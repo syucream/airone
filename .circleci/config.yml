@@ -101,11 +101,6 @@ jobs:
           paths:
             - venv
             - .tox/py35
-      - run:
-          name: Coverage
-          command: |
-            . venv/bin/activate
-            ./coverage.sh
 
   pep8:
     docker:
