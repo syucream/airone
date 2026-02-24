@@ -22,7 +22,7 @@ def index(request):
     context = {"users": [request.user]}
     if request.user.is_superuser:
         context = {
-            "users": User.objects.filter(is_active=True),
+            "users": list(User.objects.filter(is_active=True)),
         }
 
     return render(request, "list_user.html", context)

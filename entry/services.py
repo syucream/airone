@@ -9,6 +9,7 @@ from airone.lib.elasticsearch import (
     ESS,
     AdvancedSearchResults,
     AttrHint,
+    EntryDocument,
     EntryHint,
     execute_query,
     make_query,
@@ -29,7 +30,7 @@ class AdvancedSearchService:
     def search_entries(
         kls,
         user: User,
-        hint_entity_ids: list[str],
+        hint_entity_ids: list[int],
         hint_attrs: list[AttrHint] | None = None,
         limit: int = CONFIG.MAX_LIST_ENTRIES,
         entry_name: str | None = None,
@@ -278,7 +279,7 @@ class AdvancedSearchService:
         exists: bool = True
         while exists:
             exists = False
-            register_docs = []
+            register_docs: list[dict | EntryDocument] = []
             for entry in entry_list[start_pos : start_pos + 1000]:
                 exists = True
                 es_doc = entry.get_es_document(entity_attrs=entity_attrs)

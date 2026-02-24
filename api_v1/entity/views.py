@@ -12,7 +12,7 @@ class EntityAttrsAPIResponse(BaseModel):
 
 class EntityAttrsAPI(APIView):
     def get(self, request, entity_ids: str, format=None):
-        entities: list[Entity] = [
+        entities: list[Entity | None] = [
             Entity.objects.filter(id=x, is_active=True).first() for x in entity_ids.split(",") if x
         ]
 

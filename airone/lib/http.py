@@ -48,7 +48,7 @@ def http_get(func: Callable[..., HttpResponse]) -> Callable[..., HttpResponse]:
 
 
 def get_obj_with_check_perm(
-    user: User, model: models.Model, object_id: int, permission_level: int
+    user: User, model: type[models.Model], object_id: int, permission_level: int
 ) -> Tuple[Optional[Any], Optional[HttpResponse]]:
     target_obj = model.objects.filter(id=object_id).first()
     if not target_obj:

@@ -20,7 +20,7 @@ def index(request, obj_id):
 
     # Some type of objects needs object that refers target_obj (e.g. Attribute)
     # for showing breadcrumb navigation.
-    parent_obj = None
+    parent_obj: Entry | Entity | None = None
     try:
         if isinstance(target_obj, Attribute):
             parent_obj = target_obj.parent_entry

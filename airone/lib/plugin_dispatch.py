@@ -6,7 +6,7 @@ Entry API operations to plugin override handlers when configured.
 """
 
 import logging
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING, Dict, Optional, cast
 
 from pagoda_plugin_sdk.override import OverrideContext
 from rest_framework.request import Request
@@ -17,6 +17,7 @@ from airone.plugins.override_manager import OperationType, OverrideRegistration,
 if TYPE_CHECKING:
     from entity.models import Entity
     from entry.models import Entry
+    from user.models import User
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +72,7 @@ class PluginOverrideMixin:
 
         return OverrideContext(
             request=request,
-            user=request.user,
+            user=cast("User", request.user),
             entity=entity,
             entry=entry,
             data=data,

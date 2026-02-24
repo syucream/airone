@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING, cast
+
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status, viewsets
 from rest_framework.pagination import LimitOffsetPagination
@@ -6,6 +8,9 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 
 from airone.lib.acl import ACLType
+
+if TYPE_CHECKING:
+    from user.models import User
 from airone.lib.drf import ObjectNotExistsError
 from category.api_v2.serializers import (
     CategoryCreateSerializer,
@@ -36,9 +41,11 @@ class CategoryAPI(viewsets.ModelViewSet):
             return Category.objects.none()
 
         # get items that has permission to read
+        # IsAuthenticated permission guarantees user is not AnonymousUser
+        user = cast("User", self.request.user)
         targets = []
         for category in Category.objects.filter(is_active=True):
-            if self.request.user.has_permission(category, ACLType.Readable):
+            if user.has_permission(category, ACLType.Readable):
                 targets.append(category.id)
 
         return Category.objects.filter(id__in=targets)

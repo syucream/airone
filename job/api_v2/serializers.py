@@ -38,7 +38,7 @@ class JobSerializers(serializers.ModelSerializer):
     def get_target(self, obj: Job) -> JobTarget | None:
         if obj.target is not None:
             if obj.target.objtype == ACLObjType.Entry:
-                sub: dict = self.context.get(self.PREFETCHED_ENTRIES_KEY, {}).get(obj.target.id)
+                sub = self.context.get(self.PREFETCHED_ENTRIES_KEY, {}).get(obj.target.id)
                 if not sub:
                     sub = (
                         Entry.objects.filter(id=obj.target.id)
