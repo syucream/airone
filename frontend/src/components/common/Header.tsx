@@ -1,5 +1,7 @@
 import { JobSerializers } from "@dmm-com/airone-apiclient-typescript-fetch";
+import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
 import PersonIcon from "@mui/icons-material/Person";
 import TaskIcon from "@mui/icons-material/Task";
 import {
@@ -22,8 +24,10 @@ import { Link } from "react-router";
 
 import { useTranslation } from "../../hooks/useTranslation";
 
+import { useThemeContext } from "ThemeContext";
 import { SearchBox } from "components/common/SearchBox";
 import { useInterval } from "hooks/useInterval";
+import { useJobCompletionNotification } from "hooks/useJobCompletionNotification";
 import { useSimpleSearch } from "hooks/useSimpleSearch";
 import { aironeApiClient } from "repository/AironeApiClient";
 import {
@@ -83,8 +87,8 @@ const Title = styled(Typography)(({}) => ({
   textDecoration: "none",
 })) as OverridableComponent<TypographyTypeMap>;
 
-const Version = styled(Typography)(({}) => ({
-  color: "#FFFFFF8A",
+const Version = styled(Typography)(({ theme }) => ({
+  color: theme.palette.header.versionText,
   paddingLeft: "20px",
   maxWidth: "64px",
   overflow: "hidden",
@@ -115,6 +119,7 @@ const SearchBoxWrapper = styled(Box)(({}) => ({
 
 export const Header: FC = () => {
   const serverContext = ServerContext.getInstance();
+  const { mode, toggleMode } = useThemeContext();
 
   const { t } = useTranslation();
   const [query, submitQuery] = useSimpleSearch();
@@ -138,6 +143,8 @@ export const Header: FC = () => {
       console.warn("failed to get recent jobs. will auto retried ...");
     }
   }, JobRefreshIntervalMilliSec);
+
+  useJobCompletionNotification(recentJobs);
 
   const uncheckedJobsCount = useMemo(() => {
     return latestCheckDate != null
@@ -265,6 +272,13 @@ export const Header: FC = () => {
               {serverContext?.legacyUiDisabled === false && (
                 <Button href="/dashboard/">{t("previousVersion")}</Button>
               )}
+              <IconButton onClick={toggleMode} aria-label="toggle dark mode">
+                {mode === "dark" ? (
+                  <LightModeOutlinedIcon />
+                ) : (
+                  <DarkModeOutlinedIcon />
+                )}
+              </IconButton>
               <IconButton
                 aria-controls="user-menu"
                 aria-haspopup="true"
