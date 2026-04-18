@@ -2,8 +2,6 @@
  * @jest-environment jsdom
  */
 
-import { JobSerializers } from "@dmm-com/airone-apiclient-typescript-fetch";
-
 import { JobOperations, JobStatuses } from "./Constants";
 import {
   jobStatusLabel,
@@ -13,6 +11,8 @@ import {
   updateLatestCheckDate,
   setCustomJobOperations,
 } from "./JobUtil";
+
+import { JobSerializers } from "@dmm-com/airone-apiclient-typescript-fetch";
 
 describe("JobUtil", () => {
   beforeEach(() => {

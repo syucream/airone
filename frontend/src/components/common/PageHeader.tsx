@@ -11,15 +11,15 @@ const Frame = styled(Box)({
   height: "80px",
 });
 
-const Fixed = styled(Box)({
+const Fixed = styled(Box)(({ theme }) => ({
   position: "fixed",
   zIndex: 2,
   width: "100%",
-  backgroundColor: "white",
+  backgroundColor: theme.palette.background.paper,
   display: "flex",
   flexDirection: "column",
   alignItems: "center",
-});
+}));
 
 const Header = styled(Box)(({ theme }) => ({
   width: theme.breakpoints.values.lg,

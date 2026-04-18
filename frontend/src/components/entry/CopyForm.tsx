@@ -1,16 +1,17 @@
-import { EntryRetrieve } from "@dmm-com/airone-apiclient-typescript-fetch";
 import { Box, TextField, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { FC } from "react";
 
-const SampleBox = styled(Box)({
+import { EntryRetrieve } from "@dmm-com/airone-apiclient-typescript-fetch";
+
+const SampleBox = styled(Box)(({ theme }) => ({
   width: "100%",
   margin: "80px 0",
-  backgroundColor: "#607D8B0A",
+  backgroundColor: theme.palette.tableRow.alternateBackground,
   display: "flex",
   flexDirection: "column",
   alignItems: "center",
-});
+}));
 
 const SampleTextField = styled(TextField)({
   margin: "8px 0",

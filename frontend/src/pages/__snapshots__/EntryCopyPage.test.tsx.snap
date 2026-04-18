@@ -12,14 +12,14 @@ exports[`should match snapshot 1`] = `
           class="MuiBox-root css-1baykhj"
         >
           <div
-            class="MuiBox-root css-t0pdf1"
+            class="MuiBox-root css-1pvkm27"
           >
             <div
               class="MuiBox-root css-jqffe8"
             >
               <nav
                 aria-label="breadcrumb"
-                class="MuiTypography-root MuiTypography-body1 MuiBreadcrumbs-root css-5cvx94-MuiTypography-root-MuiBreadcrumbs-root"
+                class="MuiTypography-root MuiTypography-body1 MuiBreadcrumbs-root css-7btqe6-MuiTypography-root-MuiBreadcrumbs-root"
               >
                 <ol
                   class="MuiBreadcrumbs-ol css-1uwp4ue-MuiBreadcrumbs-ol"
@@ -28,7 +28,7 @@ exports[`should match snapshot 1`] = `
                     class="MuiBreadcrumbs-li"
                   >
                     <a
-                      class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                      class="MuiTypography-root MuiTypography-body1 css-1i4mxqk-MuiTypography-root"
                       data-discover="true"
                       href="/ui/"
                     >
@@ -45,7 +45,7 @@ exports[`should match snapshot 1`] = `
                     class="MuiBreadcrumbs-li"
                   >
                     <a
-                      class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                      class="MuiTypography-root MuiTypography-body1 css-1i4mxqk-MuiTypography-root"
                       data-discover="true"
                       href="/ui/entities"
                     >
@@ -65,7 +65,7 @@ exports[`should match snapshot 1`] = `
                       class="MuiBox-root css-162tvoi"
                     >
                       <a
-                        class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                        class="MuiTypography-root MuiTypography-body1 css-1i4mxqk-MuiTypography-root"
                         data-discover="true"
                         href="/ui/entities/2/entries"
                       >
@@ -97,7 +97,7 @@ exports[`should match snapshot 1`] = `
                       class="MuiBox-root css-162tvoi"
                     >
                       <a
-                        class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                        class="MuiTypography-root MuiTypography-body1 css-1i4mxqk-MuiTypography-root"
                         data-discover="true"
                         href="/ui/entities/2/entries/1/details"
                       >
@@ -126,7 +126,7 @@ exports[`should match snapshot 1`] = `
                     class="MuiBreadcrumbs-li"
                   >
                     <p
-                      class="MuiTypography-root MuiTypography-body1 css-1bgbmvw-MuiTypography-root"
+                      class="MuiTypography-root MuiTypography-body1 css-oiwby3-MuiTypography-root"
                     >
                       コピー
                     </p>
@@ -140,19 +140,19 @@ exports[`should match snapshot 1`] = `
           class="MuiBox-root css-1cs9h4l"
         >
           <div
-            class="MuiBox-root css-1519avi"
+            class="MuiBox-root css-v70eba"
           >
             <div
               class="MuiBox-root css-9rtbay"
             >
               <h6
-                class="MuiTypography-root MuiTypography-h6 css-2toz8d-MuiTypography-root"
+                class="MuiTypography-root MuiTypography-h6 css-pecs12-MuiTypography-root"
                 id="title"
               >
                 test entry
               </h6>
               <h6
-                class="MuiTypography-root MuiTypography-subtitle1 css-1i3tsf3-MuiTypography-root"
+                class="MuiTypography-root MuiTypography-subtitle1 css-1m6zjhu-MuiTypography-root"
                 id="description"
               >
                 アイテムのコピーを作成
@@ -164,7 +164,7 @@ exports[`should match snapshot 1`] = `
                   class="MuiBox-root css-1kdfklj"
                 >
                   <button
-                    class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedSecondary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorSecondary Mui-disabled MuiButton-root MuiButton-contained MuiButton-containedSecondary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorSecondary css-8fe6cp-MuiButtonBase-root-MuiButton-root"
+                    class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedSecondary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorSecondary Mui-disabled MuiButton-root MuiButton-contained MuiButton-containedSecondary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorSecondary css-qtts69-MuiButtonBase-root-MuiButton-root"
                     disabled=""
                     tabindex="-1"
                     type="button"
@@ -172,7 +172,7 @@ exports[`should match snapshot 1`] = `
                     コピーを作成
                   </button>
                   <button
-                    class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo css-152i8rg-MuiButtonBase-root-MuiButton-root"
+                    class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo css-1pflzud-MuiButtonBase-root-MuiButton-root"
                     tabindex="0"
                     type="button"
                   >
@@ -190,7 +190,7 @@ exports[`should match snapshot 1`] = `
           class="MuiContainer-root MuiContainer-maxWidthLg css-5c1adp-MuiContainer-root"
         >
           <p
-            class="MuiTypography-root MuiTypography-body1 css-rizt0-MuiTypography-root"
+            class="MuiTypography-root MuiTypography-body1 css-1bpt55s-MuiTypography-root"
           >
             入力した各行ごとに test entry と同じ属性を持つ別のアイテムを作成
           </p>
@@ -198,7 +198,7 @@ exports[`should match snapshot 1`] = `
             class="MuiFormControl-root MuiFormControl-fullWidth MuiTextField-root css-cmpglg-MuiFormControl-root-MuiTextField-root"
           >
             <div
-              class="MuiInputBase-root MuiOutlinedInput-root MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl MuiInputBase-multiline css-zsp0bh-MuiInputBase-root-MuiOutlinedInput-root"
+              class="MuiInputBase-root MuiOutlinedInput-root MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl MuiInputBase-multiline css-1hrbnan-MuiInputBase-root-MuiOutlinedInput-root"
             >
               <textarea
                 aria-invalid="false"
@@ -232,15 +232,15 @@ exports[`should match snapshot 1`] = `
             </div>
           </div>
           <div
-            class="MuiBox-root css-10z3h71"
+            class="MuiBox-root css-1xioh3b"
           >
             <h6
-              class="MuiTypography-root MuiTypography-h6 css-6y0wk1-MuiTypography-root"
+              class="MuiTypography-root MuiTypography-h6 css-1on75-MuiTypography-root"
             >
               SAMPLE
             </h6>
             <p
-              class="MuiTypography-root MuiTypography-body1 css-e0r9tj-MuiTypography-root"
+              class="MuiTypography-root MuiTypography-body1 css-vddgo9-MuiTypography-root"
             >
               (Vm0001、vm0002、…vm006の6アイテムを作成する場合)
             </p>
@@ -248,7 +248,7 @@ exports[`should match snapshot 1`] = `
               class="MuiFormControl-root MuiTextField-root css-39zbvh-MuiFormControl-root-MuiTextField-root"
             >
               <label
-                class="MuiFormLabel-root MuiInputLabel-root MuiInputLabel-formControl MuiInputLabel-animated MuiInputLabel-shrink MuiInputLabel-sizeMedium MuiInputLabel-outlined MuiFormLabel-colorPrimary Mui-disabled MuiFormLabel-filled MuiInputLabel-root MuiInputLabel-formControl MuiInputLabel-animated MuiInputLabel-shrink MuiInputLabel-sizeMedium MuiInputLabel-outlined css-113d811-MuiFormLabel-root-MuiInputLabel-root"
+                class="MuiFormLabel-root MuiInputLabel-root MuiInputLabel-formControl MuiInputLabel-animated MuiInputLabel-shrink MuiInputLabel-sizeMedium MuiInputLabel-outlined MuiFormLabel-colorPrimary Mui-disabled MuiFormLabel-filled MuiInputLabel-root MuiInputLabel-formControl MuiInputLabel-animated MuiInputLabel-shrink MuiInputLabel-sizeMedium MuiInputLabel-outlined css-6d56tl-MuiFormLabel-root-MuiInputLabel-root"
                 data-shrink="true"
                 for="_r_3_"
                 id="_r_3_-label"
@@ -256,7 +256,7 @@ exports[`should match snapshot 1`] = `
                 コピーするアイテム名
               </label>
               <div
-                class="MuiInputBase-root MuiOutlinedInput-root MuiInputBase-colorPrimary Mui-disabled MuiInputBase-formControl MuiInputBase-multiline css-xrmkj5-MuiInputBase-root-MuiOutlinedInput-root"
+                class="MuiInputBase-root MuiOutlinedInput-root MuiInputBase-colorPrimary Mui-disabled MuiInputBase-formControl MuiInputBase-multiline css-1h1w6sr-MuiInputBase-root-MuiOutlinedInput-root"
               >
                 <textarea
                   aria-invalid="false"
@@ -306,14 +306,14 @@ vm0006
         class="MuiBox-root css-1baykhj"
       >
         <div
-          class="MuiBox-root css-t0pdf1"
+          class="MuiBox-root css-1pvkm27"
         >
           <div
             class="MuiBox-root css-jqffe8"
           >
             <nav
               aria-label="breadcrumb"
-              class="MuiTypography-root MuiTypography-body1 MuiBreadcrumbs-root css-5cvx94-MuiTypography-root-MuiBreadcrumbs-root"
+              class="MuiTypography-root MuiTypography-body1 MuiBreadcrumbs-root css-7btqe6-MuiTypography-root-MuiBreadcrumbs-root"
             >
               <ol
                 class="MuiBreadcrumbs-ol css-1uwp4ue-MuiBreadcrumbs-ol"
@@ -322,7 +322,7 @@ vm0006
                   class="MuiBreadcrumbs-li"
                 >
                   <a
-                    class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                    class="MuiTypography-root MuiTypography-body1 css-1i4mxqk-MuiTypography-root"
                     data-discover="true"
                     href="/ui/"
                   >
@@ -339,7 +339,7 @@ vm0006
                   class="MuiBreadcrumbs-li"
                 >
                   <a
-                    class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                    class="MuiTypography-root MuiTypography-body1 css-1i4mxqk-MuiTypography-root"
                     data-discover="true"
                     href="/ui/entities"
                   >
@@ -359,7 +359,7 @@ vm0006
                     class="MuiBox-root css-162tvoi"
                   >
                     <a
-                      class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                      class="MuiTypography-root MuiTypography-body1 css-1i4mxqk-MuiTypography-root"
                       data-discover="true"
                       href="/ui/entities/2/entries"
                     >
@@ -391,7 +391,7 @@ vm0006
                     class="MuiBox-root css-162tvoi"
                   >
                     <a
-                      class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                      class="MuiTypography-root MuiTypography-body1 css-1i4mxqk-MuiTypography-root"
                       data-discover="true"
                       href="/ui/entities/2/entries/1/details"
                     >
@@ -420,7 +420,7 @@ vm0006
                   class="MuiBreadcrumbs-li"
                 >
                   <p
-                    class="MuiTypography-root MuiTypography-body1 css-1bgbmvw-MuiTypography-root"
+                    class="MuiTypography-root MuiTypography-body1 css-oiwby3-MuiTypography-root"
                   >
                     コピー
                   </p>
@@ -434,19 +434,19 @@ vm0006
         class="MuiBox-root css-1cs9h4l"
       >
         <div
-          class="MuiBox-root css-1519avi"
+          class="MuiBox-root css-v70eba"
         >
           <div
             class="MuiBox-root css-9rtbay"
           >
             <h6
-              class="MuiTypography-root MuiTypography-h6 css-2toz8d-MuiTypography-root"
+              class="MuiTypography-root MuiTypography-h6 css-pecs12-MuiTypography-root"
               id="title"
             >
               test entry
             </h6>
             <h6
-              class="MuiTypography-root MuiTypography-subtitle1 css-1i3tsf3-MuiTypography-root"
+              class="MuiTypography-root MuiTypography-subtitle1 css-1m6zjhu-MuiTypography-root"
               id="description"
             >
               アイテムのコピーを作成
@@ -458,7 +458,7 @@ vm0006
                 class="MuiBox-root css-1kdfklj"
               >
                 <button
-                  class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedSecondary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorSecondary Mui-disabled MuiButton-root MuiButton-contained MuiButton-containedSecondary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorSecondary css-8fe6cp-MuiButtonBase-root-MuiButton-root"
+                  class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedSecondary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorSecondary Mui-disabled MuiButton-root MuiButton-contained MuiButton-containedSecondary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorSecondary css-qtts69-MuiButtonBase-root-MuiButton-root"
                   disabled=""
                   tabindex="-1"
                   type="button"
@@ -466,7 +466,7 @@ vm0006
                   コピーを作成
                 </button>
                 <button
-                  class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo css-152i8rg-MuiButtonBase-root-MuiButton-root"
+                  class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo css-1pflzud-MuiButtonBase-root-MuiButton-root"
                   tabindex="0"
                   type="button"
                 >
@@ -484,7 +484,7 @@ vm0006
         class="MuiContainer-root MuiContainer-maxWidthLg css-5c1adp-MuiContainer-root"
       >
         <p
-          class="MuiTypography-root MuiTypography-body1 css-rizt0-MuiTypography-root"
+          class="MuiTypography-root MuiTypography-body1 css-1bpt55s-MuiTypography-root"
         >
           入力した各行ごとに test entry と同じ属性を持つ別のアイテムを作成
         </p>
@@ -492,7 +492,7 @@ vm0006
           class="MuiFormControl-root MuiFormControl-fullWidth MuiTextField-root css-cmpglg-MuiFormControl-root-MuiTextField-root"
         >
           <div
-            class="MuiInputBase-root MuiOutlinedInput-root MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl MuiInputBase-multiline css-zsp0bh-MuiInputBase-root-MuiOutlinedInput-root"
+            class="MuiInputBase-root MuiOutlinedInput-root MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl MuiInputBase-multiline css-1hrbnan-MuiInputBase-root-MuiOutlinedInput-root"
           >
             <textarea
               aria-invalid="false"
@@ -526,15 +526,15 @@ vm0006
           </div>
         </div>
         <div
-          class="MuiBox-root css-10z3h71"
+          class="MuiBox-root css-1xioh3b"
         >
           <h6
-            class="MuiTypography-root MuiTypography-h6 css-6y0wk1-MuiTypography-root"
+            class="MuiTypography-root MuiTypography-h6 css-1on75-MuiTypography-root"
           >
             SAMPLE
           </h6>
           <p
-            class="MuiTypography-root MuiTypography-body1 css-e0r9tj-MuiTypography-root"
+            class="MuiTypography-root MuiTypography-body1 css-vddgo9-MuiTypography-root"
           >
             (Vm0001、vm0002、…vm006の6アイテムを作成する場合)
           </p>
@@ -542,7 +542,7 @@ vm0006
             class="MuiFormControl-root MuiTextField-root css-39zbvh-MuiFormControl-root-MuiTextField-root"
           >
             <label
-              class="MuiFormLabel-root MuiInputLabel-root MuiInputLabel-formControl MuiInputLabel-animated MuiInputLabel-shrink MuiInputLabel-sizeMedium MuiInputLabel-outlined MuiFormLabel-colorPrimary Mui-disabled MuiFormLabel-filled MuiInputLabel-root MuiInputLabel-formControl MuiInputLabel-animated MuiInputLabel-shrink MuiInputLabel-sizeMedium MuiInputLabel-outlined css-113d811-MuiFormLabel-root-MuiInputLabel-root"
+              class="MuiFormLabel-root MuiInputLabel-root MuiInputLabel-formControl MuiInputLabel-animated MuiInputLabel-shrink MuiInputLabel-sizeMedium MuiInputLabel-outlined MuiFormLabel-colorPrimary Mui-disabled MuiFormLabel-filled MuiInputLabel-root MuiInputLabel-formControl MuiInputLabel-animated MuiInputLabel-shrink MuiInputLabel-sizeMedium MuiInputLabel-outlined css-6d56tl-MuiFormLabel-root-MuiInputLabel-root"
               data-shrink="true"
               for="_r_3_"
               id="_r_3_-label"
@@ -550,7 +550,7 @@ vm0006
               コピーするアイテム名
             </label>
             <div
-              class="MuiInputBase-root MuiOutlinedInput-root MuiInputBase-colorPrimary Mui-disabled MuiInputBase-formControl MuiInputBase-multiline css-xrmkj5-MuiInputBase-root-MuiOutlinedInput-root"
+              class="MuiInputBase-root MuiOutlinedInput-root MuiInputBase-colorPrimary Mui-disabled MuiInputBase-formControl MuiInputBase-multiline css-1h1w6sr-MuiInputBase-root-MuiOutlinedInput-root"
             >
               <textarea
                 aria-invalid="false"

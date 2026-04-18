@@ -2,9 +2,9 @@
  * @jest-environment jsdom
  */
 
-import { AdvancedSearchResult } from "@dmm-com/airone-apiclient-typescript-fetch";
 import { render, screen, fireEvent } from "@testing-library/react";
 
+import { AdvancedSearchResult } from "@dmm-com/airone-apiclient-typescript-fetch";
 import { TestWrapper } from "TestWrapper";
 import { SearchResults } from "components/entry/SearchResults";
 

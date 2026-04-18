@@ -1,5 +1,7 @@
 import { JobSerializers } from "@dmm-com/airone-apiclient-typescript-fetch";
+import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
 import PersonIcon from "@mui/icons-material/Person";
 import TaskIcon from "@mui/icons-material/Task";
 import {
@@ -22,6 +24,7 @@ import { Link } from "react-router";
 
 import { useTranslation } from "../../hooks/useTranslation";
 
+import { useThemeContext } from "ThemeContext";
 import { SearchBox } from "components/common/SearchBox";
 import { useInterval } from "hooks/useInterval";
 import { useSimpleSearch } from "hooks/useSimpleSearch";
@@ -83,8 +86,8 @@ const Title = styled(Typography)(({}) => ({
   textDecoration: "none",
 })) as OverridableComponent<TypographyTypeMap>;
 
-const Version = styled(Typography)(({}) => ({
-  color: "#FFFFFF8A",
+const Version = styled(Typography)(({ theme }) => ({
+  color: theme.palette.header.versionText,
   paddingLeft: "20px",
   maxWidth: "64px",
   overflow: "hidden",
@@ -115,6 +118,7 @@ const SearchBoxWrapper = styled(Box)(({}) => ({
 
 export const Header: FC = () => {
   const serverContext = ServerContext.getInstance();
+  const { mode, toggleMode } = useThemeContext();
 
   const { t } = useTranslation();
   const [query, submitQuery] = useSimpleSearch();
@@ -265,6 +269,13 @@ export const Header: FC = () => {
               {serverContext?.legacyUiDisabled === false && (
                 <Button href="/dashboard/">{t("previousVersion")}</Button>
               )}
+              <IconButton onClick={toggleMode}>
+                {mode === "dark" ? (
+                  <LightModeOutlinedIcon />
+                ) : (
+                  <DarkModeOutlinedIcon />
+                )}
+              </IconButton>
               <IconButton
                 aria-controls="user-menu"
                 aria-haspopup="true"

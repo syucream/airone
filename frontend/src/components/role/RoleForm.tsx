@@ -1,8 +1,4 @@
 import {
-  RoleGroup,
-  RoleUser,
-} from "@dmm-com/airone-apiclient-typescript-fetch";
-import {
   Autocomplete,
   Box,
   Chip,
@@ -15,6 +11,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import { FC, useState } from "react";
 import {
   Control,
@@ -28,12 +25,18 @@ import { aironeApiClient } from "../../repository/AironeApiClient";
 
 import { Schema } from "./roleForm/RoleFormSchema";
 
+import {
+  RoleGroup,
+  RoleUser,
+} from "@dmm-com/airone-apiclient-typescript-fetch";
+
 interface Props {
   control: Control<Schema>;
   setValue: UseFormSetValue<Schema>;
 }
 
 export const RoleForm: FC<Props> = ({ control, setValue }) => {
+  const theme = useTheme();
   const [userKeyword, setUserKeyword] = useState("");
   const [adminUserKeyword, setAdminUserKeyword] = useState("");
   const [groupUserKeyword, setGroupUserKeyword] = useState("");
@@ -79,9 +82,15 @@ export const RoleForm: FC<Props> = ({ control, setValue }) => {
       <Box>
         <Table className="table table-bordered" data-testid="basic">
           <TableHead>
-            <TableRow sx={{ backgroundColor: "#455A64" }}>
-              <TableCell sx={{ color: "#FFFFFF" }}>項目</TableCell>
-              <TableCell sx={{ color: "#FFFFFF" }}>内容</TableCell>
+            <TableRow
+              sx={{ backgroundColor: theme.palette.tableHeader.background }}
+            >
+              <TableCell sx={{ color: theme.palette.tableHeader.text }}>
+                項目
+              </TableCell>
+              <TableCell sx={{ color: theme.palette.tableHeader.text }}>
+                内容
+              </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -145,9 +154,15 @@ export const RoleForm: FC<Props> = ({ control, setValue }) => {
           </Typography>
           <Table data-testid="group">
             <TableHead>
-              <TableRow sx={{ backgroundColor: "#455A64" }}>
-                <TableCell sx={{ color: "#FFFFFF" }}>項目</TableCell>
-                <TableCell sx={{ color: "#FFFFFF" }}>内容</TableCell>
+              <TableRow
+                sx={{ backgroundColor: theme.palette.tableHeader.background }}
+              >
+                <TableCell sx={{ color: theme.palette.tableHeader.text }}>
+                  項目
+                </TableCell>
+                <TableCell sx={{ color: theme.palette.tableHeader.text }}>
+                  内容
+                </TableCell>
                 <TableCell />
               </TableRow>
             </TableHead>
@@ -306,9 +321,15 @@ export const RoleForm: FC<Props> = ({ control, setValue }) => {
           </Typography>
           <Table data-testid="user">
             <TableHead>
-              <TableRow sx={{ backgroundColor: "#455A64" }}>
-                <TableCell sx={{ color: "#FFFFFF" }}>項目</TableCell>
-                <TableCell sx={{ color: "#FFFFFF" }}>内容</TableCell>
+              <TableRow
+                sx={{ backgroundColor: theme.palette.tableHeader.background }}
+              >
+                <TableCell sx={{ color: theme.palette.tableHeader.text }}>
+                  項目
+                </TableCell>
+                <TableCell sx={{ color: theme.palette.tableHeader.text }}>
+                  内容
+                </TableCell>
                 <TableCell />
               </TableRow>
             </TableHead>

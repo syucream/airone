@@ -13,8 +13,8 @@ const PasswordField = styled(Box)(({ theme }) => ({
   marginBottom: theme.spacing(4),
 }));
 
-const PasswordFieldLabel = styled("label")(({}) => ({
-  color: "#90A4AE",
+const PasswordFieldLabel = styled("label")(({ theme }) => ({
+  color: theme.palette.primary.light,
 }));
 
 const PasswordFieldInput = styled(TextField)(({ theme }) => ({

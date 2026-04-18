@@ -2,10 +2,6 @@
  * @jest-environment jsdom
  */
 
-import {
-  EntityDetail,
-  EntryAttributeTypeTypeEnum,
-} from "@dmm-com/airone-apiclient-typescript-fetch";
 import { render, screen, within } from "@testing-library/react";
 import { FC } from "react";
 import { useForm } from "react-hook-form";
@@ -15,6 +11,10 @@ import { TestWrapper } from "../../TestWrapper";
 import { Actions } from "./Actions";
 import { Schema } from "./TriggerFormSchema";
 
+import {
+  EntityDetail,
+  EntryAttributeTypeTypeEnum,
+} from "@dmm-com/airone-apiclient-typescript-fetch";
 import { ACLType } from "services/ACLUtil";
 
 describe("ActionForm", () => {

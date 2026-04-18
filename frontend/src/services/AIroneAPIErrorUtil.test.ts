@@ -1,5 +1,3 @@
-import { ResponseError } from "@dmm-com/airone-apiclient-typescript-fetch";
-
 import {
   isAironeApiIndexedError,
   isAironeApiNonFieldsError,
@@ -8,6 +6,8 @@ import {
   toError,
 } from "./AironeAPIErrorUtil";
 import { ForbiddenError, NotFoundError, UnknownError } from "./Exceptions";
+
+import { ResponseError } from "@dmm-com/airone-apiclient-typescript-fetch";
 
 test("isAironeApiRootError should recognize an error is a root-level(same as ErrorDetail) or not", () => {
   expect(

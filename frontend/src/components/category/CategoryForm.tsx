@@ -1,4 +1,3 @@
-import { Entity } from "@dmm-com/airone-apiclient-typescript-fetch";
 import {
   Autocomplete,
   Box,
@@ -15,6 +14,7 @@ import { UseFormSetValue } from "react-hook-form/dist/types/form";
 
 import { Schema } from "./categoryForm/CategoryFormSchema";
 
+import { Entity } from "@dmm-com/airone-apiclient-typescript-fetch";
 import {
   HeaderTableCell,
   HeaderTableRow,

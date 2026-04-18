@@ -28,7 +28,7 @@ export const ErrorPageBase: FC<ErrorPageBaseProps> = ({
         <Typography
           id="sorry_forbidden"
           variant="h1"
-          color="#B0BEC5"
+          color="text.disabled"
           fontWeight="bold"
         >
           {title}
@@ -36,7 +36,7 @@ export const ErrorPageBase: FC<ErrorPageBaseProps> = ({
       </Box>
       <Box display="flex" flexDirection="column" alignItems="center">
         {description.map((text, index) => (
-          <Typography key={index} color="#455A64">
+          <Typography key={index} color="text.secondary">
             {text}
           </Typography>
         ))}

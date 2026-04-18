@@ -105,7 +105,7 @@ const EntryHistoryListContent: FC = () => {
         <Box sx={{ mb: 4 }}>
           <Typography
             variant="h6"
-            sx={{ mb: 2, color: "#455A64", fontWeight: "bold" }}
+            sx={{ mb: 2, color: "text.secondary", fontWeight: "bold" }}
           >
             アイテム変更履歴
           </Typography>
@@ -124,7 +124,7 @@ const EntryHistoryListContent: FC = () => {
         <Box>
           <Typography
             variant="h6"
-            sx={{ mb: 2, color: "#455A64", fontWeight: "bold" }}
+            sx={{ mb: 2, color: "text.secondary", fontWeight: "bold" }}
           >
             属性変更履歴
           </Typography>

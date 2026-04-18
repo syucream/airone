@@ -22,12 +22,12 @@ import { Control, Controller, useFieldArray } from "react-hook-form";
 import { Schema } from "./EntityFormSchema";
 import { WebhookHeadersModal } from "./WebhookHeadersModal";
 
-const HeaderTableRow = styled(TableRow)(({}) => ({
-  backgroundColor: "#455A64",
+const HeaderTableRow = styled(TableRow)(({ theme }) => ({
+  backgroundColor: theme.palette.tableHeader.background,
 }));
 
-const HeaderTableCell = styled(TableCell)(({}) => ({
-  color: "#FFFFFF",
+const HeaderTableCell = styled(TableCell)(({ theme }) => ({
+  color: theme.palette.tableHeader.text,
   boxSizing: "border-box",
 }));
 

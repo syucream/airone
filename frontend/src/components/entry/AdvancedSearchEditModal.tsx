@@ -1,10 +1,10 @@
-import { AttributeData } from "@dmm-com/airone-apiclient-typescript-fetch";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Box, Button } from "@mui/material";
 import { useSnackbar } from "notistack";
 import { FC, useMemo } from "react";
 import { useForm } from "react-hook-form";
 
+import { AttributeData } from "@dmm-com/airone-apiclient-typescript-fetch";
 import { AironeModal } from "components/common/AironeModal";
 import { AttributeValueField } from "components/entry/entryForm/AttributeValueField";
 import { EditableEntryAttrs } from "components/entry/entryForm/EditableEntry";

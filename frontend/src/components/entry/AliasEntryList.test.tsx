@@ -4,11 +4,12 @@
 
 import "@testing-library/jest-dom";
 
-import { EntryBase } from "@dmm-com/airone-apiclient-typescript-fetch";
 import { fireEvent, render, screen } from "@testing-library/react";
 
 import { AliasEntryList } from "./AliasEntryList";
 
+import { EntryBase } from "@dmm-com/airone-apiclient-typescript-fetch";
+import { TestWrapperWithoutRoutes } from "TestWrapper";
 import { ACLType } from "services/ACLUtil";
 
 const mockHandleCreate = jest.fn();
@@ -31,11 +32,13 @@ const mockEntryBase: EntryBase = {
 // Helper function to render the component
 const renderComponent = (entryProps: EntryBase = mockEntryBase) => {
   return render(
-    <AliasEntryList
-      entry={entryProps}
-      handleCreate={mockHandleCreate}
-      handleDelete={mockHandleDelete}
-    />,
+    <TestWrapperWithoutRoutes>
+      <AliasEntryList
+        entry={entryProps}
+        handleCreate={mockHandleCreate}
+        handleDelete={mockHandleDelete}
+      />
+    </TestWrapperWithoutRoutes>,
   );
 };
 

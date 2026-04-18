@@ -2,7 +2,6 @@
  * @jest-environment jsdom
  */
 
-import { PaginatedEntityListList } from "@dmm-com/airone-apiclient-typescript-fetch";
 import {
   act,
   fireEvent,
@@ -18,6 +17,7 @@ import { SWRConfig } from "swr";
 
 import { AdvancedSearchPage } from "./AdvancedSearchPage";
 
+import { PaginatedEntityListList } from "@dmm-com/airone-apiclient-typescript-fetch";
 import { ACLType } from "services/ACLUtil";
 
 const entities: PaginatedEntityListList = {

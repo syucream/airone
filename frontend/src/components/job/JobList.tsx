@@ -1,4 +1,3 @@
-import { JobSerializers } from "@dmm-com/airone-apiclient-typescript-fetch";
 import Download from "@mui/icons-material/Download";
 import {
   Box,
@@ -28,56 +27,57 @@ import { AironeTableHeadCell } from "../common/AironeTableHeadCell";
 import { AironeTableHeadRow } from "../common/AironeTableHeadRow";
 import { Confirmable } from "../common/Confirmable";
 
+import { JobSerializers } from "@dmm-com/airone-apiclient-typescript-fetch";
 import { AironeLink } from "components/common";
 
-const StyledTableRow = styled(TableRow)(({}) => ({
+const StyledTableRow = styled(TableRow)(({ theme }) => ({
   "&:nth-of-type(odd)": {
-    backgroundColor: "white",
+    backgroundColor: theme.palette.background.paper,
   },
   "&:nth-of-type(even)": {
-    backgroundColor: "#607D8B0A",
+    backgroundColor: theme.palette.tableRow.alternateBackground,
   },
 }));
 
-const PreparingIcon = styled(Box)(({}) => ({
+const PreparingIcon = styled(Box)(({ theme }) => ({
   width: "13px",
   height: "13px",
   margin: "0 4px",
-  backgroundColor: "white",
+  backgroundColor: theme.palette.background.paper,
   border: "solid",
   borderColor: "black",
   borderRadius: "8px",
 }));
 
-const DoneIcon = styled(Box)(({}) => ({
+const DoneIcon = styled(Box)(({ theme }) => ({
   width: "16px",
   height: "16px",
   margin: "0 4px",
-  backgroundColor: "#607D8B",
+  backgroundColor: theme.palette.primary.main,
   borderRadius: "8px",
 }));
 
-const ErrorIcon = styled(Box)(({}) => ({
+const ErrorIcon = styled(Box)(({ theme }) => ({
   width: "16px",
   height: "16px",
   margin: "0 4px",
-  backgroundColor: "#B00020",
+  backgroundColor: theme.palette.error.main,
   borderRadius: "8px",
 }));
 
-const TimeoutIcon = styled(Box)(({}) => ({
+const TimeoutIcon = styled(Box)(({ theme }) => ({
   width: "16px",
   height: "16px",
   margin: "0 4px",
-  backgroundColor: "#B00020",
+  backgroundColor: theme.palette.error.main,
   borderRadius: "8px",
 }));
 
-const CancelledIcon = styled(Box)(({}) => ({
+const CancelledIcon = styled(Box)(({ theme }) => ({
   width: "16px",
   height: "16px",
   margin: "0 4px",
-  backgroundColor: "#607D8B",
+  backgroundColor: theme.palette.primary.main,
   borderRadius: "8px",
 }));
 

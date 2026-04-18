@@ -12,14 +12,14 @@ exports[`should match snapshot 1`] = `
           class="MuiBox-root css-1baykhj"
         >
           <div
-            class="MuiBox-root css-t0pdf1"
+            class="MuiBox-root css-1pvkm27"
           >
             <div
               class="MuiBox-root css-jqffe8"
             >
               <nav
                 aria-label="breadcrumb"
-                class="MuiTypography-root MuiTypography-body1 MuiBreadcrumbs-root css-5cvx94-MuiTypography-root-MuiBreadcrumbs-root"
+                class="MuiTypography-root MuiTypography-body1 MuiBreadcrumbs-root css-7btqe6-MuiTypography-root-MuiBreadcrumbs-root"
               >
                 <ol
                   class="MuiBreadcrumbs-ol css-1uwp4ue-MuiBreadcrumbs-ol"
@@ -28,7 +28,7 @@ exports[`should match snapshot 1`] = `
                     class="MuiBreadcrumbs-li"
                   >
                     <a
-                      class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                      class="MuiTypography-root MuiTypography-body1 css-1i4mxqk-MuiTypography-root"
                       data-discover="true"
                       href="/ui/"
                     >
@@ -45,7 +45,7 @@ exports[`should match snapshot 1`] = `
                     class="MuiBreadcrumbs-li"
                   >
                     <a
-                      class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                      class="MuiTypography-root MuiTypography-body1 css-1i4mxqk-MuiTypography-root"
                       data-discover="true"
                       href="/ui/advanced_search"
                     >
@@ -62,7 +62,7 @@ exports[`should match snapshot 1`] = `
                     class="MuiBreadcrumbs-li"
                   >
                     <p
-                      class="MuiTypography-root MuiTypography-body1 css-1bgbmvw-MuiTypography-root"
+                      class="MuiTypography-root MuiTypography-body1 css-oiwby3-MuiTypography-root"
                     >
                       検索結果
                     </p>
@@ -76,19 +76,19 @@ exports[`should match snapshot 1`] = `
           class="MuiBox-root css-1cs9h4l"
         >
           <div
-            class="MuiBox-root css-1519avi"
+            class="MuiBox-root css-v70eba"
           >
             <div
               class="MuiBox-root css-9rtbay"
             >
               <h6
-                class="MuiTypography-root MuiTypography-h6 css-2toz8d-MuiTypography-root"
+                class="MuiTypography-root MuiTypography-h6 css-pecs12-MuiTypography-root"
                 id="title"
               >
                 検索結果
               </h6>
               <h6
-                class="MuiTypography-root MuiTypography-subtitle1 css-1i3tsf3-MuiTypography-root"
+                class="MuiTypography-root MuiTypography-subtitle1 css-1m6zjhu-MuiTypography-root"
                 id="description"
               >
                 1 件
@@ -100,7 +100,7 @@ exports[`should match snapshot 1`] = `
                   class="MuiBox-root css-1l4w6pd"
                 >
                   <button
-                    class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo css-mnflth-MuiButtonBase-root-MuiButton-root"
+                    class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo css-1dd4yji-MuiButtonBase-root-MuiButton-root"
                     tabindex="0"
                     type="button"
                   >
@@ -125,7 +125,7 @@ exports[`should match snapshot 1`] = `
                     class="MuiBox-root css-0"
                   >
                     <button
-                      class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo css-fm83n0-MuiButtonBase-root-MuiButton-root"
+                      class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo css-mlmsgc-MuiButtonBase-root-MuiButton-root"
                       tabindex="0"
                       type="button"
                     >
@@ -136,7 +136,7 @@ exports[`should match snapshot 1`] = `
                     class="MuiBox-root css-0"
                   >
                     <button
-                      class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo css-19ekxha-MuiButtonBase-root-MuiButton-root"
+                      class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo css-1w8axbj-MuiButtonBase-root-MuiButton-root"
                       tabindex="0"
                       type="button"
                     >
@@ -147,7 +147,7 @@ exports[`should match snapshot 1`] = `
                     class="MuiBox-root css-0"
                   >
                     <button
-                      class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo Mui-disabled MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo css-fm83n0-MuiButtonBase-root-MuiButton-root"
+                      class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo Mui-disabled MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo css-mlmsgc-MuiButtonBase-root-MuiButton-root"
                       disabled=""
                       tabindex="-1"
                       type="button"
@@ -188,21 +188,21 @@ exports[`should match snapshot 1`] = `
               class="MuiBox-root css-xc9v4r"
             >
               <div
-                class="MuiPaper-root MuiPaper-elevation MuiPaper-rounded MuiPaper-elevation1 MuiTableContainer-root css-y2ff7i-MuiPaper-root-MuiTableContainer-root"
+                class="MuiPaper-root MuiPaper-elevation MuiPaper-rounded MuiPaper-elevation1 MuiTableContainer-root css-g3bzrw-MuiPaper-root-MuiTableContainer-root"
                 style="--Paper-shadow: 0px 2px 1px -1px rgba(0,0,0,0.2),0px 1px 1px 0px rgba(0,0,0,0.14),0px 1px 3px 0px rgba(0,0,0,0.12);"
               >
                 <table
-                  class="MuiTable-root css-1xwxv7r-MuiTable-root"
+                  class="MuiTable-root css-oigiou-MuiTable-root"
                   id="table_result_list"
                 >
                   <thead
                     class="MuiTableHead-root css-1a7iywq-MuiTableHead-root"
                   >
                     <tr
-                      class="MuiTableRow-root MuiTableRow-head css-1zxdl6-MuiTableRow-root"
+                      class="MuiTableRow-root MuiTableRow-head css-2qoff5-MuiTableRow-root"
                     >
                       <th
-                        class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-16v8e99-MuiTableCell-root"
+                        class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-1g9qlba-MuiTableCell-root"
                         scope="col"
                       >
                         <button
@@ -224,14 +224,14 @@ exports[`should match snapshot 1`] = `
                         </button>
                       </th>
                       <th
-                        class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-msxbr9-MuiTableCell-root"
+                        class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-6g0x3u-MuiTableCell-root"
                         scope="col"
                       >
                         <div
                           class="MuiBox-root css-1p22ljb"
                         >
                           <p
-                            class="MuiTypography-root MuiTypography-body1 css-rizt0-MuiTypography-root"
+                            class="MuiTypography-root MuiTypography-body1 css-1bpt55s-MuiTypography-root"
                           >
                             アイテム名
                           </p>
@@ -262,13 +262,13 @@ exports[`should match snapshot 1`] = `
                     class="MuiTableBody-root css-gmh7jj-MuiTableBody-root"
                   >
                     <tr
-                      class="MuiTableRow-root css-19hlvb6-MuiTableRow-root"
+                      class="MuiTableRow-root css-qvpu5p-MuiTableRow-root"
                     >
                       <td
-                        class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-nvkn62-MuiTableCell-root"
+                        class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-jgwuz2-MuiTableCell-root"
                       >
                         <span
-                          class="MuiButtonBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium PrivateSwitchBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium css-imrjgg-MuiButtonBase-root-MuiCheckbox-root"
+                          class="MuiButtonBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium PrivateSwitchBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium css-1gyy2hj-MuiButtonBase-root-MuiCheckbox-root"
                         >
                           <input
                             class="PrivateSwitchBase-input css-j8yymo"
@@ -289,10 +289,10 @@ exports[`should match snapshot 1`] = `
                         </span>
                       </td>
                       <td
-                        class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                        class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
                       >
                         <a
-                          class="MuiBox-root css-p5ouq3"
+                          class="MuiBox-root css-1yk8hvx"
                           data-discover="true"
                           href="/ui/entities/1/entries/2/details"
                         >
@@ -308,7 +308,7 @@ exports[`should match snapshot 1`] = `
                 id="pagination"
               >
                 <p
-                  class="MuiTypography-root MuiTypography-body1 css-rizt0-MuiTypography-root"
+                  class="MuiTypography-root MuiTypography-body1 css-1bpt55s-MuiTypography-root"
                 >
                   1 - 1 / 1 件
                 </p>
@@ -325,7 +325,7 @@ exports[`should match snapshot 1`] = `
                       <li>
                         <button
                           aria-label="Go to previous page"
-                          class="MuiButtonBase-root Mui-disabled MuiPaginationItem-root MuiPaginationItem-sizeMedium MuiPaginationItem-text MuiPaginationItem-circular MuiPaginationItem-colorPrimary MuiPaginationItem-textPrimary Mui-disabled MuiPaginationItem-previousNext css-1bug3cd-MuiButtonBase-root-MuiPaginationItem-root"
+                          class="MuiButtonBase-root Mui-disabled MuiPaginationItem-root MuiPaginationItem-sizeMedium MuiPaginationItem-text MuiPaginationItem-circular MuiPaginationItem-colorPrimary MuiPaginationItem-textPrimary Mui-disabled MuiPaginationItem-previousNext css-17c1raq-MuiButtonBase-root-MuiPaginationItem-root"
                           disabled=""
                           tabindex="-1"
                           type="button"
@@ -347,7 +347,7 @@ exports[`should match snapshot 1`] = `
                         <button
                           aria-current="page"
                           aria-label="page 1"
-                          class="MuiButtonBase-root MuiPaginationItem-root MuiPaginationItem-sizeMedium MuiPaginationItem-text MuiPaginationItem-circular MuiPaginationItem-colorPrimary MuiPaginationItem-textPrimary Mui-selected MuiPaginationItem-page css-1bug3cd-MuiButtonBase-root-MuiPaginationItem-root"
+                          class="MuiButtonBase-root MuiPaginationItem-root MuiPaginationItem-sizeMedium MuiPaginationItem-text MuiPaginationItem-circular MuiPaginationItem-colorPrimary MuiPaginationItem-textPrimary Mui-selected MuiPaginationItem-page css-17c1raq-MuiButtonBase-root-MuiPaginationItem-root"
                           tabindex="0"
                           type="button"
                         >
@@ -357,7 +357,7 @@ exports[`should match snapshot 1`] = `
                       <li>
                         <button
                           aria-label="Go to next page"
-                          class="MuiButtonBase-root Mui-disabled MuiPaginationItem-root MuiPaginationItem-sizeMedium MuiPaginationItem-text MuiPaginationItem-circular MuiPaginationItem-colorPrimary MuiPaginationItem-textPrimary Mui-disabled MuiPaginationItem-previousNext css-1bug3cd-MuiButtonBase-root-MuiPaginationItem-root"
+                          class="MuiButtonBase-root Mui-disabled MuiPaginationItem-root MuiPaginationItem-sizeMedium MuiPaginationItem-text MuiPaginationItem-circular MuiPaginationItem-colorPrimary MuiPaginationItem-textPrimary Mui-disabled MuiPaginationItem-previousNext css-17c1raq-MuiButtonBase-root-MuiPaginationItem-root"
                           disabled=""
                           tabindex="-1"
                           type="button"
@@ -393,14 +393,14 @@ exports[`should match snapshot 1`] = `
         class="MuiBox-root css-1baykhj"
       >
         <div
-          class="MuiBox-root css-t0pdf1"
+          class="MuiBox-root css-1pvkm27"
         >
           <div
             class="MuiBox-root css-jqffe8"
           >
             <nav
               aria-label="breadcrumb"
-              class="MuiTypography-root MuiTypography-body1 MuiBreadcrumbs-root css-5cvx94-MuiTypography-root-MuiBreadcrumbs-root"
+              class="MuiTypography-root MuiTypography-body1 MuiBreadcrumbs-root css-7btqe6-MuiTypography-root-MuiBreadcrumbs-root"
             >
               <ol
                 class="MuiBreadcrumbs-ol css-1uwp4ue-MuiBreadcrumbs-ol"
@@ -409,7 +409,7 @@ exports[`should match snapshot 1`] = `
                   class="MuiBreadcrumbs-li"
                 >
                   <a
-                    class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                    class="MuiTypography-root MuiTypography-body1 css-1i4mxqk-MuiTypography-root"
                     data-discover="true"
                     href="/ui/"
                   >
@@ -426,7 +426,7 @@ exports[`should match snapshot 1`] = `
                   class="MuiBreadcrumbs-li"
                 >
                   <a
-                    class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                    class="MuiTypography-root MuiTypography-body1 css-1i4mxqk-MuiTypography-root"
                     data-discover="true"
                     href="/ui/advanced_search"
                   >
@@ -443,7 +443,7 @@ exports[`should match snapshot 1`] = `
                   class="MuiBreadcrumbs-li"
                 >
                   <p
-                    class="MuiTypography-root MuiTypography-body1 css-1bgbmvw-MuiTypography-root"
+                    class="MuiTypography-root MuiTypography-body1 css-oiwby3-MuiTypography-root"
                   >
                     検索結果
                   </p>
@@ -457,19 +457,19 @@ exports[`should match snapshot 1`] = `
         class="MuiBox-root css-1cs9h4l"
       >
         <div
-          class="MuiBox-root css-1519avi"
+          class="MuiBox-root css-v70eba"
         >
           <div
             class="MuiBox-root css-9rtbay"
           >
             <h6
-              class="MuiTypography-root MuiTypography-h6 css-2toz8d-MuiTypography-root"
+              class="MuiTypography-root MuiTypography-h6 css-pecs12-MuiTypography-root"
               id="title"
             >
               検索結果
             </h6>
             <h6
-              class="MuiTypography-root MuiTypography-subtitle1 css-1i3tsf3-MuiTypography-root"
+              class="MuiTypography-root MuiTypography-subtitle1 css-1m6zjhu-MuiTypography-root"
               id="description"
             >
               1 件
@@ -481,7 +481,7 @@ exports[`should match snapshot 1`] = `
                 class="MuiBox-root css-1l4w6pd"
               >
                 <button
-                  class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo css-mnflth-MuiButtonBase-root-MuiButton-root"
+                  class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo css-1dd4yji-MuiButtonBase-root-MuiButton-root"
                   tabindex="0"
                   type="button"
                 >
@@ -506,7 +506,7 @@ exports[`should match snapshot 1`] = `
                   class="MuiBox-root css-0"
                 >
                   <button
-                    class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo css-fm83n0-MuiButtonBase-root-MuiButton-root"
+                    class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo css-mlmsgc-MuiButtonBase-root-MuiButton-root"
                     tabindex="0"
                     type="button"
                   >
@@ -517,7 +517,7 @@ exports[`should match snapshot 1`] = `
                   class="MuiBox-root css-0"
                 >
                   <button
-                    class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo css-19ekxha-MuiButtonBase-root-MuiButton-root"
+                    class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo css-1w8axbj-MuiButtonBase-root-MuiButton-root"
                     tabindex="0"
                     type="button"
                   >
@@ -528,7 +528,7 @@ exports[`should match snapshot 1`] = `
                   class="MuiBox-root css-0"
                 >
                   <button
-                    class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo Mui-disabled MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo css-fm83n0-MuiButtonBase-root-MuiButton-root"
+                    class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo Mui-disabled MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo css-mlmsgc-MuiButtonBase-root-MuiButton-root"
                     disabled=""
                     tabindex="-1"
                     type="button"
@@ -569,21 +569,21 @@ exports[`should match snapshot 1`] = `
             class="MuiBox-root css-xc9v4r"
           >
             <div
-              class="MuiPaper-root MuiPaper-elevation MuiPaper-rounded MuiPaper-elevation1 MuiTableContainer-root css-y2ff7i-MuiPaper-root-MuiTableContainer-root"
+              class="MuiPaper-root MuiPaper-elevation MuiPaper-rounded MuiPaper-elevation1 MuiTableContainer-root css-g3bzrw-MuiPaper-root-MuiTableContainer-root"
               style="--Paper-shadow: 0px 2px 1px -1px rgba(0,0,0,0.2),0px 1px 1px 0px rgba(0,0,0,0.14),0px 1px 3px 0px rgba(0,0,0,0.12);"
             >
               <table
-                class="MuiTable-root css-1xwxv7r-MuiTable-root"
+                class="MuiTable-root css-oigiou-MuiTable-root"
                 id="table_result_list"
               >
                 <thead
                   class="MuiTableHead-root css-1a7iywq-MuiTableHead-root"
                 >
                   <tr
-                    class="MuiTableRow-root MuiTableRow-head css-1zxdl6-MuiTableRow-root"
+                    class="MuiTableRow-root MuiTableRow-head css-2qoff5-MuiTableRow-root"
                   >
                     <th
-                      class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-16v8e99-MuiTableCell-root"
+                      class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-1g9qlba-MuiTableCell-root"
                       scope="col"
                     >
                       <button
@@ -605,14 +605,14 @@ exports[`should match snapshot 1`] = `
                       </button>
                     </th>
                     <th
-                      class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-msxbr9-MuiTableCell-root"
+                      class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-6g0x3u-MuiTableCell-root"
                       scope="col"
                     >
                       <div
                         class="MuiBox-root css-1p22ljb"
                       >
                         <p
-                          class="MuiTypography-root MuiTypography-body1 css-rizt0-MuiTypography-root"
+                          class="MuiTypography-root MuiTypography-body1 css-1bpt55s-MuiTypography-root"
                         >
                           アイテム名
                         </p>
@@ -643,13 +643,13 @@ exports[`should match snapshot 1`] = `
                   class="MuiTableBody-root css-gmh7jj-MuiTableBody-root"
                 >
                   <tr
-                    class="MuiTableRow-root css-19hlvb6-MuiTableRow-root"
+                    class="MuiTableRow-root css-qvpu5p-MuiTableRow-root"
                   >
                     <td
-                      class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-nvkn62-MuiTableCell-root"
+                      class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-jgwuz2-MuiTableCell-root"
                     >
                       <span
-                        class="MuiButtonBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium PrivateSwitchBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium css-imrjgg-MuiButtonBase-root-MuiCheckbox-root"
+                        class="MuiButtonBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium PrivateSwitchBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium css-1gyy2hj-MuiButtonBase-root-MuiCheckbox-root"
                       >
                         <input
                           class="PrivateSwitchBase-input css-j8yymo"
@@ -670,10 +670,10 @@ exports[`should match snapshot 1`] = `
                       </span>
                     </td>
                     <td
-                      class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                      class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
                     >
                       <a
-                        class="MuiBox-root css-p5ouq3"
+                        class="MuiBox-root css-1yk8hvx"
                         data-discover="true"
                         href="/ui/entities/1/entries/2/details"
                       >
@@ -689,7 +689,7 @@ exports[`should match snapshot 1`] = `
               id="pagination"
             >
               <p
-                class="MuiTypography-root MuiTypography-body1 css-rizt0-MuiTypography-root"
+                class="MuiTypography-root MuiTypography-body1 css-1bpt55s-MuiTypography-root"
               >
                 1 - 1 / 1 件
               </p>
@@ -706,7 +706,7 @@ exports[`should match snapshot 1`] = `
                     <li>
                       <button
                         aria-label="Go to previous page"
-                        class="MuiButtonBase-root Mui-disabled MuiPaginationItem-root MuiPaginationItem-sizeMedium MuiPaginationItem-text MuiPaginationItem-circular MuiPaginationItem-colorPrimary MuiPaginationItem-textPrimary Mui-disabled MuiPaginationItem-previousNext css-1bug3cd-MuiButtonBase-root-MuiPaginationItem-root"
+                        class="MuiButtonBase-root Mui-disabled MuiPaginationItem-root MuiPaginationItem-sizeMedium MuiPaginationItem-text MuiPaginationItem-circular MuiPaginationItem-colorPrimary MuiPaginationItem-textPrimary Mui-disabled MuiPaginationItem-previousNext css-17c1raq-MuiButtonBase-root-MuiPaginationItem-root"
                         disabled=""
                         tabindex="-1"
                         type="button"
@@ -728,7 +728,7 @@ exports[`should match snapshot 1`] = `
                       <button
                         aria-current="page"
                         aria-label="page 1"
-                        class="MuiButtonBase-root MuiPaginationItem-root MuiPaginationItem-sizeMedium MuiPaginationItem-text MuiPaginationItem-circular MuiPaginationItem-colorPrimary MuiPaginationItem-textPrimary Mui-selected MuiPaginationItem-page css-1bug3cd-MuiButtonBase-root-MuiPaginationItem-root"
+                        class="MuiButtonBase-root MuiPaginationItem-root MuiPaginationItem-sizeMedium MuiPaginationItem-text MuiPaginationItem-circular MuiPaginationItem-colorPrimary MuiPaginationItem-textPrimary Mui-selected MuiPaginationItem-page css-17c1raq-MuiButtonBase-root-MuiPaginationItem-root"
                         tabindex="0"
                         type="button"
                       >
@@ -738,7 +738,7 @@ exports[`should match snapshot 1`] = `
                     <li>
                       <button
                         aria-label="Go to next page"
-                        class="MuiButtonBase-root Mui-disabled MuiPaginationItem-root MuiPaginationItem-sizeMedium MuiPaginationItem-text MuiPaginationItem-circular MuiPaginationItem-colorPrimary MuiPaginationItem-textPrimary Mui-disabled MuiPaginationItem-previousNext css-1bug3cd-MuiButtonBase-root-MuiPaginationItem-root"
+                        class="MuiButtonBase-root Mui-disabled MuiPaginationItem-root MuiPaginationItem-sizeMedium MuiPaginationItem-text MuiPaginationItem-circular MuiPaginationItem-colorPrimary MuiPaginationItem-textPrimary Mui-disabled MuiPaginationItem-previousNext css-17c1raq-MuiButtonBase-root-MuiPaginationItem-root"
                         disabled=""
                         tabindex="-1"
                         type="button"

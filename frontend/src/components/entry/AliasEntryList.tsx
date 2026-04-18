@@ -1,15 +1,16 @@
-import { EntryBase } from "@dmm-com/airone-apiclient-typescript-fetch";
 import AddIcon from "@mui/icons-material/Add";
 import { Chip, Stack, TextField } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { FC, useState } from "react";
 
-const StyledTextField = styled(TextField)({
-  background: "#F4F4F4",
+import { EntryBase } from "@dmm-com/airone-apiclient-typescript-fetch";
+
+const StyledTextField = styled(TextField)(({ theme }) => ({
+  background: theme.palette.surface.search,
   "& fieldset": {
-    borderColor: "white",
+    borderColor: theme.palette.background.paper,
   },
-});
+}));
 
 interface Props {
   entry: EntryBase;

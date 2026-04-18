@@ -1,4 +1,3 @@
-import { Entity } from "@dmm-com/airone-apiclient-typescript-fetch";
 import {
   Table,
   TableBody,
@@ -15,33 +14,34 @@ import { UseFormSetValue } from "react-hook-form/dist/types/form";
 import { AttributeField } from "./AttributeField";
 import { Schema } from "./EntityFormSchema";
 
+import { Entity } from "@dmm-com/airone-apiclient-typescript-fetch";
 import { AttributeTypes } from "services/Constants";
 
-const HeaderTableRow = styled(TableRow)(({}) => ({
-  backgroundColor: "#455A64",
+const HeaderTableRow = styled(TableRow)(({ theme }) => ({
+  backgroundColor: theme.palette.tableHeader.background,
 }));
 
-const HeaderTableCell = styled(TableCell)(({}) => ({
-  color: "#FFFFFF",
+const HeaderTableCell = styled(TableCell)(({ theme }) => ({
+  color: theme.palette.tableHeader.text,
   boxSizing: "border-box",
 }));
 
-const StyledTableBody = styled(TableBody)({
+const StyledTableBody = styled(TableBody)(({ theme }) => ({
   "tr:nth-of-type(odd)": {
-    backgroundColor: "white",
+    backgroundColor: theme.palette.background.paper,
   },
   "tr:nth-of-type(even)": {
-    backgroundColor: "#607D8B0A",
+    backgroundColor: theme.palette.tableRow.alternateBackground,
   },
   "& td": {
     padding: "8px",
   },
-});
+}));
 
-const HighlightedTableRow = styled(TableRow)(({}) => ({
+const HighlightedTableRow = styled(TableRow)(({ theme }) => ({
   "@keyframes highlighted": {
     from: {
-      backgroundColor: "#6B8998",
+      backgroundColor: theme.palette.primary.dark,
     },
   },
   animation: "highlighted 1s ease 0s 1",

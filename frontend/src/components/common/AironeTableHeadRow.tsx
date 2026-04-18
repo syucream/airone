@@ -7,6 +7,6 @@ type StyledTableRowProps = TableRowProps & {
 };
 
 export const AironeTableHeadRow: React.ComponentType<StyledTableRowProps> =
-  styled(TableRow)<StyledTableRowProps>({
-    backgroundColor: "#455A64",
-  }) as React.ComponentType<StyledTableRowProps>;
+  styled(TableRow)<StyledTableRowProps>(({ theme }) => ({
+    backgroundColor: theme.palette.tableHeader.background,
+  })) as React.ComponentType<StyledTableRowProps>;

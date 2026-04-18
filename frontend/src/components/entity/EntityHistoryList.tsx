@@ -1,8 +1,4 @@
 import {
-  EntityHistoryChange,
-  PaginatedEntityHistoryList,
-} from "@dmm-com/airone-apiclient-typescript-fetch";
-import {
   Box,
   Table,
   TableBody,
@@ -11,8 +7,13 @@ import {
   TableRow,
   Typography,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import { FC } from "react";
 
+import {
+  EntityHistoryChange,
+  PaginatedEntityHistoryList,
+} from "@dmm-com/airone-apiclient-typescript-fetch";
 import { PaginationFooter } from "components/common/PaginationFooter";
 import { EntityHistoryListParam } from "services/Constants";
 import { formatDateTime } from "services/DateUtil";
@@ -89,16 +90,29 @@ export const EntityHistoryList: FC<Props> = ({
   page,
   changePage,
 }) => {
+  const theme = useTheme();
   return (
     <Box>
       <Table>
         <TableHead>
-          <TableRow sx={{ backgroundColor: "#455A64" }}>
-            <TableCell sx={{ color: "#FFFFFF" }}>内容</TableCell>
-            <TableCell sx={{ color: "#FFFFFF" }}>変更前</TableCell>
-            <TableCell sx={{ color: "#FFFFFF" }}>変更後</TableCell>
-            <TableCell sx={{ color: "#FFFFFF" }}>実行日時</TableCell>
-            <TableCell sx={{ color: "#FFFFFF" }}>実行者</TableCell>
+          <TableRow
+            sx={{ backgroundColor: theme.palette.tableHeader.background }}
+          >
+            <TableCell sx={{ color: theme.palette.tableHeader.text }}>
+              内容
+            </TableCell>
+            <TableCell sx={{ color: theme.palette.tableHeader.text }}>
+              変更前
+            </TableCell>
+            <TableCell sx={{ color: theme.palette.tableHeader.text }}>
+              変更後
+            </TableCell>
+            <TableCell sx={{ color: theme.palette.tableHeader.text }}>
+              実行日時
+            </TableCell>
+            <TableCell sx={{ color: theme.palette.tableHeader.text }}>
+              実行者
+            </TableCell>
           </TableRow>
         </TableHead>
 

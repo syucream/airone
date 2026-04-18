@@ -1,4 +1,3 @@
-import { GroupMember } from "@dmm-com/airone-apiclient-typescript-fetch";
 import {
   Autocomplete,
   Box,
@@ -11,6 +10,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import { FC, useState } from "react";
 import { Control, Controller, UseFormSetValue } from "react-hook-form";
 
@@ -20,6 +20,7 @@ import { filterAncestorsAndOthers } from "../../services/group/Edit";
 import { GroupTreeRoot } from "./GroupTreeRoot";
 import { Schema } from "./groupForm/GroupFormSchema";
 
+import { GroupMember } from "@dmm-com/airone-apiclient-typescript-fetch";
 import { Loading } from "components/common/Loading";
 import { aironeApiClient } from "repository/AironeApiClient";
 
@@ -30,6 +31,7 @@ interface Props {
 }
 
 export const GroupForm: FC<Props> = ({ control, setValue, groupId }) => {
+  const theme = useTheme();
   const [userKeyword, setUserKeyword] = useState("");
 
   const { data: users } = usePagodaSWR(["users", 1, userKeyword], async () => {
@@ -53,9 +55,15 @@ export const GroupForm: FC<Props> = ({ control, setValue, groupId }) => {
     <Box>
       <Table className="table table-bordered">
         <TableHead>
-          <TableRow sx={{ backgroundColor: "#455A64" }}>
-            <TableCell sx={{ color: "#FFFFFF" }}>項目</TableCell>
-            <TableCell sx={{ color: "#FFFFFF" }}>内容</TableCell>
+          <TableRow
+            sx={{ backgroundColor: theme.palette.tableHeader.background }}
+          >
+            <TableCell sx={{ color: theme.palette.tableHeader.text }}>
+              項目
+            </TableCell>
+            <TableCell sx={{ color: theme.palette.tableHeader.text }}>
+              内容
+            </TableCell>
           </TableRow>
         </TableHead>
         <TableBody>

@@ -1,10 +1,3 @@
-import {
-  AdvancedSearchJoinAttrInfo,
-  EntityAttrIDandName,
-  EntryAttributeTypeTypeEnum,
-  EntryHint,
-  EntryHintFilterKeyEnum,
-} from "@dmm-com/airone-apiclient-typescript-fetch";
 import AddIcon from "@mui/icons-material/Add";
 import CheckBoxOutlineBlankOutlinedIcon from "@mui/icons-material/CheckBoxOutlineBlankOutlined";
 import CheckBoxOutlinedIcon from "@mui/icons-material/CheckBoxOutlined";
@@ -19,7 +12,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { styled } from "@mui/material/styles";
+import { styled, useTheme } from "@mui/material/styles";
 import {
   ChangeEvent,
   FC,
@@ -37,6 +30,13 @@ import { SearchResultControlMenu } from "./SearchResultControlMenu";
 import { SearchResultControlMenuForEntry } from "./SearchResultControlMenuForEntry";
 import { SearchResultControlMenuForReferral } from "./SearchResultControlMenuForReferral";
 
+import {
+  AdvancedSearchJoinAttrInfo,
+  EntityAttrIDandName,
+  EntryAttributeTypeTypeEnum,
+  EntryHint,
+  EntryHintFilterKeyEnum,
+} from "@dmm-com/airone-apiclient-typescript-fetch";
 import { getIsFiltered } from "pages/AdvancedSearchResultsPage";
 import {
   AttrFilter,
@@ -102,6 +102,7 @@ export const SearchResultsTableHead: FC<Props> = ({
   omitHeadline = false,
   entityAttrs = [],
 }) => {
+  const theme = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
   const [checked, setChecked] = useState(false);
@@ -270,7 +271,9 @@ export const SearchResultsTableHead: FC<Props> = ({
         <StyledTableCell
           {...(omitHeadline
             ? { sx: { minWidth: "0px" } }
-            : { sx: { outline: "1px solid #FFFFFF" } })}
+            : {
+                sx: { outline: `1px solid ${theme.palette.tableHeader.text}` },
+              })}
         >
           <HeaderBox>
             <Typography>{!omitHeadline ? "アイテム名" : ""}</Typography>
@@ -376,7 +379,9 @@ export const SearchResultsTableHead: FC<Props> = ({
           </StyledTableCell>
         ))}
         {hasReferral && (
-          <StyledTableCell sx={{ outline: "1px solid #FFFFFF" }}>
+          <StyledTableCell
+            sx={{ outline: `1px solid ${theme.palette.tableHeader.text}` }}
+          >
             <HeaderBox>
               <Typography>参照アイテム</Typography>
               <Tooltip title="参照アイテムでフィルタ">

@@ -9,6 +9,6 @@ type StyledTableCellProps = TableCellProps & {
 
 export const AironeTableHeadCell: ComponentType<StyledTableCellProps> = styled(
   TableCell,
-)<StyledTableCellProps>({
-  color: "#FFFFFF",
-}) as ComponentType<StyledTableCellProps>;
+)<StyledTableCellProps>(({ theme }) => ({
+  color: theme.palette.tableHeader.text,
+})) as ComponentType<StyledTableCellProps>;

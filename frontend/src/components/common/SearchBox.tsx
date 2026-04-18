@@ -3,12 +3,12 @@ import { InputAdornment, SxProps, TextField, Theme } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { FC, KeyboardEvent, useRef } from "react";
 
-const StyledTextField = styled(TextField)({
-  background: "#F4F4F4",
+const StyledTextField = styled(TextField)(({ theme }) => ({
+  background: theme.palette.surface.search,
   "& fieldset": {
-    borderColor: "white",
+    borderColor: theme.palette.background.paper,
   },
-});
+}));
 
 interface Props {
   placeholder: string;

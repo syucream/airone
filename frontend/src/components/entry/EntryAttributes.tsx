@@ -1,4 +1,3 @@
-import { EntryAttributeType } from "@dmm-com/airone-apiclient-typescript-fetch";
 import {
   Paper,
   Table,
@@ -12,15 +11,16 @@ import {
 import { styled } from "@mui/material/styles";
 import { FC } from "react";
 
+import { EntryAttributeType } from "@dmm-com/airone-apiclient-typescript-fetch";
 import { AttributeValue } from "components/entry/AttributeValue";
 
 interface Props {
   attributes: Array<EntryAttributeType>;
 }
 
-const StyledTableRow = styled(TableRow)(() => ({
+const StyledTableRow = styled(TableRow)(({ theme }) => ({
   "&:nth-of-type(odd)": {
-    backgroundColor: "#607D8B0A",
+    backgroundColor: theme.palette.tableRow.alternateBackground,
   },
   "&:last-child td, &:last-child th": {
     border: 0,

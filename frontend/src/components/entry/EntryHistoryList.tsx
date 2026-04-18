@@ -1,4 +1,3 @@
-import { PaginatedEntryHistoryAttributeValueList } from "@dmm-com/airone-apiclient-typescript-fetch";
 import RestoreIcon from "@mui/icons-material/Restore";
 import {
   Box,
@@ -17,6 +16,7 @@ import { useNavigate } from "react-router";
 
 import { AttributeValue } from "./AttributeValue";
 
+import { PaginatedEntryHistoryAttributeValueList } from "@dmm-com/airone-apiclient-typescript-fetch";
 import { Confirmable } from "components/common/Confirmable";
 import { PaginationFooter } from "components/common/PaginationFooter";
 import { aironeApiClient } from "repository/AironeApiClient";
@@ -28,17 +28,17 @@ interface WrapperProps {
   children: ReactNode;
 }
 
-const HeaderTableRow = styled(TableRow)(({}) => ({
-  backgroundColor: "#455A64",
+const HeaderTableRow = styled(TableRow)(({ theme }) => ({
+  backgroundColor: theme.palette.tableHeader.background,
 }));
 
-const HeaderTableCell = styled(TableCell)(({}) => ({
-  color: "#FFFFFF",
+const HeaderTableCell = styled(TableCell)(({ theme }) => ({
+  color: theme.palette.tableHeader.text,
 }));
 
-const StyledTableRow = styled(TableRow)(() => ({
+const StyledTableRow = styled(TableRow)(({ theme }) => ({
   "&:nth-of-type(odd)": {
-    backgroundColor: "#607D8B0A",
+    backgroundColor: theme.palette.tableRow.alternateBackground,
   },
   "& td": {
     padding: "8px 16px",

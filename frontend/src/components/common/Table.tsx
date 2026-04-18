@@ -17,15 +17,15 @@ type StyledTableCellProps = TableCellProps & {
 
 export const HeaderTableRow: React.ComponentType<StyledTableRowProps> = styled(
   TableRow,
-)<StyledTableRowProps>({
-  backgroundColor: "#455A64",
-}) as React.ComponentType<StyledTableRowProps>;
+)<StyledTableRowProps>(({ theme }) => ({
+  backgroundColor: theme.palette.tableHeader.background,
+})) as React.ComponentType<StyledTableRowProps>;
 
 export const HeaderTableCell: React.ComponentType<StyledTableCellProps> =
-  styled(TableCell)<StyledTableCellProps>({
-    color: "#FFFFFF",
+  styled(TableCell)<StyledTableCellProps>(({ theme }) => ({
+    color: theme.palette.tableHeader.text,
     boxSizing: "border-box",
-  }) as React.ComponentType<StyledTableCellProps>;
+  })) as React.ComponentType<StyledTableCellProps>;
 
 export const StyledTableRow: React.ComponentType<StyledTableRowProps> = styled(
   TableRow,

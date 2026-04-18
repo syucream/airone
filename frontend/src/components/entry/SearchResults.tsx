@@ -1,9 +1,3 @@
-import {
-  AdvancedSearchJoinAttrInfo,
-  AdvancedSearchResult,
-  EntityAttrIDandName,
-  EntryHint,
-} from "@dmm-com/airone-apiclient-typescript-fetch";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import {
   Box,
@@ -28,6 +22,12 @@ import { Link } from "react-router";
 
 import { SearchResultsTableHead } from "./SearchResultsTableHead";
 
+import {
+  AdvancedSearchJoinAttrInfo,
+  AdvancedSearchResult,
+  EntityAttrIDandName,
+  EntryHint,
+} from "@dmm-com/airone-apiclient-typescript-fetch";
 import { AironeLink } from "components/common";
 import { PaginationFooter } from "components/common/PaginationFooter";
 import { AttributeValue } from "components/entry/AttributeValue";
@@ -45,12 +45,12 @@ const StyledBox = styled(Box)({
   padding: "24px",
 });
 
-const StyledTableRow = styled(TableRow)({
+const StyledTableRow = styled(TableRow)(({ theme }) => ({
   "&:nth-of-type(odd)": {
-    backgroundColor: "#F9FAFA",
+    backgroundColor: theme.palette.background.default,
   },
   "&:nth-of-type(even)": {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: theme.palette.background.paper,
   },
   "&:last-child td, &:last-child th": {
     border: 0,
@@ -58,7 +58,7 @@ const StyledTableRow = styled(TableRow)({
   "& td": {
     padding: "8px 16px",
   },
-});
+}));
 
 interface Props {
   results: AdvancedSearchResult;

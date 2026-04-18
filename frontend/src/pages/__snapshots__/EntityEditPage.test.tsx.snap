@@ -12,14 +12,14 @@ exports[`EditEntityPage should match snapshot 1`] = `
           class="MuiBox-root css-1baykhj"
         >
           <div
-            class="MuiBox-root css-t0pdf1"
+            class="MuiBox-root css-1pvkm27"
           >
             <div
               class="MuiBox-root css-jqffe8"
             >
               <nav
                 aria-label="breadcrumb"
-                class="MuiTypography-root MuiTypography-body1 MuiBreadcrumbs-root css-5cvx94-MuiTypography-root-MuiBreadcrumbs-root"
+                class="MuiTypography-root MuiTypography-body1 MuiBreadcrumbs-root css-7btqe6-MuiTypography-root-MuiBreadcrumbs-root"
               >
                 <ol
                   class="MuiBreadcrumbs-ol css-1uwp4ue-MuiBreadcrumbs-ol"
@@ -28,7 +28,7 @@ exports[`EditEntityPage should match snapshot 1`] = `
                     class="MuiBreadcrumbs-li"
                   >
                     <a
-                      class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                      class="MuiTypography-root MuiTypography-body1 css-1i4mxqk-MuiTypography-root"
                       data-discover="true"
                       href="/ui/"
                     >
@@ -45,7 +45,7 @@ exports[`EditEntityPage should match snapshot 1`] = `
                     class="MuiBreadcrumbs-li"
                   >
                     <a
-                      class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                      class="MuiTypography-root MuiTypography-body1 css-1i4mxqk-MuiTypography-root"
                       data-discover="true"
                       href="/ui/entities"
                     >
@@ -65,7 +65,7 @@ exports[`EditEntityPage should match snapshot 1`] = `
                       class="MuiBox-root css-162tvoi"
                     >
                       <a
-                        class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                        class="MuiTypography-root MuiTypography-body1 css-1i4mxqk-MuiTypography-root"
                         data-discover="true"
                         href="/ui/entities/1/entries"
                       >
@@ -94,7 +94,7 @@ exports[`EditEntityPage should match snapshot 1`] = `
                     class="MuiBreadcrumbs-li"
                   >
                     <p
-                      class="MuiTypography-root MuiTypography-body1 css-1bgbmvw-MuiTypography-root"
+                      class="MuiTypography-root MuiTypography-body1 css-oiwby3-MuiTypography-root"
                     >
                       編集
                     </p>
@@ -108,19 +108,19 @@ exports[`EditEntityPage should match snapshot 1`] = `
           class="MuiBox-root css-1cs9h4l"
         >
           <div
-            class="MuiBox-root css-1519avi"
+            class="MuiBox-root css-v70eba"
           >
             <div
               class="MuiBox-root css-9rtbay"
             >
               <h6
-                class="MuiTypography-root MuiTypography-h6 css-2toz8d-MuiTypography-root"
+                class="MuiTypography-root MuiTypography-h6 css-pecs12-MuiTypography-root"
                 id="title"
               >
                 test entity
               </h6>
               <h6
-                class="MuiTypography-root MuiTypography-subtitle1 css-1i3tsf3-MuiTypography-root"
+                class="MuiTypography-root MuiTypography-subtitle1 css-1m6zjhu-MuiTypography-root"
                 id="description"
               >
                 エンティテイティ詳細 / 編集
@@ -132,7 +132,7 @@ exports[`EditEntityPage should match snapshot 1`] = `
                   class="MuiBox-root css-1kdfklj"
                 >
                   <button
-                    class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedSecondary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorSecondary Mui-disabled MuiButton-root MuiButton-contained MuiButton-containedSecondary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorSecondary css-8fe6cp-MuiButtonBase-root-MuiButton-root"
+                    class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedSecondary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorSecondary Mui-disabled MuiButton-root MuiButton-contained MuiButton-containedSecondary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorSecondary css-qtts69-MuiButtonBase-root-MuiButton-root"
                     disabled=""
                     tabindex="-1"
                     type="button"
@@ -140,7 +140,7 @@ exports[`EditEntityPage should match snapshot 1`] = `
                     保存
                   </button>
                   <button
-                    class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo css-152i8rg-MuiButtonBase-root-MuiButton-root"
+                    class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo css-1pflzud-MuiButtonBase-root-MuiButton-root"
                     tabindex="0"
                     type="button"
                   >
@@ -161,29 +161,29 @@ exports[`EditEntityPage should match snapshot 1`] = `
             class="MuiBox-root css-0"
           >
             <h4
-              class="MuiTypography-root MuiTypography-h4 MuiTypography-alignCenter css-1ulnhey-MuiTypography-root"
+              class="MuiTypography-root MuiTypography-h4 MuiTypography-alignCenter css-1b2bjr5-MuiTypography-root"
               style="--Typography-textAlign: center;"
             >
               基本情報
             </h4>
             <table
-              class="MuiTable-root table table-bordered css-1xwxv7r-MuiTable-root"
+              class="MuiTable-root table table-bordered css-oigiou-MuiTable-root"
             >
               <thead
                 class="MuiTableHead-root css-1a7iywq-MuiTableHead-root"
               >
                 <tr
-                  class="MuiTableRow-root MuiTableRow-head css-1msocm9-MuiTableRow-root"
+                  class="MuiTableRow-root MuiTableRow-head css-1duq44w-MuiTableRow-root"
                 >
                   <th
-                    class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-cte22h-MuiTableCell-root"
+                    class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-1pzqf5i-MuiTableCell-root"
                     scope="col"
                     width="400px"
                   >
                     項目
                   </th>
                   <th
-                    class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-cte22h-MuiTableCell-root"
+                    class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-1pzqf5i-MuiTableCell-root"
                     scope="col"
                     width="800px"
                   >
@@ -195,21 +195,21 @@ exports[`EditEntityPage should match snapshot 1`] = `
                 class="MuiTableBody-root css-gmh7jj-MuiTableBody-root"
               >
                 <tr
-                  class="MuiTableRow-root css-1lvq97o-MuiTableRow-root"
+                  class="MuiTableRow-root css-8aeh58-MuiTableRow-root"
                 >
                   <td
-                    class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                    class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
                   >
                     モデル名
                   </td>
                   <td
-                    class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                    class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
                   >
                     <div
                       class="MuiFormControl-root MuiFormControl-fullWidth MuiTextField-root css-cmpglg-MuiFormControl-root-MuiTextField-root"
                     >
                       <div
-                        class="MuiInputBase-root MuiOutlinedInput-root MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl MuiInputBase-sizeSmall css-1blp12k-MuiInputBase-root-MuiOutlinedInput-root"
+                        class="MuiInputBase-root MuiOutlinedInput-root MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl MuiInputBase-sizeSmall css-iof9r3-MuiInputBase-root-MuiOutlinedInput-root"
                       >
                         <input
                           aria-invalid="false"
@@ -242,21 +242,21 @@ exports[`EditEntityPage should match snapshot 1`] = `
                   </td>
                 </tr>
                 <tr
-                  class="MuiTableRow-root css-1lvq97o-MuiTableRow-root"
+                  class="MuiTableRow-root css-8aeh58-MuiTableRow-root"
                 >
                   <td
-                    class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                    class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
                   >
                     備考
                   </td>
                   <td
-                    class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                    class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
                   >
                     <div
                       class="MuiFormControl-root MuiFormControl-fullWidth MuiTextField-root css-cmpglg-MuiFormControl-root-MuiTextField-root"
                     >
                       <div
-                        class="MuiInputBase-root MuiOutlinedInput-root MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl MuiInputBase-sizeSmall css-1blp12k-MuiInputBase-root-MuiOutlinedInput-root"
+                        class="MuiInputBase-root MuiOutlinedInput-root MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl MuiInputBase-sizeSmall css-iof9r3-MuiInputBase-root-MuiOutlinedInput-root"
                       >
                         <input
                           aria-invalid="false"
@@ -288,24 +288,24 @@ exports[`EditEntityPage should match snapshot 1`] = `
                   </td>
                 </tr>
                 <tr
-                  class="MuiTableRow-root css-1lvq97o-MuiTableRow-root"
+                  class="MuiTableRow-root css-8aeh58-MuiTableRow-root"
                 >
                   <td
-                    class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                    class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
                   >
                     アイテム名の登録方法
                   </td>
                   <td
-                    class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                    class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
                   >
                     <div
-                      class="MuiInputBase-root MuiOutlinedInput-root MuiInputBase-colorPrimary MuiInputBase-sizeSmall MuiSelect-root css-n7krbo-MuiInputBase-root-MuiOutlinedInput-root-MuiSelect-root"
+                      class="MuiInputBase-root MuiOutlinedInput-root MuiInputBase-colorPrimary MuiInputBase-sizeSmall MuiSelect-root css-b0yaxi-MuiInputBase-root-MuiOutlinedInput-root-MuiSelect-root"
                     >
                       <div
                         aria-expanded="false"
                         aria-haspopup="listbox"
                         aria-labelledby="itemNameType"
-                        class="MuiSelect-select MuiSelect-outlined MuiInputBase-input MuiOutlinedInput-input MuiInputBase-inputSizeSmall css-si86to-MuiSelect-select-MuiInputBase-input-MuiOutlinedInput-input"
+                        class="MuiSelect-select MuiSelect-outlined MuiInputBase-input MuiOutlinedInput-input MuiInputBase-inputSizeSmall css-zt5dgc-MuiSelect-select-MuiInputBase-input-MuiOutlinedInput-input"
                         id="itemNameType"
                         role="combobox"
                         tabindex="0"
@@ -350,25 +350,25 @@ exports[`EditEntityPage should match snapshot 1`] = `
                   </td>
                 </tr>
                 <tr
-                  class="MuiTableRow-root css-1lvq97o-MuiTableRow-root"
+                  class="MuiTableRow-root css-8aeh58-MuiTableRow-root"
                 >
                   <td
-                    class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                    class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
                   >
                     <p
-                      class="MuiTypography-root MuiTypography-body1 css-4leci6-MuiTypography-root"
+                      class="MuiTypography-root MuiTypography-body1 css-7ptyzm-MuiTypography-root"
                     >
                       アイテム名の許可パターン
                     </p>
                   </td>
                   <td
-                    class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                    class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
                   >
                     <div
                       class="MuiFormControl-root MuiFormControl-fullWidth MuiTextField-root css-cmpglg-MuiFormControl-root-MuiTextField-root"
                     >
                       <div
-                        class="MuiInputBase-root MuiOutlinedInput-root MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl MuiInputBase-sizeSmall css-1blp12k-MuiInputBase-root-MuiOutlinedInput-root"
+                        class="MuiInputBase-root MuiOutlinedInput-root MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl MuiInputBase-sizeSmall css-iof9r3-MuiInputBase-root-MuiOutlinedInput-root"
                       >
                         <input
                           aria-invalid="false"
@@ -400,18 +400,18 @@ exports[`EditEntityPage should match snapshot 1`] = `
                   </td>
                 </tr>
                 <tr
-                  class="MuiTableRow-root css-1lvq97o-MuiTableRow-root"
+                  class="MuiTableRow-root css-8aeh58-MuiTableRow-root"
                 >
                   <td
-                    class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                    class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
                   >
                     トップページに表示
                   </td>
                   <td
-                    class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                    class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
                   >
                     <span
-                      class="MuiButtonBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium PrivateSwitchBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium css-imrjgg-MuiButtonBase-root-MuiCheckbox-root"
+                      class="MuiButtonBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium PrivateSwitchBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium css-1gyy2hj-MuiButtonBase-root-MuiCheckbox-root"
                       data-testid="isToplevel"
                     >
                       <input
@@ -434,15 +434,15 @@ exports[`EditEntityPage should match snapshot 1`] = `
                   </td>
                 </tr>
                 <tr
-                  class="MuiTableRow-root css-1lvq97o-MuiTableRow-root"
+                  class="MuiTableRow-root css-8aeh58-MuiTableRow-root"
                 >
                   <td
-                    class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                    class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
                   >
                     関連削除の判定から除外するモデル
                   </td>
                   <td
-                    class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                    class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
                   >
                     <div
                       class="MuiAutocomplete-root MuiAutocomplete-hasPopupIcon css-120s2v5-MuiAutocomplete-root"
@@ -452,7 +452,7 @@ exports[`EditEntityPage should match snapshot 1`] = `
                         class="MuiFormControl-root MuiFormControl-fullWidth MuiTextField-root css-cmpglg-MuiFormControl-root-MuiTextField-root"
                       >
                         <div
-                          class="MuiInputBase-root MuiOutlinedInput-root MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl MuiInputBase-sizeSmall MuiInputBase-adornedEnd MuiAutocomplete-inputRoot css-1n04w30-MuiInputBase-root-MuiOutlinedInput-root"
+                          class="MuiInputBase-root MuiOutlinedInput-root MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl MuiInputBase-sizeSmall MuiInputBase-adornedEnd MuiAutocomplete-inputRoot css-161yvhy-MuiInputBase-root-MuiOutlinedInput-root"
                         >
                           <input
                             aria-autocomplete="list"
@@ -515,65 +515,65 @@ exports[`EditEntityPage should match snapshot 1`] = `
             </table>
           </div>
           <h4
-            class="MuiTypography-root MuiTypography-h4 MuiTypography-alignCenter css-1ulnhey-MuiTypography-root"
+            class="MuiTypography-root MuiTypography-h4 MuiTypography-alignCenter css-1b2bjr5-MuiTypography-root"
             style="--Typography-textAlign: center;"
           >
             属性情報
           </h4>
           <table
-            class="MuiTable-root css-1xwxv7r-MuiTable-root"
+            class="MuiTable-root css-oigiou-MuiTable-root"
             id="table_attribute_list"
           >
             <thead
               class="MuiTableHead-root css-1a7iywq-MuiTableHead-root"
             >
               <tr
-                class="MuiTableRow-root MuiTableRow-head css-1wtsgsb-MuiTableRow-root"
+                class="MuiTableRow-root MuiTableRow-head css-1duq44w-MuiTableRow-root"
               >
                 <th
-                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-8816du-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-1pzqf5i-MuiTableCell-root"
                   scope="col"
                   width="300px"
                 >
                   属性名
                 </th>
                 <th
-                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-8816du-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-1pzqf5i-MuiTableCell-root"
                   scope="col"
                   width="300px"
                 >
                   型
                 </th>
                 <th
-                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-8816du-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-1pzqf5i-MuiTableCell-root"
                   scope="col"
                   width="200px"
                 >
                   デフォルト値
                 </th>
                 <th
-                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-8816du-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-1pzqf5i-MuiTableCell-root"
                   scope="col"
                   width="100px"
                 >
                   並び替え
                 </th>
                 <th
-                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-8816du-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-1pzqf5i-MuiTableCell-root"
                   scope="col"
                   width="100px"
                 >
                   削除
                 </th>
                 <th
-                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-8816du-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-1pzqf5i-MuiTableCell-root"
                   scope="col"
                   width="100px"
                 >
                   追加
                 </th>
                 <th
-                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-8816du-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-1pzqf5i-MuiTableCell-root"
                   scope="col"
                   width="100px"
                 >
@@ -582,28 +582,28 @@ exports[`EditEntityPage should match snapshot 1`] = `
               </tr>
             </thead>
             <tbody
-              class="MuiTableBody-root css-x2c5vp-MuiTableBody-root"
+              class="MuiTableBody-root css-1rj449u-MuiTableBody-root"
             >
               <tr
-                class="MuiTableRow-root css-1xtozoh-MuiTableRow-root"
+                class="MuiTableRow-root css-gy1mdc-MuiTableRow-root"
               >
                 <td
-                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
                 />
                 <td
-                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
                 />
                 <td
-                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
                 />
                 <td
-                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
                 />
                 <td
-                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
                 />
                 <td
-                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
                 >
                   <button
                     class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium css-53g0n7-MuiButtonBase-root-MuiIconButton-root"
@@ -624,43 +624,43 @@ exports[`EditEntityPage should match snapshot 1`] = `
                   </button>
                 </td>
                 <td
-                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
                 />
               </tr>
             </tbody>
           </table>
           <h4
-            class="MuiTypography-root MuiTypography-h4 MuiTypography-alignCenter css-1ulnhey-MuiTypography-root"
+            class="MuiTypography-root MuiTypography-h4 MuiTypography-alignCenter css-1b2bjr5-MuiTypography-root"
             style="--Typography-textAlign: center;"
           >
             他アイテムから参照されなくなる設定
           </h4>
           <table
-            class="MuiTable-root css-1xwxv7r-MuiTable-root"
+            class="MuiTable-root css-oigiou-MuiTable-root"
             id="table_isolation_rules_list"
           >
             <thead
               class="MuiTableHead-root css-1a7iywq-MuiTableHead-root"
             >
               <tr
-                class="MuiTableRow-root MuiTableRow-head css-1wtsgsb-MuiTableRow-root"
+                class="MuiTableRow-root MuiTableRow-head css-1duq44w-MuiTableRow-root"
               >
                 <th
-                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-8816du-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-1pzqf5i-MuiTableCell-root"
                   scope="col"
                   width="200px"
                 >
                   対象モデル
                 </th>
                 <th
-                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-8816du-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-1pzqf5i-MuiTableCell-root"
                   scope="col"
                   width="100px"
                 >
                   全モデル
                 </th>
                 <th
-                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-3ofsdi-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-133kz00-MuiTableCell-root"
                   scope="col"
                 >
                   <div
@@ -680,14 +680,14 @@ exports[`EditEntityPage should match snapshot 1`] = `
                   </div>
                 </th>
                 <th
-                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-8816du-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-1pzqf5i-MuiTableCell-root"
                   scope="col"
                   width="60px"
                 >
                   削除
                 </th>
                 <th
-                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-8816du-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-1pzqf5i-MuiTableCell-root"
                   scope="col"
                   width="60px"
                 >
@@ -699,22 +699,22 @@ exports[`EditEntityPage should match snapshot 1`] = `
               class="MuiTableBody-root css-gmh7jj-MuiTableBody-root"
             >
               <tr
-                class="MuiTableRow-root css-4w2o25-MuiTableRow-root"
+                class="MuiTableRow-root css-umvndd-MuiTableRow-root"
               >
                 <td
-                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
                 />
                 <td
-                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
                 />
                 <td
-                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
                 />
                 <td
-                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
                 />
                 <td
-                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
                 >
                   <button
                     class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium css-53g0n7-MuiButtonBase-root-MuiIconButton-root"
@@ -738,63 +738,63 @@ exports[`EditEntityPage should match snapshot 1`] = `
             </tbody>
           </table>
           <h4
-            class="MuiTypography-root MuiTypography-h4 MuiTypography-alignCenter css-1ulnhey-MuiTypography-root"
+            class="MuiTypography-root MuiTypography-h4 MuiTypography-alignCenter css-1b2bjr5-MuiTypography-root"
             style="--Typography-textAlign: center;"
           >
             Webhook
           </h4>
           <table
-            class="MuiTable-root css-1xwxv7r-MuiTable-root"
+            class="MuiTable-root css-oigiou-MuiTable-root"
             id="table_webhook_list"
           >
             <thead
               class="MuiTableHead-root css-1a7iywq-MuiTableHead-root"
             >
               <tr
-                class="MuiTableRow-root MuiTableRow-head css-1wtsgsb-MuiTableRow-root"
+                class="MuiTableRow-root MuiTableRow-head css-1duq44w-MuiTableRow-root"
               >
                 <th
-                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-8816du-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-1pzqf5i-MuiTableCell-root"
                   scope="col"
                   width="50px"
                 />
                 <th
-                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-8816du-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-1pzqf5i-MuiTableCell-root"
                   scope="col"
                   width="400px"
                 >
                   URL
                 </th>
                 <th
-                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-8816du-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-1pzqf5i-MuiTableCell-root"
                   scope="col"
                   width="350px"
                 >
                   ラベル
                 </th>
                 <th
-                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-8816du-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-1pzqf5i-MuiTableCell-root"
                   scope="col"
                   width="100px"
                 >
                   Header
                 </th>
                 <th
-                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-8816du-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-1pzqf5i-MuiTableCell-root"
                   scope="col"
                   width="100px"
                 >
                   有効
                 </th>
                 <th
-                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-8816du-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-1pzqf5i-MuiTableCell-root"
                   scope="col"
                   width="100px"
                 >
                   削除
                 </th>
                 <th
-                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-8816du-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-1pzqf5i-MuiTableCell-root"
                   scope="col"
                   width="100px"
                 >
@@ -806,28 +806,28 @@ exports[`EditEntityPage should match snapshot 1`] = `
               class="MuiTableBody-root css-gmh7jj-MuiTableBody-root"
             >
               <tr
-                class="MuiTableRow-root css-4w2o25-MuiTableRow-root"
+                class="MuiTableRow-root css-umvndd-MuiTableRow-root"
               >
                 <td
-                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
                 />
                 <td
-                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
                 />
                 <td
-                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
                 />
                 <td
-                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
                 />
                 <td
-                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
                 />
                 <td
-                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
                 />
                 <td
-                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
                 >
                   <button
                     class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium css-53g0n7-MuiButtonBase-root-MuiIconButton-root"
@@ -862,14 +862,14 @@ exports[`EditEntityPage should match snapshot 1`] = `
         class="MuiBox-root css-1baykhj"
       >
         <div
-          class="MuiBox-root css-t0pdf1"
+          class="MuiBox-root css-1pvkm27"
         >
           <div
             class="MuiBox-root css-jqffe8"
           >
             <nav
               aria-label="breadcrumb"
-              class="MuiTypography-root MuiTypography-body1 MuiBreadcrumbs-root css-5cvx94-MuiTypography-root-MuiBreadcrumbs-root"
+              class="MuiTypography-root MuiTypography-body1 MuiBreadcrumbs-root css-7btqe6-MuiTypography-root-MuiBreadcrumbs-root"
             >
               <ol
                 class="MuiBreadcrumbs-ol css-1uwp4ue-MuiBreadcrumbs-ol"
@@ -878,7 +878,7 @@ exports[`EditEntityPage should match snapshot 1`] = `
                   class="MuiBreadcrumbs-li"
                 >
                   <a
-                    class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                    class="MuiTypography-root MuiTypography-body1 css-1i4mxqk-MuiTypography-root"
                     data-discover="true"
                     href="/ui/"
                   >
@@ -895,7 +895,7 @@ exports[`EditEntityPage should match snapshot 1`] = `
                   class="MuiBreadcrumbs-li"
                 >
                   <a
-                    class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                    class="MuiTypography-root MuiTypography-body1 css-1i4mxqk-MuiTypography-root"
                     data-discover="true"
                     href="/ui/entities"
                   >
@@ -915,7 +915,7 @@ exports[`EditEntityPage should match snapshot 1`] = `
                     class="MuiBox-root css-162tvoi"
                   >
                     <a
-                      class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                      class="MuiTypography-root MuiTypography-body1 css-1i4mxqk-MuiTypography-root"
                       data-discover="true"
                       href="/ui/entities/1/entries"
                     >
@@ -944,7 +944,7 @@ exports[`EditEntityPage should match snapshot 1`] = `
                   class="MuiBreadcrumbs-li"
                 >
                   <p
-                    class="MuiTypography-root MuiTypography-body1 css-1bgbmvw-MuiTypography-root"
+                    class="MuiTypography-root MuiTypography-body1 css-oiwby3-MuiTypography-root"
                   >
                     編集
                   </p>
@@ -958,19 +958,19 @@ exports[`EditEntityPage should match snapshot 1`] = `
         class="MuiBox-root css-1cs9h4l"
       >
         <div
-          class="MuiBox-root css-1519avi"
+          class="MuiBox-root css-v70eba"
         >
           <div
             class="MuiBox-root css-9rtbay"
           >
             <h6
-              class="MuiTypography-root MuiTypography-h6 css-2toz8d-MuiTypography-root"
+              class="MuiTypography-root MuiTypography-h6 css-pecs12-MuiTypography-root"
               id="title"
             >
               test entity
             </h6>
             <h6
-              class="MuiTypography-root MuiTypography-subtitle1 css-1i3tsf3-MuiTypography-root"
+              class="MuiTypography-root MuiTypography-subtitle1 css-1m6zjhu-MuiTypography-root"
               id="description"
             >
               エンティテイティ詳細 / 編集
@@ -982,7 +982,7 @@ exports[`EditEntityPage should match snapshot 1`] = `
                 class="MuiBox-root css-1kdfklj"
               >
                 <button
-                  class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedSecondary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorSecondary Mui-disabled MuiButton-root MuiButton-contained MuiButton-containedSecondary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorSecondary css-8fe6cp-MuiButtonBase-root-MuiButton-root"
+                  class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedSecondary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorSecondary Mui-disabled MuiButton-root MuiButton-contained MuiButton-containedSecondary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorSecondary css-qtts69-MuiButtonBase-root-MuiButton-root"
                   disabled=""
                   tabindex="-1"
                   type="button"
@@ -990,7 +990,7 @@ exports[`EditEntityPage should match snapshot 1`] = `
                   保存
                 </button>
                 <button
-                  class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo css-152i8rg-MuiButtonBase-root-MuiButton-root"
+                  class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo css-1pflzud-MuiButtonBase-root-MuiButton-root"
                   tabindex="0"
                   type="button"
                 >
@@ -1011,29 +1011,29 @@ exports[`EditEntityPage should match snapshot 1`] = `
           class="MuiBox-root css-0"
         >
           <h4
-            class="MuiTypography-root MuiTypography-h4 MuiTypography-alignCenter css-1ulnhey-MuiTypography-root"
+            class="MuiTypography-root MuiTypography-h4 MuiTypography-alignCenter css-1b2bjr5-MuiTypography-root"
             style="--Typography-textAlign: center;"
           >
             基本情報
           </h4>
           <table
-            class="MuiTable-root table table-bordered css-1xwxv7r-MuiTable-root"
+            class="MuiTable-root table table-bordered css-oigiou-MuiTable-root"
           >
             <thead
               class="MuiTableHead-root css-1a7iywq-MuiTableHead-root"
             >
               <tr
-                class="MuiTableRow-root MuiTableRow-head css-1msocm9-MuiTableRow-root"
+                class="MuiTableRow-root MuiTableRow-head css-1duq44w-MuiTableRow-root"
               >
                 <th
-                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-cte22h-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-1pzqf5i-MuiTableCell-root"
                   scope="col"
                   width="400px"
                 >
                   項目
                 </th>
                 <th
-                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-cte22h-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-1pzqf5i-MuiTableCell-root"
                   scope="col"
                   width="800px"
                 >
@@ -1045,21 +1045,21 @@ exports[`EditEntityPage should match snapshot 1`] = `
               class="MuiTableBody-root css-gmh7jj-MuiTableBody-root"
             >
               <tr
-                class="MuiTableRow-root css-1lvq97o-MuiTableRow-root"
+                class="MuiTableRow-root css-8aeh58-MuiTableRow-root"
               >
                 <td
-                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
                 >
                   モデル名
                 </td>
                 <td
-                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
                 >
                   <div
                     class="MuiFormControl-root MuiFormControl-fullWidth MuiTextField-root css-cmpglg-MuiFormControl-root-MuiTextField-root"
                   >
                     <div
-                      class="MuiInputBase-root MuiOutlinedInput-root MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl MuiInputBase-sizeSmall css-1blp12k-MuiInputBase-root-MuiOutlinedInput-root"
+                      class="MuiInputBase-root MuiOutlinedInput-root MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl MuiInputBase-sizeSmall css-iof9r3-MuiInputBase-root-MuiOutlinedInput-root"
                     >
                       <input
                         aria-invalid="false"
@@ -1092,21 +1092,21 @@ exports[`EditEntityPage should match snapshot 1`] = `
                 </td>
               </tr>
               <tr
-                class="MuiTableRow-root css-1lvq97o-MuiTableRow-root"
+                class="MuiTableRow-root css-8aeh58-MuiTableRow-root"
               >
                 <td
-                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
                 >
                   備考
                 </td>
                 <td
-                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
                 >
                   <div
                     class="MuiFormControl-root MuiFormControl-fullWidth MuiTextField-root css-cmpglg-MuiFormControl-root-MuiTextField-root"
                   >
                     <div
-                      class="MuiInputBase-root MuiOutlinedInput-root MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl MuiInputBase-sizeSmall css-1blp12k-MuiInputBase-root-MuiOutlinedInput-root"
+                      class="MuiInputBase-root MuiOutlinedInput-root MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl MuiInputBase-sizeSmall css-iof9r3-MuiInputBase-root-MuiOutlinedInput-root"
                     >
                       <input
                         aria-invalid="false"
@@ -1138,24 +1138,24 @@ exports[`EditEntityPage should match snapshot 1`] = `
                 </td>
               </tr>
               <tr
-                class="MuiTableRow-root css-1lvq97o-MuiTableRow-root"
+                class="MuiTableRow-root css-8aeh58-MuiTableRow-root"
               >
                 <td
-                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
                 >
                   アイテム名の登録方法
                 </td>
                 <td
-                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
                 >
                   <div
-                    class="MuiInputBase-root MuiOutlinedInput-root MuiInputBase-colorPrimary MuiInputBase-sizeSmall MuiSelect-root css-n7krbo-MuiInputBase-root-MuiOutlinedInput-root-MuiSelect-root"
+                    class="MuiInputBase-root MuiOutlinedInput-root MuiInputBase-colorPrimary MuiInputBase-sizeSmall MuiSelect-root css-b0yaxi-MuiInputBase-root-MuiOutlinedInput-root-MuiSelect-root"
                   >
                     <div
                       aria-expanded="false"
                       aria-haspopup="listbox"
                       aria-labelledby="itemNameType"
-                      class="MuiSelect-select MuiSelect-outlined MuiInputBase-input MuiOutlinedInput-input MuiInputBase-inputSizeSmall css-si86to-MuiSelect-select-MuiInputBase-input-MuiOutlinedInput-input"
+                      class="MuiSelect-select MuiSelect-outlined MuiInputBase-input MuiOutlinedInput-input MuiInputBase-inputSizeSmall css-zt5dgc-MuiSelect-select-MuiInputBase-input-MuiOutlinedInput-input"
                       id="itemNameType"
                       role="combobox"
                       tabindex="0"
@@ -1200,25 +1200,25 @@ exports[`EditEntityPage should match snapshot 1`] = `
                 </td>
               </tr>
               <tr
-                class="MuiTableRow-root css-1lvq97o-MuiTableRow-root"
+                class="MuiTableRow-root css-8aeh58-MuiTableRow-root"
               >
                 <td
-                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
                 >
                   <p
-                    class="MuiTypography-root MuiTypography-body1 css-4leci6-MuiTypography-root"
+                    class="MuiTypography-root MuiTypography-body1 css-7ptyzm-MuiTypography-root"
                   >
                     アイテム名の許可パターン
                   </p>
                 </td>
                 <td
-                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
                 >
                   <div
                     class="MuiFormControl-root MuiFormControl-fullWidth MuiTextField-root css-cmpglg-MuiFormControl-root-MuiTextField-root"
                   >
                     <div
-                      class="MuiInputBase-root MuiOutlinedInput-root MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl MuiInputBase-sizeSmall css-1blp12k-MuiInputBase-root-MuiOutlinedInput-root"
+                      class="MuiInputBase-root MuiOutlinedInput-root MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl MuiInputBase-sizeSmall css-iof9r3-MuiInputBase-root-MuiOutlinedInput-root"
                     >
                       <input
                         aria-invalid="false"
@@ -1250,18 +1250,18 @@ exports[`EditEntityPage should match snapshot 1`] = `
                 </td>
               </tr>
               <tr
-                class="MuiTableRow-root css-1lvq97o-MuiTableRow-root"
+                class="MuiTableRow-root css-8aeh58-MuiTableRow-root"
               >
                 <td
-                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
                 >
                   トップページに表示
                 </td>
                 <td
-                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
                 >
                   <span
-                    class="MuiButtonBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium PrivateSwitchBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium css-imrjgg-MuiButtonBase-root-MuiCheckbox-root"
+                    class="MuiButtonBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium PrivateSwitchBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium css-1gyy2hj-MuiButtonBase-root-MuiCheckbox-root"
                     data-testid="isToplevel"
                   >
                     <input
@@ -1284,15 +1284,15 @@ exports[`EditEntityPage should match snapshot 1`] = `
                 </td>
               </tr>
               <tr
-                class="MuiTableRow-root css-1lvq97o-MuiTableRow-root"
+                class="MuiTableRow-root css-8aeh58-MuiTableRow-root"
               >
                 <td
-                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
                 >
                   関連削除の判定から除外するモデル
                 </td>
                 <td
-                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
                 >
                   <div
                     class="MuiAutocomplete-root MuiAutocomplete-hasPopupIcon css-120s2v5-MuiAutocomplete-root"
@@ -1302,7 +1302,7 @@ exports[`EditEntityPage should match snapshot 1`] = `
                       class="MuiFormControl-root MuiFormControl-fullWidth MuiTextField-root css-cmpglg-MuiFormControl-root-MuiTextField-root"
                     >
                       <div
-                        class="MuiInputBase-root MuiOutlinedInput-root MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl MuiInputBase-sizeSmall MuiInputBase-adornedEnd MuiAutocomplete-inputRoot css-1n04w30-MuiInputBase-root-MuiOutlinedInput-root"
+                        class="MuiInputBase-root MuiOutlinedInput-root MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl MuiInputBase-sizeSmall MuiInputBase-adornedEnd MuiAutocomplete-inputRoot css-161yvhy-MuiInputBase-root-MuiOutlinedInput-root"
                       >
                         <input
                           aria-autocomplete="list"
@@ -1365,65 +1365,65 @@ exports[`EditEntityPage should match snapshot 1`] = `
           </table>
         </div>
         <h4
-          class="MuiTypography-root MuiTypography-h4 MuiTypography-alignCenter css-1ulnhey-MuiTypography-root"
+          class="MuiTypography-root MuiTypography-h4 MuiTypography-alignCenter css-1b2bjr5-MuiTypography-root"
           style="--Typography-textAlign: center;"
         >
           属性情報
         </h4>
         <table
-          class="MuiTable-root css-1xwxv7r-MuiTable-root"
+          class="MuiTable-root css-oigiou-MuiTable-root"
           id="table_attribute_list"
         >
           <thead
             class="MuiTableHead-root css-1a7iywq-MuiTableHead-root"
           >
             <tr
-              class="MuiTableRow-root MuiTableRow-head css-1wtsgsb-MuiTableRow-root"
+              class="MuiTableRow-root MuiTableRow-head css-1duq44w-MuiTableRow-root"
             >
               <th
-                class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-8816du-MuiTableCell-root"
+                class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-1pzqf5i-MuiTableCell-root"
                 scope="col"
                 width="300px"
               >
                 属性名
               </th>
               <th
-                class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-8816du-MuiTableCell-root"
+                class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-1pzqf5i-MuiTableCell-root"
                 scope="col"
                 width="300px"
               >
                 型
               </th>
               <th
-                class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-8816du-MuiTableCell-root"
+                class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-1pzqf5i-MuiTableCell-root"
                 scope="col"
                 width="200px"
               >
                 デフォルト値
               </th>
               <th
-                class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-8816du-MuiTableCell-root"
+                class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-1pzqf5i-MuiTableCell-root"
                 scope="col"
                 width="100px"
               >
                 並び替え
               </th>
               <th
-                class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-8816du-MuiTableCell-root"
+                class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-1pzqf5i-MuiTableCell-root"
                 scope="col"
                 width="100px"
               >
                 削除
               </th>
               <th
-                class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-8816du-MuiTableCell-root"
+                class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-1pzqf5i-MuiTableCell-root"
                 scope="col"
                 width="100px"
               >
                 追加
               </th>
               <th
-                class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-8816du-MuiTableCell-root"
+                class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-1pzqf5i-MuiTableCell-root"
                 scope="col"
                 width="100px"
               >
@@ -1432,28 +1432,28 @@ exports[`EditEntityPage should match snapshot 1`] = `
             </tr>
           </thead>
           <tbody
-            class="MuiTableBody-root css-x2c5vp-MuiTableBody-root"
+            class="MuiTableBody-root css-1rj449u-MuiTableBody-root"
           >
             <tr
-              class="MuiTableRow-root css-1xtozoh-MuiTableRow-root"
+              class="MuiTableRow-root css-gy1mdc-MuiTableRow-root"
             >
               <td
-                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
               />
               <td
-                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
               />
               <td
-                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
               />
               <td
-                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
               />
               <td
-                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
               />
               <td
-                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
               >
                 <button
                   class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium css-53g0n7-MuiButtonBase-root-MuiIconButton-root"
@@ -1474,43 +1474,43 @@ exports[`EditEntityPage should match snapshot 1`] = `
                 </button>
               </td>
               <td
-                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
               />
             </tr>
           </tbody>
         </table>
         <h4
-          class="MuiTypography-root MuiTypography-h4 MuiTypography-alignCenter css-1ulnhey-MuiTypography-root"
+          class="MuiTypography-root MuiTypography-h4 MuiTypography-alignCenter css-1b2bjr5-MuiTypography-root"
           style="--Typography-textAlign: center;"
         >
           他アイテムから参照されなくなる設定
         </h4>
         <table
-          class="MuiTable-root css-1xwxv7r-MuiTable-root"
+          class="MuiTable-root css-oigiou-MuiTable-root"
           id="table_isolation_rules_list"
         >
           <thead
             class="MuiTableHead-root css-1a7iywq-MuiTableHead-root"
           >
             <tr
-              class="MuiTableRow-root MuiTableRow-head css-1wtsgsb-MuiTableRow-root"
+              class="MuiTableRow-root MuiTableRow-head css-1duq44w-MuiTableRow-root"
             >
               <th
-                class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-8816du-MuiTableCell-root"
+                class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-1pzqf5i-MuiTableCell-root"
                 scope="col"
                 width="200px"
               >
                 対象モデル
               </th>
               <th
-                class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-8816du-MuiTableCell-root"
+                class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-1pzqf5i-MuiTableCell-root"
                 scope="col"
                 width="100px"
               >
                 全モデル
               </th>
               <th
-                class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-3ofsdi-MuiTableCell-root"
+                class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-133kz00-MuiTableCell-root"
                 scope="col"
               >
                 <div
@@ -1530,14 +1530,14 @@ exports[`EditEntityPage should match snapshot 1`] = `
                 </div>
               </th>
               <th
-                class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-8816du-MuiTableCell-root"
+                class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-1pzqf5i-MuiTableCell-root"
                 scope="col"
                 width="60px"
               >
                 削除
               </th>
               <th
-                class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-8816du-MuiTableCell-root"
+                class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-1pzqf5i-MuiTableCell-root"
                 scope="col"
                 width="60px"
               >
@@ -1549,22 +1549,22 @@ exports[`EditEntityPage should match snapshot 1`] = `
             class="MuiTableBody-root css-gmh7jj-MuiTableBody-root"
           >
             <tr
-              class="MuiTableRow-root css-4w2o25-MuiTableRow-root"
+              class="MuiTableRow-root css-umvndd-MuiTableRow-root"
             >
               <td
-                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
               />
               <td
-                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
               />
               <td
-                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
               />
               <td
-                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
               />
               <td
-                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
               >
                 <button
                   class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium css-53g0n7-MuiButtonBase-root-MuiIconButton-root"
@@ -1588,63 +1588,63 @@ exports[`EditEntityPage should match snapshot 1`] = `
           </tbody>
         </table>
         <h4
-          class="MuiTypography-root MuiTypography-h4 MuiTypography-alignCenter css-1ulnhey-MuiTypography-root"
+          class="MuiTypography-root MuiTypography-h4 MuiTypography-alignCenter css-1b2bjr5-MuiTypography-root"
           style="--Typography-textAlign: center;"
         >
           Webhook
         </h4>
         <table
-          class="MuiTable-root css-1xwxv7r-MuiTable-root"
+          class="MuiTable-root css-oigiou-MuiTable-root"
           id="table_webhook_list"
         >
           <thead
             class="MuiTableHead-root css-1a7iywq-MuiTableHead-root"
           >
             <tr
-              class="MuiTableRow-root MuiTableRow-head css-1wtsgsb-MuiTableRow-root"
+              class="MuiTableRow-root MuiTableRow-head css-1duq44w-MuiTableRow-root"
             >
               <th
-                class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-8816du-MuiTableCell-root"
+                class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-1pzqf5i-MuiTableCell-root"
                 scope="col"
                 width="50px"
               />
               <th
-                class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-8816du-MuiTableCell-root"
+                class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-1pzqf5i-MuiTableCell-root"
                 scope="col"
                 width="400px"
               >
                 URL
               </th>
               <th
-                class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-8816du-MuiTableCell-root"
+                class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-1pzqf5i-MuiTableCell-root"
                 scope="col"
                 width="350px"
               >
                 ラベル
               </th>
               <th
-                class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-8816du-MuiTableCell-root"
+                class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-1pzqf5i-MuiTableCell-root"
                 scope="col"
                 width="100px"
               >
                 Header
               </th>
               <th
-                class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-8816du-MuiTableCell-root"
+                class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-1pzqf5i-MuiTableCell-root"
                 scope="col"
                 width="100px"
               >
                 有効
               </th>
               <th
-                class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-8816du-MuiTableCell-root"
+                class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-1pzqf5i-MuiTableCell-root"
                 scope="col"
                 width="100px"
               >
                 削除
               </th>
               <th
-                class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-8816du-MuiTableCell-root"
+                class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-1pzqf5i-MuiTableCell-root"
                 scope="col"
                 width="100px"
               >
@@ -1656,28 +1656,28 @@ exports[`EditEntityPage should match snapshot 1`] = `
             class="MuiTableBody-root css-gmh7jj-MuiTableBody-root"
           >
             <tr
-              class="MuiTableRow-root css-4w2o25-MuiTableRow-root"
+              class="MuiTableRow-root css-umvndd-MuiTableRow-root"
             >
               <td
-                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
               />
               <td
-                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
               />
               <td
-                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
               />
               <td
-                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
               />
               <td
-                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
               />
               <td
-                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
               />
               <td
-                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
+                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1i0k33j-MuiTableCell-root"
               >
                 <button
                   class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium css-53g0n7-MuiButtonBase-root-MuiIconButton-root"

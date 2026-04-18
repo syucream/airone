@@ -7,11 +7,11 @@ const Frame = styled(Box)(({}) => ({
   height: "56px",
 }));
 
-const Fixed = styled(Box)(({}) => ({
+const Fixed = styled(Box)(({ theme }) => ({
   position: "fixed",
   zIndex: 2,
   width: "100%",
-  backgroundColor: "white",
+  backgroundColor: theme.palette.background.paper,
   display: "flex",
   justifyContent: "center",
 }));

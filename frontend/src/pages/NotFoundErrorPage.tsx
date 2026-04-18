@@ -20,13 +20,13 @@ export const NotFoundErrorPage: FC = () => {
         <Typography
           id="sorry_notfound"
           variant="h1"
-          color="#B0BEC5"
+          color="text.disabled"
           fontWeight="bold"
         >
           404 |ω·`)
         </Typography>
       </Box>
-      <Typography color="#455A64">
+      <Typography color="text.secondary">
         アクセスしたページは削除、変更されたか、現在利用できない可能性があります。
       </Typography>
       <Box>

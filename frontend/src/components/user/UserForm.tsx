@@ -1,7 +1,3 @@
-import {
-  UserRetrieve,
-  UserRetrieveAuthenticateTypeEnum,
-} from "@dmm-com/airone-apiclient-typescript-fetch";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import {
   Box,
@@ -19,7 +15,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { styled } from "@mui/material/styles";
+import { styled, useTheme } from "@mui/material/styles";
 import { useSnackbar } from "notistack";
 import {
   BaseSyntheticEvent,
@@ -34,13 +30,17 @@ import { Control, Controller, useWatch } from "react-hook-form";
 import { ChangeUserAuthModal } from "./ChangeUserAuthModal";
 import { Schema } from "./userForm/UserFormSchema";
 
+import {
+  UserRetrieve,
+  UserRetrieveAuthenticateTypeEnum,
+} from "@dmm-com/airone-apiclient-typescript-fetch";
 import { FlexBox } from "components/common/FlexBox";
 import { ServerContext } from "services/ServerContext";
 import { User } from "services/ServerContext";
 
-const StyledTableRow = styled(TableRow)(() => ({
+const StyledTableRow = styled(TableRow)(({ theme }) => ({
   "&:nth-of-type(odd)": {
-    backgroundColor: "#607D8B0A",
+    backgroundColor: theme.palette.tableRow.alternateBackground,
   },
   "&:last-child td, &:last-child th": {
     border: 0,
@@ -386,6 +386,7 @@ export const UserForm: FC<UserFormProps> = ({
   handleSubmit,
   handleCancel,
 }) => {
+  const theme = useTheme();
   const loginUser = useMemo(() => ServerContext.getInstance()?.user, []);
 
   return (
@@ -410,9 +411,15 @@ export const UserForm: FC<UserFormProps> = ({
       <TableContainer component={Paper}>
         <Table className="table table-bordered">
           <TableHead>
-            <TableRow sx={{ backgroundColor: "#455A64" }}>
-              <TableCell sx={{ color: "#FFFFFF" }}>項目</TableCell>
-              <TableCell sx={{ color: "#FFFFFF" }}>内容</TableCell>
+            <TableRow
+              sx={{ backgroundColor: theme.palette.tableHeader.background }}
+            >
+              <TableCell sx={{ color: theme.palette.tableHeader.text }}>
+                項目
+              </TableCell>
+              <TableCell sx={{ color: theme.palette.tableHeader.text }}>
+                内容
+              </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>

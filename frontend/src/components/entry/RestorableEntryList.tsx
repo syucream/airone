@@ -65,16 +65,16 @@ const PaperBox = styled(Box)(({ theme }) => ({
   display: "flex",
   flexDirection: "column",
   backgroundColor: theme.palette.background.paper,
-  border: "2px solid #000",
+  border: `2px solid ${theme.palette.divider}`,
   boxShadow: theme.shadows[5],
   padding: theme.spacing(2, 3, 1),
   width: theme.breakpoints.values.lg,
   height: "80%",
 }));
 
-const StyledTableRow = styled(TableRow)(() => ({
+const StyledTableRow = styled(TableRow)(({ theme }) => ({
   "&:nth-of-type(odd)": {
-    backgroundColor: "#607D8B0A",
+    backgroundColor: theme.palette.tableRow.alternateBackground,
   },
   "&:last-child td, &:last-child th": {
     border: 0,

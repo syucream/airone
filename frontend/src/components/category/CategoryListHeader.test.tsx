@@ -2,11 +2,11 @@
  * @jest-environment jsdom
  */
 
-import { CategoryList } from "@dmm-com/airone-apiclient-typescript-fetch";
 import { render, screen } from "@testing-library/react";
 
 import { CategoryListHeader } from "./CategoryListHeader";
 
+import { CategoryList } from "@dmm-com/airone-apiclient-typescript-fetch";
 import { TestWrapper } from "TestWrapper";
 import { ACLType } from "services/ACLUtil";
 

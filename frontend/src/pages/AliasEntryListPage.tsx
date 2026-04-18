@@ -1,4 +1,3 @@
-import { EntryBase } from "@dmm-com/airone-apiclient-typescript-fetch";
 import AppsIcon from "@mui/icons-material/Apps";
 import { Box, Container, Grid, IconButton } from "@mui/material";
 import { useSnackbar } from "notistack";
@@ -7,6 +6,7 @@ import { FC, Suspense, useEffect, useState } from "react";
 import { usePagodaSWR } from "../hooks/usePagodaSWR";
 import { useTypedParams } from "../hooks/useTypedParams";
 
+import { EntryBase } from "@dmm-com/airone-apiclient-typescript-fetch";
 import { PaginationFooter } from "components";
 import { Loading } from "components/common/Loading";
 import { PageHeader } from "components/common/PageHeader";

@@ -169,9 +169,7 @@ describe("RoleImportModal", () => {
     ).toBeInTheDocument();
 
     // Error message container exists (initially empty, using class selector)
-    const errorContainer = document.querySelector(
-      ".MuiTypography-caption.css-1hldsye-MuiTypography-root",
-    );
+    const errorContainer = document.querySelector(".MuiTypography-caption");
     expect(errorContainer).toBeInTheDocument();
   });
 });

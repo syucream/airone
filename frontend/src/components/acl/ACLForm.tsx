@@ -22,35 +22,35 @@ interface Props {
   watch: UseFormWatch<Schema>;
 }
 
-const HeaderTableRow = styled(TableRow)(() => ({
-  backgroundColor: "#455A64",
+const HeaderTableRow = styled(TableRow)(({ theme }) => ({
+  backgroundColor: theme.palette.tableHeader.background,
 }));
 
-const HeaderTableCellItem = styled(TableCell)(() => ({
-  color: "#FFFFFF",
+const HeaderTableCellItem = styled(TableCell)(({ theme }) => ({
+  color: theme.palette.tableHeader.text,
   width: "328px",
 }));
 
-const HeaderTableCellContext = styled(TableCell)(() => ({
-  color: "#FFFFFF",
+const HeaderTableCellContext = styled(TableCell)(({ theme }) => ({
+  color: theme.palette.tableHeader.text,
 }));
 
-const HeaderTableCellNote = styled(TableCell)(() => ({
-  color: "#FFFFFF",
+const HeaderTableCellNote = styled(TableCell)(({ theme }) => ({
+  color: theme.palette.tableHeader.text,
   width: "363px",
 }));
 
-const StyledTableBody = styled(TableBody)({
+const StyledTableBody = styled(TableBody)(({ theme }) => ({
   "tr:nth-of-type(odd)": {
-    backgroundColor: "white",
+    backgroundColor: theme.palette.background.paper,
   },
   "tr:nth-of-type(even)": {
-    backgroundColor: "#607D8B0A",
+    backgroundColor: theme.palette.tableRow.alternateBackground,
   },
   "& td": {
     padding: "8px 16px",
   },
-});
+}));
 
 export const ACLForm: FC<Props> = ({ control, watch }) => {
   const { fields } = useFieldArray({

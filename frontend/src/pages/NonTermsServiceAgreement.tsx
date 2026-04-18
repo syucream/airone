@@ -23,13 +23,13 @@ export const NonTermsServiceAgreementPage: FC = () => {
         <Typography
           id="sorry_notfound"
           variant="h1"
-          color="#B0BEC5"
+          color="text.disabled"
           fontWeight="bold"
         >
           :;(∩´﹏`∩);:
         </Typography>
       </Box>
-      <Typography color="#455A64">
+      <Typography color="text.secondary">
         ご利用をされるにはサービス規約への同意が必要です。
       </Typography>
       <Box>

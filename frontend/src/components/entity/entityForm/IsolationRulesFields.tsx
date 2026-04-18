@@ -1,4 +1,3 @@
-import { Entity } from "@dmm-com/airone-apiclient-typescript-fetch";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import {
@@ -22,6 +21,7 @@ import { Control, Controller, useFieldArray, useWatch } from "react-hook-form";
 
 import { Schema } from "./EntityFormSchema";
 
+import { Entity } from "@dmm-com/airone-apiclient-typescript-fetch";
 import { ReferralsAutocomplete } from "components/entry/entryForm/ReferralsAutocomplete";
 import { BaseAttributeTypes } from "services/Constants";
 
@@ -38,12 +38,12 @@ const ISOLATION_SUPPORTED_TYPES = [
     BaseAttributeTypes.array,
 ];
 
-const HeaderTableRow = styled(TableRow)(() => ({
-  backgroundColor: "#455A64",
+const HeaderTableRow = styled(TableRow)(({ theme }) => ({
+  backgroundColor: theme.palette.tableHeader.background,
 }));
 
-const HeaderTableCell = styled(TableCell)(() => ({
-  color: "#FFFFFF",
+const HeaderTableCell = styled(TableCell)(({ theme }) => ({
+  color: theme.palette.tableHeader.text,
   boxSizing: "border-box",
 }));
 

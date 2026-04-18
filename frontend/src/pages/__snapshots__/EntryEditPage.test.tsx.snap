@@ -12,14 +12,14 @@ exports[`EntryEditPage should match snapshot 1`] = `
           class="MuiBox-root css-1baykhj"
         >
           <div
-            class="MuiBox-root css-t0pdf1"
+            class="MuiBox-root css-1pvkm27"
           >
             <div
               class="MuiBox-root css-jqffe8"
             >
               <nav
                 aria-label="breadcrumb"
-                class="MuiTypography-root MuiTypography-body1 MuiBreadcrumbs-root css-5cvx94-MuiTypography-root-MuiBreadcrumbs-root"
+                class="MuiTypography-root MuiTypography-body1 MuiBreadcrumbs-root css-7btqe6-MuiTypography-root-MuiBreadcrumbs-root"
               >
                 <ol
                   class="MuiBreadcrumbs-ol css-1uwp4ue-MuiBreadcrumbs-ol"
@@ -28,7 +28,7 @@ exports[`EntryEditPage should match snapshot 1`] = `
                     class="MuiBreadcrumbs-li"
                   >
                     <a
-                      class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                      class="MuiTypography-root MuiTypography-body1 css-1i4mxqk-MuiTypography-root"
                       data-discover="true"
                       href="/ui/"
                     >
@@ -45,7 +45,7 @@ exports[`EntryEditPage should match snapshot 1`] = `
                     class="MuiBreadcrumbs-li"
                   >
                     <a
-                      class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                      class="MuiTypography-root MuiTypography-body1 css-1i4mxqk-MuiTypography-root"
                       data-discover="true"
                       href="/ui/entities"
                     >
@@ -65,7 +65,7 @@ exports[`EntryEditPage should match snapshot 1`] = `
                       class="MuiBox-root css-162tvoi"
                     >
                       <a
-                        class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                        class="MuiTypography-root MuiTypography-body1 css-1i4mxqk-MuiTypography-root"
                         data-discover="true"
                         href="/ui/entities/2/entries"
                       >
@@ -97,7 +97,7 @@ exports[`EntryEditPage should match snapshot 1`] = `
                       class="MuiBox-root css-162tvoi"
                     >
                       <a
-                        class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                        class="MuiTypography-root MuiTypography-body1 css-1i4mxqk-MuiTypography-root"
                         data-discover="true"
                         href="/ui/entities/2/entries/1/details"
                       >
@@ -126,7 +126,7 @@ exports[`EntryEditPage should match snapshot 1`] = `
                     class="MuiBreadcrumbs-li"
                   >
                     <p
-                      class="MuiTypography-root MuiTypography-body1 css-1bgbmvw-MuiTypography-root"
+                      class="MuiTypography-root MuiTypography-body1 css-oiwby3-MuiTypography-root"
                     >
                       編集
                     </p>
@@ -140,19 +140,19 @@ exports[`EntryEditPage should match snapshot 1`] = `
           class="MuiBox-root css-1cs9h4l"
         >
           <div
-            class="MuiBox-root css-1519avi"
+            class="MuiBox-root css-v70eba"
           >
             <div
               class="MuiBox-root css-9rtbay"
             >
               <h6
-                class="MuiTypography-root MuiTypography-h6 css-2toz8d-MuiTypography-root"
+                class="MuiTypography-root MuiTypography-h6 css-pecs12-MuiTypography-root"
                 id="title"
               >
                 test entry
               </h6>
               <h6
-                class="MuiTypography-root MuiTypography-subtitle1 css-1i3tsf3-MuiTypography-root"
+                class="MuiTypography-root MuiTypography-subtitle1 css-1m6zjhu-MuiTypography-root"
                 id="description"
               >
                 アイテム編集
@@ -164,7 +164,7 @@ exports[`EntryEditPage should match snapshot 1`] = `
                   class="MuiBox-root css-1kdfklj"
                 >
                   <button
-                    class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedSecondary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorSecondary Mui-disabled MuiButton-root MuiButton-contained MuiButton-containedSecondary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorSecondary css-8fe6cp-MuiButtonBase-root-MuiButton-root"
+                    class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedSecondary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorSecondary Mui-disabled MuiButton-root MuiButton-contained MuiButton-containedSecondary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorSecondary css-qtts69-MuiButtonBase-root-MuiButton-root"
                     disabled=""
                     tabindex="-1"
                     type="button"
@@ -172,7 +172,7 @@ exports[`EntryEditPage should match snapshot 1`] = `
                     保存
                   </button>
                   <button
-                    class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo css-152i8rg-MuiButtonBase-root-MuiButton-root"
+                    class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo css-1pflzud-MuiButtonBase-root-MuiButton-root"
                     tabindex="0"
                     type="button"
                   >
@@ -193,7 +193,7 @@ exports[`EntryEditPage should match snapshot 1`] = `
             class="MuiBox-root css-1afd0kf"
           >
             <a
-              class="MuiButtonBase-root MuiChip-root MuiChip-outlined MuiChip-sizeMedium MuiChip-colorDefault MuiChip-clickable MuiChip-clickableColorDefault MuiChip-outlinedDefault css-soe3uv-MuiButtonBase-root-MuiChip-root"
+              class="MuiButtonBase-root MuiChip-root MuiChip-outlined MuiChip-sizeMedium MuiChip-colorDefault MuiChip-clickable MuiChip-clickableColorDefault MuiChip-outlinedDefault css-1tkj0q-MuiButtonBase-root-MuiChip-root"
               href="#name"
               id="chip_name"
               tabindex="0"
@@ -216,7 +216,7 @@ exports[`EntryEditPage should match snapshot 1`] = `
               </span>
             </a>
             <a
-              class="MuiButtonBase-root MuiChip-root MuiChip-outlined MuiChip-sizeMedium MuiChip-colorDefault MuiChip-clickable MuiChip-clickableColorDefault MuiChip-outlinedDefault css-soe3uv-MuiButtonBase-root-MuiChip-root"
+              class="MuiButtonBase-root MuiChip-root MuiChip-outlined MuiChip-sizeMedium MuiChip-colorDefault MuiChip-clickable MuiChip-clickableColorDefault MuiChip-outlinedDefault css-1tkj0q-MuiButtonBase-root-MuiChip-root"
               href="#attrs-attr1"
               id="chip_attr1"
               tabindex="0"
@@ -240,29 +240,29 @@ exports[`EntryEditPage should match snapshot 1`] = `
             </a>
           </div>
           <table
-            class="MuiTable-root css-1xwxv7r-MuiTable-root"
+            class="MuiTable-root css-oigiou-MuiTable-root"
             id="table_attr_list"
           >
             <thead
               class="MuiTableHead-root css-1a7iywq-MuiTableHead-root"
             >
               <tr
-                class="MuiTableRow-root MuiTableRow-head css-1wtsgsb-MuiTableRow-root"
+                class="MuiTableRow-root MuiTableRow-head css-1duq44w-MuiTableRow-root"
               >
                 <th
-                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-7i4wkh-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-10l7lzl-MuiTableCell-root"
                   scope="col"
                 >
                   項目
                 </th>
                 <th
-                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-7i4wkh-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-10l7lzl-MuiTableCell-root"
                   scope="col"
                 >
                   内容
                 </th>
                 <th
-                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-1oduwuh-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-r8hq0p-MuiTableCell-root"
                   scope="col"
                 />
               </tr>
@@ -271,35 +271,35 @@ exports[`EntryEditPage should match snapshot 1`] = `
               class="MuiTableBody-root css-gmh7jj-MuiTableBody-root"
             >
               <tr
-                class="MuiTableRow-root css-1xtozoh-MuiTableRow-root"
+                class="MuiTableRow-root css-gy1mdc-MuiTableRow-root"
               >
                 <td
-                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1egp9pz-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-lr0tge-MuiTableCell-root"
                 >
                   <div
                     class="MuiBox-root css-yeouz0"
                   >
                     <p
-                      class="MuiTypography-root MuiTypography-body1 css-zaqce3-MuiTypography-root"
+                      class="MuiTypography-root MuiTypography-body1 css-1j5rr62-MuiTypography-root"
                       id="name"
                     >
                       アイテム名
                     </p>
                     <p
-                      class="MuiTypography-root MuiTypography-body1 css-1yompuc-MuiTypography-root"
+                      class="MuiTypography-root MuiTypography-body1 css-3ntj21-MuiTypography-root"
                     >
                       必須
                     </p>
                   </div>
                 </td>
                 <td
-                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1egp9pz-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-lr0tge-MuiTableCell-root"
                 >
                   <div
                     class="MuiFormControl-root MuiFormControl-fullWidth MuiTextField-root css-ck5q85-MuiFormControl-root-MuiTextField-root"
                   >
                     <div
-                      class="MuiInputBase-root MuiInput-root MuiInput-underline MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl css-6h9cc6-MuiInputBase-root-MuiInput-root"
+                      class="MuiInputBase-root MuiInput-root MuiInput-underline MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl css-661qkv-MuiInputBase-root-MuiInput-root"
                     >
                       <input
                         aria-invalid="false"
@@ -314,11 +314,11 @@ exports[`EntryEditPage should match snapshot 1`] = `
                   </div>
                 </td>
                 <td
-                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1t1g30f-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1m14dq6-MuiTableCell-root"
                 >
                   <svg
                     aria-hidden="true"
-                    class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-1ok51jx-MuiSvgIcon-root"
+                    class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-1coqy5t-MuiSvgIcon-root"
                     data-testid="CheckCircleIcon"
                     focusable="false"
                     viewBox="0 0 24 24"
@@ -330,24 +330,24 @@ exports[`EntryEditPage should match snapshot 1`] = `
                 </td>
               </tr>
               <tr
-                class="MuiTableRow-root css-1xtozoh-MuiTableRow-root"
+                class="MuiTableRow-root css-gy1mdc-MuiTableRow-root"
               >
                 <td
-                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1egp9pz-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-lr0tge-MuiTableCell-root"
                   id="attrs-attr1"
                 >
                   <div
                     class="MuiBox-root css-yeouz0"
                   >
                     <p
-                      class="MuiTypography-root MuiTypography-body1 css-zaqce3-MuiTypography-root"
+                      class="MuiTypography-root MuiTypography-body1 css-1j5rr62-MuiTypography-root"
                     >
                       attr1
                     </p>
                   </div>
                 </td>
                 <td
-                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1egp9pz-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-lr0tge-MuiTableCell-root"
                 >
                   <div
                     class="MuiBox-root css-136r79r"
@@ -356,7 +356,7 @@ exports[`EntryEditPage should match snapshot 1`] = `
                       class="MuiFormControl-root MuiFormControl-fullWidth MuiTextField-root css-ck5q85-MuiFormControl-root-MuiTextField-root"
                     >
                       <div
-                        class="MuiInputBase-root MuiInput-root MuiInput-underline MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl css-6h9cc6-MuiInputBase-root-MuiInput-root"
+                        class="MuiInputBase-root MuiInput-root MuiInput-underline MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl css-661qkv-MuiInputBase-root-MuiInput-root"
                       >
                         <input
                           aria-invalid="false"
@@ -371,11 +371,11 @@ exports[`EntryEditPage should match snapshot 1`] = `
                   </div>
                 </td>
                 <td
-                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1t1g30f-MuiTableCell-root"
+                  class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1m14dq6-MuiTableCell-root"
                 >
                   <svg
                     aria-hidden="true"
-                    class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-1ok51jx-MuiSvgIcon-root"
+                    class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-1coqy5t-MuiSvgIcon-root"
                     data-testid="CheckCircleIcon"
                     focusable="false"
                     viewBox="0 0 24 24"
@@ -392,7 +392,7 @@ exports[`EntryEditPage should match snapshot 1`] = `
             class="MuiBox-root css-1h9v3gn"
           >
             <button
-              class="MuiButtonBase-root MuiFab-root MuiFab-circular MuiFab-sizeLarge MuiFab-primary MuiFab-root MuiFab-circular MuiFab-sizeLarge MuiFab-primary css-6vxf02-MuiButtonBase-root-MuiFab-root"
+              class="MuiButtonBase-root MuiFab-root MuiFab-circular MuiFab-sizeLarge MuiFab-primary MuiFab-root MuiFab-circular MuiFab-sizeLarge MuiFab-primary css-to9f8o-MuiButtonBase-root-MuiFab-root"
               id="scroll_button"
               tabindex="0"
               type="button"
@@ -422,14 +422,14 @@ exports[`EntryEditPage should match snapshot 1`] = `
         class="MuiBox-root css-1baykhj"
       >
         <div
-          class="MuiBox-root css-t0pdf1"
+          class="MuiBox-root css-1pvkm27"
         >
           <div
             class="MuiBox-root css-jqffe8"
           >
             <nav
               aria-label="breadcrumb"
-              class="MuiTypography-root MuiTypography-body1 MuiBreadcrumbs-root css-5cvx94-MuiTypography-root-MuiBreadcrumbs-root"
+              class="MuiTypography-root MuiTypography-body1 MuiBreadcrumbs-root css-7btqe6-MuiTypography-root-MuiBreadcrumbs-root"
             >
               <ol
                 class="MuiBreadcrumbs-ol css-1uwp4ue-MuiBreadcrumbs-ol"
@@ -438,7 +438,7 @@ exports[`EntryEditPage should match snapshot 1`] = `
                   class="MuiBreadcrumbs-li"
                 >
                   <a
-                    class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                    class="MuiTypography-root MuiTypography-body1 css-1i4mxqk-MuiTypography-root"
                     data-discover="true"
                     href="/ui/"
                   >
@@ -455,7 +455,7 @@ exports[`EntryEditPage should match snapshot 1`] = `
                   class="MuiBreadcrumbs-li"
                 >
                   <a
-                    class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                    class="MuiTypography-root MuiTypography-body1 css-1i4mxqk-MuiTypography-root"
                     data-discover="true"
                     href="/ui/entities"
                   >
@@ -475,7 +475,7 @@ exports[`EntryEditPage should match snapshot 1`] = `
                     class="MuiBox-root css-162tvoi"
                   >
                     <a
-                      class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                      class="MuiTypography-root MuiTypography-body1 css-1i4mxqk-MuiTypography-root"
                       data-discover="true"
                       href="/ui/entities/2/entries"
                     >
@@ -507,7 +507,7 @@ exports[`EntryEditPage should match snapshot 1`] = `
                     class="MuiBox-root css-162tvoi"
                   >
                     <a
-                      class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                      class="MuiTypography-root MuiTypography-body1 css-1i4mxqk-MuiTypography-root"
                       data-discover="true"
                       href="/ui/entities/2/entries/1/details"
                     >
@@ -536,7 +536,7 @@ exports[`EntryEditPage should match snapshot 1`] = `
                   class="MuiBreadcrumbs-li"
                 >
                   <p
-                    class="MuiTypography-root MuiTypography-body1 css-1bgbmvw-MuiTypography-root"
+                    class="MuiTypography-root MuiTypography-body1 css-oiwby3-MuiTypography-root"
                   >
                     編集
                   </p>
@@ -550,19 +550,19 @@ exports[`EntryEditPage should match snapshot 1`] = `
         class="MuiBox-root css-1cs9h4l"
       >
         <div
-          class="MuiBox-root css-1519avi"
+          class="MuiBox-root css-v70eba"
         >
           <div
             class="MuiBox-root css-9rtbay"
           >
             <h6
-              class="MuiTypography-root MuiTypography-h6 css-2toz8d-MuiTypography-root"
+              class="MuiTypography-root MuiTypography-h6 css-pecs12-MuiTypography-root"
               id="title"
             >
               test entry
             </h6>
             <h6
-              class="MuiTypography-root MuiTypography-subtitle1 css-1i3tsf3-MuiTypography-root"
+              class="MuiTypography-root MuiTypography-subtitle1 css-1m6zjhu-MuiTypography-root"
               id="description"
             >
               アイテム編集
@@ -574,7 +574,7 @@ exports[`EntryEditPage should match snapshot 1`] = `
                 class="MuiBox-root css-1kdfklj"
               >
                 <button
-                  class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedSecondary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorSecondary Mui-disabled MuiButton-root MuiButton-contained MuiButton-containedSecondary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorSecondary css-8fe6cp-MuiButtonBase-root-MuiButton-root"
+                  class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedSecondary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorSecondary Mui-disabled MuiButton-root MuiButton-contained MuiButton-containedSecondary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorSecondary css-qtts69-MuiButtonBase-root-MuiButton-root"
                   disabled=""
                   tabindex="-1"
                   type="button"
@@ -582,7 +582,7 @@ exports[`EntryEditPage should match snapshot 1`] = `
                   保存
                 </button>
                 <button
-                  class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo css-152i8rg-MuiButtonBase-root-MuiButton-root"
+                  class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo css-1pflzud-MuiButtonBase-root-MuiButton-root"
                   tabindex="0"
                   type="button"
                 >
@@ -603,7 +603,7 @@ exports[`EntryEditPage should match snapshot 1`] = `
           class="MuiBox-root css-1afd0kf"
         >
           <a
-            class="MuiButtonBase-root MuiChip-root MuiChip-outlined MuiChip-sizeMedium MuiChip-colorDefault MuiChip-clickable MuiChip-clickableColorDefault MuiChip-outlinedDefault css-soe3uv-MuiButtonBase-root-MuiChip-root"
+            class="MuiButtonBase-root MuiChip-root MuiChip-outlined MuiChip-sizeMedium MuiChip-colorDefault MuiChip-clickable MuiChip-clickableColorDefault MuiChip-outlinedDefault css-1tkj0q-MuiButtonBase-root-MuiChip-root"
             href="#name"
             id="chip_name"
             tabindex="0"
@@ -626,7 +626,7 @@ exports[`EntryEditPage should match snapshot 1`] = `
             </span>
           </a>
           <a
-            class="MuiButtonBase-root MuiChip-root MuiChip-outlined MuiChip-sizeMedium MuiChip-colorDefault MuiChip-clickable MuiChip-clickableColorDefault MuiChip-outlinedDefault css-soe3uv-MuiButtonBase-root-MuiChip-root"
+            class="MuiButtonBase-root MuiChip-root MuiChip-outlined MuiChip-sizeMedium MuiChip-colorDefault MuiChip-clickable MuiChip-clickableColorDefault MuiChip-outlinedDefault css-1tkj0q-MuiButtonBase-root-MuiChip-root"
             href="#attrs-attr1"
             id="chip_attr1"
             tabindex="0"
@@ -650,29 +650,29 @@ exports[`EntryEditPage should match snapshot 1`] = `
           </a>
         </div>
         <table
-          class="MuiTable-root css-1xwxv7r-MuiTable-root"
+          class="MuiTable-root css-oigiou-MuiTable-root"
           id="table_attr_list"
         >
           <thead
             class="MuiTableHead-root css-1a7iywq-MuiTableHead-root"
           >
             <tr
-              class="MuiTableRow-root MuiTableRow-head css-1wtsgsb-MuiTableRow-root"
+              class="MuiTableRow-root MuiTableRow-head css-1duq44w-MuiTableRow-root"
             >
               <th
-                class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-7i4wkh-MuiTableCell-root"
+                class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-10l7lzl-MuiTableCell-root"
                 scope="col"
               >
                 項目
               </th>
               <th
-                class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-7i4wkh-MuiTableCell-root"
+                class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-10l7lzl-MuiTableCell-root"
                 scope="col"
               >
                 内容
               </th>
               <th
-                class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-1oduwuh-MuiTableCell-root"
+                class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-r8hq0p-MuiTableCell-root"
                 scope="col"
               />
             </tr>
@@ -681,35 +681,35 @@ exports[`EntryEditPage should match snapshot 1`] = `
             class="MuiTableBody-root css-gmh7jj-MuiTableBody-root"
           >
             <tr
-              class="MuiTableRow-root css-1xtozoh-MuiTableRow-root"
+              class="MuiTableRow-root css-gy1mdc-MuiTableRow-root"
             >
               <td
-                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1egp9pz-MuiTableCell-root"
+                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-lr0tge-MuiTableCell-root"
               >
                 <div
                   class="MuiBox-root css-yeouz0"
                 >
                   <p
-                    class="MuiTypography-root MuiTypography-body1 css-zaqce3-MuiTypography-root"
+                    class="MuiTypography-root MuiTypography-body1 css-1j5rr62-MuiTypography-root"
                     id="name"
                   >
                     アイテム名
                   </p>
                   <p
-                    class="MuiTypography-root MuiTypography-body1 css-1yompuc-MuiTypography-root"
+                    class="MuiTypography-root MuiTypography-body1 css-3ntj21-MuiTypography-root"
                   >
                     必須
                   </p>
                 </div>
               </td>
               <td
-                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1egp9pz-MuiTableCell-root"
+                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-lr0tge-MuiTableCell-root"
               >
                 <div
                   class="MuiFormControl-root MuiFormControl-fullWidth MuiTextField-root css-ck5q85-MuiFormControl-root-MuiTextField-root"
                 >
                   <div
-                    class="MuiInputBase-root MuiInput-root MuiInput-underline MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl css-6h9cc6-MuiInputBase-root-MuiInput-root"
+                    class="MuiInputBase-root MuiInput-root MuiInput-underline MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl css-661qkv-MuiInputBase-root-MuiInput-root"
                   >
                     <input
                       aria-invalid="false"
@@ -724,11 +724,11 @@ exports[`EntryEditPage should match snapshot 1`] = `
                 </div>
               </td>
               <td
-                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1t1g30f-MuiTableCell-root"
+                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1m14dq6-MuiTableCell-root"
               >
                 <svg
                   aria-hidden="true"
-                  class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-1ok51jx-MuiSvgIcon-root"
+                  class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-1coqy5t-MuiSvgIcon-root"
                   data-testid="CheckCircleIcon"
                   focusable="false"
                   viewBox="0 0 24 24"
@@ -740,24 +740,24 @@ exports[`EntryEditPage should match snapshot 1`] = `
               </td>
             </tr>
             <tr
-              class="MuiTableRow-root css-1xtozoh-MuiTableRow-root"
+              class="MuiTableRow-root css-gy1mdc-MuiTableRow-root"
             >
               <td
-                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1egp9pz-MuiTableCell-root"
+                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-lr0tge-MuiTableCell-root"
                 id="attrs-attr1"
               >
                 <div
                   class="MuiBox-root css-yeouz0"
                 >
                   <p
-                    class="MuiTypography-root MuiTypography-body1 css-zaqce3-MuiTypography-root"
+                    class="MuiTypography-root MuiTypography-body1 css-1j5rr62-MuiTypography-root"
                   >
                     attr1
                   </p>
                 </div>
               </td>
               <td
-                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1egp9pz-MuiTableCell-root"
+                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-lr0tge-MuiTableCell-root"
               >
                 <div
                   class="MuiBox-root css-136r79r"
@@ -766,7 +766,7 @@ exports[`EntryEditPage should match snapshot 1`] = `
                     class="MuiFormControl-root MuiFormControl-fullWidth MuiTextField-root css-ck5q85-MuiFormControl-root-MuiTextField-root"
                   >
                     <div
-                      class="MuiInputBase-root MuiInput-root MuiInput-underline MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl css-6h9cc6-MuiInputBase-root-MuiInput-root"
+                      class="MuiInputBase-root MuiInput-root MuiInput-underline MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl css-661qkv-MuiInputBase-root-MuiInput-root"
                     >
                       <input
                         aria-invalid="false"
@@ -781,11 +781,11 @@ exports[`EntryEditPage should match snapshot 1`] = `
                 </div>
               </td>
               <td
-                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1t1g30f-MuiTableCell-root"
+                class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1m14dq6-MuiTableCell-root"
               >
                 <svg
                   aria-hidden="true"
-                  class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-1ok51jx-MuiSvgIcon-root"
+                  class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-1coqy5t-MuiSvgIcon-root"
                   data-testid="CheckCircleIcon"
                   focusable="false"
                   viewBox="0 0 24 24"
@@ -802,7 +802,7 @@ exports[`EntryEditPage should match snapshot 1`] = `
           class="MuiBox-root css-1h9v3gn"
         >
           <button
-            class="MuiButtonBase-root MuiFab-root MuiFab-circular MuiFab-sizeLarge MuiFab-primary MuiFab-root MuiFab-circular MuiFab-sizeLarge MuiFab-primary css-6vxf02-MuiButtonBase-root-MuiFab-root"
+            class="MuiButtonBase-root MuiFab-root MuiFab-circular MuiFab-sizeLarge MuiFab-primary MuiFab-root MuiFab-circular MuiFab-sizeLarge MuiFab-primary css-to9f8o-MuiButtonBase-root-MuiFab-root"
             id="scroll_button"
             tabindex="0"
             type="button"

@@ -163,4 +163,58 @@ describe("EntityControlMenu", () => {
       });
     });
   });
+<<<<<<< Updated upstream
+=======
+
+  describe("export notification", () => {
+    const defaultProps = {
+      entityId: 1,
+      anchorElem: document.createElement("button"),
+      handleClose: () => {},
+      setOpenImportModal: () => false,
+    };
+
+    test("should show info variant snackbar on successful export", async () => {
+      jest
+        .spyOn(
+          require("repository/AironeApiClient").aironeApiClient,
+          "exportEntries",
+        )
+        .mockResolvedValue(undefined);
+
+      render(<EntityControlMenu {...defaultProps} />, {
+        wrapper: TestWrapper,
+      });
+
+      fireEvent.click(screen.getByText("エクスポート(YAML)"));
+
+      await waitFor(() => {
+        expect(
+          screen.getByText("エクスポートのジョブ登録に成功しました"),
+        ).toBeInTheDocument();
+      });
+    });
+
+    test("should show error variant snackbar on failed export", async () => {
+      jest
+        .spyOn(
+          require("repository/AironeApiClient").aironeApiClient,
+          "exportEntries",
+        )
+        .mockRejectedValue(new Error("export failed"));
+
+      render(<EntityControlMenu {...defaultProps} />, {
+        wrapper: TestWrapper,
+      });
+
+      fireEvent.click(screen.getByText("エクスポート(CSV)"));
+
+      await waitFor(() => {
+        expect(
+          screen.getByText("エクスポートのジョブ登録に失敗しました"),
+        ).toBeInTheDocument();
+      });
+    });
+  });
+>>>>>>> Stashed changes
 });

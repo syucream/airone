@@ -17,12 +17,12 @@ import { GroupTreeItem } from "./GroupTreeItem";
 
 import { AironeLink } from "components/common";
 
-const StyledListItem = styled(ListItem)(({}) => ({
+const StyledListItem = styled(ListItem)(({ theme }) => ({
   "&:nth-of-type(odd)": {
-    backgroundColor: "white",
+    backgroundColor: theme.palette.background.paper,
   },
   "&:nth-of-type(even)": {
-    backgroundColor: "#607D8B0A",
+    backgroundColor: theme.palette.tableRow.alternateBackground,
   },
   padding: 0,
 }));

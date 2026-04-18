@@ -2,7 +2,17 @@
  * @jest-environment jsdom
  */
 
+<<<<<<< Updated upstream
 import { act, render, screen, waitFor } from "@testing-library/react";
+=======
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
+>>>>>>> Stashed changes
 import { http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
 import { createMemoryRouter, RouterProvider } from "react-router";
@@ -71,3 +81,47 @@ test("should match snapshot", async () => {
 
   expect(result).toMatchSnapshot();
 });
+<<<<<<< Updated upstream
+=======
+
+test("should show info variant snackbar on successful copy submission", async () => {
+  jest
+    .spyOn(require("repository/AironeApiClient").aironeApiClient, "copyEntry")
+    .mockResolvedValue(undefined);
+
+  const router = createMemoryRouter(
+    [
+      {
+        path: copyEntryPath(":entityId", ":entryId"),
+        element: <EntryCopyPage />,
+      },
+    ],
+    {
+      initialEntries: [copyEntryPath(2, 1)],
+    },
+  );
+
+  await act(async () => {
+    render(<RouterProvider router={router} />, {
+      wrapper: TestWrapperWithoutRoutes,
+    });
+  });
+  await waitFor(() => {
+    expect(screen.queryByTestId("loading")).not.toBeInTheDocument();
+  });
+
+  // Enter copy target names in the textarea
+  const textarea = screen.getByPlaceholderText("コピーするアイテム名");
+  fireEvent.change(textarea, { target: { value: "copy-entry-1" } });
+
+  // Click the copy button
+  const copyButton = screen.getByRole("button", { name: "コピーを作成" });
+  fireEvent.click(copyButton);
+
+  await waitFor(() => {
+    expect(
+      screen.getByText("コピーのジョブ登録に成功しました"),
+    ).toBeInTheDocument();
+  });
+});
+>>>>>>> Stashed changes

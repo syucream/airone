@@ -1,11 +1,11 @@
 /**
  * @jest-environment jsdom
  */
-import { EntryAttributeTypeTypeEnum } from "@dmm-com/airone-apiclient-typescript-fetch";
 import { render, screen } from "@testing-library/react";
 
 import { AdvancedSearchEditModal } from "./AdvancedSearchEditModal";
 
+import { EntryAttributeTypeTypeEnum } from "@dmm-com/airone-apiclient-typescript-fetch";
 import { TestWrapper } from "TestWrapper";
 
 jest.mock("hooks/usePagodaSWR", () => ({

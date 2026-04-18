@@ -1,9 +1,3 @@
-import {
-  EntryAttributeTypeTypeEnum,
-  type TriggerAction,
-  TriggerActionValue,
-  type TriggerCondition,
-} from "@dmm-com/airone-apiclient-typescript-fetch";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
@@ -31,6 +25,12 @@ import { useSnackbar } from "notistack";
 import { FC, useState } from "react";
 import { Link, useNavigate } from "react-router";
 
+import {
+  EntryAttributeTypeTypeEnum,
+  type TriggerAction,
+  TriggerActionValue,
+  type TriggerCondition,
+} from "@dmm-com/airone-apiclient-typescript-fetch";
 import { AironeLink } from "components";
 import { AironeBreadcrumbs } from "components/common/AironeBreadcrumbs";
 import { Confirmable } from "components/common/Confirmable";
@@ -59,17 +59,17 @@ const StyledIconButton = styled(IconButton)(({ theme }) => ({
   margin: theme.spacing(1),
 })) as OverridableComponent<ExtendButtonBaseTypeMap<IconButtonTypeMap>>;
 
-const HeaderTableRow = styled(TableRow)(({}) => ({
-  backgroundColor: "#455A64",
+const HeaderTableRow = styled(TableRow)(({ theme }) => ({
+  backgroundColor: theme.palette.tableHeader.background,
 }));
 
-const HeaderTableCell = styled(TableCell)(({}) => ({
-  color: "#FFFFFF",
+const HeaderTableCell = styled(TableCell)(({ theme }) => ({
+  color: theme.palette.tableHeader.text,
 }));
 
-const StyledTableRow = styled(TableRow)(() => ({
+const StyledTableRow = styled(TableRow)(({ theme }) => ({
   "&:nth-of-type(odd)": {
-    backgroundColor: "#607D8B0A",
+    backgroundColor: theme.palette.tableRow.alternateBackground,
   },
   "& td": {
     padding: "8px 16px",

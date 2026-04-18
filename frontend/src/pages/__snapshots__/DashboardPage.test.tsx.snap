@@ -18,10 +18,10 @@ exports[`DashboardPage should match snapshot 1`] = `
               class="MuiBox-root css-1m3p9o7"
             >
               <div
-                class="MuiFormControl-root MuiFormControl-fullWidth MuiTextField-root css-14i0oaq-MuiFormControl-root-MuiTextField-root"
+                class="MuiFormControl-root MuiFormControl-fullWidth MuiTextField-root css-1pns9ah-MuiFormControl-root-MuiTextField-root"
               >
                 <div
-                  class="MuiInputBase-root MuiOutlinedInput-root MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl MuiInputBase-adornedStart css-ervgxf-MuiInputBase-root-MuiOutlinedInput-root"
+                  class="MuiInputBase-root MuiOutlinedInput-root MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl MuiInputBase-adornedStart css-119zw6r-MuiInputBase-root-MuiOutlinedInput-root"
                 >
                   <div
                     class="MuiInputAdornment-root MuiInputAdornment-positionStart MuiInputAdornment-outlined MuiInputAdornment-sizeMedium css-1nowbqt-MuiInputAdornment-root"
@@ -71,7 +71,7 @@ exports[`DashboardPage should match snapshot 1`] = `
               </div>
             </div>
             <a
-              class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedSecondary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorSecondary MuiButton-root MuiButton-contained MuiButton-containedSecondary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorSecondary css-1nhwi5v-MuiButtonBase-root-MuiButton-root"
+              class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedSecondary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorSecondary MuiButton-root MuiButton-contained MuiButton-containedSecondary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorSecondary css-cmovyp-MuiButtonBase-root-MuiButton-root"
               data-discover="true"
               href="/ui/categories/new"
               tabindex="0"
@@ -110,7 +110,7 @@ exports[`DashboardPage should match snapshot 1`] = `
                     >
                       <svg
                         aria-hidden="true"
-                        class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-l3h2k7-MuiSvgIcon-root"
+                        class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-pjjpww-MuiSvgIcon-root"
                         data-testid="TurnedInTwoToneIcon"
                         focusable="false"
                         viewBox="0 0 24 24"
@@ -125,7 +125,7 @@ exports[`DashboardPage should match snapshot 1`] = `
                       </svg>
                     </div>
                     <div
-                      class="MuiTypography-root MuiTypography-h6 css-1miy0lu-MuiTypography-root"
+                      class="MuiTypography-root MuiTypography-h6 css-1beywob-MuiTypography-root"
                     >
                       Category A
                     </div>
@@ -156,7 +156,7 @@ exports[`DashboardPage should match snapshot 1`] = `
                   class="MuiBox-root css-1kcxdgd"
                 >
                   <a
-                    class="MuiTypography-root MuiTypography-body2 css-14btd25-MuiTypography-root"
+                    class="MuiTypography-root MuiTypography-body2 css-5t4rbn-MuiTypography-root"
                     data-discover="true"
                     href="/ui/entities/10/entries"
                   >
@@ -182,7 +182,7 @@ exports[`DashboardPage should match snapshot 1`] = `
                     >
                       <svg
                         aria-hidden="true"
-                        class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-l3h2k7-MuiSvgIcon-root"
+                        class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-pjjpww-MuiSvgIcon-root"
                         data-testid="TurnedInTwoToneIcon"
                         focusable="false"
                         viewBox="0 0 24 24"
@@ -197,7 +197,7 @@ exports[`DashboardPage should match snapshot 1`] = `
                       </svg>
                     </div>
                     <div
-                      class="MuiTypography-root MuiTypography-h6 css-1miy0lu-MuiTypography-root"
+                      class="MuiTypography-root MuiTypography-h6 css-1beywob-MuiTypography-root"
                     >
                       Category B
                     </div>
@@ -246,7 +246,7 @@ exports[`DashboardPage should match snapshot 1`] = `
                     >
                       <svg
                         aria-hidden="true"
-                        class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-l3h2k7-MuiSvgIcon-root"
+                        class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-pjjpww-MuiSvgIcon-root"
                         data-testid="TurnedInTwoToneIcon"
                         focusable="false"
                         viewBox="0 0 24 24"
@@ -261,7 +261,7 @@ exports[`DashboardPage should match snapshot 1`] = `
                       </svg>
                     </div>
                     <div
-                      class="MuiTypography-root MuiTypography-h6 css-1miy0lu-MuiTypography-root"
+                      class="MuiTypography-root MuiTypography-h6 css-1beywob-MuiTypography-root"
                     >
                       Category C
                     </div>
@@ -292,14 +292,14 @@ exports[`DashboardPage should match snapshot 1`] = `
                   class="MuiBox-root css-1kcxdgd"
                 >
                   <a
-                    class="MuiTypography-root MuiTypography-body2 css-14btd25-MuiTypography-root"
+                    class="MuiTypography-root MuiTypography-body2 css-5t4rbn-MuiTypography-root"
                     data-discover="true"
                     href="/ui/entities/20/entries"
                   >
                     Model 2
                   </a>
                   <a
-                    class="MuiTypography-root MuiTypography-body2 css-14btd25-MuiTypography-root"
+                    class="MuiTypography-root MuiTypography-body2 css-5t4rbn-MuiTypography-root"
                     data-discover="true"
                     href="/ui/entities/30/entries"
                   >
@@ -314,7 +314,7 @@ exports[`DashboardPage should match snapshot 1`] = `
             id="pagination"
           >
             <p
-              class="MuiTypography-root MuiTypography-body1 css-rizt0-MuiTypography-root"
+              class="MuiTypography-root MuiTypography-body1 css-1bpt55s-MuiTypography-root"
             >
               1 - 3 / 3 件
             </p>
@@ -331,7 +331,7 @@ exports[`DashboardPage should match snapshot 1`] = `
                   <li>
                     <button
                       aria-label="Go to previous page"
-                      class="MuiButtonBase-root Mui-disabled MuiPaginationItem-root MuiPaginationItem-sizeMedium MuiPaginationItem-text MuiPaginationItem-circular MuiPaginationItem-colorPrimary MuiPaginationItem-textPrimary Mui-disabled MuiPaginationItem-previousNext css-1bug3cd-MuiButtonBase-root-MuiPaginationItem-root"
+                      class="MuiButtonBase-root Mui-disabled MuiPaginationItem-root MuiPaginationItem-sizeMedium MuiPaginationItem-text MuiPaginationItem-circular MuiPaginationItem-colorPrimary MuiPaginationItem-textPrimary Mui-disabled MuiPaginationItem-previousNext css-17c1raq-MuiButtonBase-root-MuiPaginationItem-root"
                       disabled=""
                       tabindex="-1"
                       type="button"
@@ -353,7 +353,7 @@ exports[`DashboardPage should match snapshot 1`] = `
                     <button
                       aria-current="page"
                       aria-label="page 1"
-                      class="MuiButtonBase-root MuiPaginationItem-root MuiPaginationItem-sizeMedium MuiPaginationItem-text MuiPaginationItem-circular MuiPaginationItem-colorPrimary MuiPaginationItem-textPrimary Mui-selected MuiPaginationItem-page css-1bug3cd-MuiButtonBase-root-MuiPaginationItem-root"
+                      class="MuiButtonBase-root MuiPaginationItem-root MuiPaginationItem-sizeMedium MuiPaginationItem-text MuiPaginationItem-circular MuiPaginationItem-colorPrimary MuiPaginationItem-textPrimary Mui-selected MuiPaginationItem-page css-17c1raq-MuiButtonBase-root-MuiPaginationItem-root"
                       tabindex="0"
                       type="button"
                     >
@@ -363,7 +363,7 @@ exports[`DashboardPage should match snapshot 1`] = `
                   <li>
                     <button
                       aria-label="Go to next page"
-                      class="MuiButtonBase-root Mui-disabled MuiPaginationItem-root MuiPaginationItem-sizeMedium MuiPaginationItem-text MuiPaginationItem-circular MuiPaginationItem-colorPrimary MuiPaginationItem-textPrimary Mui-disabled MuiPaginationItem-previousNext css-1bug3cd-MuiButtonBase-root-MuiPaginationItem-root"
+                      class="MuiButtonBase-root Mui-disabled MuiPaginationItem-root MuiPaginationItem-sizeMedium MuiPaginationItem-text MuiPaginationItem-circular MuiPaginationItem-colorPrimary MuiPaginationItem-textPrimary Mui-disabled MuiPaginationItem-previousNext css-17c1raq-MuiButtonBase-root-MuiPaginationItem-root"
                       disabled=""
                       tabindex="-1"
                       type="button"
@@ -403,10 +403,10 @@ exports[`DashboardPage should match snapshot 1`] = `
             class="MuiBox-root css-1m3p9o7"
           >
             <div
-              class="MuiFormControl-root MuiFormControl-fullWidth MuiTextField-root css-14i0oaq-MuiFormControl-root-MuiTextField-root"
+              class="MuiFormControl-root MuiFormControl-fullWidth MuiTextField-root css-1pns9ah-MuiFormControl-root-MuiTextField-root"
             >
               <div
-                class="MuiInputBase-root MuiOutlinedInput-root MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl MuiInputBase-adornedStart css-ervgxf-MuiInputBase-root-MuiOutlinedInput-root"
+                class="MuiInputBase-root MuiOutlinedInput-root MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl MuiInputBase-adornedStart css-119zw6r-MuiInputBase-root-MuiOutlinedInput-root"
               >
                 <div
                   class="MuiInputAdornment-root MuiInputAdornment-positionStart MuiInputAdornment-outlined MuiInputAdornment-sizeMedium css-1nowbqt-MuiInputAdornment-root"
@@ -456,7 +456,7 @@ exports[`DashboardPage should match snapshot 1`] = `
             </div>
           </div>
           <a
-            class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedSecondary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorSecondary MuiButton-root MuiButton-contained MuiButton-containedSecondary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorSecondary css-1nhwi5v-MuiButtonBase-root-MuiButton-root"
+            class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedSecondary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorSecondary MuiButton-root MuiButton-contained MuiButton-containedSecondary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorSecondary css-cmovyp-MuiButtonBase-root-MuiButton-root"
             data-discover="true"
             href="/ui/categories/new"
             tabindex="0"
@@ -495,7 +495,7 @@ exports[`DashboardPage should match snapshot 1`] = `
                   >
                     <svg
                       aria-hidden="true"
-                      class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-l3h2k7-MuiSvgIcon-root"
+                      class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-pjjpww-MuiSvgIcon-root"
                       data-testid="TurnedInTwoToneIcon"
                       focusable="false"
                       viewBox="0 0 24 24"
@@ -510,7 +510,7 @@ exports[`DashboardPage should match snapshot 1`] = `
                     </svg>
                   </div>
                   <div
-                    class="MuiTypography-root MuiTypography-h6 css-1miy0lu-MuiTypography-root"
+                    class="MuiTypography-root MuiTypography-h6 css-1beywob-MuiTypography-root"
                   >
                     Category A
                   </div>
@@ -541,7 +541,7 @@ exports[`DashboardPage should match snapshot 1`] = `
                 class="MuiBox-root css-1kcxdgd"
               >
                 <a
-                  class="MuiTypography-root MuiTypography-body2 css-14btd25-MuiTypography-root"
+                  class="MuiTypography-root MuiTypography-body2 css-5t4rbn-MuiTypography-root"
                   data-discover="true"
                   href="/ui/entities/10/entries"
                 >
@@ -567,7 +567,7 @@ exports[`DashboardPage should match snapshot 1`] = `
                   >
                     <svg
                       aria-hidden="true"
-                      class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-l3h2k7-MuiSvgIcon-root"
+                      class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-pjjpww-MuiSvgIcon-root"
                       data-testid="TurnedInTwoToneIcon"
                       focusable="false"
                       viewBox="0 0 24 24"
@@ -582,7 +582,7 @@ exports[`DashboardPage should match snapshot 1`] = `
                     </svg>
                   </div>
                   <div
-                    class="MuiTypography-root MuiTypography-h6 css-1miy0lu-MuiTypography-root"
+                    class="MuiTypography-root MuiTypography-h6 css-1beywob-MuiTypography-root"
                   >
                     Category B
                   </div>
@@ -631,7 +631,7 @@ exports[`DashboardPage should match snapshot 1`] = `
                   >
                     <svg
                       aria-hidden="true"
-                      class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-l3h2k7-MuiSvgIcon-root"
+                      class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-pjjpww-MuiSvgIcon-root"
                       data-testid="TurnedInTwoToneIcon"
                       focusable="false"
                       viewBox="0 0 24 24"
@@ -646,7 +646,7 @@ exports[`DashboardPage should match snapshot 1`] = `
                     </svg>
                   </div>
                   <div
-                    class="MuiTypography-root MuiTypography-h6 css-1miy0lu-MuiTypography-root"
+                    class="MuiTypography-root MuiTypography-h6 css-1beywob-MuiTypography-root"
                   >
                     Category C
                   </div>
@@ -677,14 +677,14 @@ exports[`DashboardPage should match snapshot 1`] = `
                 class="MuiBox-root css-1kcxdgd"
               >
                 <a
-                  class="MuiTypography-root MuiTypography-body2 css-14btd25-MuiTypography-root"
+                  class="MuiTypography-root MuiTypography-body2 css-5t4rbn-MuiTypography-root"
                   data-discover="true"
                   href="/ui/entities/20/entries"
                 >
                   Model 2
                 </a>
                 <a
-                  class="MuiTypography-root MuiTypography-body2 css-14btd25-MuiTypography-root"
+                  class="MuiTypography-root MuiTypography-body2 css-5t4rbn-MuiTypography-root"
                   data-discover="true"
                   href="/ui/entities/30/entries"
                 >
@@ -699,7 +699,7 @@ exports[`DashboardPage should match snapshot 1`] = `
           id="pagination"
         >
           <p
-            class="MuiTypography-root MuiTypography-body1 css-rizt0-MuiTypography-root"
+            class="MuiTypography-root MuiTypography-body1 css-1bpt55s-MuiTypography-root"
           >
             1 - 3 / 3 件
           </p>
@@ -716,7 +716,7 @@ exports[`DashboardPage should match snapshot 1`] = `
                 <li>
                   <button
                     aria-label="Go to previous page"
-                    class="MuiButtonBase-root Mui-disabled MuiPaginationItem-root MuiPaginationItem-sizeMedium MuiPaginationItem-text MuiPaginationItem-circular MuiPaginationItem-colorPrimary MuiPaginationItem-textPrimary Mui-disabled MuiPaginationItem-previousNext css-1bug3cd-MuiButtonBase-root-MuiPaginationItem-root"
+                    class="MuiButtonBase-root Mui-disabled MuiPaginationItem-root MuiPaginationItem-sizeMedium MuiPaginationItem-text MuiPaginationItem-circular MuiPaginationItem-colorPrimary MuiPaginationItem-textPrimary Mui-disabled MuiPaginationItem-previousNext css-17c1raq-MuiButtonBase-root-MuiPaginationItem-root"
                     disabled=""
                     tabindex="-1"
                     type="button"
@@ -738,7 +738,7 @@ exports[`DashboardPage should match snapshot 1`] = `
                   <button
                     aria-current="page"
                     aria-label="page 1"
-                    class="MuiButtonBase-root MuiPaginationItem-root MuiPaginationItem-sizeMedium MuiPaginationItem-text MuiPaginationItem-circular MuiPaginationItem-colorPrimary MuiPaginationItem-textPrimary Mui-selected MuiPaginationItem-page css-1bug3cd-MuiButtonBase-root-MuiPaginationItem-root"
+                    class="MuiButtonBase-root MuiPaginationItem-root MuiPaginationItem-sizeMedium MuiPaginationItem-text MuiPaginationItem-circular MuiPaginationItem-colorPrimary MuiPaginationItem-textPrimary Mui-selected MuiPaginationItem-page css-17c1raq-MuiButtonBase-root-MuiPaginationItem-root"
                     tabindex="0"
                     type="button"
                   >
@@ -748,7 +748,7 @@ exports[`DashboardPage should match snapshot 1`] = `
                 <li>
                   <button
                     aria-label="Go to next page"
-                    class="MuiButtonBase-root Mui-disabled MuiPaginationItem-root MuiPaginationItem-sizeMedium MuiPaginationItem-text MuiPaginationItem-circular MuiPaginationItem-colorPrimary MuiPaginationItem-textPrimary Mui-disabled MuiPaginationItem-previousNext css-1bug3cd-MuiButtonBase-root-MuiPaginationItem-root"
+                    class="MuiButtonBase-root Mui-disabled MuiPaginationItem-root MuiPaginationItem-sizeMedium MuiPaginationItem-text MuiPaginationItem-circular MuiPaginationItem-colorPrimary MuiPaginationItem-textPrimary Mui-disabled MuiPaginationItem-previousNext css-17c1raq-MuiButtonBase-root-MuiPaginationItem-root"
                     disabled=""
                     tabindex="-1"
                     type="button"

@@ -1,9 +1,9 @@
-import { UserRetrieve } from "@dmm-com/airone-apiclient-typescript-fetch";
 import { Box, Button, Input, Modal, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { useSnackbar } from "notistack";
 import { FC, useCallback, useState } from "react";
 
+import { UserRetrieve } from "@dmm-com/airone-apiclient-typescript-fetch";
 import { aironeApiClient } from "repository/AironeApiClient";
 
 const StyledModal = styled(Modal)(({}) => ({
@@ -16,7 +16,7 @@ const Paper = styled(Box)(({ theme }) => ({
   display: "flex",
   flexDirection: "column",
   backgroundColor: theme.palette.background.paper,
-  border: "2px solid #000",
+  border: `2px solid ${theme.palette.divider}`,
   boxShadow: theme.shadows[5],
   padding: theme.spacing(2, 3, 1),
   width: "50%",

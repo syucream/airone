@@ -1,4 +1,3 @@
-import { EntityDetail } from "@dmm-com/airone-apiclient-typescript-fetch";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import KeyboardArrowUpRoundedIcon from "@mui/icons-material/KeyboardArrowUpRounded";
@@ -20,6 +19,7 @@ import { FC } from "react";
 import { Control, Controller, useFormState } from "react-hook-form";
 import { UseFormSetValue } from "react-hook-form/dist/types/form";
 
+import { EntityDetail } from "@dmm-com/airone-apiclient-typescript-fetch";
 import { AttributeValueField } from "components/entry/entryForm/AttributeValueField";
 import { Schema } from "components/entry/entryForm/EntryFormSchema";
 import { getStagedErrorStyle } from "utils/styleUtils";
@@ -41,12 +41,12 @@ const StyledTypography = styled(Typography)(({}) => ({
   flexGrow: 1,
 }));
 
-const HeaderTableRow = styled(TableRow)(({}) => ({
-  backgroundColor: "#455A64",
+const HeaderTableRow = styled(TableRow)(({ theme }) => ({
+  backgroundColor: theme.palette.tableHeader.background,
 }));
 
-const HeaderTableCell = styled(TableCell)(({}) => ({
-  color: "#FFFFFF",
+const HeaderTableCell = styled(TableCell)(({ theme }) => ({
+  color: theme.palette.tableHeader.text,
   width: "384px",
 }));
 
@@ -167,7 +167,7 @@ export const EntryForm: FC<EntryFormProps> = ({
                         {field.value && (
                           <CheckCircleIcon
                             sx={{
-                              color: "#4caf50",
+                              color: "success.main",
                               fontSize: 20,
                             }}
                           />
@@ -216,7 +216,7 @@ export const EntryForm: FC<EntryFormProps> = ({
                             {shouldShowCheck && (
                               <CheckCircleIcon
                                 sx={{
-                                  color: "#4caf50",
+                                  color: "success.main",
                                   fontSize: 20,
                                 }}
                               />

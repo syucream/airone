@@ -15,7 +15,7 @@ import {
 import { ExtendButtonBaseTypeMap } from "@mui/material/ButtonBase/ButtonBase";
 import { IconButtonTypeMap } from "@mui/material/IconButton/IconButton";
 import { OverridableComponent } from "@mui/material/OverridableComponent";
-import { styled } from "@mui/material/styles";
+import { styled, useTheme } from "@mui/material/styles";
 import { useSnackbar } from "notistack";
 import { FC, Suspense } from "react";
 import { Link, useNavigate } from "react-router";
@@ -41,6 +41,7 @@ const StyledIconButton = styled(IconButton)(({ theme }) => ({
 })) as OverridableComponent<ExtendButtonBaseTypeMap<IconButtonTypeMap>>;
 
 const RoleListContent: FC = () => {
+  const theme = useTheme();
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const { data: roles, mutate: refreshRoles } = usePagodaSWR(
@@ -70,12 +71,24 @@ const RoleListContent: FC = () => {
   return (
     <Table data-testid="RoleList">
       <TableHead>
-        <TableRow sx={{ backgroundColor: "#455A64" }}>
-          <TableCell sx={{ color: "#FFFFFF" }}>ロール</TableCell>
-          <TableCell sx={{ color: "#FFFFFF" }}>備考</TableCell>
-          <TableCell sx={{ color: "#FFFFFF" }}>登録ユーザ・グループ</TableCell>
-          <TableCell sx={{ color: "#FFFFFF" }}>削除</TableCell>
-          <TableCell sx={{ color: "#FFFFFF" }}>編集</TableCell>
+        <TableRow
+          sx={{ backgroundColor: theme.palette.tableHeader.background }}
+        >
+          <TableCell sx={{ color: theme.palette.tableHeader.text }}>
+            ロール
+          </TableCell>
+          <TableCell sx={{ color: theme.palette.tableHeader.text }}>
+            備考
+          </TableCell>
+          <TableCell sx={{ color: theme.palette.tableHeader.text }}>
+            登録ユーザ・グループ
+          </TableCell>
+          <TableCell sx={{ color: theme.palette.tableHeader.text }}>
+            削除
+          </TableCell>
+          <TableCell sx={{ color: theme.palette.tableHeader.text }}>
+            編集
+          </TableCell>
         </TableRow>
       </TableHead>
       <TableBody>
@@ -109,7 +122,8 @@ const RoleListContent: FC = () => {
                         mx="4px"
                         sx={{
                           color: "white",
-                          backgroundColor: "#0000008A",
+                          backgroundColor:
+                            theme.palette.action.disabledBackground,
                           borderRadius: "12px",
                         }}
                       >
@@ -129,7 +143,8 @@ const RoleListContent: FC = () => {
                         mx="4px"
                         sx={{
                           color: "white",
-                          backgroundColor: "#0000008A",
+                          backgroundColor:
+                            theme.palette.action.disabledBackground,
                           borderRadius: "12px",
                         }}
                       >

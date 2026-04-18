@@ -49,20 +49,20 @@ export const SchemaValidationErrorPage: FC<Props> = ({
       p={4}
     >
       <Box display="flex" my="32px" alignItems="center" gap={2}>
-        <ErrorOutlineIcon sx={{ fontSize: 48, color: "#B0BEC5" }} />
-        <Typography variant="h4" color="#B0BEC5" fontWeight="bold">
+        <ErrorOutlineIcon sx={{ fontSize: 48, color: "text.disabled" }} />
+        <Typography variant="h4" color="text.disabled" fontWeight="bold">
           Entity Schema Mismatch
         </Typography>
       </Box>
 
       <Box display="flex" flexDirection="column" alignItems="center" mb={3}>
-        <Typography color="#455A64" paragraph>
+        <Typography color="text.secondary" paragraph>
           {entityName
             ? `The entity "${entityName}" does not meet the requirements defined by the plugin.`
             : "This entity does not meet the plugin's requirements."}
         </Typography>
         {pluginName && (
-          <Typography color="#455A64" variant="body2">
+          <Typography color="text.secondary" variant="body2">
             Plugin: {pluginName}
           </Typography>
         )}
@@ -96,7 +96,7 @@ export const SchemaValidationErrorPage: FC<Props> = ({
       </Card>
 
       <Box display="flex" flexDirection="column" alignItems="center">
-        <Typography color="#455A64" variant="body2" paragraph>
+        <Typography color="text.secondary" variant="body2" paragraph>
           To use this plugin, ensure the entity has the required attributes with
           correct types.
         </Typography>
