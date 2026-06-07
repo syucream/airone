@@ -52,11 +52,12 @@ class JobSerializers(serializers.ModelSerializer):
                     obj.target.id
                 )
                 if not sub:
-                    sub = (
+                    sub = dict(
                         Entry.objects.filter(id=obj.target.id)
                         .select_related("schema")
                         .values("id", "name", "schema__id", "schema__name")
                         .first()
+                        or {}
                     )
                 return {
                     "id": sub["id"],

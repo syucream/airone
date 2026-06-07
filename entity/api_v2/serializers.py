@@ -5,7 +5,7 @@ import json
 import math
 import re
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, List, Optional, Self, TypedDict
+from typing import TYPE_CHECKING, Any, List, Optional, Self, TypedDict, cast
 
 if TYPE_CHECKING:
     from airone.lib.resources import AironeModelResource
@@ -162,7 +162,9 @@ class WebhookCreateUpdateSerializer(serializers.ModelSerializer):
         extra_kwargs = {"url": {"required": False}}
 
     def validate_id(self, id: Optional[int]) -> Optional[int]:
-        entity: Entity = self.parent.parent.instance
+        assert self.parent is not None and self.parent.parent is not None
+        entity = self.parent.parent.instance
+        assert isinstance(entity, Entity)
         if id is not None and not entity.webhooks.filter(id=id).exists():
             raise ObjectNotExistsError("Invalid id(%s) object does not exist" % id)
 
@@ -349,7 +351,9 @@ class EntityAttrUpdateSerializer(serializers.ModelSerializer):
             return id
 
         # Normal case when used as nested serializer
-        entity: Entity = self.parent.parent.instance
+        assert self.parent is not None and self.parent.parent is not None
+        entity = self.parent.parent.instance
+        assert isinstance(entity, Entity)
         nested_entity_attr: Optional[EntityAttr] = entity.attrs.filter(
             id=id, is_active=True
         ).first()
@@ -656,7 +660,7 @@ class EntitySerializer(serializers.ModelSerializer):
         validated_data: EntityCreateData | EntityUpdateData,
     ) -> Entity:
         attrs_data: list[Any] = validated_data.get("attrs", [])
-        webhooks_data: list[Any] = validated_data.get("webhooks", [])
+        webhooks_data: list[Any] = cast(list[Any], validated_data.get("webhooks", []))
         isolation_rules_data: list[Any] = validated_data.get("isolation_rules", [])
         exclude_entity_ids: list[int] | None = validated_data.get(
             "delete_chain_exclude_entities", None
@@ -712,7 +716,8 @@ class EntitySerializer(serializers.ModelSerializer):
             # set referrals if necessary
             if entity_attr.type & AttrType.OBJECT:
                 entity_attr.referral_clear()
-                [entity_attr.referral.add(x) for x in attr_referrals]
+                for x in attr_referrals:
+                    entity_attr.referral.add(x)
 
             # register history to create, update EntityAttr
             if is_created_attr:
@@ -868,12 +873,15 @@ class EntityCreateSerializer(EntitySerializer):
                 "before_create_entity_v2", None, user, validated_data
             )
 
+        name_val = validated_data.get("name")
+        if name_val is None:
+            raise RequiredParameterError("name is required")
         entity = Entity.objects.create(
-            name=validated_data.get("name"),
+            name=name_val,
             note=validated_data.get("note", ""),
             item_name_pattern=validated_data.get("item_name_pattern", ""),
             item_name_type=validated_data.get("item_name_type", ""),
-            created_user=validated_data.get("created_user"),
+            created_user=user,
         )
 
         # set status parameters
@@ -925,18 +933,19 @@ class EntityUpdateSerializer(EntitySerializer):
         extra_kwargs = {"name": {"required": False}, "note": {"write_only": True}}
 
     def validate_name(self, name: str) -> str:
-        if self.instance.name != name and Entity.objects.filter(name=name, is_active=True).exists():
+        instance = self.instance
+        assert isinstance(instance, Entity)
+        if instance.name != name and Entity.objects.filter(name=name, is_active=True).exists():
             raise DuplicatedObjectExistsError("Duplication error. There is same named Entity")
 
         return name
 
-    def validate_attrs(
-        self, attrs: list[EntityAttrUpdateSerializer]
-    ) -> list[EntityAttrUpdateSerializer]:
-        entity: Entity = self.instance
+    def validate_attrs(self, attrs: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        entity = self.instance
+        assert isinstance(entity, Entity)
 
         # duplication checks
-        attr_names = {}
+        attr_names: dict[int, str] = {}
         for current_attr in entity.attrs.filter(is_active=True):
             attr_names[current_attr.id] = current_attr.name
 
@@ -958,7 +967,8 @@ class EntityUpdateSerializer(EntitySerializer):
     def validate_webhooks(
         self, webhooks: list[WebhookCreateUpdateSerializer]
     ) -> list[WebhookCreateUpdateSerializer]:
-        entity: Entity = self.instance
+        entity = self.instance
+        assert isinstance(entity, Entity)
 
         # deny changing webhooks if its disabled
         if not settings.AIRONE_FLAGS["WEBHOOK"]:
@@ -985,21 +995,21 @@ class EntityUpdateSerializer(EntitySerializer):
         # record history for specific fields on update
         updated_fields: list[str] = []
         if "name" in validated_data and entity.name != validated_data.get("name"):
-            entity.name = validated_data.get("name")
+            entity.name = validated_data.get("name") or ""
             updated_fields.append("name")
         if "note" in validated_data and entity.note != validated_data.get("note"):
-            entity.note = validated_data.get("note")
+            entity.note = validated_data.get("note") or ""
             updated_fields.append("note")
         if "item_name_pattern" in validated_data and entity.item_name_pattern != validated_data.get(
             "item_name_pattern"
         ):
-            entity.item_name_pattern = validated_data.get("item_name_pattern")
+            entity.item_name_pattern = validated_data.get("item_name_pattern") or ""
             updated_fields.append("item_name_pattern")
 
         if "item_name_type" in validated_data and entity.item_name_type != validated_data.get(
             "item_name_type"
         ):
-            entity.item_name_type = validated_data.get("item_name_type")
+            entity.item_name_type = validated_data.get("item_name_type") or ""
             updated_fields.append("item_name_type")
         if len(updated_fields) > 0:
             entity.save(update_fields=updated_fields)
@@ -1413,7 +1423,10 @@ class EntityImportExportRootSerializer(serializers.Serializer):
     EntityAttr = EntityAttrImportExportSerializer(many=True)
 
     def save(self, **kwargs: object) -> None:
-        user: User = self.context.get("request").user
+        request = self.context.get("request")
+        assert request is not None
+        assert isinstance(request.user, User)
+        user: User = request.user
 
         def _do_import(
             resource: type[AironeModelResource], iter_data: list[dict[str, Any]]

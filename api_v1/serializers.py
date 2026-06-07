@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any
+from typing import Any, cast
 
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -122,9 +122,9 @@ class PostEntrySerializer(serializers.Serializer):
                 value["id"] = None
             else:
                 entryset = [
-                    get_entry(r, value["id"])
+                    get_entry(cast(Entity, r), value["id"])
                     for r in attr.referral.all()
-                    if is_entry(r, value["id"])
+                    if is_entry(cast(Entity, r), value["id"])
                 ]
 
                 # It means that there is no entry which is matched specified reference
@@ -158,7 +158,11 @@ class PostEntrySerializer(serializers.Serializer):
             elif attr.type & AttrType.OBJECT:
                 return sum(
                     [
-                        [get_entry(r, v) for r in attr.referral.all() if is_entry(r, v)]
+                        [
+                            get_entry(cast(Entity, r), v)
+                            for r in attr.referral.all()
+                            if is_entry(cast(Entity, r), v)
+                        ]
                         for v in value
                     ],
                     [],
@@ -192,7 +196,11 @@ class PostEntrySerializer(serializers.Serializer):
                 return 0
 
             if isinstance(value, str):
-                entryset = [get_entry(x, value) for x in attr.referral.all() if is_entry(x, value)]
+                entryset = [
+                    get_entry(cast(Entity, x), value)
+                    for x in attr.referral.all()
+                    if is_entry(cast(Entity, x), value)
+                ]
                 if any(entryset):
                     return entryset[0]
 

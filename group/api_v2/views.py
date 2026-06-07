@@ -1,3 +1,5 @@
+from typing import Any, cast
+
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
 from rest_framework import filters, generics, serializers, status, viewsets
@@ -21,18 +23,18 @@ from user.models import User
 
 class UserPermission(BasePermission):
     def has_object_permission(self, request: Request, view: APIView, obj: User) -> bool:
-        current_user: User = request.user
+        current_user = cast(User, request.user)
         permisson = {
             "retrieve": True,
             "destroy": current_user.is_superuser,
             "create": current_user.is_superuser,
             "update": current_user.is_superuser,
         }
-        return permisson.get(view.action, False)
+        return permisson.get(getattr(view, "action", ""), False)
 
 
 class GroupAPI(viewsets.ModelViewSet):
-    queryset = Group.objects.filter(is_active=True)
+    queryset = Group.objects.filter(is_active=True)  # type: ignore[misc]
     permission_classes = [IsAuthenticated & UserPermission]
     pagination_class = PageNumberPagination
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
@@ -40,7 +42,7 @@ class GroupAPI(viewsets.ModelViewSet):
     search_fields = ["name"]
 
     def get_serializer_class(self) -> type[serializers.Serializer]:
-        serializer = {
+        serializer: dict[str, type[serializers.Serializer]] = {
             "create": GroupCreateUpdateSerializer,
             "update": GroupCreateUpdateSerializer,
             "destroy": serializers.Serializer,
@@ -49,7 +51,7 @@ class GroupAPI(viewsets.ModelViewSet):
 
 
 class GroupTreeAPI(viewsets.ReadOnlyModelViewSet):
-    queryset = Group.objects.filter(parent_group__isnull=True, is_active=True)
+    queryset = Group.objects.filter(parent_group__isnull=True, is_active=True)  # type: ignore[misc]
     serializer_class = GroupTreeSerializer
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
     ordering = ["name"]
@@ -62,7 +64,7 @@ class GroupImportAPI(generics.GenericAPIView):
 
     @extend_schema(responses={200: None})
     def post(self, request: Request) -> Response:
-        import_datas = request.data
+        import_datas: list[dict[str, Any]] = cast(list[dict[str, Any]], request.data)
         serializer = GroupImportSerializer(data=import_datas, many=True)
         serializer.is_valid(raise_exception=True)
 
@@ -70,7 +72,9 @@ class GroupImportAPI(generics.GenericAPIView):
         for group_data in import_datas:
             if "id" in group_data:
                 # update group by id
-                group: Group | None = Group.objects.filter(id=group_data["id"]).first()
+                group: Group | None = cast(
+                    Group | None, Group.objects.filter(id=group_data["id"]).first()
+                )
                 if not group:
                     return Response(
                         "Specified id group does not exist(id:%s, group:%s)"
@@ -92,7 +96,7 @@ class GroupImportAPI(generics.GenericAPIView):
                 group.save()
             else:
                 # update group by name
-                group = Group.objects.filter(name=group_data["name"]).first()
+                group = cast(Group | None, Group.objects.filter(name=group_data["name"]).first())
                 if not group:
                     # create group
                     group = Group(name=group_data["name"])
@@ -102,6 +106,6 @@ class GroupImportAPI(generics.GenericAPIView):
 
 
 class GroupExportAPI(generics.ListAPIView):
-    queryset = Group.objects.filter(is_active=True)
+    queryset = Group.objects.filter(is_active=True)  # type: ignore[misc]
     serializer_class = GroupExportSerializer
     renderer_classes = [YAMLRenderer]

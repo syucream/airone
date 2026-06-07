@@ -34,6 +34,7 @@ class ReferSerializer(serializers.Serializer):
 
     def validate(self, data: dict[str, Any]) -> dict[str, Any]:
         entity = Entity.objects.filter(name=data["entity"], is_active=True).first()
+        assert entity is not None
         data["entity_id"] = entity.id
         return data
 
@@ -93,7 +94,7 @@ class EntrySearchChainSerializer(serializers.Serializer):
             # This validates whethere it is possible that Entity has specified Attribute
             if not any(
                 [
-                    EntityAttr.objects.filter(name=attrname, is_active=True, parent_entity__pk=x)
+                    EntityAttr.objects.filter(name=attrname, is_active=True, parent_entity__pk=x.pk)
                     for x in entities
                 ]
             ):
@@ -104,7 +105,7 @@ class EntrySearchChainSerializer(serializers.Serializer):
                 entity_ids = []
                 for entity in entities:
                     entity_attr = EntityAttr.objects.filter(
-                        name=condition["name"], is_active=True, parent_entity__pk=entity
+                        name=condition["name"], is_active=True, parent_entity__pk=entity.pk
                     ).first()
                     if entity_attr:
                         # complements Entity IDs that this condition implicitly expects
@@ -125,7 +126,7 @@ class EntrySearchChainSerializer(serializers.Serializer):
             if not entities:
                 raise ValidationError("Condition(%s) couldn't find valid Entities" % str(condition))
 
-            validated_data = serializer.validated_data
+            validated_data: dict[str, Any] = serializer.validated_data
             if "name" in validated_data:
                 _validate_attribute(validated_data["name"], entities)
 

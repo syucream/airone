@@ -322,6 +322,9 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
         if password1 != password2:
             raise ValidationError("passwords do not match")
 
+        if password1 is None:
+            raise ValidationError("password is required")
+
         try:
             password_validation.validate_password(password1)
         except DjangoCoreValidationError as e:

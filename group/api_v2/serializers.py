@@ -1,5 +1,6 @@
 from typing import Any, TypedDict
 
+from django.db.models import QuerySet
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
@@ -109,7 +110,9 @@ class GroupTreeSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(serializers.ListField(child=serializers.DictField()))
     def get_children(self, obj: Group) -> list[dict[str, object]]:
-        def _make_hierarchical_group(groups: list[Group]) -> list[dict[str, object]]:
+        def _make_hierarchical_group(
+            groups: "QuerySet[Group] | list[Group]",
+        ) -> list[dict[str, object]]:
             return [
                 {
                     "id": g.id,

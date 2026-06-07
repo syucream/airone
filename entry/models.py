@@ -604,7 +604,7 @@ class Attribute(ACLBase):
                 # the case that first value is 'False' at the boolean typed parameter
                 return True
             else:
-                return recv_value
+                return bool(recv_value)
 
         # Self-heal: when the invariant "exactly one AttributeValue with
         # is_latest=True" has been broken (e.g. by a race between concurrent
@@ -624,7 +624,7 @@ class Attribute(ACLBase):
                     # in the latest AttributeValue
                     return bool(last_value.value)
                 else:
-                    return last_value.value != recv_value
+                    return bool(last_value.value != recv_value)
 
             case AttrType.OBJECT:
                 # formalize recv_value type
@@ -749,7 +749,7 @@ class Attribute(ACLBase):
                     except ValueError:
                         return last_value.date is not None
 
-                return last_value.date != recv_value
+                return bool(last_value.date != recv_value)
 
             case AttrType.DATETIME:
                 if isinstance(recv_value, str):
@@ -758,7 +758,7 @@ class Attribute(ACLBase):
                     except ValueError:
                         return last_value.datetime is not None
 
-                return last_value.datetime != recv_value
+                return bool(last_value.datetime != recv_value)
 
             case AttrType.NAMED_OBJECT:
                 # the case that specified value is empty or invalid
@@ -2896,30 +2896,35 @@ class PrefetchedItemWrapper(object):
 
     @property
     def item(self) -> Entry:
-        return self.pi
+        item: Entry = self.pi
+        return item
 
     @property
     def value(self) -> str:
         if self.attrv is not None:
-            return self.attrv.value
+            v: str = self.attrv.value
+            return v
         return ""
 
     @property
     def boolean(self) -> bool:
         if self.attrv is not None:
-            return self.attrv.boolean
+            b: bool = self.attrv.boolean
+            return b
         return False
 
     @property
     def date(self) -> date | None:
         if self.attrv is not None:
-            return self.attrv.date
+            d: date | None = self.attrv.date
+            return d
         return None
 
     @property
     def datetime(self) -> datetime | None:
         if self.attrv is not None:
-            return self.attrv.datetime
+            dt: datetime | None = self.attrv.datetime
+            return dt
         return None
 
 

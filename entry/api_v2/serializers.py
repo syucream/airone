@@ -1,6 +1,6 @@
 import re
 from datetime import date, datetime
-from typing import Any, Dict, List, Literal, Union
+from typing import Any, Dict, List, Literal, Union, cast
 
 from django.db.models import Prefetch, QuerySet
 from drf_spectacular.types import OpenApiTypes
@@ -490,7 +490,7 @@ class EntryCreateData(TypedDict, total=False):
 
 @extend_schema_serializer(exclude_fields=["schema"])
 class EntryCreateSerializer(EntryBaseSerializer):
-    schema = serializers.PrimaryKeyRelatedField(
+    schema = serializers.PrimaryKeyRelatedField(  # type: ignore[assignment]
         queryset=Entity.objects.all(), write_only=True, required=True
     )
     attrs = serializers.ListField(child=AttributeDataSerializer(), write_only=True, required=False)
@@ -523,7 +523,7 @@ class EntryCreateSerializer(EntryBaseSerializer):
         entry: Entry = Entry(**validated_data, status=Entry.STATUS_CREATING)
 
         # for history record
-        entry._history_user = user
+        entry._history_user = user  # type: ignore[attr-defined]
 
         entry.save()
 
@@ -603,9 +603,9 @@ class EntryUpdateSerializer(EntryBaseSerializer):
         }
 
     def validate(self, params: dict[str, Any]) -> dict[str, Any]:
-        self._validate(
-            self.instance.schema, params.get("name", self.instance.name), params.get("attrs", [])
-        )
+        assert self.instance is not None
+        instance = cast(Entry, self.instance)
+        self._validate(instance.schema, params.get("name", instance.name), params.get("attrs", []))
         return params
 
     def update(self, entry: Entry, validated_data: EntryUpdateData) -> Entry:
@@ -620,7 +620,7 @@ class EntryUpdateSerializer(EntryBaseSerializer):
             raise RequiredParameterError("user is required")
 
         # for history record
-        entry._history_user = user
+        entry._history_user = user  # type: ignore[attr-defined]
 
         entity_name = entry.schema.name
         if custom_view.is_custom("before_update_entry_v2", entity_name):
@@ -647,7 +647,7 @@ class EntryUpdateSerializer(EntryBaseSerializer):
             job_register_referrals = Job.new_register_referrals(user, entry)
 
         for entity_attr in entry.schema.attrs.filter(is_active=True):
-            attr: Attribute = entry.attrs.filter(schema=entity_attr, is_active=True).first()
+            attr: Attribute | None = entry.attrs.filter(schema=entity_attr, is_active=True).first()
             if not attr:
                 attr = entry.add_attribute_from_base(entity_attr, user)
 
@@ -736,7 +736,8 @@ class EntryRetrieveSerializer(EntryBaseSerializer):
     @extend_schema_field(serializers.ListField(child=EntryAttributeTypeSerializer()))
     def get_attrs(self, obj: Entry) -> list[EntryAttributeType]:
         def get_attr_value(attr: Attribute) -> EntryAttributeValue:
-            attrv = attr.attrv_list[0] if len(attr.attrv_list) > 0 else None
+            attrv_list: list[AttributeValue] = getattr(attr, "attrv_list", [])
+            attrv = attrv_list[0] if len(attrv_list) > 0 else None
 
             if not attrv:
                 return {}
@@ -805,6 +806,7 @@ class EntryRetrieveSerializer(EntryBaseSerializer):
                                 "name": group.name,
                             }
                             for group in groups
+                            if group is not None
                         ]
                     }
 
@@ -817,6 +819,7 @@ class EntryRetrieveSerializer(EntryBaseSerializer):
                                 "name": role.name,
                             }
                             for role in roles
+                            if role is not None
                         ]
                     }
 
@@ -863,7 +866,7 @@ class EntryRetrieveSerializer(EntryBaseSerializer):
                     return {"as_number": val}
 
                 case AttrType.DATE:
-                    return {"as_string": attrv.date if attrv.date else ""}
+                    return {"as_string": str(attrv.date) if attrv.date else ""}
 
                 case AttrType.GROUP if attrv.group:
                     return {
@@ -882,7 +885,7 @@ class EntryRetrieveSerializer(EntryBaseSerializer):
                     }
 
                 case AttrType.DATETIME:
-                    return {"as_string": attrv.datetime if attrv.datetime else ""}
+                    return {"as_string": str(attrv.datetime) if attrv.datetime else ""}
 
                 case _:
                     return {}
@@ -1015,7 +1018,7 @@ class EntryCopySerializer(serializers.Serializer):
         fields = "copy_entry_names"
 
     def validate_copy_entry_names(self, copy_entry_names: list[str]) -> list[str]:
-        entry: Entry = self.instance
+        entry: Entry = cast(Entry, self.instance)
         duplicated_entries = Entry.objects.filter(
             name__in=copy_entry_names, schema=entry.schema, is_active=True
         )
@@ -1125,7 +1128,9 @@ class EntryImportEntitySerializer(serializers.Serializer):
 
             def _group(val: str) -> int | None:
                 if val:
-                    ref_group: Group | None = Group.objects.filter(name=val).first()
+                    ref_group: Group | None = Group.objects.filter(  # type: ignore[assignment]
+                        name=val
+                    ).first()
                     return ref_group.id if ref_group else 0
                 return None
 
@@ -1335,6 +1340,7 @@ class EntryHistoryAttributeValueSerializer(serializers.ModelSerializer):
                             "name": group.name,
                         }
                         for group in groups
+                        if group is not None
                     ]
                 }
 
@@ -1347,6 +1353,7 @@ class EntryHistoryAttributeValueSerializer(serializers.ModelSerializer):
                             "name": role.name,
                         }
                         for role in roles
+                        if role is not None
                     ]
                 }
 
@@ -1357,7 +1364,7 @@ class EntryHistoryAttributeValueSerializer(serializers.ModelSerializer):
                 return {"as_boolean": obj.boolean}
 
             case AttrType.DATE:
-                return {"as_string": obj.date if obj.date else ""}
+                return {"as_string": str(obj.date) if obj.date else ""}
 
             case AttrType.OBJECT:
                 return {
@@ -1412,7 +1419,7 @@ class EntryHistoryAttributeValueSerializer(serializers.ModelSerializer):
                 }
 
             case AttrType.DATETIME:
-                return {"as_string": obj.datetime if obj.datetime else ""}
+                return {"as_string": str(obj.datetime) if obj.datetime else ""}
 
             case AttrType.NUMBER:
                 return {"as_number": obj.get_value()}
@@ -1444,7 +1451,8 @@ class EntryHistoryAttributeValueSerializer(serializers.ModelSerializer):
         if hasattr(obj, "_prefetched_previous_value"):
             prev_value = obj._prefetched_previous_value
             if prev_value:
-                return prev_value.id
+                prev_id: int = prev_value.id
+                return prev_id
             return None
 
         # Fallback to the original method if not prefetched
