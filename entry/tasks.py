@@ -1,8 +1,9 @@
 import csv
 import io
 import json
+from collections.abc import Callable
 from datetime import date, datetime
-from typing import Any, Callable, List, TypeAlias
+from typing import Any
 
 import yaml
 from celery import Task
@@ -60,7 +61,7 @@ from user.models import User
 # A single pre-serialization attribute value handed to the YAML exporter: an
 # object/named-object dict, a scalar, or None. Array values are unwrapped one
 # level up (in _get_attr_value) before reaching the primitive helper.
-ExportPrimitiveInput: TypeAlias = dict[str, Any] | str | int | float | date | datetime | bool | None
+type ExportPrimitiveInput = dict[str, Any] | str | int | float | date | datetime | bool | None
 
 
 def _merge_referrals_by_index(
@@ -336,7 +337,7 @@ def _yaml_export_v2(
                 assert not isinstance(value, list)
                 return _get_attr_primitive_value(atype, value)
 
-    resp_data: List[ExportedEntityEntries] = []
+    resp_data: list[ExportedEntityEntries] = []
     for index, entry_info in enumerate(values):
         data = ExportedEntry(
             id=entry_info.entry["id"],
@@ -394,7 +395,7 @@ def _yaml_export_v2(
 
 
 @register_job_task(JobOperation.CREATE_ENTRY)
-@app.task(bind=True)  # type: ignore[misc]
+@app.task(bind=True)
 @may_schedule_until_job_is_ready_with_handlers(
     on_cancelled=lambda job: (
         Entry.objects.filter(id=job.target.id, is_active=True).first().delete()
@@ -468,7 +469,7 @@ def create_entry_attrs(self: Task, job: Job) -> JobStatus | None:
 
 
 @register_job_task(JobOperation.EDIT_ENTRY)
-@app.task(bind=True)  # type: ignore[misc]
+@app.task(bind=True)
 @may_schedule_until_job_is_ready
 def edit_entry_attrs(self: Task, job: Job) -> JobStatus:
     user = User.objects.get(id=job.user.id)
@@ -522,7 +523,7 @@ def edit_entry_attrs(self: Task, job: Job) -> JobStatus:
 
 
 @register_job_task(JobOperation.DELETE_ENTRY)
-@app.task(bind=True)  # type: ignore[misc]
+@app.task(bind=True)
 @may_schedule_until_job_is_ready
 def delete_entry(self: Task, job: Job) -> JobStatus:
     entry = Entry.objects.get(id=job.target.id)
@@ -543,7 +544,7 @@ def delete_entry(self: Task, job: Job) -> JobStatus:
 
 
 @register_job_task(JobOperation.RESTORE_ENTRY)
-@app.task(bind=True)  # type: ignore[misc]
+@app.task(bind=True)
 @may_schedule_until_job_is_ready
 def restore_entry(self: Task, job: Job) -> JobStatus:
     entry = Entry.objects.get(id=job.target.id)
@@ -568,7 +569,7 @@ def restore_entry(self: Task, job: Job) -> JobStatus:
 
 
 @register_job_task(JobOperation.COPY_ENTRY)
-@app.task(bind=True)  # type: ignore[misc]
+@app.task(bind=True)
 @may_schedule_until_job_is_ready
 def copy_entry(self: Task, job: Job) -> tuple[JobStatus, str, None] | None:
     src_entry = Entry.objects.get(id=job.target.id)
@@ -594,7 +595,7 @@ def copy_entry(self: Task, job: Job) -> tuple[JobStatus, str, None] | None:
 
 
 @register_job_task(JobOperation.DO_COPY_ENTRY)
-@app.task(bind=True)  # type: ignore[misc]
+@app.task(bind=True)
 @may_schedule_until_job_is_ready
 def do_copy_entry(self: Task, job: Job) -> tuple[JobStatus, str, None]:
     src_entry = Entry.objects.get(id=job.target.id)
@@ -636,7 +637,7 @@ def do_copy_entry(self: Task, job: Job) -> tuple[JobStatus, str, None]:
 
 
 @register_job_task(JobOperation.IMPORT_ENTRY)
-@app.task(bind=True)  # type: ignore[misc]
+@app.task(bind=True)
 @may_schedule_until_job_is_ready
 def import_entries(self: Task, job: Job) -> tuple[JobStatus, str, None] | None:
     try:
@@ -648,7 +649,7 @@ def import_entries(self: Task, job: Job) -> tuple[JobStatus, str, None] | None:
 
 
 @register_job_task(JobOperation.IMPORT_ENTRY_V2)
-@app.task(bind=True)  # type: ignore[misc]
+@app.task(bind=True)
 @may_schedule_until_job_is_ready
 def import_entries_v2(self: Task, job: Job) -> tuple[JobStatus, str, None] | None:
     user: User = job.user
@@ -706,7 +707,7 @@ def import_entries_v2(self: Task, job: Job) -> tuple[JobStatus, str, None] | Non
 
 
 @register_job_task(JobOperation.EXPORT_ENTRY)
-@app.task(bind=True)  # type: ignore[misc]
+@app.task(bind=True)
 @may_schedule_until_job_is_ready
 def export_entries(self: Task, job: Job) -> None:
     user = job.user
@@ -772,7 +773,7 @@ def export_entries(self: Task, job: Job) -> None:
 
 
 @register_job_task(JobOperation.EXPORT_ENTRY_V2)
-@app.task(bind=True)  # type: ignore[misc]
+@app.task(bind=True)
 @may_schedule_until_job_is_ready
 def export_entries_v2(self: Task, job: Job) -> None:
     user = job.user
@@ -923,7 +924,7 @@ def _csv_export_v2(
 
 
 @register_job_task(JobOperation.EXPORT_SEARCH_RESULT_V2)
-@app.task(bind=True)  # type: ignore[misc]
+@app.task(bind=True)
 @may_schedule_until_job_is_ready
 def export_search_result_v2(self: Any, job: Job) -> tuple[JobStatus, str, ACLBase | None] | None:
     user = job.user
@@ -996,13 +997,14 @@ def export_search_result_v2(self: Any, job: Job) -> tuple[JobStatus, str, ACLBas
 
 
 @register_job_task(JobOperation.REGISTER_REFERRALS)
-@app.task(bind=True)  # type: ignore[misc]
+@app.task(bind=True)
 @may_schedule_until_job_is_ready
 def register_referrals(self: Task, job: Job) -> None:
     # register entries data which refer target entry to elasticsearch
     entry = Entry.objects.filter(id=job.target.id, is_active=True).first()
     if entry:
-        [r.register_es() for r in entry.get_referred_objects()]
+        for r in entry.get_referred_objects():
+            r.register_es()
 
 
 def _notify_event(
@@ -1020,7 +1022,7 @@ def _notify_event(
 
 
 @register_job_task(JobOperation.UPDATE_DOCUMENT)
-@app.task(bind=True)  # type: ignore[misc]
+@app.task(bind=True)
 @may_schedule_until_job_is_ready
 def update_es_documents(self: Task, job: Job) -> JobStatus:
     params = json.loads(job.params)
@@ -1032,28 +1034,28 @@ def update_es_documents(self: Task, job: Job) -> JobStatus:
 
 
 @register_job_task(JobOperation.NOTIFY_CREATE_ENTRY)
-@app.task(bind=True)  # type: ignore[misc]
+@app.task(bind=True)
 @may_schedule_until_job_is_ready
 def notify_create_entry(self: Task, job: Job) -> tuple[JobStatus, str, None] | None:
     return _notify_event(notify_entry_create, job.target.id, job.user)
 
 
 @register_job_task(JobOperation.NOTIFY_UPDATE_ENTRY)
-@app.task(bind=True)  # type: ignore[misc]
+@app.task(bind=True)
 @may_schedule_until_job_is_ready
 def notify_update_entry(self: Task, job: Job) -> tuple[JobStatus, str, None] | None:
     return _notify_event(notify_entry_update, job.target.id, job.user)
 
 
 @register_job_task(JobOperation.NOTIFY_DELETE_ENTRY)
-@app.task(bind=True)  # type: ignore[misc]
+@app.task(bind=True)
 @may_schedule_until_job_is_ready
 def notify_delete_entry(self: Task, job: Job) -> tuple[JobStatus, str, None] | None:
     return _notify_event(notify_entry_delete, job.target.id, job.user)
 
 
 @register_job_task(JobOperation.CREATE_ENTRY_V2)
-@app.task(bind=True)  # type: ignore[misc]
+@app.task(bind=True)
 @may_schedule_until_job_is_ready
 def create_entry_v2(self: Task, job: Job) -> JobStatus:
     serializer = EntryCreateSerializer(data=json.loads(job.params), context={"_user": job.user})
@@ -1074,7 +1076,7 @@ def create_entry_v2(self: Task, job: Job) -> JobStatus:
 
 
 @register_job_task(JobOperation.EDIT_ENTRY_V2)
-@app.task(bind=True)  # type: ignore[misc]
+@app.task(bind=True)
 @may_schedule_until_job_is_ready
 def edit_entry_v2(self: Task, job: Job) -> JobStatus:
     entry: Entry | None = Entry.objects.filter(id=job.target.id, is_active=True).first()
@@ -1093,7 +1095,7 @@ def edit_entry_v2(self: Task, job: Job) -> JobStatus:
 
 
 @register_job_task(JobOperation.DELETE_ENTRY_V2)
-@app.task(bind=True)  # type: ignore[misc]
+@app.task(bind=True)
 @may_schedule_until_job_is_ready
 def delete_entry_v2(self: Task, job: Job) -> JobStatus:
     entry: Entry | None = Entry.objects.filter(id=job.target.id, is_active=True).first()
@@ -1119,7 +1121,7 @@ def delete_entry_v2(self: Task, job: Job) -> JobStatus:
 
 
 @register_job_task(JobOperation.BULK_EDIT_ENTRY)
-@app.task(bind=True)  # type: ignore[misc]
+@app.task(bind=True)
 @may_schedule_until_job_is_ready
 def bulk_update_entries(
     self: Any, job: Job

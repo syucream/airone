@@ -6,7 +6,7 @@ with the host application's systems like authentication, job processing, etc.
 """
 
 import logging
-from typing import Any, Dict
+from typing import Any
 
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
@@ -59,7 +59,7 @@ class PluginAPIViewMixin(APIView):
         logger.error(f"Plugin API error in {plugin_class}: {exc}")
         return super().handle_exception(exc)
 
-    def get_plugin_context(self) -> Dict[str, Any]:
+    def get_plugin_context(self) -> dict[str, Any]:
         """Get plugin execution context
 
         Returns context information that might be useful for the plugin.

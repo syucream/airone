@@ -19,7 +19,7 @@ def set_role_members(role: Role, recv_data: dict[str, Any]) -> None:
     ]:
         for obj in recv_data[key]:
             # model is either User or Group, both have .objects manager
-            instance = model.objects.filter(id=obj["id"], is_active=True).first()  # type: ignore[attr-defined]
+            instance = model.objects.filter(id=obj["id"], is_active=True).first()
             if instance:
                 getattr(role, member).add(instance)
 

@@ -6,7 +6,7 @@ such as version information, logging helpers, and validation functions.
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +22,7 @@ def get_pagoda_version() -> str:
     return __version__
 
 
-def validate_plugin_data(data: Dict[str, Any], required_fields: List[str]) -> Dict[str, Any]:
+def validate_plugin_data(data: dict[str, Any], required_fields: list[str]) -> dict[str, Any]:
     """Validate plugin data structure
 
     Args:
@@ -50,7 +50,7 @@ def validate_plugin_data(data: Dict[str, Any], required_fields: List[str]) -> Di
     }
 
 
-def format_datetime_for_api(dt: Any) -> Optional[str]:
+def format_datetime_for_api(dt: Any) -> str | None:
     """Format datetime for API response
 
     Args:
@@ -105,7 +105,7 @@ def generate_plugin_cache_key(plugin_id: str, key: str) -> str:
 
 
 def log_plugin_activity(
-    plugin_id: str, action: str, details: Optional[Dict[str, Any]] = None
+    plugin_id: str, action: str, details: dict[str, Any] | None = None
 ) -> None:
     """Log plugin activity
 
@@ -122,8 +122,8 @@ def log_plugin_activity(
 
 
 def merge_plugin_config(
-    default_config: Dict[str, Any], plugin_config: Dict[str, Any]
-) -> Dict[str, Any]:
+    default_config: dict[str, Any], plugin_config: dict[str, Any]
+) -> dict[str, Any]:
     """Merge plugin configuration with defaults
 
     Args:

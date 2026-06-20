@@ -17,7 +17,7 @@ _TEST_MAX_LIST_VIEW = 2
 
 class ViewTest(AironeViewTest):
     def setUp(self):
-        super(ViewTest, self).setUp()
+        super().setUp()
 
         # save original configuration not to make affect other tests by chaning this
         self.old_config = CONFIG.conf
@@ -25,7 +25,7 @@ class ViewTest(AironeViewTest):
         CONFIG.conf["MAX_LIST_VIEW"] = _TEST_MAX_LIST_VIEW
 
     def tearDown(self):
-        super(ViewTest, self).tearDown()
+        super().tearDown()
 
         # retrieve original configuration for Job.settings.CONFIG
         CONFIG.conf = self.old_config

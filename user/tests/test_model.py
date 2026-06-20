@@ -92,7 +92,7 @@ class ModelTest(TestCase):
         self.assertEqual(history.details.filter(operation=History.MOD_ENTITY).count(), 1)
 
     def test_set_history_of_invalid_type_entry(self):
-        class InvalidType(object):
+        class InvalidType:
             pass
 
         Entity.objects.create(name="test-entity", created_user=self.user)

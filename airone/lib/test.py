@@ -4,7 +4,8 @@ import io
 import logging
 import os
 import sys
-from typing import Callable, List, cast
+from collections.abc import Callable
+from typing import cast
 from zoneinfo import ZoneInfo
 
 from django.conf import settings
@@ -116,7 +117,7 @@ class AironeTestCase(TestCase):
             # register referral(s) EntityAttr.add_referral() supports any kind of types
             ref = attr_info.get("ref")
             if ref is not None:
-                entity_attr.add_referral(cast(Entity | str | int | list[Entity | str | int], ref))
+                entity_attr.add_referral(cast("Entity | str | int | list[Entity | str | int]", ref))
 
         for webhook_info in webhooks:
             webhook: Webhook = Webhook.objects.create(
@@ -204,7 +205,7 @@ class AironeTestCase(TestCase):
         return entry
 
     def create_category(
-        self, user: User, name: str, note: str = "", models: List[Entity] = [], priority: int = 0
+        self, user: User, name: str, note: str = "", models: list[Entity] = [], priority: int = 0
     ) -> Category:
         # create target Category instance
         category = Category.objects.create(
@@ -259,13 +260,13 @@ class AironeTestCase(TestCase):
         entry: Entry | None = None,
     ) -> Attribute:
         """Create EntityAttr and Attribute for testing."""
-        entity_attr = EntityAttr.objects.create(
+        entity_attr = EntityAttr.objects.create(  # type: ignore[misc]
             name=name,
             type=attrtype,
             created_user=user or getattr(self, "_user", None),
             parent_entity=entity or getattr(self, "_entity", None),
         )
-        return Attribute.objects.create(
+        return Attribute.objects.create(  # type: ignore[misc]
             name=name,
             schema=entity_attr,
             created_user=user or getattr(self, "_user", None),
@@ -291,7 +292,7 @@ class AironeTestCase(TestCase):
 
 class AironeViewTest(AironeTestCase):
     def setUp(self) -> None:
-        super(AironeViewTest, self).setUp()
+        super().setUp()
 
         self.client = Client()
 
@@ -299,10 +300,10 @@ class AironeViewTest(AironeTestCase):
         test_file_path = inspect.getfile(self.__class__)
         test_base_path = os.path.dirname(test_file_path)
 
-        return open("%s/fixtures/%s" % (test_base_path, fname), "r")
+        return open("%s/fixtures/%s" % (test_base_path, fname))
 
 
-class DisableStderr(object):
+class DisableStderr:
     def __enter__(self) -> "DisableStderr":
         self.tmp_stderr = sys.stderr
         self.f = open(os.devnull, "w")

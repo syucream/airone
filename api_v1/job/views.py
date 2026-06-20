@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from django.db.models import Q
@@ -17,7 +17,7 @@ class JobAPI(APIView):
         """
         This returns only jobs that are created by the user who sends this request.
         """
-        time_threashold = datetime.now(timezone.utc) - timedelta(seconds=JOB_CONFIG.RECENT_SECONDS)
+        time_threashold = datetime.now(UTC) - timedelta(seconds=JOB_CONFIG.RECENT_SECONDS)
 
         constant = {
             "status": {

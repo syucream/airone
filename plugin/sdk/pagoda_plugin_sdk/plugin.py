@@ -5,12 +5,16 @@ All plugins must inherit from the Plugin class defined here.
 This provides the foundation for plugin discovery, validation, and lifecycle management.
 """
 
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Optional, Type
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from .exceptions import PluginValidationError
 from .override import OVERRIDE_META_ATTR
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from pydantic import BaseModel
 
 
@@ -29,22 +33,22 @@ class Plugin:
     author: str = ""
 
     # Optional attributes
-    dependencies: List[str] = []
+    dependencies: list[str] = []
 
     # Django integration
-    django_apps: List[str] = []
-    url_patterns: Optional[str] = None
-    api_v2_patterns: Optional[str] = None
+    django_apps: list[str] = []
+    url_patterns: str | None = None
+    api_v2_patterns: str | None = None
 
     # Plugin-specific parameter model for override configuration
     # Subclasses can set this to a Pydantic BaseModel class for validation
-    params_model: ClassVar[Optional[Type["BaseModel"]]] = None
+    params_model: ClassVar[type[BaseModel] | None] = None
 
     # Hook handlers - populated by __init_subclass__
-    _hook_handlers: ClassVar[List[Dict[str, Any]]] = []
+    _hook_handlers: ClassVar[list[dict[str, Any]]] = []
 
     # Override handlers mapping: operation -> method_name, populated by __init_subclass__
-    _override_handlers: ClassVar[Dict[str, str]] = {}
+    _override_handlers: ClassVar[dict[str, str]] = {}
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
         """Automatically detect and register decorated hook and override methods"""
@@ -110,7 +114,7 @@ class Plugin:
             if not app or not isinstance(app, str):
                 raise PluginValidationError("Django app names must be non-empty strings")
 
-    def validate_params(self, params: Dict[str, Any]) -> Dict[str, Any] | "BaseModel":
+    def validate_params(self, params: dict[str, Any]) -> dict[str, Any] | BaseModel:
         """Validate plugin parameters using the params_model if defined.
 
         If params_model is defined (a Pydantic BaseModel), the params will
@@ -132,7 +136,7 @@ class Plugin:
         # Assumes params_model is a Pydantic BaseModel
         return self.params_model(**params)
 
-    def get_handler(self, operation: str) -> Optional[Callable[..., Any]]:
+    def get_handler(self, operation: str) -> Callable[..., Any] | None:
         """Get the override handler for a specific operation.
 
         Uses the pre-built _override_handlers mapping for O(1) lookup.
@@ -148,7 +152,7 @@ class Plugin:
             return getattr(self, method_name, None)
         return None
 
-    def get_info(self) -> Dict[str, str | bool | List[str] | None]:
+    def get_info(self) -> dict[str, str | bool | list[str] | None]:
         """Get plugin metadata
 
         Returns:

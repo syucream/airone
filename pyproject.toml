@@ -13,7 +13,7 @@ mypy_path = [".", "plugin/sdk"]
 # Each plugin package ships its own top-level "tests" package. Once
 # plugin/sdk is on mypy_path they collide as duplicate modules, so exclude
 # plugin test trees from discovery (they are already ignored for errors).
-exclude = ['plugin/.*/tests/', 'plugin/examples/']
+exclude = ['plugin/.*/tests/', 'plugin/examples/', 'virtualenv_old/', 'custom_view/', 'custom_view_sample/']
 
 # Gradual type checking improvements
 check_untyped_defs = true
@@ -27,6 +27,7 @@ disallow_untyped_calls = true
 extra_checks = true
 disallow_untyped_decorators = true
 disallow_any_generics = true
+warn_return_any = true
 # Production code (including plugin/sdk and tools) must be fully annotated.
 # Test and migration trees are exempted via the ignore_errors overrides below.
 disallow_untyped_defs = true
@@ -44,84 +45,82 @@ ignore_errors = true
 module = ["*.migrations.*"]
 ignore_errors = true
 
-# Modules that surface new mypy errors once mypy_django_plugin / mypy_drf_plugin
-# are enabled. The model layer has been typed in the accompanying commit; the
-# view / serializer / task / plugin layer is intentionally muted here and will
-# be typed in a follow-up PR (fix/mypy-django-stubs-finalize).
+# Views, serializers, tasks, and services sit at the Django/DRF boundary and
+# surface a class of errors that are structural framework patterns rather than
+# bugs.  Suppress only specific, well-understood codes here; all other error
+# categories (e.g. import-untyped, name-defined, syntax) continue to be caught.
+#
+# Codes suppressed and why:
+#   type-arg     — DRF ViewSet/Serializer generics and Celery Task generics are
+#                  rarely annotated in practice; requires pervasive refactor.
+#   union-attr   — request.user is User|AnonymousUser; .first() returns T|None.
+#                  Guard patterns are implied by surrounding logic.
+#   arg-type     — AnonymousUser passed where User expected; ORM Q-objects, etc.
+#   assignment   — Type narrowing after .filter(...).first() assignments.
+#   attr-defined — django-simple-history injects _history_user dynamically.
+#   misc         — ORM lookup types, @csrf_protect on class methods, etc.
+#   no-any-return — Django ORM and DRF internals return Any in many places.
+#   return-value — DRF get_obj_with_check_perm returns T|None vs T pattern.
+#   index        — Q-object and dict indexing type inference.
+#   override     — DRF ViewSet action signatures differ from base class stubs.
+#   operator     — Q-object | / & operator typing.
 [[tool.mypy.overrides]]
 module = [
-    "acl.api_v2.serializers",
-    "acl.api_v2.views",
+    "acl.api_v2.*",
     "acl.views",
-    "airone.auth.view",
-    "airone.celery",
-    "airone.lib.drf",
-    "airone.lib.http",
-    "airone.lib.multidb",
-    "airone.lib.plugin_dispatch",
-    "airone.lib.test",
-    "airone.libs.auth",
-    "airone.plugins.integration",
-    "airone.urls",
-    "api_v1.entity.views",
-    "api_v1.entry.serializer",
-    "api_v1.entry.views",
-    "api_v1.job.views",
-    "api_v1.serializers",
-    "api_v1.user.views",
-    "api_v1.views",
-    "category.api_v2.serializers",
-    "category.api_v2.views",
-    "common.templatetags.bitwise_tags",
-    "common.templatetags.calculator",
-    "custom_view_sample.tasks.task_custom",
-    "custom_view.tasks.task_custom",
-    "dashboard.tasks",
+    "api_v1.*",
+    "category.api_v2.*",
     "dashboard.views",
-    "entity.api_v1.views",
-    "entity.api_v2.serializers",
-    "entity.api_v2.views",
+    "entity.api_v1.*",
+    "entity.api_v2.*",
     "entity.tasks",
     "entity.views",
-    "entry.api_v1.views",
-    "entry.api_v2.serializers",
-    "entry.api_v2.views",
+    "entry.api_v1.*",
+    "entry.api_v2.*",
     "entry.services",
     "entry.tasks",
     "entry.views",
-    "group.api_v1.views",
-    "group.api_v2.serializers",
-    "group.api_v2.views",
+    "group.api_v1.*",
+    "group.api_v2.*",
     "group.tasks",
     "group.views",
-    "job.api_v2.serializers",
-    "job.api_v2.views",
-    "pagoda_plugin_sdk.api.base",
-    "pagoda_plugin_sdk.api.pagination",
-    "pagoda_plugin_sdk.api.permissions",
-    "pagoda_plugin_sdk.api.serializers",
+    "job.api_v2.*",
+    "pagoda_plugin_sdk.api.*",
     "pagoda_plugin_sdk.override",
-    "role.api_v1.views",
-    "role.api_v2.serializers",
-    "role.api_v2.views",
+    "role.api_v1.*",
+    "role.api_v2.*",
     "role.tasks",
     "role.views",
     "tools.generate_testdata",
-    "trigger.api_v2.serializers",
-    "trigger.api_v2.views",
+    "trigger.api_v2.*",
     "trigger.tasks",
-    "user.api_v2.serializers",
-    "user.api_v2.views",
+    "user.api_v2.*",
     "user.forms",
     "user.views",
-    "webhook.api_v1.views",
+    "webhook.api_v1.*",
     "webhook.views",
 ]
-ignore_errors = true
+disable_error_code = [
+    "type-arg",
+    "union-attr",
+    "arg-type",
+    "assignment",
+    "attr-defined",
+    "misc",
+    "no-any-return",
+    "return-value",
+    "index",
+    "override",
+    "operator",
+    "unreachable",
+]
+
 
 [tool.ruff]
-# Pyflakes (F), pycodestyle (E, W), isort (I)
-lint.select = ["E", "F", "I", "W"]
+# Pyflakes (F), pycodestyle (E, W), isort (I), pyupgrade (UP), type-checking (TC)
+lint.select = ["E", "F", "I", "W", "UP", "TC"]
+# UP031: printf-style formatting is not type-related; defer as separate cleanup
+lint.ignore = ["UP031"]
 line-length = 100
 extend-exclude = ["./*/migrations", "manage.py", "./node_modules"]
 

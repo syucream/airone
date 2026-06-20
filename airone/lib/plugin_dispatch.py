@@ -6,7 +6,7 @@ Entry API operations to plugin override handlers when configured.
 """
 
 import logging
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 from pagoda_plugin_sdk.override import OverrideContext
 from rest_framework.request import Request
@@ -17,6 +17,7 @@ from airone.plugins.override_manager import OperationType, OverrideRegistration,
 if TYPE_CHECKING:
     from entity.models import Entity
     from entry.models import Entry
+    from user.models import User
 
 logger = logging.getLogger(__name__)
 
@@ -48,11 +49,11 @@ class PluginOverrideMixin:
     """
 
     # Type hints for attributes provided by ViewSet (for mypy)
-    kwargs: Dict[str, str]
+    kwargs: dict[str, str]
 
     def _get_override_registration(
         self, entity_id: int, operation: str
-    ) -> Optional[OverrideRegistration]:
+    ) -> OverrideRegistration | None:
         """Get override registration for an entity/operation if available."""
         try:
             op_type = OperationType.from_string(operation)
@@ -76,7 +77,7 @@ class PluginOverrideMixin:
 
         return OverrideContext(
             request=request,
-            user=request.user,
+            user=cast("User", request.user),
             entity=entity,
             entry=entry,
             data=data,
@@ -92,7 +93,7 @@ class PluginOverrideMixin:
         entity_id: int,
         entity: "Entity",
         entry: Optional["Entry"] = None,
-    ) -> Optional[Response]:
+    ) -> Response | None:
         """Attempt to dispatch to a plugin override handler.
 
         Returns:
@@ -104,7 +105,7 @@ class PluginOverrideMixin:
 
         context = self._build_override_context(request, registration, entity, operation, entry)
         try:
-            return registration.handler(context)
+            return cast("Response", registration.handler(context))
         except Exception as e:
             logger.error(f"Override handler error for entity {entity_id}/{operation}: {e}")
             raise
@@ -121,7 +122,7 @@ class PluginOverrideMixin:
                 if response is not None:
                     return response
 
-        return super().create(request, *args, **kwargs)  # type: ignore[misc]
+        return cast("Response", super().create(request, *args, **kwargs))  # type: ignore[misc]
 
     def list(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         """Handle list action with plugin override support."""
@@ -135,4 +136,4 @@ class PluginOverrideMixin:
                 if response is not None:
                     return response
 
-        return super().list(request, *args, **kwargs)  # type: ignore[misc]
+        return cast("Response", super().list(request, *args, **kwargs))  # type: ignore[misc]

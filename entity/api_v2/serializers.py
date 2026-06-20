@@ -4,10 +4,11 @@ import collections
 import json
 import math
 import re
-from datetime import datetime
-from typing import TYPE_CHECKING, Any, List, Optional, Self, TypedDict
+from typing import TYPE_CHECKING, Any, Self, TypedDict
 
 if TYPE_CHECKING:
+    from datetime import datetime
+
     from airone.lib.resources import AironeModelResource
     from isolation.models import IsolationCondition
 
@@ -58,7 +59,7 @@ class EntityDetailAttribute(TypedDict):
     is_delete_in_chain: bool
     is_summarized: bool
     is_writable: bool
-    referral: List[EntityAttrReferralData]
+    referral: list[EntityAttrReferralData]
     note: str
     default_value: Any
     name_order: int
@@ -111,7 +112,7 @@ class EntityAttrCreateRequest(BaseModel):
 
         # Number type
         elif self.type == AttrType.NUMBER:
-            if not isinstance(self.default_value, (int, float)) or isinstance(
+            if not isinstance(self.default_value, int | float) or isinstance(
                 self.default_value, bool
             ):
                 raise ValueError(
@@ -161,7 +162,7 @@ class WebhookCreateUpdateSerializer(serializers.ModelSerializer):
         read_only_fields = ["is_verified"]
         extra_kwargs = {"url": {"required": False}}
 
-    def validate_id(self, id: Optional[int]) -> Optional[int]:
+    def validate_id(self, id: int | None) -> int | None:
         entity: Entity = self.parent.parent.instance
         if id is not None and not entity.webhooks.filter(id=id).exists():
             raise ObjectNotExistsError("Invalid id(%s) object does not exist" % id)
@@ -207,7 +208,7 @@ class EntityAttrCreateSerializer(serializers.ModelSerializer):
             "name_postfix",
         ]
 
-    def validate_type(self, type: Optional[int]) -> Optional[int]:
+    def validate_type(self, type: int | None) -> int | None:
         if type is not None and type not in AttrTypeValue.values():
             raise ObjectNotExistsError("attrs type(%s) does not exist" % type)
 
@@ -241,7 +242,7 @@ class EntityAttrCreateSerializer(serializers.ModelSerializer):
 
         # Number type
         elif attr_type == AttrType.NUMBER:
-            if isinstance(default_value, (int, float)) and not isinstance(default_value, bool):
+            if isinstance(default_value, int | float) and not isinstance(default_value, bool):
                 if math.isnan(default_value) or math.isinf(default_value):
                     raise ValidationError("Default value cannot be NaN or Infinity for NUMBER type")
                 return default_value
@@ -341,7 +342,7 @@ class EntityAttrUpdateSerializer(serializers.ModelSerializer):
             or not hasattr(self.parent.parent, "instance")
         ):
             # When used directly, try to get the entity from the EntityAttr
-            entity_attr: Optional[EntityAttr] = EntityAttr.objects.filter(
+            entity_attr: EntityAttr | None = EntityAttr.objects.filter(
                 id=id, is_active=True
             ).first()
             if not entity_attr:
@@ -350,7 +351,7 @@ class EntityAttrUpdateSerializer(serializers.ModelSerializer):
 
         # Normal case when used as nested serializer
         entity: Entity = self.parent.parent.instance
-        nested_entity_attr: Optional[EntityAttr] = entity.attrs.filter(
+        nested_entity_attr: EntityAttr | None = entity.attrs.filter(
             id=id, is_active=True
         ).first()
         if not nested_entity_attr:
@@ -358,7 +359,7 @@ class EntityAttrUpdateSerializer(serializers.ModelSerializer):
 
         return id
 
-    def validate_type(self, type: Optional[int]) -> Optional[int]:
+    def validate_type(self, type: int | None) -> int | None:
         # FIX ME:Handle special case for ARRAY_NAMED_OBJECT_BOOLEAN
         # type to maintain backward compatibility
         if type == AttrType.ARRAY_NAMED_OBJECT_BOOLEAN:
@@ -396,7 +397,7 @@ class EntityAttrUpdateSerializer(serializers.ModelSerializer):
 
         # Number type
         elif attr_type == AttrType.NUMBER:
-            if isinstance(default_value, (int, float)) and not isinstance(default_value, bool):
+            if isinstance(default_value, int | float) and not isinstance(default_value, bool):
                 if math.isnan(default_value) or math.isinf(default_value):
                     raise ValidationError("Default value cannot be NaN or Infinity for NUMBER type")
                 return default_value
@@ -637,7 +638,7 @@ class EntitySerializer(serializers.ModelSerializer):
 
         # Number type
         elif attr_type == AttrType.NUMBER:
-            if isinstance(default_value, (int, float)) and not isinstance(default_value, bool):
+            if isinstance(default_value, int | float) and not isinstance(default_value, bool):
                 if math.isnan(default_value) or math.isinf(default_value):
                     raise ValidationError("Default value cannot be NaN or Infinity for NUMBER type")
                 return default_value
@@ -712,7 +713,8 @@ class EntitySerializer(serializers.ModelSerializer):
             # set referrals if necessary
             if entity_attr.type & AttrType.OBJECT:
                 entity_attr.referral_clear()
-                [entity_attr.referral.add(x) for x in attr_referrals]
+                for x in attr_referrals:
+                    entity_attr.referral.add(x)
 
             # register history to create, update EntityAttr
             if is_created_attr:
@@ -945,7 +947,7 @@ class EntityUpdateSerializer(EntitySerializer):
                 if "name" in update_attr:
                     attr_names[update_attr["id"]] = update_attr["name"]
                 if update_attr["is_deleted"]:
-                    attr_names.pop(update_attr["id"])
+                    attr_names.pop(int(update_attr["id"]))
 
         counter = collections.Counter(
             [x for x in attr_names.values()] + [attr["name"] for attr in attrs if "id" not in attr]
@@ -1096,10 +1098,10 @@ class EntityDetailSerializer(EntityListSerializer):
         ]
 
     @extend_schema_field(serializers.ListField(child=EntityDetailAttributeSerializer()))
-    def get_attrs(self, obj: Entity) -> List[EntityDetailAttribute]:
+    def get_attrs(self, obj: Entity) -> list[EntityDetailAttribute]:
         user = User.objects.get(id=self.context["request"].user.id)
 
-        attrinfo: List[EntityDetailAttribute] = [
+        attrinfo: list[EntityDetailAttribute] = [
             {
                 "id": x.id,
                 "index": x.index,
@@ -1173,7 +1175,7 @@ class EntityHistorySerializer(serializers.ModelSerializer):
         return obj.user.username
 
     @extend_schema_field(EntityHistoryChangeSerializer(many=True))
-    def get_changes(self, obj: History) -> List[dict[str, Any]]:
+    def get_changes(self, obj: History) -> list[dict[str, Any]]:
         """
         Get changes from simple-history records.
 
@@ -1205,7 +1207,7 @@ class EntityHistorySerializer(serializers.ModelSerializer):
         operation: int,
         historical_cache: dict[str, list[Any]],
         prev_record_cache: dict[str, Any],
-    ) -> List[dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Get changes for Entity operations."""
         cache_key = f"entity_{entity_id}"
         historicals = historical_cache.get(cache_key, [])
@@ -1255,7 +1257,7 @@ class EntityHistorySerializer(serializers.ModelSerializer):
         operation: int,
         historical_cache: dict[str, list[Any]],
         prev_record_cache: dict[str, Any],
-    ) -> List[dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Get changes for EntityAttr operations."""
         cache_key = f"attr_{attr_id}"
         historicals = historical_cache.get(cache_key, [])
@@ -1300,7 +1302,7 @@ class EntityHistorySerializer(serializers.ModelSerializer):
 
     def _find_closest_historical(
         self, historicals: list[Any], target_time: datetime
-    ) -> Optional[Any]:
+    ) -> Any | None:
         """Find the historical record closest to the target time."""
         if not historicals:
             return None
@@ -1314,7 +1316,7 @@ class EntityHistorySerializer(serializers.ModelSerializer):
         # If all records are after target_time, return the oldest one
         return historicals[-1] if historicals else None
 
-    def _find_prev_record(self, historicals: list[Any], current: Any) -> Optional[Any]:
+    def _find_prev_record(self, historicals: list[Any], current: Any) -> Any | None:
         """Find the previous record in the historical list."""
         try:
             idx = historicals.index(current)

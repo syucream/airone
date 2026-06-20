@@ -6,7 +6,7 @@ from user.models import User
 
 class RoleTestBase(AironeViewTest):
     def setUp(self):
-        super(RoleTestBase, self).setUp()
+        super().setUp()
 
         # create Users and Groups for using this test
         self.users = {

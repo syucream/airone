@@ -13,7 +13,7 @@ import random
 import string
 import sys
 from concurrent.futures import Future, ThreadPoolExecutor
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from optparse import OptionParser, Values
 from typing import Any
 
@@ -105,13 +105,13 @@ def _get_attribute_value(
         case AttrType.TEXT:
             return f"text_value_{extra}"
         case AttrType.DATE:
-            return datetime.now(tz=timezone.utc).date()
+            return datetime.now(tz=UTC).date()
         case AttrType.ROLE:
             return random.choice(roles)
         case AttrType.ARRAY_ROLE:
             return random.sample(roles, k=random.randint(1, len(roles)))
         case AttrType.DATETIME:
-            return datetime.now(tz=timezone.utc)
+            return datetime.now(tz=UTC)
         case AttrType.NUMBER:
             return random.randint(1, 1000)
         case AttrType.ARRAY_NUMBER:

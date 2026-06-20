@@ -1,3 +1,5 @@
+from datetime import UTC
+
 from django.test import TestCase
 
 from airone.lib import elasticsearch
@@ -687,7 +689,7 @@ class ElasticSearchTest(TestCase):
 
     def test_is_date_check(self):
         """Test the _is_date_check function with legacy date formats and ISO8601 datetime formats"""
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         from airone.lib.elasticsearch import _is_date_check
 
@@ -740,12 +742,12 @@ class ElasticSearchTest(TestCase):
         # ISO8601 with timezone
         result = _is_date_check("2023-01-01T12:34:56Z")
         self.assertEqual(result[0], "")
-        self.assertEqual(result[1], datetime(2023, 1, 1, 12, 34, 56, tzinfo=timezone.utc))
+        self.assertEqual(result[1], datetime(2023, 1, 1, 12, 34, 56, tzinfo=UTC))
 
         result = _is_date_check("2023-01-01T12:34:56+09:00")
         self.assertEqual(result[0], "")
         # Expect UTC normalized time (12:34:56+09:00 -> 03:34:56Z)
-        self.assertEqual(result[1], datetime(2023, 1, 1, 3, 34, 56, tzinfo=timezone.utc))
+        self.assertEqual(result[1], datetime(2023, 1, 1, 3, 34, 56, tzinfo=UTC))
 
         # ISO8601 with milliseconds
         result = _is_date_check("2023-01-01T12:34:56.789")
@@ -775,9 +777,9 @@ class ElasticSearchTest(TestCase):
         # ISO8601 timestamp range with timezones
         result = _is_date_check("2023-01-01T00:00:00Z~2023-01-01T23:59:59+09:00")
         self.assertEqual(result[0], "~")
-        self.assertEqual(result[1][0], datetime(2023, 1, 1, 0, 0, 0, tzinfo=timezone.utc))
+        self.assertEqual(result[1][0], datetime(2023, 1, 1, 0, 0, 0, tzinfo=UTC))
         self.assertEqual(
-            result[1][1], datetime(2023, 1, 1, 14, 59, 59, tzinfo=timezone.utc)
+            result[1][1], datetime(2023, 1, 1, 14, 59, 59, tzinfo=UTC)
         )  # 23:59:59+09:00 -> 14:59:59Z
 
         # 秒なしの形式も有効とする

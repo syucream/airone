@@ -1,5 +1,6 @@
 import json
 from datetime import timedelta
+from typing import TYPE_CHECKING
 from unittest import mock
 from unittest.mock import Mock, patch
 
@@ -10,10 +11,12 @@ from rest_framework.exceptions import ValidationError
 from airone.lib.types import (
     AttrType,
 )
-from entity.models import EntityAttr
 from entry import tasks
-from entry.models import Attribute, AttributeValue, Entry
 from entry.tests.test_api_v2 import BaseViewTest
+
+if TYPE_CHECKING:
+    from entity.models import EntityAttr
+    from entry.models import Attribute, AttributeValue, Entry
 
 
 class ViewTest(BaseViewTest):

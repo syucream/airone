@@ -6,7 +6,8 @@ the legacy custom_view system for backward compatibility.
 """
 
 import logging
-from typing import Any, Callable, Dict, List, Optional
+from collections.abc import Callable
+from typing import Any
 
 from .hooks import normalize_hook_name
 
@@ -23,8 +24,8 @@ class HookManager:
 
     def __init__(self) -> None:
         """Initialize the hook manager"""
-        self._hooks: Dict[str, List[Dict[str, Any]]] = {}
-        self._stats: Dict[str, int] = {
+        self._hooks: dict[str, list[dict[str, Any]]] = {}
+        self._stats: dict[str, int] = {
             "total_registered": 0,
             "total_executed": 0,
             "total_failed": 0,
@@ -36,7 +37,7 @@ class HookManager:
         handler: Callable[..., Any],
         plugin_id: str,
         priority: int = 100,
-        entity: Optional[str] = None,
+        entity: str | None = None,
     ) -> None:
         """Register a plugin hook handler
 
@@ -68,7 +69,7 @@ class HookManager:
             f"(priority: {priority}){entity_info}"
         )
 
-    def has_hook(self, handler_name: str, entity_name: Optional[str] = None) -> bool:
+    def has_hook(self, handler_name: str, entity_name: str | None = None) -> bool:
         """Check if any plugin registered this hook
 
         Args:
@@ -97,8 +98,8 @@ class HookManager:
         return False
 
     def execute_hook(
-        self, handler_name: str, *args: Any, entity_name: Optional[str] = None, **kwargs: Any
-    ) -> List[Any]:
+        self, handler_name: str, *args: Any, entity_name: str | None = None, **kwargs: Any
+    ) -> list[Any]:
         """Execute all registered plugin hooks for this handler
 
         Args:
@@ -167,7 +168,7 @@ class HookManager:
 
         return results
 
-    def get_registered_hooks(self) -> List[str]:
+    def get_registered_hooks(self) -> list[str]:
         """Get list of all registered hook names
 
         Returns:
@@ -175,7 +176,7 @@ class HookManager:
         """
         return list(self._hooks.keys())
 
-    def get_hooks_for_plugin(self, plugin_id: str) -> List[str]:
+    def get_hooks_for_plugin(self, plugin_id: str) -> list[str]:
         """Get list of hooks registered by a specific plugin
 
         Args:
@@ -192,7 +193,7 @@ class HookManager:
                     break
         return hooks
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Get hook execution statistics
 
         Returns:

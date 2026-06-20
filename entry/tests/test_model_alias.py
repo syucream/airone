@@ -4,7 +4,7 @@ from entry.models import AliasEntry
 
 class ModelTest(AironeTestCase):
     def setUp(self):
-        super(ModelTest, self).setUp()
+        super().setUp()
 
         # create common Instances in this test
         self.user = self.admin_login()

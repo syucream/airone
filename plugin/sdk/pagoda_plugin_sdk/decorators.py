@@ -2,8 +2,9 @@
 Decorators for plugin hook registration
 """
 
+from collections.abc import Callable
 from functools import wraps
-from typing import Any, Callable, Optional, TypeVar, cast
+from typing import Any, TypeVar, cast
 
 # Type variable for preserving the decorated function's signature, so that
 # applying these decorators does not erase the wrapped function's type.
@@ -11,7 +12,7 @@ F = TypeVar("F", bound=Callable[..., Any])
 
 
 def entry_hook(
-    hook_type: str, entity: Optional[str] = None, priority: int = 100
+    hook_type: str, entity: str | None = None, priority: int = 100
 ) -> Callable[[F], F]:
     """
     Decorator for entry lifecycle hooks.
@@ -38,13 +39,13 @@ def entry_hook(
             "entity": entity,
             "priority": priority,
         }
-        return cast(F, wrapper)
+        return cast("F", wrapper)
 
     return decorator
 
 
 def entity_hook(
-    hook_type: str, entity: Optional[str] = None, priority: int = 100
+    hook_type: str, entity: str | None = None, priority: int = 100
 ) -> Callable[[F], F]:
     """
     Decorator for entity lifecycle hooks.
@@ -71,12 +72,12 @@ def entity_hook(
             "entity": entity,
             "priority": priority,
         }
-        return cast(F, wrapper)
+        return cast("F", wrapper)
 
     return decorator
 
 
-def validation_hook(entity: Optional[str] = None, priority: int = 100) -> Callable[[F], F]:
+def validation_hook(entity: str | None = None, priority: int = 100) -> Callable[[F], F]:
     """
     Decorator for entry validation hooks.
 
@@ -102,13 +103,13 @@ def validation_hook(entity: Optional[str] = None, priority: int = 100) -> Callab
             "entity": entity,
             "priority": priority,
         }
-        return cast(F, wrapper)
+        return cast("F", wrapper)
 
     return decorator
 
 
 def get_attrs_hook(
-    hook_target: str, entity: Optional[str] = None, priority: int = 100
+    hook_target: str, entity: str | None = None, priority: int = 100
 ) -> Callable[[F], F]:
     """
     Decorator for attribute retrieval hooks.
@@ -136,6 +137,6 @@ def get_attrs_hook(
             "entity": entity,
             "priority": priority,
         }
-        return cast(F, wrapper)
+        return cast("F", wrapper)
 
     return decorator

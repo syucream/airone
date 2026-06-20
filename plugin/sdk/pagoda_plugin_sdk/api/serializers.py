@@ -8,7 +8,7 @@ and integration with host application data models.
 
 import logging
 from datetime import datetime
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, cast
 
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer, Serializer
@@ -34,7 +34,7 @@ class PluginSerializerMixin:
                 fields = '__all__'
     """
 
-    plugin_id: Optional[str] = None
+    plugin_id: str | None = None
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
@@ -49,7 +49,7 @@ class PluginSerializerMixin:
         else:
             self.plugin_context = self._get_default_plugin_context()
 
-    def _get_default_plugin_context(self) -> Dict[str, Any]:
+    def _get_default_plugin_context(self) -> dict[str, Any]:
         """Get default plugin context
 
         Returns:
@@ -60,7 +60,7 @@ class PluginSerializerMixin:
             "serializer_class": self.__class__.__name__,
         }
 
-    def validate(self, attrs: Dict[str, Any]) -> Dict[str, Any]:
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         """Enhanced validation with plugin context
 
         Args:
@@ -72,7 +72,7 @@ class PluginSerializerMixin:
         Raises:
             ValidationError: If validation fails
         """
-        attrs = super().validate(attrs)  # type: ignore[misc]
+        attrs = super().validate(attrs)
 
         # Add plugin-specific validation
         attrs = self.validate_plugin_data(attrs)
@@ -83,7 +83,7 @@ class PluginSerializerMixin:
 
         return attrs
 
-    def validate_plugin_data(self, attrs: Dict[str, Any]) -> Dict[str, Any]:
+    def validate_plugin_data(self, attrs: dict[str, Any]) -> dict[str, Any]:
         """Plugin-specific validation logic
 
         Override this method to add custom validation logic
@@ -101,7 +101,7 @@ class PluginSerializerMixin:
         # Default implementation does nothing
         return attrs
 
-    def to_representation(self, instance: Any) -> Dict[str, Any]:
+    def to_representation(self, instance: Any) -> dict[str, Any]:
         """Convert model instance to representation with plugin metadata
 
         Args:
@@ -110,7 +110,7 @@ class PluginSerializerMixin:
         Returns:
             Serialized representation
         """
-        data = super().to_representation(instance)  # type: ignore[misc]
+        data = super().to_representation(instance)
 
         # Add plugin metadata if requested
         if self._should_include_plugin_metadata():
@@ -119,7 +119,7 @@ class PluginSerializerMixin:
                 "serializer": self.__class__.__name__,
             }
 
-        return cast(Dict[str, Any], data)
+        return cast("dict[str, Any]", data)
 
     def _should_include_plugin_metadata(self) -> bool:
         """Check if plugin metadata should be included
@@ -132,7 +132,7 @@ class PluginSerializerMixin:
             return request.GET.get("include_plugin_meta", "").lower() in ("true", "1", "yes")
         return False
 
-    def create(self, validated_data: Dict[str, Any]) -> Any:
+    def create(self, validated_data: dict[str, Any]) -> Any:
         """Create instance with plugin context
 
         Args:
@@ -151,9 +151,9 @@ class PluginSerializerMixin:
         model_name = meta.model.__name__ if meta else "Unknown"
         logger.info(f"Plugin {plugin_id} creating new {model_name}")
 
-        return super().create(validated_data)  # type: ignore[misc]
+        return super().create(validated_data)
 
-    def update(self, instance: Any, validated_data: Dict[str, Any]) -> Any:
+    def update(self, instance: Any, validated_data: dict[str, Any]) -> Any:
         """Update instance with plugin context
 
         Args:
@@ -171,7 +171,7 @@ class PluginSerializerMixin:
         plugin_id = self.plugin_context.get("plugin_id", "unknown")
         logger.info(f"Plugin {plugin_id} updating {instance.__class__.__name__} {instance.pk}")
 
-        return super().update(instance, validated_data)  # type: ignore[misc]
+        return super().update(instance, validated_data)
 
 
 class PluginModelSerializer(PluginSerializerMixin, ModelSerializer):
@@ -204,7 +204,7 @@ class PluginModelSerializer(PluginSerializerMixin, ModelSerializer):
         # Apply plugin-specific field filtering
         return self.filter_fields_for_plugin(field_names)
 
-    def filter_fields_for_plugin(self, field_names: List[str]) -> List[str]:
+    def filter_fields_for_plugin(self, field_names: list[str]) -> list[str]:
         """Filter fields based on plugin configuration
 
         Override this method to customize which fields are exposed

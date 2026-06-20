@@ -1,5 +1,5 @@
 import math
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any, TypedDict
 
 from drf_spectacular.utils import extend_schema_field
@@ -25,7 +25,9 @@ class JobTargetSerializer(serializers.Serializer):
 
 
 class JobSerializers(serializers.ModelSerializer):
-    user = serializers.SlugRelatedField(slug_field="username", read_only=True)
+    user: serializers.SlugRelatedField = serializers.SlugRelatedField(
+        slug_field="username", read_only=True
+    )
     target = serializers.SerializerMethodField(method_name="get_target")
     passed_time = serializers.SerializerMethodField(method_name="get_passed_time")
 
@@ -78,4 +80,4 @@ class JobSerializers(serializers.ModelSerializer):
         if obj.is_finished(with_refresh=False):
             return math.floor((obj.updated_at - obj.created_at).total_seconds())
         else:
-            return math.floor((datetime.now(timezone.utc) - obj.created_at).total_seconds())
+            return math.floor((datetime.now(UTC) - obj.created_at).total_seconds())

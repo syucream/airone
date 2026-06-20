@@ -7,7 +7,7 @@ from .base import RoleTestBase
 
 class ViewTest(RoleTestBase):
     def setUp(self):
-        super(ViewTest, self).setUp()
+        super().setUp()
 
         self._BASE_CREATE_PARAMS = {
             "name": "Creating Role",

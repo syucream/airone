@@ -26,7 +26,7 @@ from user.models import User
 
 class APITest(AironeViewTest):
     def setUp(self):
-        super(APITest, self).setUp()
+        super().setUp()
 
         # dump originl configuration data
         self._orig_entry_config = copy.copy(ENTRY_CONFIG.conf)
@@ -35,7 +35,7 @@ class APITest(AironeViewTest):
         self._test_data = {}
 
     def tearDown(self):
-        super(APITest, self).tearDown()
+        super().tearDown()
 
         # restore originl configuration data
         ENTRY_CONFIG.conf = self._orig_entry_config

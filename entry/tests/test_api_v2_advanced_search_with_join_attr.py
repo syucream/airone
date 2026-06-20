@@ -11,7 +11,7 @@ from job.models import Job
 
 class ViewTest(BaseViewTest):
     def setUp(self):
-        super(ViewTest, self).setUp()
+        super().setUp()
 
         # create Items to be search by join_attrs parameter
         ref_entries = [

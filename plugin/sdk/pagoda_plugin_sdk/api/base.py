@@ -7,7 +7,7 @@ integration with the host application's plugin system.
 """
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Any
 
 from rest_framework import status, viewsets
 from rest_framework.permissions import IsAuthenticated
@@ -37,8 +37,8 @@ class PluginAPIView(PluginAPIViewMixin):
                 return Response({"message": f"Hello from {context['plugin_id']}!"})
     """
 
-    plugin_id: Optional[str] = None
-    plugin_version: Optional[str] = None
+    plugin_id: str | None = None
+    plugin_version: str | None = None
 
     def get_plugin_id(self) -> str:
         """Get the plugin identifier
@@ -55,7 +55,7 @@ class PluginAPIView(PluginAPIViewMixin):
             )
         return self.plugin_id
 
-    def get_plugin_version(self) -> Optional[str]:
+    def get_plugin_version(self) -> str | None:
         """Get the plugin version
 
         Returns:
@@ -63,7 +63,7 @@ class PluginAPIView(PluginAPIViewMixin):
         """
         return self.plugin_version
 
-    def get_plugin_context(self) -> Dict[str, Any]:
+    def get_plugin_context(self) -> dict[str, Any]:
         """Get enhanced plugin execution context
 
         Returns:
@@ -128,8 +128,8 @@ class PluginViewSet(viewsets.ModelViewSet):
     """
 
     permission_classes = [IsAuthenticated]
-    plugin_id: Optional[str] = None
-    plugin_version: Optional[str] = None
+    plugin_id: str | None = None
+    plugin_version: str | None = None
 
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
@@ -160,7 +160,7 @@ class PluginViewSet(viewsets.ModelViewSet):
             )
         return self.plugin_id
 
-    def get_plugin_version(self) -> Optional[str]:
+    def get_plugin_version(self) -> str | None:
         """Get the plugin version
 
         Returns:
@@ -168,7 +168,7 @@ class PluginViewSet(viewsets.ModelViewSet):
         """
         return self.plugin_version
 
-    def get_plugin_context(self) -> Dict[str, Any]:
+    def get_plugin_context(self) -> dict[str, Any]:
         """Get plugin execution context
 
         Returns:

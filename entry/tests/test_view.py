@@ -28,14 +28,14 @@ from user.models import User
 
 class BaseViewTest(AironeViewTest):
     def setUp(self):
-        super(BaseViewTest, self).setUp()
+        super().setUp()
 
         # clear data which is used in individual tests
         self._test_data = {}
 
     # override 'admin_login' method to create initial Entity/EntityAttr objects
     def admin_login(self):
-        user = super(BaseViewTest, self).admin_login()
+        user = super().admin_login()
 
         # create test entity which is a base of creating entry
         self._entity = Entity.objects.create(name="hoge", created_user=user)
@@ -2010,7 +2010,7 @@ class ViewTest(BaseViewTest):
             resp = self.client.get(reverse(test_suite, args=[entry.id]))
             self.assertEqual(resp.status_code, 302)
             self.assertEqual(
-                resp.url, "/entry/restore/{}/?keyword={}".format(entity.id, entry.name)
+                resp.url, f"/entry/restore/{entity.id}/?keyword={entry.name}"
             )
 
     def test_not_to_show_under_processing_entry(self):

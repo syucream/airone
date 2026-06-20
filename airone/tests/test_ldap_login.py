@@ -9,7 +9,7 @@ from user.models import User
 
 class ViewTest(AironeTestCase):
     def setUp(self):
-        super(ViewTest, self).setUp()
+        super().setUp()
 
         self.settings(
             AUTHENTICATION_BACKENDS=["airone.auth.ldap.LDAPBackend"],

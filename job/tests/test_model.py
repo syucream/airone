@@ -14,7 +14,7 @@ from user.models import User
 
 class ModelTest(AironeTestCase):
     def setUp(self):
-        super(ModelTest, self).setUp()
+        super().setUp()
         self.guest = User.objects.create(username="guest", password="passwd", is_superuser=False)
         self.admin = User.objects.create(username="admin", password="passwd", is_superuser=True)
         self.entity = Entity.objects.create(name="entity", created_user=self.guest)

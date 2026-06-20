@@ -8,7 +8,8 @@ Configure via BACKEND_PLUGIN_ENTITY_OVERRIDES environment variable:
     BACKEND_PLUGIN_ENTITY_OVERRIDES='{"42":{"plugin":"cross-entity-sample","operations":["create","retrieve","update","delete"],"params":{"configuration_entity_id":99}}}'
 """
 
-from typing import Any, Callable, Dict, List, Optional, Set
+from collections.abc import Callable
+from typing import Any
 
 from pagoda_plugin_sdk import Plugin
 
@@ -52,10 +53,10 @@ class CrossEntityPlugin(Plugin):
     author = "AirOne Team"
 
     # Django integration (no custom endpoints needed)
-    django_apps: List[str] = []
+    django_apps: list[str] = []
 
     # Plugin capabilities
-    capabilities: Set[str] = {"cross_entity", "composite_entries", "endpoint_override"}
+    capabilities: set[str] = {"cross_entity", "composite_entries", "endpoint_override"}
 
     def __init__(self) -> None:
         super().__init__()
@@ -69,7 +70,7 @@ class CrossEntityPlugin(Plugin):
             "delete": self._handlers.handle_delete,
         }
 
-    def get_relationships(self) -> List[EntityRelationship]:
+    def get_relationships(self) -> list[EntityRelationship]:
         """Get entity relationship definitions for this plugin.
 
         Returns:
@@ -77,7 +78,7 @@ class CrossEntityPlugin(Plugin):
         """
         return get_plugin_relationships()
 
-    def validate_params(self, params: Dict[str, Any]) -> Dict[str, Any]:
+    def validate_params(self, params: dict[str, Any]) -> dict[str, Any]:
         """Validate and normalize plugin parameters.
 
         Args:
@@ -96,7 +97,7 @@ class CrossEntityPlugin(Plugin):
         }
         return validated
 
-    def get_handler(self, operation: str) -> Optional[Callable[..., Any]]:
+    def get_handler(self, operation: str) -> Callable[..., Any] | None:
         """Get the handler for a specific operation.
 
         Args:

@@ -2,7 +2,7 @@ from collections.abc import ValuesView
 from typing import Any
 
 
-class Settings(object):
+class Settings:
     def __init__(self, conf: dict[str, Any] = {}) -> None:
         self.conf = conf
 

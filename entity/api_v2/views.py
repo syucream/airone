@@ -1,5 +1,6 @@
+import builtins
 import logging
-from typing import Any, List
+from typing import Any
 
 from django.db.models import F, QuerySet
 from django.http import Http404, HttpRequest
@@ -349,8 +350,8 @@ class EntityHistoryAPI(viewsets.ReadOnlyModelViewSet):
         return Response(serializer.data)
 
     def _build_historical_cache(
-        self, entity: Entity, histories: List[History]
-    ) -> dict[str, List[Any]]:
+        self, entity: Entity, histories: builtins.list[History]
+    ) -> dict[str, builtins.list[Any]]:
         """
         Build cache for simple-history records to avoid N+1 queries.
 

@@ -355,7 +355,7 @@ class ViewTest(BaseViewTest):
                 {"name": "roles", "value": ["role0"]},
                 {
                     "name": "datetime",
-                    "value": datetime.datetime(2018, 12, 31, 0, 0, 0, tzinfo=datetime.timezone.utc),
+                    "value": datetime.datetime(2018, 12, 31, 0, 0, 0, tzinfo=datetime.UTC),
                 },
                 {"name": "num", "value": 123},
                 {"name": "nums", "value": [456, 789]},

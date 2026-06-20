@@ -4,11 +4,13 @@ AirOne Utility Functions for Plugins
 Provides utility functions that plugins can use to interact with AirOne core functionality.
 """
 
-import datetime
 import logging
-from typing import Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from django.conf import settings
+
+if TYPE_CHECKING:
+    import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +25,7 @@ def get_airone_version() -> str:
     return "1.0.0"  # Placeholder
 
 
-def get_airone_settings(key: Optional[str] = None, default: Any = None) -> Any:
+def get_airone_settings(key: str | None = None, default: Any = None) -> Any:
     """Get AirOne configuration settings
 
     Provides safe access to AirOne settings for plugins.
@@ -59,7 +61,7 @@ def get_airone_settings(key: Optional[str] = None, default: Any = None) -> Any:
 
 
 def log_plugin_activity(
-    plugin_id: str, action: str, details: Optional[Dict[str, Any]] = None
+    plugin_id: str, action: str, details: dict[str, Any] | None = None
 ) -> None:
     """Log plugin activity
 
@@ -77,7 +79,7 @@ def log_plugin_activity(
     logger.info(log_entry)
 
 
-def validate_plugin_data(data: Dict[str, Any], required_fields: list[str]) -> Dict[str, Any]:
+def validate_plugin_data(data: dict[str, Any], required_fields: list[str]) -> dict[str, Any]:
     """Validate plugin data
 
     Validates that required fields are present in plugin data.
@@ -106,7 +108,7 @@ def validate_plugin_data(data: Dict[str, Any], required_fields: list[str]) -> Di
     }
 
 
-def format_datetime_for_api(dt: Optional["datetime.datetime"]) -> Optional[str]:
+def format_datetime_for_api(dt: Optional["datetime.datetime"]) -> str | None:
     """Format datetime for API response
 
     Args:

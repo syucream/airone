@@ -5,7 +5,7 @@ from entity.models import Entity, EntityAttr
 
 class APITest(AironeViewTest):
     def setUp(self):
-        super(APITest, self).setUp()
+        super().setUp()
         user = self.admin_login()
         entity_info = {
             "test_entity1": ["foo", "bar", "fuga"],

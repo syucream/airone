@@ -13,7 +13,7 @@ from user.models import User
 
 class ViewTest(AironeViewTest):
     def setUp(self):
-        super(ViewTest, self).setUp()
+        super().setUp()
 
         # common processing to create Users and Groups that are specified
         # by test import file

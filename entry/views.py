@@ -1,6 +1,6 @@
 import re
 from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from urllib.parse import urlencode
 
 import yaml
@@ -29,9 +29,11 @@ from entry.utils import get_sort_order
 from group.models import Group
 from job.models import Job, JobStatus
 from role.models import Role
-from user.models import User
 
 from .settings import CONFIG
+
+if TYPE_CHECKING:
+    from user.models import User
 
 
 def _validate_input(recv_data: dict[str, Any], obj: Entry | Entity) -> HttpResponse | None:

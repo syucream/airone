@@ -13,7 +13,7 @@ from .base import RoleTestBase
 
 class ModelTest(RoleTestBase):
     def setUp(self):
-        super(ModelTest, self).setUp()
+        super().setUp()
 
     def test_delete_invalid_role(self):
         self.guest_login()

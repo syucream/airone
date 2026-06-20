@@ -1,6 +1,6 @@
 import errno
 import json
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from unittest.mock import Mock, mock_open, patch
 
 import yaml
@@ -23,7 +23,7 @@ from user.models import User
 
 class ViewTest(AironeViewTest):
     def setUp(self):
-        super(ViewTest, self).setUp()
+        super().setUp()
 
         self.admin = self.admin_login()
 
@@ -61,7 +61,7 @@ class ViewTest(AironeViewTest):
         # check boundary value with multibyte characters
         resp = self.client.get(
             reverse("dashboard:search"),
-            {"query": "あ" * int(CONFIG.MAX_QUERY_SIZE / len("あ".encode("utf-8")))},
+            {"query": "あ" * int(CONFIG.MAX_QUERY_SIZE / len("あ".encode()))},
         )
         self.assertEqual(resp.status_code, 200)
 
@@ -1258,7 +1258,7 @@ class ViewTest(AironeViewTest):
             "date": {"type": AttrType.DATE, "value": date(2020, 1, 1)},
             "datetime": {
                 "type": AttrType.DATETIME,
-                "value": datetime(2020, 1, 1, 0, 0, 0, tzinfo=timezone.utc),
+                "value": datetime(2020, 1, 1, 0, 0, 0, tzinfo=UTC),
             },
         }
         entities = []
@@ -1421,7 +1421,7 @@ class ViewTest(AironeViewTest):
             elif attr_name == "date":
                 self.assertEqual(attrv.date, date(1999, 1, 1))
             elif attr_name == "datetime":
-                self.assertEqual(attrv.datetime, datetime(1999, 1, 1, 0, 0, 0, tzinfo=timezone.utc))
+                self.assertEqual(attrv.datetime, datetime(1999, 1, 1, 0, 0, 0, tzinfo=UTC))
 
     @patch(
         "dashboard.tasks.export_search_result.delay",

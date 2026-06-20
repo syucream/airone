@@ -1,13 +1,16 @@
 import json
+from typing import TYPE_CHECKING
 
 from airone.lib.test import AironeViewTest
 from entry.models import AliasEntry
-from user.models import User
+
+if TYPE_CHECKING:
+    from user.models import User
 
 
 class APITest(AironeViewTest):
     def setUp(self):
-        super(APITest, self).setUp()
+        super().setUp()
         self.user: User = self.guest_login()
 
         # initialize Mdoel and Item for test

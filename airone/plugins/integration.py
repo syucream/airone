@@ -1,5 +1,4 @@
 import logging
-from typing import List
 
 from django.conf import settings
 from django.urls import URLResolver
@@ -74,14 +73,14 @@ class PluginIntegration:
             from job.models import Job
             from user.models import User
 
-            # Inject real models
-            sdk_models.Entity = Entity
-            sdk_models.Entry = Entry
-            sdk_models.User = User
-            sdk_models.AttributeValue = AttributeValue
-            sdk_models.EntityAttr = EntityAttr
-            sdk_models.Attribute = Attribute
-            sdk_models.Job = Job
+            # Inject real models — concrete types satisfy the Protocol interfaces at runtime
+            sdk_models.Entity = Entity  # type: ignore[assignment]
+            sdk_models.Entry = Entry  # type: ignore[assignment]
+            sdk_models.User = User  # type: ignore[assignment]
+            sdk_models.AttributeValue = AttributeValue  # type: ignore[assignment]
+            sdk_models.EntityAttr = EntityAttr  # type: ignore[assignment]
+            sdk_models.Attribute = Attribute  # type: ignore[assignment]
+            sdk_models.Job = Job  # type: ignore[assignment]
 
             logger.info("Successfully injected models into plugin SDK")
 
@@ -92,7 +91,7 @@ class PluginIntegration:
             logger.error(f"Unexpected error during model injection: {e}")
             raise
 
-    def get_installed_apps(self) -> List[str]:
+    def get_installed_apps(self) -> list[str]:
         """Get list of apps to add to Django INSTALLED_APPS
 
         Returns an empty list if plugins are disabled.
@@ -106,7 +105,7 @@ class PluginIntegration:
         self.initialize()
         return plugin_registry.get_installed_apps()
 
-    def get_url_patterns(self) -> List[URLResolver]:
+    def get_url_patterns(self) -> list[URLResolver]:
         """Get URL patterns
 
         Returns an empty list if plugins are disabled.
@@ -120,7 +119,7 @@ class PluginIntegration:
         self.initialize()
         return plugin_registry.get_url_patterns()
 
-    def get_api_v2_patterns(self) -> List[URLResolver]:
+    def get_api_v2_patterns(self) -> list[URLResolver]:
         """Get API v2 URL patterns
 
         Returns an empty list if plugins are disabled.

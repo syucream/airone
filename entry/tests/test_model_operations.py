@@ -1,4 +1,4 @@
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from unittest import skip
 
 from django.conf import settings
@@ -1102,8 +1102,8 @@ class ModelOperationsTest(BaseModelTest):
             {"name": "arr_role", "set_val": [test_role], "exp_val": [test_role.name]},
             {
                 "name": "datetime",
-                "set_val": datetime(2018, 12, 31, 12, 34, 56, tzinfo=timezone.utc),
-                "exp_val": datetime(2018, 12, 31, 12, 34, 56, tzinfo=timezone.utc),
+                "set_val": datetime(2018, 12, 31, 12, 34, 56, tzinfo=UTC),
+                "exp_val": datetime(2018, 12, 31, 12, 34, 56, tzinfo=UTC),
             },
         ]
         for info in attr_info:

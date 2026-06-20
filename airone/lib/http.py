@@ -2,8 +2,9 @@ import codecs
 import importlib
 import json
 import urllib.parse
+from collections.abc import Callable
 from io import StringIO
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any
 from urllib.parse import quote
 
 from django.conf import settings
@@ -48,9 +49,9 @@ def http_get(func: Callable[..., HttpResponse]) -> Callable[..., HttpResponse]:
 
 
 def get_obj_with_check_perm(
-    user: User, model: models.Model, object_id: int, permission_level: int
-) -> Tuple[Optional[Any], Optional[HttpResponse]]:
-    target_obj = model.objects.filter(id=object_id).first()
+    user: User, model: type[models.Model], object_id: int, permission_level: int
+) -> tuple[Any | None, HttpResponse | None]:
+    target_obj = model.objects.filter(id=object_id).first()  # type: ignore[attr-defined]
     if not target_obj:
         return (None, HttpResponse("Failed to get entity of specified id", status=400))
 
@@ -81,7 +82,7 @@ def check_superuser(func: Callable[..., HttpResponse]) -> Callable[..., HttpResp
 
 
 def http_post(
-    validator: List[Dict[str, Any]] = [],
+    validator: list[dict[str, Any]] = [],
 ) -> Callable[[Callable[..., HttpResponse]], Callable[..., HttpResponse]]:
     def _decorator(func: Callable[..., HttpResponse]) -> Callable[..., HttpResponse]:
         def http_post_handler(*args: Any, **kwargs: Any) -> HttpResponse:
@@ -109,16 +110,19 @@ def http_post(
 
 
 def http_file_upload(func: Callable[..., HttpResponse]) -> Callable[..., HttpResponse]:
-    def get_uploaded_file_content(request: HttpRequest) -> Optional[str]:
+    def get_uploaded_file_content(request: HttpRequest) -> str | None:
         """This returns uploaded file context whatever encoding type"""
 
         fp = request.FILES.get("file")
         for encoding in ["UTF-8", "Shift-JIS", "ISO-2022-JP", "EUC-JP"]:
             try:
+                if fp is None:
+                    return None
                 return codecs.getreader(encoding)(fp).read()
 
             except UnicodeDecodeError:
-                fp.seek(0)
+                if fp is not None:
+                    fp.seek(0)
 
             except Exception:
                 return None
@@ -140,7 +144,7 @@ def http_file_upload(func: Callable[..., HttpResponse]) -> Callable[..., HttpRes
     return wrapper
 
 
-def render(request: HttpRequest, template: str, context: Dict[str, Any] = {}) -> HttpResponse:
+def render(request: HttpRequest, template: str, context: dict[str, Any] = {}) -> HttpResponse:
     # added default parameters for navigate
     entity_objects = entity_models.Entity.objects.order_by("name").filter(is_active=True)
     context["navigator"] = {
@@ -224,13 +228,12 @@ def get_download_response(io_stream: StringIO, fname: str, encode: str = "utf-8"
         io_stream.getvalue().encode(encode, errors="replace"),
         content_type="application/force-download",
     )
-    response["Content-Disposition"] = 'attachment; filename="{fn}"'.format(
-        fn=urllib.parse.quote(smart_str(fname))
-    )
+    fname_encoded = urllib.parse.quote(smart_str(fname))
+    response["Content-Disposition"] = f'attachment; filename="{fname_encoded}"'
     return response
 
 
-def _is_valid(params: Dict[str, Any], meta_info: List[Dict[str, Any]]) -> bool:
+def _is_valid(params: dict[str, Any], meta_info: list[dict[str, Any]]) -> bool:
     # These are existance checks of each parameters except for ones which has omittable parameter
     if not all([x["name"] in params for x in meta_info if "omittable" not in x]):
         return False

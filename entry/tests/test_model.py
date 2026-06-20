@@ -1,4 +1,4 @@
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 
 from django.conf import settings
 
@@ -13,7 +13,7 @@ from user.models import User
 
 class BaseModelTest(AironeTestCase):
     def setUp(self):
-        super(BaseModelTest, self).setUp()
+        super().setUp()
 
         self._user: User = User(username="test")
         self._user.save()
@@ -58,8 +58,8 @@ class BaseModelTest(AironeTestCase):
             },
             {
                 "name": "datetime",
-                "set_val": datetime(2018, 12, 31, 12, 34, 56, tzinfo=timezone.utc),
-                "exp_val": datetime(2018, 12, 31, 12, 34, 56, tzinfo=timezone.utc),
+                "set_val": datetime(2018, 12, 31, 12, 34, 56, tzinfo=UTC),
+                "exp_val": datetime(2018, 12, 31, 12, 34, 56, tzinfo=UTC),
             },
             {"name": "num", "set_val": 123.45, "exp_val": 123.45},
         ]

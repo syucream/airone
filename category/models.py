@@ -16,5 +16,5 @@ class Category(ACLBase):
         return Category.objects.order_by("-priority")
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super(Category, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.objtype = ACLObjType.Category

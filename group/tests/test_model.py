@@ -27,7 +27,7 @@ class ModelTest(AironeTestCase):
             └──group2
                  └──group3(member: user1)
         """
-        super(ModelTest, self).setUp()
+        super().setUp()
 
         self.group0 = self._create_group("group0")
         self.group1 = self._create_group("group1", self.group0)

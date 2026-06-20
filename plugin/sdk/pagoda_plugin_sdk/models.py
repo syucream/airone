@@ -5,7 +5,7 @@ This module provides access to host application models through a safe injection 
 Models are injected by the host application during plugin system initialization.
 """
 
-from typing import Any, List, Optional, Type
+from typing import Any
 
 from .protocols import (
     AttributeProtocol,
@@ -18,13 +18,13 @@ from .protocols import (
 )
 
 # Model references - injected by the host application
-Entity: Optional[Type[EntityProtocol]] = None
-Entry: Optional[Type[EntryProtocol]] = None
-User: Optional[Type[UserProtocol]] = None
-AttributeValue: Optional[Type[AttributeValueProtocol]] = None
-EntityAttr: Optional[Type[EntityAttrProtocol]] = None
-Attribute: Optional[Type[AttributeProtocol]] = None
-Job: Optional[Type[JobProtocol]] = None
+Entity: type[EntityProtocol] | None = None
+Entry: type[EntryProtocol] | None = None
+User: type[UserProtocol] | None = None
+AttributeValue: type[AttributeValueProtocol] | None = None
+EntityAttr: type[EntityAttrProtocol] | None = None
+Attribute: type[AttributeProtocol] | None = None
+Job: type[JobProtocol] | None = None
 
 
 def __getattr__(name: str) -> Any:
@@ -63,7 +63,7 @@ def is_initialized() -> bool:
     return any([Entity, Entry, User, AttributeValue, EntityAttr, Attribute, Job])
 
 
-def get_available_models() -> List[str]:
+def get_available_models() -> list[str]:
     """Get list of available (initialized) models
 
     Returns:

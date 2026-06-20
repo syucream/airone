@@ -1,6 +1,6 @@
 import re
 from datetime import timedelta
-from typing import Any
+from typing import Any, cast
 
 from django.contrib.auth import views as auth_views
 from django.core.exceptions import ObjectDoesNotExist
@@ -20,10 +20,10 @@ def index(request: HttpRequest) -> HttpResponse:
     if not request.user.is_authenticated:
         return HttpResponseSeeOther("/auth/login")
 
-    context = {"users": [request.user]}
+    context: dict[str, Any] = {"users": [request.user]}
     if request.user.is_superuser:
         context = {
-            "users": User.objects.filter(is_active=True),
+            "users": list(User.objects.filter(is_active=True)),
         }
 
     return render(request, "list_user.html", context)
@@ -290,11 +290,12 @@ def do_delete(request: HttpRequest, user_id: int, recv_data: dict[str, Any]) -> 
     ]
 )
 def change_ldap_auth(request: HttpRequest, recv_data: dict[str, Any]) -> HttpResponse:
-    if LDAPBackend.is_authenticated(request.user.username, recv_data["ldap_password"]):
+    current_user = cast("User", request.user)
+    if LDAPBackend.is_authenticated(current_user.username, recv_data["ldap_password"]):
         # When LDAP authentication is passed with current username and specified password,
         # this chnages authentication type from local to LDAP.
-        request.user.authenticate_type = User.AuthenticateType.AUTH_TYPE_LDAP
-        request.user.save(update_fields=["authenticate_type"])
+        current_user.authenticate_type = User.AuthenticateType.AUTH_TYPE_LDAP
+        current_user.save(update_fields=["authenticate_type"])
 
         return HttpResponse("Succeeded")
     else:
@@ -323,7 +324,7 @@ class PasswordReset(auth_views.PasswordResetView):
                 status=400,
             )
 
-        return super(PasswordReset, self).form_valid(form)
+        return super().form_valid(form)
 
 
 class PasswordResetDone(auth_views.PasswordResetDoneView):
