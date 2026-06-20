@@ -1,6 +1,6 @@
 import re
 from datetime import date, datetime
-from typing import Any, Dict, List, Literal, Union
+from typing import Any, Literal
 
 from django.db.models import Prefetch, QuerySet
 from drf_spectacular.types import OpenApiTypes
@@ -178,7 +178,7 @@ class IntOrFloatField(serializers.Field):
     default_error_messages = {"invalid": "A valid number is required."}
 
     def to_representation(self, value: Any) -> int | float | None:
-        if value is None or isinstance(value, (int, float)):
+        if value is None or isinstance(value, int | float):
             return value
         # Fallback for unexpected stored types (e.g. legacy strings)
         try:
@@ -1357,7 +1357,7 @@ class EntryHistoryAttributeValueSerializer(serializers.ModelSerializer):
                 return {"as_boolean": obj.boolean}
 
             case AttrType.DATE:
-                return {"as_string": obj.date if obj.date else ""}
+                return {"as_string": obj.date.isoformat() if obj.date else ""}
 
             case AttrType.OBJECT:
                 return {
@@ -1412,7 +1412,7 @@ class EntryHistoryAttributeValueSerializer(serializers.ModelSerializer):
                 }
 
             case AttrType.DATETIME:
-                return {"as_string": obj.datetime if obj.datetime else ""}
+                return {"as_string": obj.datetime.isoformat() if obj.datetime else ""}
 
             case AttrType.NUMBER:
                 return {"as_number": obj.get_value()}
@@ -1476,7 +1476,7 @@ class EntryAttributeValueRestoreSerializer(serializers.ModelSerializer):
                 "user ({}) is not permitted for the recovery operation", user.username
             )
 
-        value: Union[str, int, float, bool, Dict[str, Any], List[Any], None]
+        value: str | int | float | bool | dict[str, Any] | list[Any] | None
 
         # Prepare value based on data_type
         match instance.data_type:
