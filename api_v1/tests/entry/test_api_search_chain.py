@@ -11,14 +11,14 @@ from entry.settings import CONFIG as ENTRY_CONFIG
 
 class APITest(AironeViewTest):
     def tearDown(self):
-        super(APITest, self).tearDown()
+        super().tearDown()
 
         # restore originl configuration data and method
         ENTRY_CONFIG.conf = self._orig_entry_config
         AdvancedSearchService.search_entries = self._entry_search_entries
 
     def setUp(self):
-        super(APITest, self).setUp()
+        super().setUp()
 
         self.user = self.guest_login()
 

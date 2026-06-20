@@ -1,4 +1,4 @@
-from typing import Optional, Self
+from typing import Self
 
 from celery import Task
 from pydantic import BaseModel, Field, ValidationError, field_validator, model_validator
@@ -49,14 +49,14 @@ class CreateEntityParams(BaseModel):
 class EditEntityAttr(BaseModel):
     """Attribute definition for EDIT_ENTITY (V1) task."""
 
-    id: Optional[int] = None
+    id: int | None = None
     name: str = Field(..., max_length=200)
     type: int
     is_mandatory: bool
     is_delete_in_chain: bool
     row_index: str
     ref_ids: list[int] = Field(default_factory=list)
-    deleted: Optional[bool] = None
+    deleted: bool | None = None
 
     @field_validator("type", mode="before")
     @classmethod
@@ -99,16 +99,16 @@ class CreateEntityV2Attr(BaseModel):
 
     name: str = Field(..., max_length=200)
     type: int
-    index: Optional[int] = None
+    index: int | None = None
     is_mandatory: bool = False
     is_delete_in_chain: bool = False
     is_summarized: bool = False
     referral: list[int] = Field(default_factory=list)
     note: str = ""
-    default_value: Optional[str | bool | int | float] = None
-    name_order: Optional[int] = 0  # for internal use only
-    name_prefix: Optional[str] = ""  # for internal use only
-    name_postfix: Optional[str] = ""  # for internal use only
+    default_value: str | bool | int | float | None = None
+    name_order: int | None = 0  # for internal use only
+    name_prefix: str | None = ""  # for internal use only
+    name_postfix: str | None = ""  # for internal use only
 
     @model_validator(mode="after")
     def validate_default_value_for_type(self) -> Self:
@@ -136,7 +136,7 @@ class CreateEntityV2Attr(BaseModel):
             if not isinstance(self.default_value, bool):
                 is_valid = False
         elif self.type == AttrType.NUMBER:
-            if not isinstance(self.default_value, (int, float)):
+            if not isinstance(self.default_value, int | float):
                 is_valid = False
 
         if not is_valid:
@@ -163,8 +163,8 @@ class CreateEntityV2Params(BaseModel):
 class EditEntityV2Webhook(BaseModel):
     """Webhook definition for EDIT_ENTITY_V2 task."""
 
-    id: Optional[int] = None
-    url: Optional[str] = Field(None, max_length=200)
+    id: int | None = None
+    url: str | None = Field(None, max_length=200)
     label: str = ""
     is_enabled: bool = False
     headers: list[WebhookHeader] = Field(default_factory=list)
@@ -174,20 +174,20 @@ class EditEntityV2Webhook(BaseModel):
 class EditEntityV2Attr(BaseModel):
     """Attribute definition for EDIT_ENTITY_V2 task."""
 
-    id: Optional[int] = None
-    name: Optional[str] = Field(None, max_length=200)
-    type: Optional[int] = None
-    index: Optional[int] = None
-    is_mandatory: Optional[bool] = None
-    is_delete_in_chain: Optional[bool] = None
-    is_summarized: Optional[bool] = None
-    referral: Optional[list[int]] = None
-    note: Optional[str] = None
-    default_value: Optional[str | bool | int | float] = None
+    id: int | None = None
+    name: str | None = Field(None, max_length=200)
+    type: int | None = None
+    index: int | None = None
+    is_mandatory: bool | None = None
+    is_delete_in_chain: bool | None = None
+    is_summarized: bool | None = None
+    referral: list[int] | None = None
+    note: str | None = None
+    default_value: str | bool | int | float | None = None
     is_deleted: bool = False
-    name_order: Optional[int] = 0  # for internal use only
-    name_prefix: Optional[str] = ""  # for internal use only
-    name_postfix: Optional[str] = ""  # for internal use only
+    name_order: int | None = 0  # for internal use only
+    name_prefix: str | None = ""  # for internal use only
+    name_postfix: str | None = ""  # for internal use only
 
     @model_validator(mode="after")
     def validate_attr_fields(self) -> Self:
@@ -223,7 +223,7 @@ class EditEntityV2Attr(BaseModel):
             if not isinstance(self.default_value, bool):
                 is_valid = False
         elif self.type == AttrType.NUMBER:
-            if not isinstance(self.default_value, (int, float)):
+            if not isinstance(self.default_value, int | float):
                 is_valid = False
 
         if not is_valid:
@@ -241,7 +241,7 @@ class IsolationConditionParam(BaseModel):
 
     attr_id: int
     str_cond: str = ""
-    ref_cond_id: Optional[int] = None
+    ref_cond_id: int | None = None
     bool_cond: bool = False
     is_unmatch: bool = False
 
@@ -250,13 +250,13 @@ class IsolationActionParam(BaseModel):
     """Action definition for an isolation rule."""
 
     is_prevent_all: bool = False
-    prevent_from_id: Optional[int] = None
+    prevent_from_id: int | None = None
 
 
 class IsolationRuleParam(BaseModel):
     """Isolation rule definition for EDIT_ENTITY_V2 task."""
 
-    id: Optional[int] = None
+    id: int | None = None
     is_deleted: bool = False
     conditions: list[IsolationConditionParam] = Field(default_factory=list)
     action: IsolationActionParam = Field(default_factory=IsolationActionParam)
@@ -265,11 +265,11 @@ class IsolationRuleParam(BaseModel):
 class EditEntityV2Params(BaseModel):
     """Parameters for EDIT_ENTITY_V2 task."""
 
-    id: Optional[int] = None
-    name: Optional[str] = Field(None, max_length=200)
-    note: Optional[str] = None
-    item_name_pattern: Optional[str] = None
-    is_toplevel: Optional[bool] = None
+    id: int | None = None
+    name: str | None = Field(None, max_length=200)
+    note: str | None = None
+    item_name_pattern: str | None = None
+    is_toplevel: bool | None = None
     attrs: list[EditEntityV2Attr] = Field(default_factory=list)
     webhooks: list[EditEntityV2Webhook] = Field(default_factory=list)
     isolation_rules: list[IsolationRuleParam] = Field(default_factory=list)
@@ -282,7 +282,7 @@ class EditEntityV2Params(BaseModel):
 
 
 @register_job_task(JobOperation.CREATE_ENTITY)
-@app.task(bind=True)  # type: ignore[misc]
+@app.task(bind=True)
 @may_schedule_until_job_is_ready
 def create_entity(self: Task, job: Job) -> JobStatus:
     user = User.objects.filter(id=job.user.id).first()
@@ -317,7 +317,8 @@ def create_entity(self: Task, job: Job) -> JobStatus:
         )
 
         if attr.type & AttrType.OBJECT:
-            [attr_base.referral.add(Entity.objects.get(id=x)) for x in attr.ref_ids]
+            for x in attr.ref_ids:
+                attr_base.referral.add(Entity.objects.get(id=x))
 
         # register history to modify Entity
         history.add_attr(attr_base)
@@ -330,7 +331,7 @@ def create_entity(self: Task, job: Job) -> JobStatus:
 
 
 @register_job_task(JobOperation.EDIT_ENTITY)
-@app.task(bind=True)  # type: ignore[misc]
+@app.task(bind=True)
 @may_schedule_until_job_is_ready
 def edit_entity(self: Task, job: Job) -> JobStatus:
     user = User.objects.filter(id=job.user.id).first()
@@ -427,7 +428,8 @@ def edit_entity(self: Task, job: Job) -> JobStatus:
 
             # append referral objects
             if attr.type & AttrType.OBJECT:
-                [attr_obj.referral.add(Entity.objects.get(id=x)) for x in attr.ref_ids]
+                for x in attr.ref_ids:
+                    attr_obj.referral.add(Entity.objects.get(id=x))
 
             # register History to register adding EntityAttr
             history.add_attr(attr_obj)
@@ -440,7 +442,7 @@ def edit_entity(self: Task, job: Job) -> JobStatus:
 
 
 @register_job_task(JobOperation.DELETE_ENTITY)
-@app.task(bind=True)  # type: ignore[misc]
+@app.task(bind=True)
 @may_schedule_until_job_is_ready
 def delete_entity(self: Task, job: Job) -> JobStatus:
     user = User.objects.filter(id=job.user.id).first()
@@ -466,7 +468,7 @@ def delete_entity(self: Task, job: Job) -> JobStatus:
 
 
 @register_job_task(JobOperation.CREATE_ENTITY_V2)
-@app.task(bind=True)  # type: ignore[misc]
+@app.task(bind=True)
 @may_schedule_until_job_is_ready
 def create_entity_v2(self: Task, job: Job) -> JobStatus:
     entity: Entity | None = Entity.objects.filter(id=job.target.id, is_active=True).first()
@@ -494,7 +496,7 @@ def create_entity_v2(self: Task, job: Job) -> JobStatus:
 
 
 @register_job_task(JobOperation.EDIT_ENTITY_V2)
-@app.task(bind=True)  # type: ignore[misc]
+@app.task(bind=True)
 @may_schedule_until_job_is_ready
 def edit_entity_v2(self: Task, job: Job) -> JobStatus:
     entity: Entity | None = Entity.objects.filter(id=job.target.id, is_active=True).first()
@@ -524,7 +526,7 @@ def edit_entity_v2(self: Task, job: Job) -> JobStatus:
 
 
 @register_job_task(JobOperation.DELETE_ENTITY_V2)
-@app.task(bind=True)  # type: ignore[misc]
+@app.task(bind=True)
 @may_schedule_until_job_is_ready
 def delete_entity_v2(self: Task, job: Job) -> JobStatus:
     entity: Entity | None = Entity.objects.filter(id=job.target.id, is_active=True).first()

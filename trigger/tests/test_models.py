@@ -19,7 +19,7 @@ FAT_LADY_PASSWDS = ["Caputo Draconis", "Pig snout"]
 
 class ModelTest(AironeTestCase):
     def setUp(self):
-        super(ModelTest, self).setUp()
+        super().setUp()
 
         self.user = User.objects.create(username="test")
         self.entity_ref = self.create_entity(self.user, "test_entity_ref")

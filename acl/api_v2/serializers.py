@@ -1,4 +1,4 @@
-from typing import Any, TypedDict
+from typing import TYPE_CHECKING, Any, TypedDict
 
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
@@ -11,7 +11,9 @@ from category.models import Category
 from entity.models import Entity, EntityAttr
 from entry.models import Attribute, Entry
 from role.models import HistoricalPermission, Role
-from user.models import User
+
+if TYPE_CHECKING:
+    from user.models import User
 
 
 class ACLParentType(TypedDict):

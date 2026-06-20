@@ -1,5 +1,5 @@
 import math
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 
 from django.conf import settings
 
@@ -243,8 +243,8 @@ class ModelValidationTest(BaseModelTest):
             {"name": "arr_group", "set_val": ["abcd"], "exp_val": []},
             {
                 "name": "datetime",
-                "set_val": datetime(2018, 12, 31, 0, 0, 0, tzinfo=timezone.utc),
-                "exp_val": datetime(2018, 12, 31, 0, 0, 0, tzinfo=timezone.utc),
+                "set_val": datetime(2018, 12, 31, 0, 0, 0, tzinfo=UTC),
+                "exp_val": datetime(2018, 12, 31, 0, 0, 0, tzinfo=UTC),
             },
         ]
         for info in attr_info:
@@ -1052,7 +1052,7 @@ class ModelValidationTest(BaseModelTest):
             values={
                 "nw": item_nw2,
                 "type": item_ip_type,
-                "created_at": datetime(2025, 10, 28, 10, 0, 0, tzinfo=timezone.utc),
+                "created_at": datetime(2025, 10, 28, 10, 0, 0, tzinfo=UTC),
             },
         )
         item_srv1 = self.add_entry(
@@ -1106,7 +1106,7 @@ class ModelValidationTest(BaseModelTest):
             # check date and datetime values can be retrieved expectedly
             self.assertEqual(
                 piw["I/F"]["created_at"].datetime,
-                datetime(2025, 10, 28, 10, 0, 0, tzinfo=timezone.utc),
+                datetime(2025, 10, 28, 10, 0, 0, tzinfo=UTC),
             )
             self.assertEqual(piw["I/F"]["nw"]["created_at"].date, date(2025, 10, 28))
             self.assertIsNone(piw["I/F"]["created_at"].date)

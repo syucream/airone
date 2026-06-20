@@ -1,6 +1,6 @@
 import functools
 import traceback
-from typing import Callable, Union
+from collections.abc import Callable
 
 from django.core.mail import mail_admins
 
@@ -88,7 +88,7 @@ def may_schedule_until_job_is_ready_with_handlers(
 
 
 def register_job_task(
-    operation: Union[JobOperation, JobOperationCustom],
+    operation: JobOperation | JobOperationCustom,
 ) -> Callable[[TaskHandler], TaskHandler]:
     """
     A decorator to register a Celery task in the job model's method table.

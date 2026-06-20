@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Any
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
-from django.db.models import QuerySet
 from rest_framework.authtoken.models import Token
 
 from airone.lib.acl import ACLType
@@ -14,6 +13,8 @@ from group.models import Group
 from role.models import Role
 
 if TYPE_CHECKING:
+    from django.db.models import QuerySet
+
     from acl.models import ACLBase
 
 
@@ -227,7 +228,7 @@ class User(AbstractUser):
         max_users: int | None = settings.MAX_USERS
         if max_users and User.objects.count() >= max_users:
             raise RuntimeError("The number of users is over the limit")
-        return super(User, self).save(*args, **kwargs)
+        return super().save(*args, **kwargs)
 
     def delete(self) -> None:  # type: ignore[override]
         """

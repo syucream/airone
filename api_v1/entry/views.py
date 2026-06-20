@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, List, Optional
+from typing import Any, Optional
 from zoneinfo import ZoneInfo
 
 from django.conf import settings
@@ -27,7 +27,7 @@ from entry.settings import CONFIG as CONFIG_ENTRY
 
 class EntrySearchChainAPIResponse(BaseModel):
     ret_count: int
-    ret_values: List[AdvancedSearchResultRecord]
+    ret_values: list[AdvancedSearchResultRecord]
 
 
 class EntrySearchAPIRequest(BaseModel):
@@ -182,8 +182,8 @@ class EntrySearchAPI(APIView):
 
 class EntryReferredResponse(BaseModel):
     class Entity(BaseModel):
-        id: Optional[int] = None
-        name: Optional[str] = None
+        id: int | None = None
+        name: str | None = None
 
     class ReferralEntry(BaseModel):
         id: int
@@ -193,9 +193,9 @@ class EntryReferredResponse(BaseModel):
     class EntryReferred(BaseModel):
         id: int
         entity: "EntryReferredResponse.Entity"
-        referral: List["EntryReferredResponse.ReferralEntry"]
+        referral: list["EntryReferredResponse.ReferralEntry"]
 
-    result: List[EntryReferred]
+    result: list[EntryReferred]
 
 
 class EntryReferredAPI(APIView):
@@ -245,7 +245,7 @@ class EntryReferredAPI(APIView):
         return Response(EntryReferredResponse(result=entries_data).model_dump(exclude_none=True))
 
 
-class UpdateHistoryResponse(RootModel[List["UpdateHistoryResponse.ResponseItem"]]):
+class UpdateHistoryResponse(RootModel[list["UpdateHistoryResponse.ResponseItem"]]):
     class Entity(BaseModel):
         id: int
         name: str
@@ -263,7 +263,7 @@ class UpdateHistoryResponse(RootModel[List["UpdateHistoryResponse.ResponseItem"]
     class Attribute(BaseModel):
         id: int
         name: str
-        history: List["UpdateHistoryResponse.AttributeHistory"]
+        history: list["UpdateHistoryResponse.AttributeHistory"]
 
     class ResponseItem(BaseModel):
         entity: "UpdateHistoryResponse.Entity"
@@ -337,7 +337,7 @@ class UpdateHistory(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        results: List[UpdateHistoryResponse.ResponseItem] = []
+        results: list[UpdateHistoryResponse.ResponseItem] = []
         for entry in target_entries:
             attr = entry.attrs.filter(schema__name=p_attr, is_active=True).first()
             if not attr:
@@ -346,7 +346,7 @@ class UpdateHistory(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            history_items: List[UpdateHistoryResponse.AttributeHistory] = []
+            history_items: list[UpdateHistoryResponse.AttributeHistory] = []
             for attrv in attr.values.filter(
                 created_time__gt=newer_than, created_time__lt=older_than
             ).order_by("-created_time")[: CONFIG_ENTRY.MAX_HISTORY_COUNT]:

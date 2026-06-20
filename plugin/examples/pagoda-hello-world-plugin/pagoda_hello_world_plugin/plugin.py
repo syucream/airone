@@ -5,7 +5,7 @@ Demonstrates how to create external plugins using the Pagoda plugin system.
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 # Import from Pagoda Plugin SDK libraries (fully independent)
 from pagoda_plugin_sdk import Plugin
@@ -62,8 +62,8 @@ class HelloWorldPlugin(Plugin):
 
     @entry_hook("before_update", entity="helloworld")
     def log_helloworld_before_update(
-        self, entity_name: str, user: Any, validated_data: Dict[str, Any], entry: Any, **kwargs: Any
-    ) -> Dict[str, Any]:
+        self, entity_name: str, user: Any, validated_data: dict[str, Any], entry: Any, **kwargs: Any
+    ) -> dict[str, Any]:
         """Called before an entry is updated in 'helloworld' entity
 
         Args:
@@ -124,8 +124,8 @@ class HelloWorldPlugin(Plugin):
         user: Any,
         schema_name: str,
         name: str,
-        attrs: List[Any],
-        instance: Optional[Any],
+        attrs: list[Any],
+        instance: Any | None,
         **kwargs: Any,
     ) -> None:
         """Custom validation for entry creation/update
@@ -151,8 +151,8 @@ class HelloWorldPlugin(Plugin):
 
     @get_attrs_hook("entry")
     def get_entry_attrs(
-        self, entry: Any, attrinfo: List[Any], is_retrieve: bool, **kwargs: Any
-    ) -> List[Any]:
+        self, entry: Any, attrinfo: list[Any], is_retrieve: bool, **kwargs: Any
+    ) -> list[Any]:
         """Modify entry attributes before returning to client
 
         Args:
@@ -185,8 +185,8 @@ class HelloWorldPlugin(Plugin):
 
     @entity_hook("before_update")
     def log_entity_before_update(
-        self, user: Any, validated_data: Dict[str, Any], entity: Any, **kwargs: Any
-    ) -> Dict[str, Any]:
+        self, user: Any, validated_data: dict[str, Any], entity: Any, **kwargs: Any
+    ) -> dict[str, Any]:
         """Called before an entity is updated
 
         Args:
@@ -215,7 +215,7 @@ class HelloWorldPlugin(Plugin):
     # Entity Data Access Hook
 
     @get_attrs_hook("entity")
-    def get_entity_attrs(self, entity: Any, attrinfo: List[Any], **kwargs: Any) -> List[Any]:
+    def get_entity_attrs(self, entity: Any, attrinfo: list[Any], **kwargs: Any) -> list[Any]:
         """Modify entity attributes before returning to client
 
         Args:

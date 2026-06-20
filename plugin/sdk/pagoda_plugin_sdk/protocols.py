@@ -5,8 +5,9 @@ These protocols define the interface for accessing host application models
 in a type-safe manner without creating implementation dependencies.
 """
 
+from collections.abc import Iterator
 from datetime import datetime
-from typing import Any, ClassVar, Iterator, Protocol, TypeVar, overload, runtime_checkable
+from typing import Any, ClassVar, Protocol, TypeVar, overload, runtime_checkable
 
 T = TypeVar("T", covariant=True)
 

@@ -1,5 +1,5 @@
 import logging
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 
 from django.conf import settings
 
@@ -18,7 +18,7 @@ from user.models import User
 
 class AdvancedSearchServiceTest(AironeTestCase):
     def setUp(self):
-        super(AdvancedSearchServiceTest, self).setUp()
+        super().setUp()
 
         self._user: User = User(username="test")
         self._user.save()
@@ -80,7 +80,7 @@ class AdvancedSearchServiceTest(AironeTestCase):
             "arr_role": {"type": AttrType.ARRAY_ROLE, "value": [ref_role]},
             "datetime": {
                 "type": AttrType.DATETIME,
-                "value": datetime(2018, 12, 31, 12, 34, 56, tzinfo=timezone.utc),
+                "value": datetime(2018, 12, 31, 12, 34, 56, tzinfo=UTC),
             },
         }
 

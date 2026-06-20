@@ -12,7 +12,7 @@ from trigger.models import (
 
 class APITest(AironeViewTest):
     def setUp(self):
-        super(APITest, self).setUp()
+        super().setUp()
 
         self.user = self.guest_login()
 

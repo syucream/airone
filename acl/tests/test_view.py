@@ -14,7 +14,7 @@ from user.models import User
 
 class ViewTest(AironeViewTest):
     def setUp(self):
-        super(ViewTest, self).setUp()
+        super().setUp()
 
         # create test Role instance which is used in this test
         self._role = Role.objects.create(name="TestRole", description="Hoge")
@@ -23,7 +23,7 @@ class ViewTest(AironeViewTest):
 
     # override 'admin_login' method to create initial ACLBase objects
     def admin_login(self):
-        user = super(ViewTest, self).admin_login()
+        user = super().admin_login()
 
         self._aclobj = ACLBase(name="test", created_user=user)
         self._aclobj.save()

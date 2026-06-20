@@ -104,19 +104,19 @@ class ESS(Elasticsearch):
         if ("timeout" not in kwargs) and (settings.ES_CONFIG["TIMEOUT"] is not None):
             kwargs["timeout"] = settings.ES_CONFIG["TIMEOUT"]
 
-        super(ESS, self).__init__(settings.ES_CONFIG["URL"], **kwargs)
+        super().__init__(settings.ES_CONFIG["URL"], **kwargs)
 
     def bulk(self, **kwargs: Any) -> Any:
-        return super(ESS, self).bulk(index=self._index, **kwargs)
+        return super().bulk(index=self._index, **kwargs)
 
     def delete(self, **kwargs: Any) -> Any:
-        return super(ESS, self).delete(index=self._index, **kwargs)
+        return super().delete(index=self._index, **kwargs)
 
     def refresh(self, **kwargs: Any) -> Any:
         return self.indices.refresh(index=self._index, **kwargs)
 
     def index(self, **kwargs: Any) -> Any:
-        return super(ESS, self).index(index=self._index, **kwargs)
+        return super().index(index=self._index, **kwargs)
 
     def search(self, **kwargs: Any) -> dict[str, Any]:  # type: ignore[override]
         # expand max_result_window parameter which indicates numbers to return at one searching
@@ -135,7 +135,7 @@ class ESS(Elasticsearch):
         if "size" not in kwargs:
             kwargs["size"] = settings.ES_CONFIG["MAXIMUM_RESULTS_NUM"]
 
-        return dict(super(ESS, self).search(index=self._index, **kwargs))
+        return dict(super().search(index=self._index, **kwargs))
 
     def recreate_index(self) -> None:
         self.indices.delete(index=self._index, ignore_unavailable=True)

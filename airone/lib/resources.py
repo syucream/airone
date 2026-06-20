@@ -1,5 +1,5 @@
 import importlib
-from typing import Sequence
+from collections.abc import Sequence
 
 import tablib
 from import_export.exceptions import ImportError as ImportExportError
@@ -16,7 +16,7 @@ class AironeModelResource(ModelResource):
     DISALLOW_UPDATE_KEYS: list[str] = []
 
     def __init__(self, *args: object, **kwargs: object) -> None:
-        super(AironeModelResource, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         # This parameter is needed to check that imported object has permission
         # to add/update it by the user who import data.

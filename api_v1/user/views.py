@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING, cast
+
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_protect
 from rest_framework.authtoken.models import Token
@@ -5,18 +7,23 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+if TYPE_CHECKING:
+    from user.models import User
+
 
 class AccessTokenAPI(APIView):
     def get(self, request: Request, format: str | None = None) -> Response:
-        return Response({"results": str(request.user.token)})
+        user = cast("User", request.user)
+        token_obj = Token.objects.filter(user=user).first()
+        return Response({"results": str(token_obj)})
 
-    @method_decorator(csrf_protect)  # type: ignore[misc]
+    @method_decorator(csrf_protect)
     def put(self, request: Request, format: str | None = None) -> Response:
         """
         This refresh access_token to another one
         """
-
-        token, created = Token.objects.get_or_create(user=request.user)
+        user = cast("User", request.user)
+        token, created = Token.objects.get_or_create(user=user)
 
         # If the token is not created, this returns it.
         if created:
@@ -24,4 +31,4 @@ class AccessTokenAPI(APIView):
 
         # This recreates another Token when it has been already existed.
         token.delete()
-        return Response({"results": str(Token.objects.create(user=request.user))})
+        return Response({"results": str(Token.objects.create(user=user))})

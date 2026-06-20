@@ -7,7 +7,7 @@ from user.models import User
 
 class LibAutoComplementTest(AironeTestCase):
     def setUp(self):
-        super(LibAutoComplementTest, self).setUp()
+        super().setUp()
 
         # When both user and password were correct, it would be success.
         self.user = User(username="guest", email="guest@example.com", is_superuser=False)

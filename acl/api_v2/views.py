@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from django.db.models import Q
 from django.http import Http404
@@ -14,9 +14,11 @@ from acl.api_v2.serializers import ACLHistorySerializer, ACLSerializer
 from acl.models import ACLBase
 from airone.lib.acl import ACLObjType, ACLType
 from entity.models import Entity, EntityAttr
-from entry.models import Attribute, Entry
 from role.models import HistoricalPermission
-from user.models import User
+
+if TYPE_CHECKING:
+    from entry.models import Attribute, Entry
+    from user.models import User
 
 
 class ACLPermission(BasePermission):

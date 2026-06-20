@@ -12,7 +12,7 @@ from user.views import PasswordReset
 
 class ViewTest(AironeViewTest):
     def setUp(self):
-        super(ViewTest, self).setUp()
+        super().setUp()
         self.guest = self._create_user("guest", "guest@example.com")
         self.admin = self._create_user("admin", "admin@example.com", True)
 

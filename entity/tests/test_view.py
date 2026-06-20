@@ -23,7 +23,7 @@ class ViewTest(AironeViewTest):
     """
 
     def setUp(self):
-        super(ViewTest, self).setUp()
+        super().setUp()
 
         # clear data which is used in individual tests
         self._test_data = {}

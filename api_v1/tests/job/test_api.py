@@ -14,7 +14,7 @@ _TEST_MAX_LIST_NAV = 3
 
 class APITest(AironeViewTest):
     def setUp(self):
-        super(APITest, self).setUp()
+        super().setUp()
 
         # save original configuration not to make affect other tests by chaning this
         self.old_config = CONFIG.conf
@@ -22,7 +22,7 @@ class APITest(AironeViewTest):
         CONFIG.conf["MAX_LIST_NAV"] = _TEST_MAX_LIST_NAV
 
     def tearDown(self):
-        super(APITest, self).tearDown()
+        super().tearDown()
 
         # retrieve original configuration for Job.settings.CONFIG
         CONFIG.conf = self.old_config

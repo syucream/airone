@@ -15,10 +15,10 @@ _TEST_MAX_LIST_VIEW = 2
 
 class ViewTest(AironeViewTest):
     def setUp(self):
-        super(ViewTest, self).setUp()
+        super().setUp()
 
     def tearDown(self):
-        super(ViewTest, self).tearDown()
+        super().tearDown()
 
     def test_get_jobs(self):
         user = self.guest_login()

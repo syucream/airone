@@ -1,23 +1,25 @@
 import json
-from typing import List
+from typing import TYPE_CHECKING
 
 from airone.lib.acl import ACLType
 from airone.lib.test import AironeViewTest
 from category.models import Category
-from entity.models import Entity
-from user.models import User
+
+if TYPE_CHECKING:
+    from entity.models import Entity
+    from user.models import User
 
 
 class ViewTest(AironeViewTest):
     def setUp(self):
-        super(ViewTest, self).setUp()
+        super().setUp()
 
         self.user: User = self.guest_login()
 
     def test_list(self):
         # initialize Model and Categories for testing API processing
         model: Entity = self.create_entity(self.user, "Model")
-        categories: List[Category] = [
+        categories: list[Category] = [
             self.create_category(self.user, "Category-%d" % n, "Note-%d" % n, [model])
             for n in range(3)
         ]
@@ -53,7 +55,7 @@ class ViewTest(AironeViewTest):
     def test_list_unauthorized_categories(self):
         # initialize Model and Categories for testing API processing
         model: Entity = self.create_entity(self.user, "Model")
-        categories: List[Category] = [
+        categories: list[Category] = [
             self.create_category(self.user, "Category-%d" % n, "Note-%d" % n, [model])
             for n in range(3)
         ]
@@ -76,7 +78,7 @@ class ViewTest(AironeViewTest):
 
     def test_get(self):
         # initialize Models and Categories for testing API processing
-        models: List[Entity] = [self.create_entity(self.user, "Model-%d" % n) for n in range(3)]
+        models: list[Entity] = [self.create_entity(self.user, "Model-%d" % n) for n in range(3)]
         category: Category = self.create_category(self.user, "Category", "note", models)
 
         # get specified Category
@@ -107,7 +109,7 @@ class ViewTest(AironeViewTest):
 
     def test_create(self):
         # initialize Models for testing API processing
-        models: List[Entity] = [self.create_entity(self.user, "Model-%d" % n) for n in range(3)]
+        models: list[Entity] = [self.create_entity(self.user, "Model-%d" % n) for n in range(3)]
 
         # send request to create a Category
         params = {
@@ -161,7 +163,7 @@ class ViewTest(AironeViewTest):
         Initially, there are 3 models (M0, M1, M2) and Category has M0 and M1
         Then, this test sends a request to change its beloning category to M1 and M2.
         """
-        models: List[Entity] = [self.create_entity(self.user, "M%d" % n) for n in range(3)]
+        models: list[Entity] = [self.create_entity(self.user, "M%d" % n) for n in range(3)]
         category: Category = self.create_category(
             self.user, "Category", "note", [models[0], models[1]]
         )

@@ -5,7 +5,7 @@ Demonstrates how external plugins can create API endpoints using Pagoda's core l
 """
 
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any
 
 # Import from Pagoda Plugin SDK libraries (fully independent)
 from pagoda_plugin_sdk import PluginAPIViewMixin
@@ -17,7 +17,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 
 
-def _get_user_info(request: Request) -> Dict[str, Any]:
+def _get_user_info(request: Request) -> dict[str, Any]:
     """Extract user information from request.
 
     Args:
@@ -32,7 +32,7 @@ def _get_user_info(request: Request) -> Dict[str, Any]:
     }
 
 
-def _get_plugin_metadata(**kwargs: Any) -> Dict[str, Any]:
+def _get_plugin_metadata(**kwargs: Any) -> dict[str, Any]:
     """Get plugin metadata dictionary.
 
     Args:
@@ -79,7 +79,7 @@ def _create_error_response(
     )
 
 
-def _build_entry_data(entry: Any) -> Dict[str, Any]:
+def _build_entry_data(entry: Any) -> dict[str, Any]:
     """Build entry data dictionary from Entry model instance.
 
     Args:

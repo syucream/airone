@@ -16,7 +16,7 @@ from user.models import User
 
 class UpdateESDocuemntlTest(AironeTestCase):
     def setUp(self):
-        super(UpdateESDocuemntlTest, self).setUp()
+        super().setUp()
 
         self.user = User(username="test")
         self.user.save()

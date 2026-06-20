@@ -13,7 +13,7 @@ from group.models import Group
 
 class APITest(AironeViewTest):
     def setUp(self):
-        super(APITest, self).setUp()
+        super().setUp()
 
         self.user = self.guest_login()
         self.group = Group.objects.create(name="group")

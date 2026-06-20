@@ -13,7 +13,7 @@ from user.models import User
 
 class ViewTest(AironeViewTest):
     def setUp(self):
-        super(ViewTest, self).setUp()
+        super().setUp()
 
         user: User = User.objects.create(username="userA")
 

@@ -15,7 +15,7 @@ def coerce_number(raw: str | int | float | None) -> int | float | None:
     """
     if raw is None or isinstance(raw, bool):
         return None
-    if isinstance(raw, (int, float)):
+    if isinstance(raw, int | float):
         f = float(raw)
     elif isinstance(raw, str):
         if not raw.strip():

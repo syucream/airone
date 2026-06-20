@@ -6,11 +6,10 @@ legacy custom_view hook names and the new standardized hook names for
 backward compatibility.
 """
 
-from typing import Dict, List
 
 # Mapping from custom_view hook names to standard hook names
 # This ensures backward compatibility with existing custom_view implementations
-HOOK_ALIASES: Dict[str, str] = {
+HOOK_ALIASES: dict[str, str] = {
     # Entry lifecycle hooks
     "before_create_entry_v2": "entry.before_create",
     "after_create_entry_v2": "entry.after_create",
@@ -32,10 +31,10 @@ HOOK_ALIASES: Dict[str, str] = {
 }
 
 # Reverse mapping (standard name → legacy name)
-HOOK_ALIASES_REVERSE: Dict[str, str] = {v: k for k, v in HOOK_ALIASES.items()}
+HOOK_ALIASES_REVERSE: dict[str, str] = {v: k for k, v in HOOK_ALIASES.items()}
 
 # All available standard hook names
-AVAILABLE_HOOKS: List[str] = [
+AVAILABLE_HOOKS: list[str] = [
     # Entry lifecycle
     "entry.before_create",
     "entry.after_create",
@@ -57,7 +56,7 @@ AVAILABLE_HOOKS: List[str] = [
 ]
 
 # Hook metadata for documentation and validation
-HOOK_METADATA: Dict[str, Dict[str, str]] = {
+HOOK_METADATA: dict[str, dict[str, str]] = {
     "entry.before_create": {
         "description": "Called before an entry is created",
         "args": "entity_name: str, user: User, validated_data: dict",
@@ -172,7 +171,7 @@ def is_valid_hook_name(hook_name: str) -> bool:
     return hook_name in AVAILABLE_HOOKS or hook_name in HOOK_ALIASES
 
 
-def get_hook_metadata(hook_name: str) -> Dict[str, str]:
+def get_hook_metadata(hook_name: str) -> dict[str, str]:
     """Get metadata for a hook
 
     Args:
@@ -185,7 +184,7 @@ def get_hook_metadata(hook_name: str) -> Dict[str, str]:
     return HOOK_METADATA.get(standard_name, {})
 
 
-def list_available_hooks() -> List[str]:
+def list_available_hooks() -> list[str]:
     """Get list of all available standard hook names
 
     Returns:
@@ -194,7 +193,7 @@ def list_available_hooks() -> List[str]:
     return AVAILABLE_HOOKS.copy()
 
 
-def list_legacy_hook_names() -> List[str]:
+def list_legacy_hook_names() -> list[str]:
     """Get list of all legacy custom_view hook names
 
     Returns:

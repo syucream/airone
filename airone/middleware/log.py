@@ -1,6 +1,6 @@
 import traceback
+from collections.abc import Callable
 from time import time
-from typing import Callable, Optional
 
 from django.conf import settings
 from django.core.mail import mail_admins
@@ -37,10 +37,10 @@ class LoggingRequestMiddleware:
 
     def process_exception(
         self, request: HttpRequest, exception: Exception
-    ) -> Optional[HttpResponse]:
+    ) -> HttpResponse | None:
         traceback_msg = traceback.format_exc()
         subject = "ERROR Django Request " + request.path
-        message = """
+        message = f"""
 Request Method: {request.method}
 Request URL: {request.path}
 USER: {request.user.id}
@@ -50,7 +50,7 @@ raised exception:
 
 full traceback:
 {traceback_msg}
-""".format(request=request, exception=exception, traceback_msg=traceback_msg)
+"""
 
         # Print for DEBUG because email is not sent in dev environment
         print(message)

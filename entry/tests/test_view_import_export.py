@@ -2,6 +2,7 @@ import errno
 import json
 import logging
 from datetime import date
+from typing import TYPE_CHECKING
 from unittest import skip
 from unittest.mock import Mock, patch
 
@@ -26,7 +27,9 @@ from job.models import Job, JobOperation, JobStatus, JobTarget
 from role.models import Role
 from trigger import tasks as trigger_tasks
 from trigger.models import TriggerCondition
-from user.models import User
+
+if TYPE_CHECKING:
+    from user.models import User
 
 
 class ViewImportExportTest(BaseViewTest):

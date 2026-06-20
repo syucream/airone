@@ -1,6 +1,6 @@
 import errno
 import io
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from django.db.models import Q
 from django.http import HttpRequest, HttpResponse
@@ -39,7 +39,7 @@ def index(request: HttpRequest) -> HttpResponse:
                 "created_at": x.created_at,
                 "passed_time": (x.updated_at - x.created_at).seconds
                 if x.is_finished()
-                else (datetime.now(timezone.utc) - x.created_at).seconds,
+                else (datetime.now(UTC) - x.created_at).seconds,
             }
             for x in Job.objects.filter(query).order_by("-created_at")[:limitation]
             if (

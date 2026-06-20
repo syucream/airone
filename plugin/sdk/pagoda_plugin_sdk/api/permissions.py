@@ -7,7 +7,7 @@ and flexibility.
 """
 
 import logging
-from typing import Any, Optional
+from typing import Any
 
 from rest_framework.permissions import BasePermission
 from rest_framework.request import Request
@@ -175,7 +175,7 @@ class PluginACLPermission(PluginPermission):
             logger.error(f"ACL permission check failed: {e}")
             return False
 
-    def get_acl_checker(self, request: Request, view: APIView) -> Optional[Any]:
+    def get_acl_checker(self, request: Request, view: APIView) -> Any | None:
         """Get ACL checker from host application
 
         Override this method to return the appropriate ACL checker

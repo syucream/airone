@@ -16,7 +16,7 @@ from webhook.models import Webhook
 
 class EventNotificationTest(AironeViewTest):
     def setUp(self):
-        super(EventNotificationTest, self).setUp()
+        super().setUp()
         self.user = self.guest_login()
         self.entity = Entity.objects.create(name="test-entity", created_user=self.user)
         self.entry = Entry.objects.create(name="e", schema=self.entity, created_user=self.user)

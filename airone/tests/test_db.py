@@ -11,7 +11,7 @@ COOKIE_NAME = settings.MULTIDB_PINNING_COOKIE
 
 class ViewTest(AironeViewTest):
     def setUp(self):
-        super(ViewTest, self).setUp()
+        super().setUp()
 
         self.admin = self.admin_login()
 

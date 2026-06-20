@@ -11,13 +11,13 @@ BASE_DIR = os.path.dirname(os.path.realpath(__file__))
 
 class ViewTest(AironeViewTest):
     def setUp(self):
-        super(ViewTest, self).setUp()
+        super().setUp()
 
         self.custom_view_basedir = custom_view.BASE_DIR
         custom_view.BASE_DIR = "%s/custom_view" % BASE_DIR
 
     def tearDown(self):
-        super(ViewTest, self).tearDown()
+        super().tearDown()
         custom_view.BASE_DIR = self.custom_view_basedir
 
     def test_list_entry(self):

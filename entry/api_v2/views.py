@@ -4,7 +4,7 @@ import re
 from collections import Counter
 from copy import deepcopy
 from datetime import datetime, timedelta
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from django.db.models import Q, QuerySet
 from drf_spectacular.types import OpenApiTypes
@@ -69,7 +69,9 @@ from entry.settings import CONFIG as ENTRY_CONFIG
 from group.models import Group
 from job.models import Job, JobOperation, JobStatus
 from role.models import Role
-from user.models import User
+
+if TYPE_CHECKING:
+    from user.models import User
 
 logger = logging.getLogger(__name__)
 
@@ -234,7 +236,7 @@ class EntryAPI(PluginOverrideMixin, viewsets.ModelViewSet):
 
         self.queryset = AliasEntry.objects.filter(entry=entry, entry__is_active=True)
 
-        return super(EntryAPI, self).list(request, *args, **kwargs)
+        return super().list(request, *args, **kwargs)
 
     @extend_schema(responses=EntryHistoryAttributeValueSerializer(many=True))
     def list_histories(self, request: Request, *args: Any, **kwargs: Any) -> Response:
@@ -259,7 +261,7 @@ class EntryAPI(PluginOverrideMixin, viewsets.ModelViewSet):
             .prefetch_related("data_array__referral__entry__schema")
         )
 
-        return super(EntryAPI, self).list(request, *args, **kwargs)
+        return super().list(request, *args, **kwargs)
 
     @extend_schema(responses=EntrySelfHistorySerializer(many=True))
     def list_self_histories(self, request: Request, *args: Any, **kwargs: Any) -> Response:
@@ -269,7 +271,7 @@ class EntryAPI(PluginOverrideMixin, viewsets.ModelViewSet):
         # Get historical records for the entry
         self.queryset = entry.history.all().order_by("-history_date").select_related("history_user")
 
-        return super(EntryAPI, self).list(request, *args, **kwargs)
+        return super().list(request, *args, **kwargs)
 
     @extend_schema(request=EntrySelfHistoryRestoreSerializer)
     def restore_self_history(self, request: Request, *args: Any, **kwargs: Any) -> Response:

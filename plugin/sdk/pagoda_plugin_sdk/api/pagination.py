@@ -8,7 +8,7 @@ different plugins and host applications.
 
 import logging
 from collections import OrderedDict
-from typing import Any, Dict, Optional, cast
+from typing import Any, cast
 
 from rest_framework.pagination import LimitOffsetPagination, PageNumberPagination
 from rest_framework.response import Response
@@ -73,7 +73,7 @@ class PluginPagination(LimitOffsetPagination):
 
         return Response(response_data)
 
-    def _get_plugin_context(self) -> Optional[Dict[str, Any]]:
+    def _get_plugin_context(self) -> dict[str, Any] | None:
         """Get plugin context from request if available
 
         Returns:
@@ -81,7 +81,7 @@ class PluginPagination(LimitOffsetPagination):
         """
         request = getattr(self, "request", None)
         if request and hasattr(request, "plugin_context"):
-            return cast(Optional[Dict[str, Any]], request.plugin_context)
+            return cast("dict[str, Any] | None", request.plugin_context)
         return None
 
     def _get_total_pages(self) -> int:
@@ -184,7 +184,7 @@ class PluginPageNumberPagination(PageNumberPagination):
 
         return Response(response_data)
 
-    def _get_plugin_context(self) -> Optional[Dict[str, Any]]:
+    def _get_plugin_context(self) -> dict[str, Any] | None:
         """Get plugin context from request if available
 
         Returns:
@@ -192,7 +192,7 @@ class PluginPageNumberPagination(PageNumberPagination):
         """
         request = getattr(self, "request", None)
         if request and hasattr(request, "plugin_context"):
-            return cast(Optional[Dict[str, Any]], request.plugin_context)
+            return cast("dict[str, Any] | None", request.plugin_context)
         return None
 
     def paginate_queryset(self, queryset: Any, request: Any, view: Any = None) -> Any:

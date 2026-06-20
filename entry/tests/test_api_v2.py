@@ -26,7 +26,7 @@ from user.models import User
 
 class BaseViewTest(AironeViewTest):
     def setUp(self):
-        super(BaseViewTest, self).setUp()
+        super().setUp()
 
         self.user: User = self.guest_login()
 
@@ -770,7 +770,7 @@ class ViewTest(BaseViewTest):
                 "roles": ["role0"],
                 "num": 42,
                 "nums": [10, 20, 30],
-                "datetime": datetime.datetime(2018, 12, 31, 0, 0, 0, tzinfo=datetime.timezone.utc),
+                "datetime": datetime.datetime(2018, 12, 31, 0, 0, 0, tzinfo=datetime.UTC),
             },
         )
         search_result = self._es.search(body={"query": {"term": {"name": "entry-change"}}})
@@ -2094,7 +2094,7 @@ class ItemRollbackAPITest(BaseViewTest):
         timepoints = []
         for i, value in enumerate(["first", "second", "third"]):
             # save timepoint before update to be rolled back to later at this point.
-            timepoints.append(datetime.datetime.now(tz=datetime.timezone.utc))
+            timepoints.append(datetime.datetime.now(tz=datetime.UTC))
 
             # update target item
             params = {
@@ -2143,7 +2143,7 @@ class ItemRollbackAPITest(BaseViewTest):
         attrs = {x: item_tgt.attrs.get(schema__name=x) for x in ["val"]}
 
         # update item_tgt multiple times and rollback
-        t0 = datetime.datetime.now(tz=datetime.timezone.utc)
+        t0 = datetime.datetime.now(tz=datetime.UTC)
         for i, value in enumerate(["first", "second", "third"]):
             # update target item
             params = {
@@ -2179,7 +2179,7 @@ class ItemRollbackAPITest(BaseViewTest):
         attr = entry.attrs.get(schema__name="val")
 
         # `at` is set to now so there are no changes after it
-        at = datetime.datetime.now(tz=datetime.timezone.utc).isoformat()
+        at = datetime.datetime.now(tz=datetime.UTC).isoformat()
 
         resp = self.client.post(
             "/entry/api/v2/rollback/",
@@ -2228,7 +2228,7 @@ class ItemRollbackAPITest(BaseViewTest):
         attr1 = entry1.attrs.get(schema__name="val")
         attr2 = entry2.attrs.get(schema__name="val")
 
-        at = datetime.datetime.now(tz=datetime.timezone.utc)
+        at = datetime.datetime.now(tz=datetime.UTC)
 
         for entry, value in [(entry1, "updated-1"), (entry2, "updated-2")]:
             attr = entry.attrs.get(schema__name="val")
@@ -2261,7 +2261,7 @@ class ItemRollbackAPITest(BaseViewTest):
         )
         attr = entry.attrs.get(schema__name="val")
 
-        at = datetime.datetime.now(tz=datetime.timezone.utc)
+        at = datetime.datetime.now(tz=datetime.UTC)
 
         other_user = User(username="other")
         other_user.set_password("other")
@@ -2293,7 +2293,7 @@ class ItemRollbackAPITest(BaseViewTest):
         )
         attr = entry.attrs.get(schema__name="val")
 
-        at = datetime.datetime.now(tz=datetime.timezone.utc)
+        at = datetime.datetime.now(tz=datetime.UTC)
 
         other_user = User(username="other2")
         other_user.set_password("other2")
@@ -2325,7 +2325,7 @@ class ItemRollbackAPITest(BaseViewTest):
         )
         attr = entry.attrs.get(schema__name="val")
 
-        at = datetime.datetime.now(tz=datetime.timezone.utc)
+        at = datetime.datetime.now(tz=datetime.UTC)
 
         params = {
             "name": "entry",

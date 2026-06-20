@@ -1,7 +1,6 @@
 import datetime
 import json
 import logging
-from datetime import timezone
 from unittest import mock
 
 import requests
@@ -29,7 +28,7 @@ from webhook.models import Webhook
 
 class ViewTest(AironeViewTest):
     def setUp(self):
-        super(ViewTest, self).setUp()
+        super().setUp()
 
         self.user: User = self.guest_login()
         self.role: Role = Role.objects.create(name="Role")
@@ -3126,7 +3125,7 @@ class ViewTest(AironeViewTest):
                 "vals": ["hoge", "fuga"],
                 "role": "role0",
                 "roles": ["role0"],
-                "datetime": datetime.datetime(2018, 12, 31, 0, 0, tzinfo=timezone.utc),
+                "datetime": datetime.datetime(2018, 12, 31, 0, 0, tzinfo=datetime.UTC),
             },
         )
         search_result = self._es.search(body={"query": {"term": {"name": entry.name}}})
