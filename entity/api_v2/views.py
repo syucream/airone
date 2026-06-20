@@ -156,7 +156,7 @@ class EntityPermission(BasePermission):
         OpenApiParameter("is_toplevel", OpenApiTypes.BOOL, OpenApiParameter.QUERY),
     ],
 )
-class EntityAPI(viewsets.ModelViewSet[Any]):
+class EntityAPI(viewsets.ModelViewSet[Entity]):
     pagination_class = LimitOffsetPagination
     permission_classes = [IsAuthenticated & EntityPermission]
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
@@ -253,7 +253,7 @@ class AliasSearchFilter(filters.SearchFilter):
         OpenApiParameter("with_alias", OpenApiTypes.STR, OpenApiParameter.QUERY),
     ],
 )
-class EntityEntryAPI(PluginOverrideMixin, viewsets.ModelViewSet[Any]):
+class EntityEntryAPI(PluginOverrideMixin, viewsets.ModelViewSet[Entry]):
     """Entity Entry API ViewSet with plugin override support.
 
     Plugin overrides are automatically handled by PluginOverrideMixin.
@@ -309,7 +309,7 @@ class EntityEntryAPI(PluginOverrideMixin, viewsets.ModelViewSet[Any]):
         return Response(status=status.HTTP_202_ACCEPTED)
 
 
-class EntityHistoryAPI(viewsets.ReadOnlyModelViewSet[Any]):
+class EntityHistoryAPI(viewsets.ReadOnlyModelViewSet[History]):
     serializer_class = EntityHistorySerializer
     permission_classes = [IsAuthenticated & EntityPermission]
     pagination_class = LimitOffsetPagination

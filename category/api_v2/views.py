@@ -21,7 +21,7 @@ from entity.api_v2.views import EntityPermission
 from user.models import User
 
 
-class CategoryAPI(viewsets.ModelViewSet[Any]):
+class CategoryAPI(viewsets.ModelViewSet[Category]):
     pagination_class = LimitOffsetPagination
     permission_classes = [IsAuthenticated & EntityPermission]
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]

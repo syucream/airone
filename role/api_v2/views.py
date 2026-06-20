@@ -58,7 +58,7 @@ class RolePermission(BasePermission):
         return permission.get(view.action, False)
 
 
-class RoleAPI(viewsets.ModelViewSet[Any]):
+class RoleAPI(viewsets.ModelViewSet[Role]):
     queryset = Role.objects.filter(is_active=True)
     permission_classes = [IsAuthenticated & RolePermission]
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
@@ -105,7 +105,7 @@ class RoleImportAPI(generics.GenericAPIView[Any]):
         )
 
 
-class RoleExportAPI(generics.ListAPIView[Any]):
+class RoleExportAPI(generics.ListAPIView[Role]):
     queryset = Role.objects.filter(is_active=True)
     serializer_class = RoleImportExportChildSerializer
     renderer_classes = [YAMLRenderer]

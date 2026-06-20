@@ -517,13 +517,13 @@ class UserImportAPI(generics.GenericAPIView[Any]):
         return Response()
 
 
-class UserExportAPI(generics.ListAPIView[Any]):
+class UserExportAPI(generics.ListAPIView[User]):
     queryset = User.objects.filter(is_active=True)
     serializer_class = UserExportSerializer
     renderer_classes = [YAMLRenderer]
 
 
-class UserPasswordAPI(generics.UpdateAPIView[Any]):
+class UserPasswordAPI(generics.UpdateAPIView[User]):
     queryset = User.objects.filter(is_active=True)
     serializer_class = UserPasswordSerializer
 
@@ -544,7 +544,7 @@ class UserPasswordAPI(generics.UpdateAPIView[Any]):
         return Response({})
 
 
-class UserPasswordBySuperuserAPI(generics.UpdateAPIView[Any]):
+class UserPasswordBySuperuserAPI(generics.UpdateAPIView[User]):
     queryset = User.objects.filter(is_active=True)
     serializer_class = UserPasswordBySuperuserSerializer
     permission_classes = [IsAuthenticated & SuperuserPermission]
@@ -660,7 +660,7 @@ class PasswordResetConfirmAPI(viewsets.GenericViewSet[Any]):
         return Response(serializer.validated_data)
 
 
-class UserAuthAPI(generics.UpdateAPIView[Any]):
+class UserAuthAPI(generics.UpdateAPIView[User]):
     queryset = User.objects.filter(is_active=True)
     serializer_class = UserAuthSerializer
 

@@ -96,7 +96,7 @@ class EntryPermission(BasePermission):
         return True
 
 
-class EntryAPI(PluginOverrideMixin, viewsets.ModelViewSet[Any]):
+class EntryAPI(PluginOverrideMixin, viewsets.ModelViewSet[Entry]):
     """Entry API ViewSet with plugin override support.
 
     Plugin overrides are automatically handled by PluginOverrideMixin.
@@ -619,7 +619,7 @@ class AdvancedSearchResultAPI(generics.GenericAPIView[Any]):
         OpenApiParameter("keyword", OpenApiTypes.STR, OpenApiParameter.QUERY),
     ],
 )
-class EntryReferralAPI(viewsets.ReadOnlyModelViewSet[Any]):
+class EntryReferralAPI(viewsets.ReadOnlyModelViewSet[Entry]):
     serializer_class = EntryBaseSerializer
     pagination_class = EntryReferralPagination
 
@@ -813,7 +813,7 @@ class EntryImportAPI(generics.GenericAPIView[Any]):
         )
 
 
-class EntryAttributeValueRestoreAPI(generics.UpdateAPIView[Any]):
+class EntryAttributeValueRestoreAPI(generics.UpdateAPIView[AttributeValue]):
     queryset = AttributeValue.objects.all()
     serializer_class = EntryAttributeValueRestoreSerializer
 
@@ -1049,7 +1049,7 @@ class EntryBulkDeleteAPI(generics.DestroyAPIView[Any]):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class EntryAliasAPI(viewsets.ModelViewSet[Any]):
+class EntryAliasAPI(viewsets.ModelViewSet[AliasEntry]):
     pagination_class = LimitOffsetPagination
     serializer_class = EntryAliasSerializer
     queryset = AliasEntry.objects.filter(entry__is_active=True)

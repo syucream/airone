@@ -24,7 +24,7 @@ class JobTargetSerializer(serializers.Serializer[Any]):
     schema_name = serializers.CharField(allow_null=True)
 
 
-class JobSerializers(serializers.ModelSerializer[Any]):
+class JobSerializers(serializers.ModelSerializer[Job]):
     user: serializers.SlugRelatedField[Any] = serializers.SlugRelatedField(
         slug_field="username", read_only=True
     )

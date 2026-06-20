@@ -283,7 +283,7 @@ class EntryAttributeTypeSerializer(serializers.Serializer[Any]):
     schema = EntityAttributeTypeSerializer()
 
 
-class EntryAliasSerializer(serializers.ModelSerializer[Any]):
+class EntryAliasSerializer(serializers.ModelSerializer[AliasEntry]):
     class Meta:
         model = AliasEntry
         fields = [
@@ -299,7 +299,7 @@ class EntryAliasSerializer(serializers.ModelSerializer[Any]):
         return params
 
 
-class EntryBaseSerializer(serializers.ModelSerializer[Any]):
+class EntryBaseSerializer(serializers.ModelSerializer[Entry]):
     # This attribute toggle privileged mode that allow user to CRUD Entry without
     # considering permission. This must not change from program, but declare in a
     # serializer.
@@ -337,6 +337,7 @@ class EntryBaseSerializer(serializers.ModelSerializer[Any]):
         return ACLType.Nothing.value
 
     def validate_name(self, name: str) -> str:
+        schema: Entity | None = None
         if self.instance:
             # case for creation
             schema = self.instance.schema
@@ -604,7 +605,7 @@ class EntryUpdateSerializer(EntryBaseSerializer):
 
     def validate(self, params: dict[str, Any]) -> dict[str, Any]:
         assert self.instance is not None
-        instance = cast(Entry, self.instance)
+        instance = self.instance
         self._validate(instance.schema, params.get("name", instance.name), params.get("attrs", []))
         return params
 
@@ -1215,13 +1216,13 @@ class EntryImportSerializer(serializers.ListSerializer[Any]):
     child = EntryImportEntitySerializer()
 
 
-class GetEntryAttrReferralSerializer(serializers.ModelSerializer[Any]):
+class GetEntryAttrReferralSerializer(serializers.ModelSerializer[ACLBase]):
     class Meta:
         model = ACLBase
         fields = ("id", "name")
 
 
-class AttributeSerializer(serializers.ModelSerializer[Any]):
+class AttributeSerializer(serializers.ModelSerializer[Attribute]):
     name = serializers.CharField(source="schema.name")
 
     class Meta:
@@ -1229,7 +1230,7 @@ class AttributeSerializer(serializers.ModelSerializer[Any]):
         fields = ("id", "name")
 
 
-class EntryHistoryAttributeValueListSerializer(serializers.ListSerializer[Any]):
+class EntryHistoryAttributeValueListSerializer(serializers.ListSerializer[AttributeValue]):
     """Custom list serializer to prefetch previous values efficiently"""
 
     def to_representation(self, data: Any) -> Any:
@@ -1257,7 +1258,7 @@ class EntryHistoryAttributeValueListSerializer(serializers.ListSerializer[Any]):
         return super().to_representation(data)
 
 
-class EntryHistoryAttributeValueSerializer(serializers.ModelSerializer[Any]):
+class EntryHistoryAttributeValueSerializer(serializers.ModelSerializer[AttributeValue]):
     type = serializers.IntegerField(source="data_type")
     created_user = serializers.CharField(source="created_user.username")
     curr_value = serializers.SerializerMethodField()
@@ -1464,7 +1465,7 @@ class EntryHistoryAttributeValueSerializer(serializers.ModelSerializer[Any]):
         return None
 
 
-class EntryAttributeValueRestoreSerializer(serializers.ModelSerializer[Any]):
+class EntryAttributeValueRestoreSerializer(serializers.ModelSerializer[AttributeValue]):
     class Meta:
         model = AttributeValue
         fields: list[str] = []

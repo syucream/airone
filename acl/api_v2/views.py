@@ -32,7 +32,7 @@ class ACLPermission(BasePermission):
         return True
 
 
-class ACLAPI(mixins.RetrieveModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet[Any]):
+class ACLAPI(mixins.RetrieveModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet[ACLBase]):
     queryset = ACLBase.objects.all()
     serializer_class = ACLSerializer
 

@@ -24,7 +24,7 @@ from trigger.models import (
 )
 
 
-class TriggerActionValueSerializer(serializers.ModelSerializer[Any]):
+class TriggerActionValueSerializer(serializers.ModelSerializer[TriggerActionValue]):
     ref_cond = serializers.SerializerMethodField()
 
     class Meta:
@@ -50,7 +50,7 @@ class TriggerActionValueSerializer(serializers.ModelSerializer[Any]):
             return None
 
 
-class TriggerActionSerializer(serializers.ModelSerializer[Any]):
+class TriggerActionSerializer(serializers.ModelSerializer[TriggerAction]):
     attr = EntityAttrSerializer(read_only=True)
     values = TriggerActionValueSerializer(many=True)
 
@@ -63,7 +63,7 @@ class TriggerActionSerializer(serializers.ModelSerializer[Any]):
         ]
 
 
-class TriggerConditionSerializer(serializers.ModelSerializer[Any]):
+class TriggerConditionSerializer(serializers.ModelSerializer[TriggerCondition]):
     attr = EntityAttrSerializer(read_only=True)
     ref_cond = serializers.SerializerMethodField()
 
@@ -92,7 +92,7 @@ class TriggerConditionSerializer(serializers.ModelSerializer[Any]):
             return None
 
 
-class TriggerParentSerializer(serializers.ModelSerializer[Any]):
+class TriggerParentSerializer(serializers.ModelSerializer[TriggerParent]):
     entity = EntitySerializer(read_only=True)
     actions = TriggerActionSerializer(many=True)
     conditions = TriggerConditionSerializer(many=True)
@@ -145,7 +145,7 @@ class TriggerActionUpdateSerializer(serializers.Serializer[Any]):
     value = AnyField(allow_null=True, required=False)
 
 
-class TriggerParentBaseSerializer(serializers.ModelSerializer[Any]):
+class TriggerParentBaseSerializer(serializers.ModelSerializer[TriggerParent]):
     entity_id = serializers.IntegerField(write_only=True, required=False)
     conditions = serializers.ListField(
         child=TriggerConditionUpdateSerializer(), write_only=True, required=False

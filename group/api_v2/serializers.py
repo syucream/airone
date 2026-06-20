@@ -19,7 +19,7 @@ class GroupMemberSerializer(serializers.Serializer[Any]):
     username = serializers.CharField()
 
 
-class GroupSerializer(serializers.ModelSerializer[Any]):
+class GroupSerializer(serializers.ModelSerializer[Group]):
     members = serializers.SerializerMethodField(method_name="get_members")
 
     class Meta:
@@ -38,7 +38,7 @@ class GroupSerializer(serializers.ModelSerializer[Any]):
         ]
 
 
-class GroupCreateUpdateSerializer(serializers.ModelSerializer[Any]):
+class GroupCreateUpdateSerializer(serializers.ModelSerializer[Group]):
     members = serializers.ListField(
         child=serializers.IntegerField(), write_only=True, required=False
     )
@@ -101,7 +101,7 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer[Any]):
         return instance
 
 
-class GroupTreeSerializer(serializers.ModelSerializer[Any]):
+class GroupTreeSerializer(serializers.ModelSerializer[Group]):
     children = serializers.SerializerMethodField(method_name="get_children")
 
     class Meta:
@@ -130,7 +130,7 @@ class GroupImportSerializer(serializers.Serializer[Any]):
     name = serializers.CharField()
 
 
-class GroupExportSerializer(serializers.ModelSerializer[Any]):
+class GroupExportSerializer(serializers.ModelSerializer[Group]):
     class Meta:
         model = Group
         fields = ["id", "name"]

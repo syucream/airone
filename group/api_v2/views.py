@@ -33,8 +33,8 @@ class UserPermission(BasePermission):
         return permisson.get(getattr(view, "action", ""), False)
 
 
-class GroupAPI(viewsets.ModelViewSet[Any]):
-    queryset = Group.objects.filter(is_active=True)  # type: ignore[misc]
+class GroupAPI(viewsets.ModelViewSet[Group]):
+    queryset = Group.objects.filter(is_active=True)  # type: ignore[assignment,misc]
     permission_classes = [IsAuthenticated & UserPermission]
     pagination_class = PageNumberPagination
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
@@ -50,8 +50,8 @@ class GroupAPI(viewsets.ModelViewSet[Any]):
         return serializer.get(self.action, GroupSerializer)
 
 
-class GroupTreeAPI(viewsets.ReadOnlyModelViewSet[Any]):
-    queryset = Group.objects.filter(parent_group__isnull=True, is_active=True)  # type: ignore[misc]
+class GroupTreeAPI(viewsets.ReadOnlyModelViewSet[Group]):
+    queryset = Group.objects.filter(parent_group__isnull=True, is_active=True)  # type: ignore[assignment,misc]
     serializer_class = GroupTreeSerializer
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
     ordering = ["name"]
@@ -105,7 +105,7 @@ class GroupImportAPI(generics.GenericAPIView[Any]):
         return Response(status=status.HTTP_200_OK)
 
 
-class GroupExportAPI(generics.ListAPIView[Any]):
-    queryset = Group.objects.filter(is_active=True)  # type: ignore[misc]
+class GroupExportAPI(generics.ListAPIView[Group]):
+    queryset = Group.objects.filter(is_active=True)  # type: ignore[assignment,misc]
     serializer_class = GroupExportSerializer
     renderer_classes = [YAMLRenderer]

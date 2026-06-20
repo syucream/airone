@@ -28,7 +28,7 @@ class UserRetrieveTokenSerializer(serializers.Serializer[Any]):
         created: str
 
 
-class UserTokenSerializer(serializers.ModelSerializer[Any]):
+class UserTokenSerializer(serializers.ModelSerializer[Token]):
     class Meta:
         model = Token
         fields = [
@@ -37,7 +37,7 @@ class UserTokenSerializer(serializers.ModelSerializer[Any]):
         read_only_fields = ["key"]
 
 
-class UserBaseSerializer(serializers.ModelSerializer[Any]):
+class UserBaseSerializer(serializers.ModelSerializer[User]):
     date_joined = serializers.SerializerMethodField(method_name="get_date_joined")
 
     class Meta:
@@ -169,7 +169,7 @@ class UserListSerializer(UserBaseSerializer):
         ]
 
 
-class CoUserSerializer(serializers.ModelSerializer[Any]):
+class CoUserSerializer(serializers.ModelSerializer[User]):
     user_id = serializers.IntegerField(source="id")
 
     class Meta:
@@ -177,7 +177,7 @@ class CoUserSerializer(serializers.ModelSerializer[Any]):
         fields = ["user_id", "username", "email"]
 
 
-class UserMeSerializer(serializers.ModelSerializer[Any]):
+class UserMeSerializer(serializers.ModelSerializer[User]):
     user_id = serializers.IntegerField(source="id")
     co_users = CoUserSerializer(many=True)
 
@@ -186,7 +186,7 @@ class UserMeSerializer(serializers.ModelSerializer[Any]):
         fields = ["user_id", "username", "email", "co_users"]
 
 
-class UserImportChildSerializer(serializers.ModelSerializer[Any]):
+class UserImportChildSerializer(serializers.ModelSerializer[User]):
     username = serializers.CharField()
     groups = serializers.CharField(required=True, allow_blank=True, write_only=True)
 
@@ -201,11 +201,11 @@ class UserImportChildSerializer(serializers.ModelSerializer[Any]):
         ]
 
 
-class UserImportSerializer(serializers.ListSerializer[Any]):
+class UserImportSerializer(serializers.ListSerializer[User]):
     child = UserImportChildSerializer()
 
 
-class UserExportSerializer(serializers.ModelSerializer[Any]):
+class UserExportSerializer(serializers.ModelSerializer[User]):
     groups = serializers.SerializerMethodField()
 
     class Meta:

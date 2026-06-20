@@ -10,7 +10,7 @@ from role.models import Role
 from user.models import User
 
 
-class RoleUserSerializer(serializers.ModelSerializer[Any]):
+class RoleUserSerializer(serializers.ModelSerializer[User]):
     class Meta:
         model = User
         fields = [
@@ -19,7 +19,7 @@ class RoleUserSerializer(serializers.ModelSerializer[Any]):
         ]
 
 
-class RoleGroupSerializer(serializers.ModelSerializer[Any]):
+class RoleGroupSerializer(serializers.ModelSerializer[Group]):
     class Meta:
         model = Group
         fields = [
@@ -28,7 +28,7 @@ class RoleGroupSerializer(serializers.ModelSerializer[Any]):
         ]
 
 
-class RoleSerializer(serializers.ModelSerializer[Any]):
+class RoleSerializer(serializers.ModelSerializer[Role]):
     users = serializers.SerializerMethodField()
     groups = serializers.SerializerMethodField()
     admin_users = serializers.SerializerMethodField()
@@ -72,7 +72,7 @@ class RoleSerializer(serializers.ModelSerializer[Any]):
         )
 
 
-class RoleCreateUpdateSerializer(serializers.ModelSerializer[Any]):
+class RoleCreateUpdateSerializer(serializers.ModelSerializer[Role]):
     class Meta:
         model = Role
         fields = [
@@ -117,7 +117,7 @@ class RoleCreateUpdateSerializer(serializers.ModelSerializer[Any]):
         return role
 
 
-class RoleImportExportChildSerializer(serializers.ModelSerializer[Any]):
+class RoleImportExportChildSerializer(serializers.ModelSerializer[Role]):
     name = serializers.CharField()
     users = serializers.ListField(child=serializers.CharField())
     groups = serializers.ListField(child=serializers.CharField())
@@ -157,5 +157,5 @@ class RoleImportExportChildSerializer(serializers.ModelSerializer[Any]):
         }
 
 
-class RoleImportSerializer(serializers.ListSerializer[Any]):
+class RoleImportSerializer(serializers.ListSerializer[Role]):
     child = RoleImportExportChildSerializer()

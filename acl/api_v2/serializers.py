@@ -42,7 +42,7 @@ class ACLSettingSerializer(serializers.Serializer[Any]):
     value = serializers.IntegerField()
 
 
-class ACLSerializer(serializers.ModelSerializer[Any]):
+class ACLSerializer(serializers.ModelSerializer[ACLBase]):
     @extend_schema_field(
         {
             "type": "integer",

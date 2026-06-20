@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING, Any, List, Optional, Self, TypedDict, cast
 
 if TYPE_CHECKING:
     from airone.lib.resources import AironeModelResource
-    from isolation.models import IsolationCondition
 
 import requests
 from django.conf import settings
@@ -28,6 +27,7 @@ from airone.lib.log import Logger
 from airone.lib.types import AttrType, AttrTypeValue
 from entity.admin import EntityAttrResource, EntityResource
 from entity.models import Entity, EntityAttr, ItemNameType
+from isolation.models import IsolationAction, IsolationCondition, IsolationParent
 from user.models import History, User
 from webhook.models import Webhook
 
@@ -129,7 +129,7 @@ class WebhookHeadersSerializer(serializers.Serializer[Any]):
     header_value = serializers.CharField()
 
 
-class WebhookSerializer(serializers.ModelSerializer[Any]):
+class WebhookSerializer(serializers.ModelSerializer[Webhook]):
     headers = serializers.ListField(child=WebhookHeadersSerializer(), required=False)
     is_deleted = serializers.BooleanField(required=False, default=False, write_only=True)
     url = serializers.CharField(required=False, max_length=200, allow_blank=True)
@@ -149,7 +149,7 @@ class WebhookSerializer(serializers.ModelSerializer[Any]):
         read_only_fields = ["is_verified", "verification_error_details"]
 
 
-class WebhookCreateUpdateSerializer(serializers.ModelSerializer[Any]):
+class WebhookCreateUpdateSerializer(serializers.ModelSerializer[Webhook]):
     id = serializers.IntegerField(required=False)
     url = serializers.CharField(required=False, max_length=200, allow_blank=True)
     headers = serializers.ListField(child=WebhookHeadersSerializer(), required=False)
@@ -182,7 +182,7 @@ class WebhookCreateUpdateSerializer(serializers.ModelSerializer[Any]):
         return webhook
 
 
-class EntityAttrCreateSerializer(serializers.ModelSerializer[Any]):
+class EntityAttrCreateSerializer(serializers.ModelSerializer[EntityAttr]):
     created_user = serializers.HiddenField(default=drf.AironeUserDefault())
     name_prefix = serializers.CharField(
         required=False, max_length=20, allow_blank=True, trim_whitespace=False
@@ -304,7 +304,7 @@ class EntityAttrCreateSerializer(serializers.ModelSerializer[Any]):
         return attr
 
 
-class EntityAttrUpdateSerializer(serializers.ModelSerializer[Any]):
+class EntityAttrUpdateSerializer(serializers.ModelSerializer[EntityAttr]):
     id = serializers.IntegerField(required=False)
     is_deleted = serializers.BooleanField(required=False, default=False)
     name_prefix = serializers.CharField(
@@ -471,7 +471,7 @@ class EntityAttrUpdateSerializer(serializers.ModelSerializer[Any]):
         return attr
 
 
-class EntityAttrSerializer(serializers.ModelSerializer[Any]):
+class EntityAttrSerializer(serializers.ModelSerializer[EntityAttr]):
     type = serializers.IntegerField(required=False, read_only=True)
 
     class Meta:
@@ -479,7 +479,7 @@ class EntityAttrSerializer(serializers.ModelSerializer[Any]):
         fields = ("id", "name", "type")
 
 
-class IsolationConditionSerializer(serializers.ModelSerializer[Any]):
+class IsolationConditionSerializer(serializers.ModelSerializer[IsolationCondition]):
     attr = EntityAttrSerializer(read_only=True)
     ref_cond = serializers.SerializerMethodField()
 
@@ -503,13 +503,13 @@ class IsolationConditionSerializer(serializers.ModelSerializer[Any]):
         return None
 
 
-class IsolationActionModelSerializer(serializers.ModelSerializer[Any]):
+class IsolationActionModelSerializer(serializers.ModelSerializer[Entity]):
     class Meta:
         model = Entity
         fields = ["id", "name"]
 
 
-class IsolationActionSerializer(serializers.ModelSerializer[Any]):
+class IsolationActionSerializer(serializers.ModelSerializer[IsolationAction]):
     prevent_from = IsolationActionModelSerializer(read_only=True)
 
     class Meta:
@@ -519,7 +519,7 @@ class IsolationActionSerializer(serializers.ModelSerializer[Any]):
         fields = ["id", "prevent_from", "is_prevent_all"]
 
 
-class IsolationParentSerializer(serializers.ModelSerializer[Any]):
+class IsolationParentSerializer(serializers.ModelSerializer[IsolationParent]):
     conditions = IsolationConditionSerializer(many=True, read_only=True)
     action = IsolationActionSerializer(read_only=True)
 
@@ -576,7 +576,7 @@ class EntityUpdateData(TypedDict, total=False):
     delete_chain_exclude_entities: list[int]
 
 
-class EntitySerializer(serializers.ModelSerializer[Any]):
+class EntitySerializer(serializers.ModelSerializer[Entity]):
     permission = serializers.SerializerMethodField()
 
     class Meta:
@@ -1159,7 +1159,7 @@ class EntityHistoryChangeSerializer(serializers.Serializer[Any]):
     after = serializers.JSONField(allow_null=True)
 
 
-class EntityHistorySerializer(serializers.ModelSerializer[Any]):
+class EntityHistorySerializer(serializers.ModelSerializer[History]):
     """Extended serializer with simple-history changes for entity history."""
 
     username = serializers.SerializerMethodField()
@@ -1375,7 +1375,7 @@ class EntityHistorySerializer(serializers.Serializer):
 
 
 # The format keeps compatibility with entity.views and dashboard.views
-class EntityAttrImportExportSerializer(serializers.ModelSerializer[Any]):
+class EntityAttrImportExportSerializer(serializers.ModelSerializer[EntityAttr]):
     id = serializers.IntegerField(required=False)
     name = serializers.CharField(required=False)
     type = serializers.IntegerField(required=False)
@@ -1402,7 +1402,7 @@ class EntityAttrImportExportSerializer(serializers.ModelSerializer[Any]):
 
 
 # The format keeps compatibility with entity.views and dashboard.views
-class EntityImportExportSerializer(serializers.ModelSerializer[Any]):
+class EntityImportExportSerializer(serializers.ModelSerializer[Entity]):
     id = serializers.IntegerField(required=False)
     name = serializers.CharField(required=False)
     created_user = serializers.CharField(required=False)
