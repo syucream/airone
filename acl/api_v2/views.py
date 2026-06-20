@@ -32,7 +32,7 @@ class ACLPermission(BasePermission):
         return True
 
 
-class ACLAPI(mixins.RetrieveModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet):
+class ACLAPI(mixins.RetrieveModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet[Any]):
     queryset = ACLBase.objects.all()
     serializer_class = ACLSerializer
 
@@ -44,10 +44,10 @@ class ACLAPI(mixins.RetrieveModelMixin, mixins.UpdateModelMixin, viewsets.Generi
         OpenApiParameter("id", OpenApiTypes.INT, OpenApiParameter.PATH),
     ]
 )
-class ACLHistoryAPI(generics.ListAPIView):
+class ACLHistoryAPI(generics.ListAPIView[Any]):
     serializer_class = ACLHistorySerializer
 
-    def get_queryset(self) -> QuerySet:
+    def get_queryset(self) -> QuerySet[Any]:
         """Unnecessary in this serializer"""
         return ACLBase.objects.none()
 

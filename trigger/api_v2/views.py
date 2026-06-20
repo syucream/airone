@@ -24,7 +24,7 @@ class TriggerPermission(BasePermission):
         return True
 
 
-class TriggerAPI(viewsets.ModelViewSet):
+class TriggerAPI(viewsets.ModelViewSet[Any]):
     pagination_class = PageNumberPagination
     permission_classes = [IsAuthenticated & TriggerPermission]
     filterset_fields = ["entity__is_active"]

@@ -19,7 +19,7 @@ from entry.settings import CONFIG
 SEARCH_ENTRY_LIMIT = 200
 
 
-class ReferSerializer(serializers.Serializer):
+class ReferSerializer(serializers.Serializer[Any]):
     entity = serializers.CharField(max_length=200)
     entry = serializers.CharField(max_length=200, required=False, allow_blank=True)
     is_any = serializers.BooleanField(default=False)
@@ -39,7 +39,7 @@ class ReferSerializer(serializers.Serializer):
         return data
 
 
-class AttrSerializer(serializers.Serializer):
+class AttrSerializer(serializers.Serializer[Any]):
     name = serializers.CharField(max_length=200)
     value = serializers.CharField(max_length=200, required=False, allow_blank=True)
     is_any = serializers.BooleanField(default=False)
@@ -56,7 +56,7 @@ class AttrSerializer(serializers.Serializer):
         return value
 
 
-class EntrySearchChainSerializer(serializers.Serializer):
+class EntrySearchChainSerializer(serializers.Serializer[Any]):
     entities = serializers.ListField(child=serializers.CharField(max_length=200))
     attrs = serializers.ListField(child=AttrSerializer(), required=False)
     refers = serializers.ListField(child=ReferSerializer(), required=False)
@@ -117,7 +117,7 @@ class EntrySearchChainSerializer(serializers.Serializer):
         def _may_validate_and_complement_condition(
             condition: dict[str, Any],
             entities: list[Entity] | None,
-            serializer_class: type[serializers.Serializer],
+            serializer_class: type[serializers.Serializer[Any]],
         ) -> dict[str, Any]:
             serializer = serializer_class(data=condition)
             if not serializer.is_valid():

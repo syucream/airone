@@ -17,15 +17,17 @@ class JobTarget(TypedDict):
     schema_name: str | None
 
 
-class JobTargetSerializer(serializers.Serializer):
+class JobTargetSerializer(serializers.Serializer[Any]):
     id = serializers.IntegerField()
     name = serializers.CharField()
     schema_id = serializers.IntegerField(allow_null=True)
     schema_name = serializers.CharField(allow_null=True)
 
 
-class JobSerializers(serializers.ModelSerializer):
-    user = serializers.SlugRelatedField(slug_field="username", read_only=True)
+class JobSerializers(serializers.ModelSerializer[Any]):
+    user: serializers.SlugRelatedField[Any] = serializers.SlugRelatedField(
+        slug_field="username", read_only=True
+    )
     target = serializers.SerializerMethodField(method_name="get_target")
     passed_time = serializers.SerializerMethodField(method_name="get_passed_time")
 

@@ -108,7 +108,7 @@ class PluginAPIView(PluginAPIViewMixin):
         return result
 
 
-class PluginViewSet(viewsets.ModelViewSet):
+class PluginViewSet(viewsets.ModelViewSet[Any]):
     """Base ViewSet for plugin models
 
     Provides a standardized base for plugin ViewSets with:

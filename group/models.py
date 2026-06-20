@@ -106,7 +106,7 @@ class Group(DjangoGroup):
             entry_model = importlib.import_module("entry.models")
 
         # get Entries that has AttributeValues, which specify this Group instance.
-        qs: QuerySet = entry_model.Entry.objects.filter(
+        qs: QuerySet[Any] = entry_model.Entry.objects.filter(
             pk__in=entry_model.AttributeValue.objects.filter(query).values_list(
                 "parent_attr__parent_entry", flat=True
             )

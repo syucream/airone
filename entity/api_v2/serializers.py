@@ -124,12 +124,12 @@ class EntityAttrCreateRequest(BaseModel):
         return self
 
 
-class WebhookHeadersSerializer(serializers.Serializer):
+class WebhookHeadersSerializer(serializers.Serializer[Any]):
     header_key = serializers.CharField()
     header_value = serializers.CharField()
 
 
-class WebhookSerializer(serializers.ModelSerializer):
+class WebhookSerializer(serializers.ModelSerializer[Any]):
     headers = serializers.ListField(child=WebhookHeadersSerializer(), required=False)
     is_deleted = serializers.BooleanField(required=False, default=False, write_only=True)
     url = serializers.CharField(required=False, max_length=200, allow_blank=True)
@@ -149,7 +149,7 @@ class WebhookSerializer(serializers.ModelSerializer):
         read_only_fields = ["is_verified", "verification_error_details"]
 
 
-class WebhookCreateUpdateSerializer(serializers.ModelSerializer):
+class WebhookCreateUpdateSerializer(serializers.ModelSerializer[Any]):
     id = serializers.IntegerField(required=False)
     url = serializers.CharField(required=False, max_length=200, allow_blank=True)
     headers = serializers.ListField(child=WebhookHeadersSerializer(), required=False)
@@ -182,7 +182,7 @@ class WebhookCreateUpdateSerializer(serializers.ModelSerializer):
         return webhook
 
 
-class EntityAttrCreateSerializer(serializers.ModelSerializer):
+class EntityAttrCreateSerializer(serializers.ModelSerializer[Any]):
     created_user = serializers.HiddenField(default=drf.AironeUserDefault())
     name_prefix = serializers.CharField(
         required=False, max_length=20, allow_blank=True, trim_whitespace=False
@@ -304,7 +304,7 @@ class EntityAttrCreateSerializer(serializers.ModelSerializer):
         return attr
 
 
-class EntityAttrUpdateSerializer(serializers.ModelSerializer):
+class EntityAttrUpdateSerializer(serializers.ModelSerializer[Any]):
     id = serializers.IntegerField(required=False)
     is_deleted = serializers.BooleanField(required=False, default=False)
     name_prefix = serializers.CharField(
@@ -471,7 +471,7 @@ class EntityAttrUpdateSerializer(serializers.ModelSerializer):
         return attr
 
 
-class EntityAttrSerializer(serializers.ModelSerializer):
+class EntityAttrSerializer(serializers.ModelSerializer[Any]):
     type = serializers.IntegerField(required=False, read_only=True)
 
     class Meta:
@@ -479,7 +479,7 @@ class EntityAttrSerializer(serializers.ModelSerializer):
         fields = ("id", "name", "type")
 
 
-class IsolationConditionSerializer(serializers.ModelSerializer):
+class IsolationConditionSerializer(serializers.ModelSerializer[Any]):
     attr = EntityAttrSerializer(read_only=True)
     ref_cond = serializers.SerializerMethodField()
 
@@ -503,13 +503,13 @@ class IsolationConditionSerializer(serializers.ModelSerializer):
         return None
 
 
-class IsolationActionModelSerializer(serializers.ModelSerializer):
+class IsolationActionModelSerializer(serializers.ModelSerializer[Any]):
     class Meta:
         model = Entity
         fields = ["id", "name"]
 
 
-class IsolationActionSerializer(serializers.ModelSerializer):
+class IsolationActionSerializer(serializers.ModelSerializer[Any]):
     prevent_from = IsolationActionModelSerializer(read_only=True)
 
     class Meta:
@@ -519,7 +519,7 @@ class IsolationActionSerializer(serializers.ModelSerializer):
         fields = ["id", "prevent_from", "is_prevent_all"]
 
 
-class IsolationParentSerializer(serializers.ModelSerializer):
+class IsolationParentSerializer(serializers.ModelSerializer[Any]):
     conditions = IsolationConditionSerializer(many=True, read_only=True)
     action = IsolationActionSerializer(read_only=True)
 
@@ -530,7 +530,7 @@ class IsolationParentSerializer(serializers.ModelSerializer):
         fields = ["id", "conditions", "action"]
 
 
-class IsolationConditionCreateUpdateSerializer(serializers.Serializer):
+class IsolationConditionCreateUpdateSerializer(serializers.Serializer[Any]):
     attr_id = serializers.IntegerField()
     str_cond = serializers.CharField(required=False, allow_blank=True, default="")
     ref_cond_id = serializers.IntegerField(required=False, allow_null=True, default=None)
@@ -538,12 +538,12 @@ class IsolationConditionCreateUpdateSerializer(serializers.Serializer):
     is_unmatch = serializers.BooleanField(required=False, default=False)
 
 
-class IsolationActionCreateUpdateSerializer(serializers.Serializer):
+class IsolationActionCreateUpdateSerializer(serializers.Serializer[Any]):
     is_prevent_all = serializers.BooleanField(required=False, default=False)
     prevent_from_id = serializers.IntegerField(required=False, allow_null=True, default=None)
 
 
-class IsolationParentCreateUpdateSerializer(serializers.Serializer):
+class IsolationParentCreateUpdateSerializer(serializers.Serializer[Any]):
     id = serializers.IntegerField(required=False)
     is_deleted = serializers.BooleanField(required=False, default=False)
     conditions = IsolationConditionCreateUpdateSerializer(many=True, default=[])
@@ -576,7 +576,7 @@ class EntityUpdateData(TypedDict, total=False):
     delete_chain_exclude_entities: list[int]
 
 
-class EntitySerializer(serializers.ModelSerializer):
+class EntitySerializer(serializers.ModelSerializer[Any]):
     permission = serializers.SerializerMethodField()
 
     class Meta:
@@ -1062,7 +1062,7 @@ class EntityListSerializer(EntitySerializer):
         return get_permission_level(user, obj)
 
 
-class EntityDetailAttributeSerializer(serializers.Serializer):
+class EntityDetailAttributeSerializer(serializers.Serializer[Any]):
     id = serializers.IntegerField()
     index = serializers.IntegerField()
     name = serializers.CharField()
@@ -1150,7 +1150,7 @@ class EntityDetailSerializer(EntityListSerializer):
         return [{"id": e.id, "name": e.name} for e in obj.delete_chain_exclude_entities.all()]
 
 
-class EntityHistoryChangeSerializer(serializers.Serializer):
+class EntityHistoryChangeSerializer(serializers.Serializer[Any]):
     """Serializer for individual change items in entity history."""
 
     action = serializers.CharField()
@@ -1159,7 +1159,7 @@ class EntityHistoryChangeSerializer(serializers.Serializer):
     after = serializers.JSONField(allow_null=True)
 
 
-class EntityHistorySerializer(serializers.ModelSerializer):
+class EntityHistorySerializer(serializers.ModelSerializer[Any]):
     """Extended serializer with simple-history changes for entity history."""
 
     username = serializers.SerializerMethodField()
@@ -1375,7 +1375,7 @@ class EntityHistorySerializer(serializers.Serializer):
 
 
 # The format keeps compatibility with entity.views and dashboard.views
-class EntityAttrImportExportSerializer(serializers.ModelSerializer):
+class EntityAttrImportExportSerializer(serializers.ModelSerializer[Any]):
     id = serializers.IntegerField(required=False)
     name = serializers.CharField(required=False)
     type = serializers.IntegerField(required=False)
@@ -1402,7 +1402,7 @@ class EntityAttrImportExportSerializer(serializers.ModelSerializer):
 
 
 # The format keeps compatibility with entity.views and dashboard.views
-class EntityImportExportSerializer(serializers.ModelSerializer):
+class EntityImportExportSerializer(serializers.ModelSerializer[Any]):
     id = serializers.IntegerField(required=False)
     name = serializers.CharField(required=False)
     created_user = serializers.CharField(required=False)
@@ -1418,7 +1418,7 @@ class EntityImportExportSerializer(serializers.ModelSerializer):
 
 
 # The format keeps compatibility with entity.views and dashboard.views
-class EntityImportExportRootSerializer(serializers.Serializer):
+class EntityImportExportRootSerializer(serializers.Serializer[Any]):
     Entity = EntityImportExportSerializer(many=True)
     EntityAttr = EntityAttrImportExportSerializer(many=True)
 
@@ -1445,11 +1445,11 @@ class EntityImportExportRootSerializer(serializers.Serializer):
         _do_import(EntityAttrResource, self.validated_data["EntityAttr"])
 
 
-class EntityAttrIDandNameSerializer(serializers.Serializer):
+class EntityAttrIDandNameSerializer(serializers.Serializer[Any]):
     id = serializers.IntegerField()
     name = serializers.CharField()
     type = serializers.IntegerField()
 
 
-class EntityAttrNameSerializer(serializers.ListSerializer):
+class EntityAttrNameSerializer(serializers.ListSerializer[Any]):
     child = EntityAttrIDandNameSerializer()

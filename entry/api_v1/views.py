@@ -38,7 +38,8 @@ def get_referrals(request: HttpRequest, entry_id: str) -> HttpResponse:
 
     # filters the result by keyword
     if "keyword" in request.GET:
-        entries = [x for x in entries if request.GET.get("keyword") in x.name]
+        keyword = request.GET.get("keyword") or ""
+        entries = [x for x in entries if keyword in x.name]
 
     # serialize data for each entries to convert json format
     entries_data = [

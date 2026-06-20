@@ -33,7 +33,7 @@ class UserPermission(BasePermission):
         return permisson.get(getattr(view, "action", ""), False)
 
 
-class GroupAPI(viewsets.ModelViewSet):
+class GroupAPI(viewsets.ModelViewSet[Any]):
     queryset = Group.objects.filter(is_active=True)  # type: ignore[misc]
     permission_classes = [IsAuthenticated & UserPermission]
     pagination_class = PageNumberPagination
@@ -41,8 +41,8 @@ class GroupAPI(viewsets.ModelViewSet):
     ordering = ["name"]
     search_fields = ["name"]
 
-    def get_serializer_class(self) -> type[serializers.Serializer]:
-        serializer: dict[str, type[serializers.Serializer]] = {
+    def get_serializer_class(self) -> type[serializers.Serializer[Any]]:
+        serializer: dict[str, type[serializers.Serializer[Any]]] = {
             "create": GroupCreateUpdateSerializer,
             "update": GroupCreateUpdateSerializer,
             "destroy": serializers.Serializer,
@@ -50,7 +50,7 @@ class GroupAPI(viewsets.ModelViewSet):
         return serializer.get(self.action, GroupSerializer)
 
 
-class GroupTreeAPI(viewsets.ReadOnlyModelViewSet):
+class GroupTreeAPI(viewsets.ReadOnlyModelViewSet[Any]):
     queryset = Group.objects.filter(parent_group__isnull=True, is_active=True)  # type: ignore[misc]
     serializer_class = GroupTreeSerializer
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
@@ -58,7 +58,7 @@ class GroupTreeAPI(viewsets.ReadOnlyModelViewSet):
     search_fields = ["name"]
 
 
-class GroupImportAPI(generics.GenericAPIView):
+class GroupImportAPI(generics.GenericAPIView[Any]):
     parser_classes = [YAMLParser]
     serializer_class = GroupImportSerializer
 
@@ -105,7 +105,7 @@ class GroupImportAPI(generics.GenericAPIView):
         return Response(status=status.HTTP_200_OK)
 
 
-class GroupExportAPI(generics.ListAPIView):
+class GroupExportAPI(generics.ListAPIView[Any]):
     queryset = Group.objects.filter(is_active=True)  # type: ignore[misc]
     serializer_class = GroupExportSerializer
     renderer_classes = [YAMLRenderer]

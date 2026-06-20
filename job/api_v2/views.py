@@ -19,10 +19,10 @@ from job.models import Job, JobOperation, JobStatus
 from user.models import User
 
 
-class JobAPI(viewsets.ModelViewSet):
+class JobAPI(viewsets.ModelViewSet[Any]):
     serializer_class = JobSerializers
 
-    def get_queryset(self) -> QuerySet:
+    def get_queryset(self) -> QuerySet[Any]:
         user = cast(User, self.request.user)
         if user.is_superuser:
             return Job.objects.all()
@@ -98,11 +98,11 @@ class JobAPI(viewsets.ModelViewSet):
         ),
     ],
 )
-class JobListAPI(viewsets.ModelViewSet):
+class JobListAPI(viewsets.ModelViewSet[Any]):
     serializer_class = JobSerializers
     pagination_class = LimitOffsetPagination
 
-    def get_queryset(self) -> QuerySet:
+    def get_queryset(self) -> QuerySet[Any]:
         user = self.request.user
         created_after: str | None = self.request.query_params.get("created_after", None)
         target_id: str | None = self.request.query_params.get("target_id", None)
@@ -160,10 +160,10 @@ class JobListAPI(viewsets.ModelViewSet):
 
 
 @extend_schema(request=None, responses={200: OpenApiTypes.STR})
-class JobRerunAPI(generics.UpdateAPIView):
+class JobRerunAPI(generics.UpdateAPIView[Any]):
     serializer_class = None
 
-    def get_queryset(self) -> QuerySet:
+    def get_queryset(self) -> QuerySet[Any]:
         return Job.objects.filter(user=cast(User, self.request.user))
 
     def update(self, request: Request, *args: Any, **kwargs: Any) -> Response:

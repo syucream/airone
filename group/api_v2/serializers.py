@@ -14,12 +14,12 @@ class GroupMemberType(TypedDict):
     username: str
 
 
-class GroupMemberSerializer(serializers.Serializer):
+class GroupMemberSerializer(serializers.Serializer[Any]):
     id = serializers.IntegerField()
     username = serializers.CharField()
 
 
-class GroupSerializer(serializers.ModelSerializer):
+class GroupSerializer(serializers.ModelSerializer[Any]):
     members = serializers.SerializerMethodField(method_name="get_members")
 
     class Meta:
@@ -38,7 +38,7 @@ class GroupSerializer(serializers.ModelSerializer):
         ]
 
 
-class GroupCreateUpdateSerializer(serializers.ModelSerializer):
+class GroupCreateUpdateSerializer(serializers.ModelSerializer[Any]):
     members = serializers.ListField(
         child=serializers.IntegerField(), write_only=True, required=False
     )
@@ -101,7 +101,7 @@ class GroupCreateUpdateSerializer(serializers.ModelSerializer):
         return instance
 
 
-class GroupTreeSerializer(serializers.ModelSerializer):
+class GroupTreeSerializer(serializers.ModelSerializer[Any]):
     children = serializers.SerializerMethodField(method_name="get_children")
 
     class Meta:
@@ -125,12 +125,12 @@ class GroupTreeSerializer(serializers.ModelSerializer):
         return _make_hierarchical_group(obj.subordinates.filter(is_active=True))
 
 
-class GroupImportSerializer(serializers.Serializer):
+class GroupImportSerializer(serializers.Serializer[Any]):
     id = serializers.IntegerField(required=False)
     name = serializers.CharField()
 
 
-class GroupExportSerializer(serializers.ModelSerializer):
+class GroupExportSerializer(serializers.ModelSerializer[Any]):
     class Meta:
         model = Group
         fields = ["id", "name"]

@@ -10,7 +10,7 @@ from role.models import Role
 from user.models import User
 
 
-class RoleUserSerializer(serializers.ModelSerializer):
+class RoleUserSerializer(serializers.ModelSerializer[Any]):
     class Meta:
         model = User
         fields = [
@@ -19,7 +19,7 @@ class RoleUserSerializer(serializers.ModelSerializer):
         ]
 
 
-class RoleGroupSerializer(serializers.ModelSerializer):
+class RoleGroupSerializer(serializers.ModelSerializer[Any]):
     class Meta:
         model = Group
         fields = [
@@ -28,7 +28,7 @@ class RoleGroupSerializer(serializers.ModelSerializer):
         ]
 
 
-class RoleSerializer(serializers.ModelSerializer):
+class RoleSerializer(serializers.ModelSerializer[Any]):
     users = serializers.SerializerMethodField()
     groups = serializers.SerializerMethodField()
     admin_users = serializers.SerializerMethodField()
@@ -72,7 +72,7 @@ class RoleSerializer(serializers.ModelSerializer):
         )
 
 
-class RoleCreateUpdateSerializer(serializers.ModelSerializer):
+class RoleCreateUpdateSerializer(serializers.ModelSerializer[Any]):
     class Meta:
         model = Role
         fields = [
@@ -95,7 +95,7 @@ class RoleCreateUpdateSerializer(serializers.ModelSerializer):
         admin_groups: list[Group] = role.get("admin_groups", [])
 
         user = cast(User, self.context["request"].user)
-        if not Role.editable(user, admin_users, cast(list, admin_groups)):
+        if not Role.editable(user, admin_users, cast(list[Any], admin_groups)):
             raise RequiredParameterError(
                 "your account must be set as a member of admin_users or admin_groups"
             )
@@ -117,7 +117,7 @@ class RoleCreateUpdateSerializer(serializers.ModelSerializer):
         return role
 
 
-class RoleImportExportChildSerializer(serializers.ModelSerializer):
+class RoleImportExportChildSerializer(serializers.ModelSerializer[Any]):
     name = serializers.CharField()
     users = serializers.ListField(child=serializers.CharField())
     groups = serializers.ListField(child=serializers.CharField())
@@ -157,5 +157,5 @@ class RoleImportExportChildSerializer(serializers.ModelSerializer):
         }
 
 
-class RoleImportSerializer(serializers.ListSerializer):
+class RoleImportSerializer(serializers.ListSerializer[Any]):
     child = RoleImportExportChildSerializer()

@@ -21,15 +21,15 @@ from entity.api_v2.views import EntityPermission
 from user.models import User
 
 
-class CategoryAPI(viewsets.ModelViewSet):
+class CategoryAPI(viewsets.ModelViewSet[Any]):
     pagination_class = LimitOffsetPagination
     permission_classes = [IsAuthenticated & EntityPermission]
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
     search_fields = ["name", "models__name"]
     ordering = ["-priority", "name"]
 
-    def get_serializer_class(self) -> type[Serializer]:
-        serializer: dict[str, type[Serializer]] = {
+    def get_serializer_class(self) -> type[Serializer[Any]]:
+        serializer: dict[str, type[Serializer[Any]]] = {
             "create": CategoryCreateSerializer,
             "update": CategoryUpdateSerializer,
         }

@@ -156,14 +156,14 @@ class EntityPermission(BasePermission):
         OpenApiParameter("is_toplevel", OpenApiTypes.BOOL, OpenApiParameter.QUERY),
     ],
 )
-class EntityAPI(viewsets.ModelViewSet):
+class EntityAPI(viewsets.ModelViewSet[Any]):
     pagination_class = LimitOffsetPagination
     permission_classes = [IsAuthenticated & EntityPermission]
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
     search_fields = ["name"]
     ordering = ["name"]
 
-    def get_serializer_class(self) -> type[serializers.Serializer]:
+    def get_serializer_class(self) -> type[serializers.Serializer[Any]]:
         serializer = {
             "list": EntityListSerializer,
             "create": EntityCreateSerializer,
@@ -253,7 +253,7 @@ class AliasSearchFilter(filters.SearchFilter):
         OpenApiParameter("with_alias", OpenApiTypes.STR, OpenApiParameter.QUERY),
     ],
 )
-class EntityEntryAPI(PluginOverrideMixin, viewsets.ModelViewSet):
+class EntityEntryAPI(PluginOverrideMixin, viewsets.ModelViewSet[Any]):
     """Entity Entry API ViewSet with plugin override support.
 
     Plugin overrides are automatically handled by PluginOverrideMixin.
@@ -268,7 +268,7 @@ class EntityEntryAPI(PluginOverrideMixin, viewsets.ModelViewSet):
     ordering_fields = ["name", "updated_time"]
     search_fields = ["name"]
 
-    def get_serializer_class(self) -> type[serializers.Serializer]:
+    def get_serializer_class(self) -> type[serializers.Serializer[Any]]:
         serializer = {
             "create": EntryCreateSerializer,
         }
@@ -309,7 +309,7 @@ class EntityEntryAPI(PluginOverrideMixin, viewsets.ModelViewSet):
         return Response(status=status.HTTP_202_ACCEPTED)
 
 
-class EntityHistoryAPI(viewsets.ReadOnlyModelViewSet):
+class EntityHistoryAPI(viewsets.ReadOnlyModelViewSet[Any]):
     serializer_class = EntityHistorySerializer
     permission_classes = [IsAuthenticated & EntityPermission]
     pagination_class = LimitOffsetPagination
@@ -415,7 +415,7 @@ class EntityHistoryAPI(viewsets.ReadOnlyModelViewSet):
         return historical_cache
 
 
-class EntityImportAPI(generics.GenericAPIView):
+class EntityImportAPI(generics.GenericAPIView[Any]):
     parser_classes = [YAMLParser]
     serializer_class = EntityImportExportRootSerializer
 
@@ -437,7 +437,7 @@ class EntityImportAPI(generics.GenericAPIView):
         return Response()
 
 
-class EntityExportAPI(generics.RetrieveAPIView):
+class EntityExportAPI(generics.RetrieveAPIView[Any]):
     serializer_class = EntityImportExportRootSerializer
     renderer_classes = [YAMLRenderer]
 
@@ -459,7 +459,7 @@ class EntityExportAPI(generics.RetrieveAPIView):
         OpenApiParameter("referral_attr", OpenApiTypes.STR, OpenApiParameter.QUERY),
     ],
 )
-class EntityAttrNameAPI(generics.GenericAPIView):
+class EntityAttrNameAPI(generics.GenericAPIView[Any]):
     serializer_class = EntityAttrNameSerializer
 
     def get_queryset(self) -> list[dict[str, int | str]]:  # type: ignore[override]

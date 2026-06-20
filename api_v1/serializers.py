@@ -12,7 +12,7 @@ from group.models import Group
 from role.models import Role
 
 
-class GetEntrySerializer(serializers.ModelSerializer):
+class GetEntrySerializer(serializers.ModelSerializer[Any]):
     attrs = serializers.SerializerMethodField()
 
     class Meta:
@@ -99,7 +99,7 @@ class GetEntrySerializer(serializers.ModelSerializer):
         ]
 
 
-class PostEntrySerializer(serializers.Serializer):
+class PostEntrySerializer(serializers.Serializer[Any]):
     id = serializers.IntegerField(required=False)
     entity = serializers.CharField(required=True, max_length=100)
     name = serializers.CharField(required=True, max_length=100)

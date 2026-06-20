@@ -175,7 +175,7 @@ class AironeUserDefault(serializers.CurrentUserDefault):
     so it fails if the context doesn't have request.
     """
 
-    def __call__(self, serializer_field: serializers.Field) -> User:
+    def __call__(self, serializer_field: serializers.Field[Any, Any, Any, Any]) -> User:
         if "_user" in serializer_field.context:
             user: User = serializer_field.context["_user"]
             return user

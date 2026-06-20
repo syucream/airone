@@ -409,7 +409,7 @@ def _on_cancelled_create_entry(job: Job) -> None:
 @register_job_task(JobOperation.CREATE_ENTRY)
 @app.task(bind=True)
 @may_schedule_until_job_is_ready_with_handlers(on_cancelled=_on_cancelled_create_entry)
-def create_entry_attrs(self: Task, job: Job) -> JobStatus | None:
+def create_entry_attrs(self: Task[Any, Any], job: Job) -> JobStatus | None:
     user = User.objects.filter(id=job.user.id).first()
     assert job.target is not None
     entry = Entry.objects.filter(id=job.target.id, is_active=True).first()
@@ -480,7 +480,7 @@ def create_entry_attrs(self: Task, job: Job) -> JobStatus | None:
 @register_job_task(JobOperation.EDIT_ENTRY)
 @app.task(bind=True)
 @may_schedule_until_job_is_ready
-def edit_entry_attrs(self: Task, job: Job) -> JobStatus:
+def edit_entry_attrs(self: Task[Any, Any], job: Job) -> JobStatus:
     user = User.objects.get(id=job.user.id)
     assert job.target is not None
     entry = Entry.objects.get(id=job.target.id)
@@ -538,7 +538,7 @@ def edit_entry_attrs(self: Task, job: Job) -> JobStatus:
 @register_job_task(JobOperation.DELETE_ENTRY)
 @app.task(bind=True)
 @may_schedule_until_job_is_ready
-def delete_entry(self: Task, job: Job) -> JobStatus:
+def delete_entry(self: Task[Any, Any], job: Job) -> JobStatus:
     assert job.target is not None
     entry = Entry.objects.get(id=job.target.id)
 
@@ -560,7 +560,7 @@ def delete_entry(self: Task, job: Job) -> JobStatus:
 @register_job_task(JobOperation.RESTORE_ENTRY)
 @app.task(bind=True)
 @may_schedule_until_job_is_ready
-def restore_entry(self: Task, job: Job) -> JobStatus:
+def restore_entry(self: Task[Any, Any], job: Job) -> JobStatus:
     assert job.target is not None
     entry = Entry.objects.get(id=job.target.id)
 
@@ -586,7 +586,7 @@ def restore_entry(self: Task, job: Job) -> JobStatus:
 @register_job_task(JobOperation.COPY_ENTRY)
 @app.task(bind=True)
 @may_schedule_until_job_is_ready
-def copy_entry(self: Task, job: Job) -> tuple[JobStatus, str, None] | None:
+def copy_entry(self: Task[Any, Any], job: Job) -> tuple[JobStatus, str, None] | None:
     assert job.target is not None
     src_entry = Entry.objects.get(id=job.target.id)
 
@@ -613,7 +613,7 @@ def copy_entry(self: Task, job: Job) -> tuple[JobStatus, str, None] | None:
 @register_job_task(JobOperation.DO_COPY_ENTRY)
 @app.task(bind=True)
 @may_schedule_until_job_is_ready
-def do_copy_entry(self: Task, job: Job) -> tuple[JobStatus, str, Entry | None]:
+def do_copy_entry(self: Task[Any, Any], job: Job) -> tuple[JobStatus, str, Entry | None]:
     assert job.target is not None
     src_entry = Entry.objects.get(id=job.target.id)
     params = json.loads(job.params)
@@ -664,7 +664,7 @@ def do_copy_entry(self: Task, job: Job) -> tuple[JobStatus, str, Entry | None]:
 @register_job_task(JobOperation.IMPORT_ENTRY)
 @app.task(bind=True)
 @may_schedule_until_job_is_ready
-def import_entries(self: Task, job: Job) -> tuple[JobStatus, str, None] | None:
+def import_entries(self: Task[Any, Any], job: Job) -> tuple[JobStatus, str, None] | None:
     try:
         _do_import_entries(job)
     except Exception as e:
@@ -676,7 +676,7 @@ def import_entries(self: Task, job: Job) -> tuple[JobStatus, str, None] | None:
 @register_job_task(JobOperation.IMPORT_ENTRY_V2)
 @app.task(bind=True)
 @may_schedule_until_job_is_ready
-def import_entries_v2(self: Task, job: Job) -> tuple[JobStatus, str, None] | None:
+def import_entries_v2(self: Task[Any, Any], job: Job) -> tuple[JobStatus, str, None] | None:
     user: User = job.user
     assert job.target is not None
     entity = Entity.objects.get(id=job.target.id)
@@ -736,7 +736,7 @@ def import_entries_v2(self: Task, job: Job) -> tuple[JobStatus, str, None] | Non
 @register_job_task(JobOperation.EXPORT_ENTRY)
 @app.task(bind=True)
 @may_schedule_until_job_is_ready
-def export_entries(self: Task, job: Job) -> None:
+def export_entries(self: Task[Any, Any], job: Job) -> None:
     user = job.user
     assert job.target is not None
     entity = Entity.objects.get(id=job.target.id)
@@ -803,7 +803,7 @@ def export_entries(self: Task, job: Job) -> None:
 @register_job_task(JobOperation.EXPORT_ENTRY_V2)
 @app.task(bind=True)
 @may_schedule_until_job_is_ready
-def export_entries_v2(self: Task, job: Job) -> None:
+def export_entries_v2(self: Task[Any, Any], job: Job) -> None:
     user = job.user
     assert job.target is not None
     entity = Entity.objects.get(id=job.target.id)
@@ -1030,12 +1030,13 @@ def export_search_result_v2(self: Any, job: Job) -> tuple[JobStatus, str, ACLBas
 @register_job_task(JobOperation.REGISTER_REFERRALS)
 @app.task(bind=True)
 @may_schedule_until_job_is_ready
-def register_referrals(self: Task, job: Job) -> None:
+def register_referrals(self: Task[Any, Any], job: Job) -> None:
     # register entries data which refer target entry to elasticsearch
     assert job.target is not None
     entry = Entry.objects.filter(id=job.target.id, is_active=True).first()
     if entry:
-        [r.register_es() for r in entry.get_referred_objects()]
+        for r in entry.get_referred_objects():
+            r.register_es()
 
 
 def _notify_event(
@@ -1055,7 +1056,7 @@ def _notify_event(
 @register_job_task(JobOperation.UPDATE_DOCUMENT)
 @app.task(bind=True)
 @may_schedule_until_job_is_ready
-def update_es_documents(self: Task, job: Job) -> JobStatus:
+def update_es_documents(self: Task[Any, Any], job: Job) -> JobStatus:
     params = json.loads(job.params)
 
     assert job.target is not None
@@ -1068,7 +1069,7 @@ def update_es_documents(self: Task, job: Job) -> JobStatus:
 @register_job_task(JobOperation.NOTIFY_CREATE_ENTRY)
 @app.task(bind=True)
 @may_schedule_until_job_is_ready
-def notify_create_entry(self: Task, job: Job) -> tuple[JobStatus, str, None] | None:
+def notify_create_entry(self: Task[Any, Any], job: Job) -> tuple[JobStatus, str, None] | None:
     assert job.target is not None
     return _notify_event(notify_entry_create, job.target.id, job.user)
 
@@ -1076,7 +1077,7 @@ def notify_create_entry(self: Task, job: Job) -> tuple[JobStatus, str, None] | N
 @register_job_task(JobOperation.NOTIFY_UPDATE_ENTRY)
 @app.task(bind=True)
 @may_schedule_until_job_is_ready
-def notify_update_entry(self: Task, job: Job) -> tuple[JobStatus, str, None] | None:
+def notify_update_entry(self: Task[Any, Any], job: Job) -> tuple[JobStatus, str, None] | None:
     assert job.target is not None
     return _notify_event(notify_entry_update, job.target.id, job.user)
 
@@ -1084,7 +1085,7 @@ def notify_update_entry(self: Task, job: Job) -> tuple[JobStatus, str, None] | N
 @register_job_task(JobOperation.NOTIFY_DELETE_ENTRY)
 @app.task(bind=True)
 @may_schedule_until_job_is_ready
-def notify_delete_entry(self: Task, job: Job) -> tuple[JobStatus, str, None] | None:
+def notify_delete_entry(self: Task[Any, Any], job: Job) -> tuple[JobStatus, str, None] | None:
     assert job.target is not None
     return _notify_event(notify_entry_delete, job.target.id, job.user)
 
@@ -1092,7 +1093,7 @@ def notify_delete_entry(self: Task, job: Job) -> tuple[JobStatus, str, None] | N
 @register_job_task(JobOperation.CREATE_ENTRY_V2)
 @app.task(bind=True)
 @may_schedule_until_job_is_ready
-def create_entry_v2(self: Task, job: Job) -> JobStatus:
+def create_entry_v2(self: Task[Any, Any], job: Job) -> JobStatus:
     serializer = EntryCreateSerializer(data=json.loads(job.params), context={"_user": job.user})
     if not serializer.is_valid():
         return JobStatus.ERROR
@@ -1113,7 +1114,7 @@ def create_entry_v2(self: Task, job: Job) -> JobStatus:
 @register_job_task(JobOperation.EDIT_ENTRY_V2)
 @app.task(bind=True)
 @may_schedule_until_job_is_ready
-def edit_entry_v2(self: Task, job: Job) -> JobStatus:
+def edit_entry_v2(self: Task[Any, Any], job: Job) -> JobStatus:
     assert job.target is not None
     entry: Entry | None = Entry.objects.filter(id=job.target.id, is_active=True).first()
     if not entry:
@@ -1133,7 +1134,7 @@ def edit_entry_v2(self: Task, job: Job) -> JobStatus:
 @register_job_task(JobOperation.DELETE_ENTRY_V2)
 @app.task(bind=True)
 @may_schedule_until_job_is_ready
-def delete_entry_v2(self: Task, job: Job) -> JobStatus:
+def delete_entry_v2(self: Task[Any, Any], job: Job) -> JobStatus:
     assert job.target is not None
     entry: Entry | None = Entry.objects.filter(id=job.target.id, is_active=True).first()
     if not entry:

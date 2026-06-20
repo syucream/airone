@@ -399,7 +399,7 @@ class UserAPI(viewsets.ModelViewSet[User]):
     ordering = ["username"]
     search_fields = ["username"]
 
-    def get_serializer_class(self) -> type[Serializer]:
+    def get_serializer_class(self) -> type[Serializer[Any]]:
         serializer = {
             "create": UserCreateSerializer,
             "update": UserUpdateSerializer,
@@ -414,7 +414,7 @@ class UserAPI(viewsets.ModelViewSet[User]):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class UserMeAPI(generics.RetrieveAPIView):
+class UserMeAPI(generics.RetrieveAPIView[Any]):
     serializer_class = UserMeSerializer
     permission_classes = [IsAuthenticated]
 
@@ -453,7 +453,7 @@ class UserTokenAPI(viewsets.ModelViewSet[Token]):
         return Response(serializer.data)
 
 
-class UserImportAPI(generics.GenericAPIView):
+class UserImportAPI(generics.GenericAPIView[Any]):
     parser_classes = [YAMLParser]
     serializer_class = UserImportSerializer
 
@@ -517,13 +517,13 @@ class UserImportAPI(generics.GenericAPIView):
         return Response()
 
 
-class UserExportAPI(generics.ListAPIView):
+class UserExportAPI(generics.ListAPIView[Any]):
     queryset = User.objects.filter(is_active=True)
     serializer_class = UserExportSerializer
     renderer_classes = [YAMLRenderer]
 
 
-class UserPasswordAPI(generics.UpdateAPIView):
+class UserPasswordAPI(generics.UpdateAPIView[Any]):
     queryset = User.objects.filter(is_active=True)
     serializer_class = UserPasswordSerializer
 
@@ -538,13 +538,13 @@ class UserPasswordAPI(generics.UpdateAPIView):
         )
 
     def patch(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        serializer: BaseSerializer = self.get_serializer(data=request.data)
+        serializer: BaseSerializer[Any] = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({})
 
 
-class UserPasswordBySuperuserAPI(generics.UpdateAPIView):
+class UserPasswordBySuperuserAPI(generics.UpdateAPIView[Any]):
     queryset = User.objects.filter(is_active=True)
     serializer_class = UserPasswordBySuperuserSerializer
     permission_classes = [IsAuthenticated & SuperuserPermission]
@@ -560,13 +560,13 @@ class UserPasswordBySuperuserAPI(generics.UpdateAPIView):
         )
 
     def patch(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        serializer: BaseSerializer = self.get_serializer(data=request.data)
+        serializer: BaseSerializer[Any] = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({})
 
 
-class PasswordResetAPI(viewsets.GenericViewSet):
+class PasswordResetAPI(viewsets.GenericViewSet[Any]):
     serializer_class = PasswordResetSerializer
     permission_classes: list[type] = []
 
@@ -648,7 +648,7 @@ class PasswordResetAPI(viewsets.GenericViewSet):
         email_message.send()
 
 
-class PasswordResetConfirmAPI(viewsets.GenericViewSet):
+class PasswordResetConfirmAPI(viewsets.GenericViewSet[Any]):
     serializer_class = PasswordResetConfirmSerializer
     permission_classes: list[type] = []
 
@@ -660,7 +660,7 @@ class PasswordResetConfirmAPI(viewsets.GenericViewSet):
         return Response(serializer.validated_data)
 
 
-class UserAuthAPI(generics.UpdateAPIView):
+class UserAuthAPI(generics.UpdateAPIView[Any]):
     queryset = User.objects.filter(is_active=True)
     serializer_class = UserAuthSerializer
 
@@ -675,7 +675,7 @@ class UserAuthAPI(generics.UpdateAPIView):
         )
 
     def patch(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        serializer: BaseSerializer = self.get_serializer(data=request.data)
+        serializer: BaseSerializer[Any] = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({})

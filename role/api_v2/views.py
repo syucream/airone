@@ -58,7 +58,7 @@ class RolePermission(BasePermission):
         return permission.get(view.action, False)
 
 
-class RoleAPI(viewsets.ModelViewSet):
+class RoleAPI(viewsets.ModelViewSet[Any]):
     queryset = Role.objects.filter(is_active=True)
     permission_classes = [IsAuthenticated & RolePermission]
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
@@ -74,15 +74,15 @@ class RoleAPI(viewsets.ModelViewSet):
         )
         return get_permitted_roles(cast(User, self.request.user), base_queryset)
 
-    def get_serializer_class(self) -> type[serializers.Serializer]:
-        serializer: dict[str, type[serializers.Serializer]] = {
+    def get_serializer_class(self) -> type[serializers.Serializer[Any]]:
+        serializer: dict[str, type[serializers.Serializer[Any]]] = {
             "create": RoleCreateUpdateSerializer,
             "update": RoleCreateUpdateSerializer,
         }
         return serializer.get(self.action, RoleSerializer)
 
 
-class RoleImportAPI(generics.GenericAPIView):
+class RoleImportAPI(generics.GenericAPIView[Any]):
     parser_classes = [YAMLParser]
     serializer_class = RoleImportSerializer
 
@@ -105,7 +105,7 @@ class RoleImportAPI(generics.GenericAPIView):
         )
 
 
-class RoleExportAPI(generics.ListAPIView):
+class RoleExportAPI(generics.ListAPIView[Any]):
     queryset = Role.objects.filter(is_active=True)
     serializer_class = RoleImportExportChildSerializer
     renderer_classes = [YAMLRenderer]

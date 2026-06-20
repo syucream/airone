@@ -20,7 +20,7 @@ class ACLParentType(TypedDict):
     is_public: bool
 
 
-class ACLRoleSerializer(serializers.Serializer):
+class ACLRoleSerializer(serializers.Serializer[Any]):
     id = serializers.IntegerField()
     name = serializers.CharField()
     description = serializers.CharField()
@@ -33,16 +33,16 @@ class ACLRoleSerializer(serializers.Serializer):
         current_permission: int
 
 
-class ACLRoleListSerializer(serializers.ListSerializer):
+class ACLRoleListSerializer(serializers.ListSerializer[Any]):
     child = ACLRoleSerializer()
 
 
-class ACLSettingSerializer(serializers.Serializer):
+class ACLSettingSerializer(serializers.Serializer[Any]):
     member_id = serializers.IntegerField()
     value = serializers.IntegerField()
 
 
-class ACLSerializer(serializers.ModelSerializer):
+class ACLSerializer(serializers.ModelSerializer[Any]):
     @extend_schema_field(
         {
             "type": "integer",
@@ -227,12 +227,12 @@ class ACLSerializer(serializers.ModelSerializer):
             permission.roles.add(role)
 
 
-class ACLHistoryUserSerializer(serializers.Serializer):
+class ACLHistoryUserSerializer(serializers.Serializer[Any]):
     id = serializers.IntegerField()
     username = serializers.CharField()
 
 
-class ACLHistoryChangeSerializer(serializers.Serializer):
+class ACLHistoryChangeSerializer(serializers.Serializer[Any]):
     # unkwnon | create | update | delete
     action = serializers.CharField()
     # is_public | default_permission | <role name>
@@ -247,7 +247,7 @@ class ACLHistoryChangeSerializer(serializers.Serializer):
         return change.after
 
 
-class ACLHistorySerializer(serializers.Serializer):
+class ACLHistorySerializer(serializers.Serializer[Any]):
     user = ACLHistoryUserSerializer(source="history_user")
     time = serializers.DateTimeField(source="history_date")
     name = serializers.SerializerMethodField()

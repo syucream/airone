@@ -96,7 +96,7 @@ class EntryPermission(BasePermission):
         return True
 
 
-class EntryAPI(PluginOverrideMixin, viewsets.ModelViewSet):
+class EntryAPI(PluginOverrideMixin, viewsets.ModelViewSet[Any]):
     """Entry API ViewSet with plugin override support.
 
     Plugin overrides are automatically handled by PluginOverrideMixin.
@@ -107,8 +107,8 @@ class EntryAPI(PluginOverrideMixin, viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated & EntryPermission]
     pagination_class = LimitOffsetPagination
 
-    def get_serializer_class(self) -> type[BaseSerializer]:
-        serializer: dict[str, type[BaseSerializer]] = {
+    def get_serializer_class(self) -> type[BaseSerializer[Any]]:
+        serializer: dict[str, type[BaseSerializer[Any]]] = {
             "retrieve": EntryRetrieveSerializer,
             "update": EntryUpdateSerializer,
             "copy": EntryCopySerializer,
@@ -327,7 +327,7 @@ class EntryAPI(PluginOverrideMixin, viewsets.ModelViewSet):
         OpenApiParameter("query", OpenApiTypes.STR, OpenApiParameter.QUERY),
     ],
 )
-class searchAPI(viewsets.ReadOnlyModelViewSet):
+class searchAPI(viewsets.ReadOnlyModelViewSet[Any]):
     serializer_class = EntrySearchSerializer
 
     def get_queryset(self) -> list[Any]:  # type: ignore[override]
@@ -344,7 +344,7 @@ class searchAPI(viewsets.ReadOnlyModelViewSet):
 
 
 @db_readonly
-class AdvancedSearchAPI(generics.GenericAPIView):
+class AdvancedSearchAPI(generics.GenericAPIView[Any]):
     serializer_class = AdvancedSearchSerializer
     """
     NOTE for now it's just copied from /api/v1/entry/search, but it should be
@@ -572,7 +572,7 @@ class AdvancedSearchAPI(generics.GenericAPIView):
 
 
 @db_readonly
-class AdvancedSearchChainAPI(generics.GenericAPIView):
+class AdvancedSearchChainAPI(generics.GenericAPIView[Any]):
     serializer_class = EntrySearchChainSerializer
     """
     NOTE For now, it's just copied from /api/v1/entry/search_chain.
@@ -604,7 +604,7 @@ class AdvancedSearchChainAPI(generics.GenericAPIView):
         return Response(EntryBaseSerializer(entries, many=True).data)
 
 
-class AdvancedSearchResultAPI(generics.GenericAPIView):
+class AdvancedSearchResultAPI(generics.GenericAPIView[Any]):
     serializer_class = AdvancedSearchResultExportSerializer
 
     def post(self, request: Request) -> Response:
@@ -619,7 +619,7 @@ class AdvancedSearchResultAPI(generics.GenericAPIView):
         OpenApiParameter("keyword", OpenApiTypes.STR, OpenApiParameter.QUERY),
     ],
 )
-class EntryReferralAPI(viewsets.ReadOnlyModelViewSet):
+class EntryReferralAPI(viewsets.ReadOnlyModelViewSet[Any]):
     serializer_class = EntryBaseSerializer
     pagination_class = EntryReferralPagination
 
@@ -643,7 +643,7 @@ class EntryReferralAPI(viewsets.ReadOnlyModelViewSet):
         return Entry.objects.filter(query).select_related("schema")
 
 
-class EntryExportAPI(generics.GenericAPIView):
+class EntryExportAPI(generics.GenericAPIView[Any]):
     serializer_class = EntryExportSerializer
 
     def post(self, request: Request, entity_id: int) -> Response:
@@ -702,7 +702,7 @@ class EntryExportAPI(generics.GenericAPIView):
         OpenApiParameter("keyword", OpenApiTypes.STR, OpenApiParameter.QUERY),
     ],
 )
-class EntryAttrReferralsAPI(viewsets.ReadOnlyModelViewSet):
+class EntryAttrReferralsAPI(viewsets.ReadOnlyModelViewSet[Any]):
     serializer_class = GetEntryAttrReferralSerializer
 
     def get_queryset(self) -> QuerySet[Entry] | QuerySet[Group] | QuerySet[Role]:
@@ -745,7 +745,7 @@ class EntryAttrReferralsAPI(viewsets.ReadOnlyModelViewSet):
             raise IncorrectTypeError(f"unsupported attr type: {entity_attr.type}")
 
 
-class EntryImportAPI(generics.GenericAPIView):
+class EntryImportAPI(generics.GenericAPIView[Any]):
     parser_classes = [YAMLParser]
     serializer_class = EntryImportSerializer
 
@@ -813,7 +813,7 @@ class EntryImportAPI(generics.GenericAPIView):
         )
 
 
-class EntryAttributeValueRestoreAPI(generics.UpdateAPIView):
+class EntryAttributeValueRestoreAPI(generics.UpdateAPIView[Any]):
     queryset = AttributeValue.objects.all()
     serializer_class = EntryAttributeValueRestoreSerializer
 
@@ -823,7 +823,7 @@ class EntryAttributeValueRestoreAPI(generics.UpdateAPIView):
         return super().update(request, *args, **kwargs)
 
 
-class EntryBulkUpdateAPI(generics.UpdateAPIView):
+class EntryBulkUpdateAPI(generics.UpdateAPIView[Any]):
     serializer_class = EntryBulkUpdateSerializer
 
     def update(self, request: Request, *args: Any, **kwargs: Any) -> Response:
@@ -846,7 +846,7 @@ class EntryBulkUpdateAPI(generics.UpdateAPIView):
         return Response({}, status=status.HTTP_202_ACCEPTED)
 
 
-class ItemRollbackAPI(generics.GenericAPIView):
+class ItemRollbackAPI(generics.GenericAPIView[Any]):
     serializer_class = ItemRollbackSerializer
 
     @extend_schema(request=ItemRollbackSerializer)
@@ -971,7 +971,7 @@ class ItemRollbackAPI(generics.GenericAPIView):
         OpenApiParameter("attrinfo", OpenApiTypes.STR, OpenApiParameter.QUERY),
     ],
 )
-class EntryBulkDeleteAPI(generics.DestroyAPIView):
+class EntryBulkDeleteAPI(generics.DestroyAPIView[Any]):
     # (Execuse)
     # Specifying serializer_class is necessary for passing processing
     # of npm run generate
@@ -1049,7 +1049,7 @@ class EntryBulkDeleteAPI(generics.DestroyAPIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class EntryAliasAPI(viewsets.ModelViewSet):
+class EntryAliasAPI(viewsets.ModelViewSet[Any]):
     pagination_class = LimitOffsetPagination
     serializer_class = EntryAliasSerializer
     queryset = AliasEntry.objects.filter(entry__is_active=True)
