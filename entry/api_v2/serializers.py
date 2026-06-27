@@ -2,6 +2,11 @@ import re
 from datetime import date, datetime
 from typing import Any, Dict, List, Literal, Union, cast
 
+
+def _datetime_to_isoformat(dt: datetime) -> str:
+    s = dt.isoformat()
+    return s[:-6] + "Z" if s.endswith("+00:00") else s
+
 from django.db.models import Prefetch, QuerySet
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field, extend_schema_serializer
@@ -888,7 +893,7 @@ class EntryRetrieveSerializer(EntryBaseSerializer):
                     }
 
                 case AttrType.DATETIME:
-                    return {"as_string": str(attrv.datetime) if attrv.datetime else ""}
+                    return {"as_string": _datetime_to_isoformat(attrv.datetime) if attrv.datetime else ""}
 
                 case _:
                     return {}
@@ -1422,7 +1427,7 @@ class EntryHistoryAttributeValueSerializer(serializers.ModelSerializer[Attribute
                 }
 
             case AttrType.DATETIME:
-                return {"as_string": str(obj.datetime) if obj.datetime else ""}
+                return {"as_string": _datetime_to_isoformat(obj.datetime) if obj.datetime else ""}
 
             case AttrType.NUMBER:
                 return {"as_number": obj.get_value()}
