@@ -1,7 +1,7 @@
 import json
 import re
 from datetime import date, datetime
-from typing import Any
+from typing import Any, cast
 from zoneinfo import ZoneInfo
 
 from django.db import models
@@ -21,6 +21,7 @@ from entry.settings import CONFIG
 from entry.utils import get_sort_order
 from group.models import Group
 from role.models import Role
+from user.models import User
 
 
 @http_get
@@ -37,7 +38,8 @@ def get_referrals(request: HttpRequest, entry_id: str) -> HttpResponse:
 
     # filters the result by keyword
     if "keyword" in request.GET:
-        entries = [x for x in entries if request.GET.get("keyword") in x.name]
+        keyword = request.GET.get("keyword") or ""
+        entries = [x for x in entries if keyword in x.name]
 
     # serialize data for each entries to convert json format
     entries_data = [
@@ -93,7 +95,7 @@ def search_entries(
         if cond["type"] == "text":
             return re.match(r".*%s" % cond["value"], attrv.value)
         else:
-            return int(cond["value"]) == attrv.referral.id
+            return attrv.referral is not None and int(cond["value"]) == attrv.referral.id
 
     def _is_match_attrs(attrs: QuerySet[Attribute], cond: dict[str, Any]) -> bool:
         # Ignore he case a value is not specified
@@ -206,8 +208,8 @@ def get_attr_referrals(request: HttpRequest, attr_id: str) -> HttpResponse:
             query_name = Q(name__icontains=keyword)
 
         return [
-            {"id": x.id, "name": x.name}
-            for x in model.objects.filter(Q(**query_params), query_name).order_by("name")[
+            {"id": x.id, "name": x.name}  # type: ignore[attr-defined]
+            for x in model._default_manager.filter(Q(**query_params), query_name).order_by("name")[
                 0 : CONFIG.MAX_LIST_REFERRALS
             ]
         ]
@@ -278,7 +280,9 @@ def get_entry_history(request: HttpRequest, entry_id: str) -> HttpResponse:
 
         raise TypeError("Type %s not serializable" % type(obj))
 
-    history = entry.get_value_history(request.user, count=params["count"], index=params["index"])
+    count = params["count"] if params["count"] is not None else 0
+    index = params["index"] if params["index"] is not None else 0
+    history = entry.get_value_history(cast(User, request.user), count=count, index=index)
 
     return JsonResponse(
         {
@@ -296,6 +300,17 @@ def get_entry_info(request: HttpRequest, entry_id: str) -> HttpResponse:
     if not entry:
         return HttpResponse("There is no entry which is specified by entry_id", status=400)
 
+    user = cast(User, request.user)
+
+    def _attr_dict(x: Attribute) -> dict[str, Any]:
+        latest = x.get_latest_value()
+        if latest is None:
+            return {"id": x.id, "name": x.schema.name, "index": x.schema.index}
+        return dict(
+            {"id": x.id, "name": x.schema.name, "index": x.schema.index},
+            **latest.get_value(with_metainfo=True, is_active=False),
+        )
+
     return JsonResponse(
         {
             "id": entry.id,
@@ -305,12 +320,9 @@ def get_entry_info(request: HttpRequest, entry_id: str) -> HttpResponse:
             },
             "attrs": sorted(
                 [
-                    dict(
-                        {"id": x.id, "name": x.schema.name, "index": x.schema.index},
-                        **x.get_latest_value().get_value(with_metainfo=True, is_active=False),
-                    )
+                    _attr_dict(x)
                     for x in entry.attrs.all()
-                    if request.user.has_permission(x, ACLType.Readable) and x.schema.is_active
+                    if user.has_permission(x, ACLType.Readable) and x.schema.is_active
                 ],
                 key=lambda x: x["index"],
             ),
@@ -335,6 +347,6 @@ def create_entry_attr(
 
     attr = entry.attrs.filter(schema=entity_attr, is_active=True).first()
     if not attr:
-        attr = entry.add_attribute_from_base(entity_attr, request.user)
+        attr = entry.add_attribute_from_base(entity_attr, cast(User, request.user))
 
     return JsonResponse({"id": attr.id})

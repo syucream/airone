@@ -5,11 +5,10 @@ import json
 import math
 import re
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, List, Optional, Self, TypedDict
+from typing import TYPE_CHECKING, Any, List, Optional, Self, TypedDict, cast
 
 if TYPE_CHECKING:
     from airone.lib.resources import AironeModelResource
-    from isolation.models import IsolationCondition
 
 import requests
 from django.conf import settings
@@ -28,6 +27,7 @@ from airone.lib.log import Logger
 from airone.lib.types import AttrType, AttrTypeValue
 from entity.admin import EntityAttrResource, EntityResource
 from entity.models import Entity, EntityAttr, ItemNameType
+from isolation.models import IsolationAction, IsolationCondition, IsolationParent
 from user.models import History, User
 from webhook.models import Webhook
 
@@ -124,12 +124,12 @@ class EntityAttrCreateRequest(BaseModel):
         return self
 
 
-class WebhookHeadersSerializer(serializers.Serializer):
+class WebhookHeadersSerializer(serializers.Serializer[Any]):
     header_key = serializers.CharField()
     header_value = serializers.CharField()
 
 
-class WebhookSerializer(serializers.ModelSerializer):
+class WebhookSerializer(serializers.ModelSerializer[Webhook]):
     headers = serializers.ListField(child=WebhookHeadersSerializer(), required=False)
     is_deleted = serializers.BooleanField(required=False, default=False, write_only=True)
     url = serializers.CharField(required=False, max_length=200, allow_blank=True)
@@ -149,7 +149,7 @@ class WebhookSerializer(serializers.ModelSerializer):
         read_only_fields = ["is_verified", "verification_error_details"]
 
 
-class WebhookCreateUpdateSerializer(serializers.ModelSerializer):
+class WebhookCreateUpdateSerializer(serializers.ModelSerializer[Webhook]):
     id = serializers.IntegerField(required=False)
     url = serializers.CharField(required=False, max_length=200, allow_blank=True)
     headers = serializers.ListField(child=WebhookHeadersSerializer(), required=False)
@@ -162,7 +162,9 @@ class WebhookCreateUpdateSerializer(serializers.ModelSerializer):
         extra_kwargs = {"url": {"required": False}}
 
     def validate_id(self, id: Optional[int]) -> Optional[int]:
-        entity: Entity = self.parent.parent.instance
+        assert self.parent is not None and self.parent.parent is not None
+        entity = self.parent.parent.instance
+        assert isinstance(entity, Entity)
         if id is not None and not entity.webhooks.filter(id=id).exists():
             raise ObjectNotExistsError("Invalid id(%s) object does not exist" % id)
 
@@ -180,7 +182,7 @@ class WebhookCreateUpdateSerializer(serializers.ModelSerializer):
         return webhook
 
 
-class EntityAttrCreateSerializer(serializers.ModelSerializer):
+class EntityAttrCreateSerializer(serializers.ModelSerializer[EntityAttr]):
     created_user = serializers.HiddenField(default=drf.AironeUserDefault())
     name_prefix = serializers.CharField(
         required=False, max_length=20, allow_blank=True, trim_whitespace=False
@@ -302,7 +304,7 @@ class EntityAttrCreateSerializer(serializers.ModelSerializer):
         return attr
 
 
-class EntityAttrUpdateSerializer(serializers.ModelSerializer):
+class EntityAttrUpdateSerializer(serializers.ModelSerializer[EntityAttr]):
     id = serializers.IntegerField(required=False)
     is_deleted = serializers.BooleanField(required=False, default=False)
     name_prefix = serializers.CharField(
@@ -349,7 +351,9 @@ class EntityAttrUpdateSerializer(serializers.ModelSerializer):
             return id
 
         # Normal case when used as nested serializer
-        entity: Entity = self.parent.parent.instance
+        assert self.parent is not None and self.parent.parent is not None
+        entity = self.parent.parent.instance
+        assert isinstance(entity, Entity)
         nested_entity_attr: Optional[EntityAttr] = entity.attrs.filter(
             id=id, is_active=True
         ).first()
@@ -467,7 +471,7 @@ class EntityAttrUpdateSerializer(serializers.ModelSerializer):
         return attr
 
 
-class EntityAttrSerializer(serializers.ModelSerializer):
+class EntityAttrSerializer(serializers.ModelSerializer[EntityAttr]):
     type = serializers.IntegerField(required=False, read_only=True)
 
     class Meta:
@@ -475,7 +479,7 @@ class EntityAttrSerializer(serializers.ModelSerializer):
         fields = ("id", "name", "type")
 
 
-class IsolationConditionSerializer(serializers.ModelSerializer):
+class IsolationConditionSerializer(serializers.ModelSerializer[IsolationCondition]):
     attr = EntityAttrSerializer(read_only=True)
     ref_cond = serializers.SerializerMethodField()
 
@@ -499,13 +503,13 @@ class IsolationConditionSerializer(serializers.ModelSerializer):
         return None
 
 
-class IsolationActionModelSerializer(serializers.ModelSerializer):
+class IsolationActionModelSerializer(serializers.ModelSerializer[Entity]):
     class Meta:
         model = Entity
         fields = ["id", "name"]
 
 
-class IsolationActionSerializer(serializers.ModelSerializer):
+class IsolationActionSerializer(serializers.ModelSerializer[IsolationAction]):
     prevent_from = IsolationActionModelSerializer(read_only=True)
 
     class Meta:
@@ -515,7 +519,7 @@ class IsolationActionSerializer(serializers.ModelSerializer):
         fields = ["id", "prevent_from", "is_prevent_all"]
 
 
-class IsolationParentSerializer(serializers.ModelSerializer):
+class IsolationParentSerializer(serializers.ModelSerializer[IsolationParent]):
     conditions = IsolationConditionSerializer(many=True, read_only=True)
     action = IsolationActionSerializer(read_only=True)
 
@@ -526,7 +530,7 @@ class IsolationParentSerializer(serializers.ModelSerializer):
         fields = ["id", "conditions", "action"]
 
 
-class IsolationConditionCreateUpdateSerializer(serializers.Serializer):
+class IsolationConditionCreateUpdateSerializer(serializers.Serializer[Any]):
     attr_id = serializers.IntegerField()
     str_cond = serializers.CharField(required=False, allow_blank=True, default="")
     ref_cond_id = serializers.IntegerField(required=False, allow_null=True, default=None)
@@ -534,12 +538,12 @@ class IsolationConditionCreateUpdateSerializer(serializers.Serializer):
     is_unmatch = serializers.BooleanField(required=False, default=False)
 
 
-class IsolationActionCreateUpdateSerializer(serializers.Serializer):
+class IsolationActionCreateUpdateSerializer(serializers.Serializer[Any]):
     is_prevent_all = serializers.BooleanField(required=False, default=False)
     prevent_from_id = serializers.IntegerField(required=False, allow_null=True, default=None)
 
 
-class IsolationParentCreateUpdateSerializer(serializers.Serializer):
+class IsolationParentCreateUpdateSerializer(serializers.Serializer[Any]):
     id = serializers.IntegerField(required=False)
     is_deleted = serializers.BooleanField(required=False, default=False)
     conditions = IsolationConditionCreateUpdateSerializer(many=True, default=[])
@@ -572,7 +576,7 @@ class EntityUpdateData(TypedDict, total=False):
     delete_chain_exclude_entities: list[int]
 
 
-class EntitySerializer(serializers.ModelSerializer):
+class EntitySerializer(serializers.ModelSerializer[Entity]):
     permission = serializers.SerializerMethodField()
 
     class Meta:
@@ -656,7 +660,7 @@ class EntitySerializer(serializers.ModelSerializer):
         validated_data: EntityCreateData | EntityUpdateData,
     ) -> Entity:
         attrs_data: list[Any] = validated_data.get("attrs", [])
-        webhooks_data: list[Any] = validated_data.get("webhooks", [])
+        webhooks_data: list[Any] = cast(list[Any], validated_data.get("webhooks", []))
         isolation_rules_data: list[Any] = validated_data.get("isolation_rules", [])
         exclude_entity_ids: list[int] | None = validated_data.get(
             "delete_chain_exclude_entities", None
@@ -712,7 +716,8 @@ class EntitySerializer(serializers.ModelSerializer):
             # set referrals if necessary
             if entity_attr.type & AttrType.OBJECT:
                 entity_attr.referral_clear()
-                [entity_attr.referral.add(x) for x in attr_referrals]
+                for x in attr_referrals:
+                    entity_attr.referral.add(x)
 
             # register history to create, update EntityAttr
             if is_created_attr:
@@ -868,12 +873,15 @@ class EntityCreateSerializer(EntitySerializer):
                 "before_create_entity_v2", None, user, validated_data
             )
 
+        name_val = validated_data.get("name")
+        if name_val is None:
+            raise RequiredParameterError("name is required")
         entity = Entity.objects.create(
-            name=validated_data.get("name"),
+            name=name_val,
             note=validated_data.get("note", ""),
             item_name_pattern=validated_data.get("item_name_pattern", ""),
             item_name_type=validated_data.get("item_name_type", ""),
-            created_user=validated_data.get("created_user"),
+            created_user=user,
         )
 
         # set status parameters
@@ -925,18 +933,19 @@ class EntityUpdateSerializer(EntitySerializer):
         extra_kwargs = {"name": {"required": False}, "note": {"write_only": True}}
 
     def validate_name(self, name: str) -> str:
-        if self.instance.name != name and Entity.objects.filter(name=name, is_active=True).exists():
+        instance = self.instance
+        assert isinstance(instance, Entity)
+        if instance.name != name and Entity.objects.filter(name=name, is_active=True).exists():
             raise DuplicatedObjectExistsError("Duplication error. There is same named Entity")
 
         return name
 
-    def validate_attrs(
-        self, attrs: list[EntityAttrUpdateSerializer]
-    ) -> list[EntityAttrUpdateSerializer]:
-        entity: Entity = self.instance
+    def validate_attrs(self, attrs: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        entity = self.instance
+        assert isinstance(entity, Entity)
 
         # duplication checks
-        attr_names = {}
+        attr_names: dict[int, str] = {}
         for current_attr in entity.attrs.filter(is_active=True):
             attr_names[current_attr.id] = current_attr.name
 
@@ -958,7 +967,8 @@ class EntityUpdateSerializer(EntitySerializer):
     def validate_webhooks(
         self, webhooks: list[WebhookCreateUpdateSerializer]
     ) -> list[WebhookCreateUpdateSerializer]:
-        entity: Entity = self.instance
+        entity = self.instance
+        assert isinstance(entity, Entity)
 
         # deny changing webhooks if its disabled
         if not settings.AIRONE_FLAGS["WEBHOOK"]:
@@ -985,21 +995,21 @@ class EntityUpdateSerializer(EntitySerializer):
         # record history for specific fields on update
         updated_fields: list[str] = []
         if "name" in validated_data and entity.name != validated_data.get("name"):
-            entity.name = validated_data.get("name")
+            entity.name = validated_data.get("name") or ""
             updated_fields.append("name")
         if "note" in validated_data and entity.note != validated_data.get("note"):
-            entity.note = validated_data.get("note")
+            entity.note = validated_data.get("note") or ""
             updated_fields.append("note")
         if "item_name_pattern" in validated_data and entity.item_name_pattern != validated_data.get(
             "item_name_pattern"
         ):
-            entity.item_name_pattern = validated_data.get("item_name_pattern")
+            entity.item_name_pattern = validated_data.get("item_name_pattern") or ""
             updated_fields.append("item_name_pattern")
 
         if "item_name_type" in validated_data and entity.item_name_type != validated_data.get(
             "item_name_type"
         ):
-            entity.item_name_type = validated_data.get("item_name_type")
+            entity.item_name_type = validated_data.get("item_name_type") or ""
             updated_fields.append("item_name_type")
         if len(updated_fields) > 0:
             entity.save(update_fields=updated_fields)
@@ -1052,7 +1062,7 @@ class EntityListSerializer(EntitySerializer):
         return get_permission_level(user, obj)
 
 
-class EntityDetailAttributeSerializer(serializers.Serializer):
+class EntityDetailAttributeSerializer(serializers.Serializer[Any]):
     id = serializers.IntegerField()
     index = serializers.IntegerField()
     name = serializers.CharField()
@@ -1140,7 +1150,7 @@ class EntityDetailSerializer(EntityListSerializer):
         return [{"id": e.id, "name": e.name} for e in obj.delete_chain_exclude_entities.all()]
 
 
-class EntityHistoryChangeSerializer(serializers.Serializer):
+class EntityHistoryChangeSerializer(serializers.Serializer[Any]):
     """Serializer for individual change items in entity history."""
 
     action = serializers.CharField()
@@ -1149,7 +1159,7 @@ class EntityHistoryChangeSerializer(serializers.Serializer):
     after = serializers.JSONField(allow_null=True)
 
 
-class EntityHistorySerializer(serializers.ModelSerializer):
+class EntityHistorySerializer(serializers.ModelSerializer[History]):
     """Extended serializer with simple-history changes for entity history."""
 
     username = serializers.SerializerMethodField()
@@ -1365,7 +1375,7 @@ class EntityHistorySerializer(serializers.Serializer):
 
 
 # The format keeps compatibility with entity.views and dashboard.views
-class EntityAttrImportExportSerializer(serializers.ModelSerializer):
+class EntityAttrImportExportSerializer(serializers.ModelSerializer[EntityAttr]):
     id = serializers.IntegerField(required=False)
     name = serializers.CharField(required=False)
     type = serializers.IntegerField(required=False)
@@ -1392,7 +1402,7 @@ class EntityAttrImportExportSerializer(serializers.ModelSerializer):
 
 
 # The format keeps compatibility with entity.views and dashboard.views
-class EntityImportExportSerializer(serializers.ModelSerializer):
+class EntityImportExportSerializer(serializers.ModelSerializer[Entity]):
     id = serializers.IntegerField(required=False)
     name = serializers.CharField(required=False)
     created_user = serializers.CharField(required=False)
@@ -1408,12 +1418,15 @@ class EntityImportExportSerializer(serializers.ModelSerializer):
 
 
 # The format keeps compatibility with entity.views and dashboard.views
-class EntityImportExportRootSerializer(serializers.Serializer):
+class EntityImportExportRootSerializer(serializers.Serializer[Any]):
     Entity = EntityImportExportSerializer(many=True)
     EntityAttr = EntityAttrImportExportSerializer(many=True)
 
     def save(self, **kwargs: object) -> None:
-        user: User = self.context.get("request").user
+        request = self.context.get("request")
+        assert request is not None
+        assert isinstance(request.user, User)
+        user: User = request.user
 
         def _do_import(
             resource: type[AironeModelResource], iter_data: list[dict[str, Any]]
@@ -1432,11 +1445,11 @@ class EntityImportExportRootSerializer(serializers.Serializer):
         _do_import(EntityAttrResource, self.validated_data["EntityAttr"])
 
 
-class EntityAttrIDandNameSerializer(serializers.Serializer):
+class EntityAttrIDandNameSerializer(serializers.Serializer[Any]):
     id = serializers.IntegerField()
     name = serializers.CharField()
     type = serializers.IntegerField()
 
 
-class EntityAttrNameSerializer(serializers.ListSerializer):
+class EntityAttrNameSerializer(serializers.ListSerializer[Any]):
     child = EntityAttrIDandNameSerializer()
