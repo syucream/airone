@@ -523,7 +523,7 @@ class AdvancedSearchService:
         exists: bool = True
         while exists:
             exists = False
-            register_docs = []
+            register_docs: list[Any] = []
             for entry in entry_list[start_pos : start_pos + 1000]:
                 exists = True
                 es_doc = entry.get_es_document(entity_attrs=entity_attrs)

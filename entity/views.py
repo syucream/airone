@@ -1,7 +1,7 @@
 import collections
 import io
 import re
-from typing import Any
+from typing import Any, cast
 
 import yaml
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
@@ -21,7 +21,7 @@ from airone.lib.http import (
 from airone.lib.types import AttrType, AttrTypeValue
 from entry.models import AttributeValue, Entry
 from job.models import Job
-from user.models import History
+from user.models import History, User
 
 from .models import Entity, EntityAttr
 from .settings import CONFIG
@@ -52,24 +52,27 @@ def index(request: HttpRequest) -> HttpResponse:
 
     return_entities = page_obj.object_list
     index_start = (page_obj.number - 1) * CONFIG.MAX_LIST_ENTITIES
+    return_entities_count = len(return_entities)
 
     context = {
         "entities": return_entities,
-        "entity_count": return_entities.count(),
+        "entity_count": return_entities_count,
         "total_count": overall_entities.count(),
         "page_index_start": index_start,
-        "page_index_end": index_start + return_entities.count(),
+        "page_index_end": index_start + return_entities_count,
     }
     return render(request, "list_entities.html", context)
 
 
 @http_get
 def create(request: HttpRequest) -> HttpResponse:
+    user = request.user
+    assert isinstance(user, User)
     context = {
         "entities": [
             x
             for x in Entity.objects.filter(is_active=True)
-            if request.user.has_permission(x, ACLType.Readable)
+            if user.has_permission(x, ACLType.Readable)
         ],
         "attr_types": AttrTypeValue,
     }
@@ -78,9 +81,13 @@ def create(request: HttpRequest) -> HttpResponse:
 
 @http_get
 def edit(request: HttpRequest, entity_id: int) -> HttpResponse:
-    entity, error = get_obj_with_check_perm(request.user, Entity, entity_id, ACLType.Writable)
-    if error or entity is None:
+    user = request.user
+    assert isinstance(user, User)
+    entity, error = get_obj_with_check_perm(user, cast(Any, Entity), entity_id, ACLType.Writable)
+    if error is not None or entity is None:
+        assert error is not None
         return error
+    assert isinstance(entity, Entity)
 
     # when an entity in referral attribute is deleted
     # user should be able to select new entity or keep it unchanged
@@ -100,7 +107,7 @@ def edit(request: HttpRequest, entity_id: int) -> HttpResponse:
                 "referrals": x.referral.all(),
             }
             for x in entity.attrs.filter(is_active=True).order_by("index")
-            if request.user.has_permission(x, ACLType.Writable)
+            if user.has_permission(x, ACLType.Writable)
         ],
     }
     return render(request, "edit_entity.html", context)
@@ -112,7 +119,7 @@ def edit(request: HttpRequest, entity_id: int) -> HttpResponse:
             "name": "name",
             "type": str,
             "checker": lambda x: (
-                x["name"] and len(x["name"]) <= Entity._meta.get_field("name").max_length
+                x["name"] and len(x["name"]) <= (Entity._meta.get_field("name").max_length or 0)
             ),
         },
         {"name": "note", "type": str},
@@ -127,7 +134,7 @@ def edit(request: HttpRequest, entity_id: int) -> HttpResponse:
                     "checker": lambda x: (
                         x["name"]
                         and not re.match(r"^\s*$", x["name"])
-                        and len(x["name"]) <= EntityAttr._meta.get_field("name").max_length
+                        and len(x["name"]) <= (EntityAttr._meta.get_field("name").max_length or 0)
                     ),
                 },
                 {
@@ -149,9 +156,13 @@ def edit(request: HttpRequest, entity_id: int) -> HttpResponse:
     ]
 )
 def do_edit(request: HttpRequest, entity_id: int, recv_data: dict[str, Any]) -> HttpResponse:
-    entity, error = get_obj_with_check_perm(request.user, Entity, entity_id, ACLType.Writable)
-    if error or entity is None:
+    user = request.user
+    assert isinstance(user, User)
+    entity, error = get_obj_with_check_perm(user, cast(Any, Entity), entity_id, ACLType.Writable)
+    if error is not None or entity is None:
+        assert error is not None
         return error
+    assert isinstance(entity, Entity)
 
     # validation checks
     for attr in recv_data["attrs"]:
@@ -185,7 +196,7 @@ def do_edit(request: HttpRequest, entity_id: int, recv_data: dict[str, Any]) -> 
             "edit_entity", None, entity, recv_data["name"], recv_data["attrs"]
         )
         if resp:
-            return resp
+            return cast(HttpResponse, resp)
 
     # update status parameters
     if recv_data["is_toplevel"]:
@@ -197,7 +208,7 @@ def do_edit(request: HttpRequest, entity_id: int, recv_data: dict[str, Any]) -> 
     entity.set_status(Entity.STATUS_EDITING)
 
     # Create a new job to edit entity and run it
-    job = Job.new_edit_entity(request.user, entity, params=recv_data)
+    job = Job.new_edit_entity(user, entity, params=recv_data)
     job.run()
 
     new_name = recv_data["name"]
@@ -216,7 +227,7 @@ def do_edit(request: HttpRequest, entity_id: int, recv_data: dict[str, Any]) -> 
             "name": "name",
             "type": str,
             "checker": lambda x: (
-                x["name"] and len(x["name"]) <= Entity._meta.get_field("name").max_length
+                x["name"] and len(x["name"]) <= (Entity._meta.get_field("name").max_length or 0)
             ),
         },
         {"name": "note", "type": str},
@@ -231,7 +242,7 @@ def do_edit(request: HttpRequest, entity_id: int, recv_data: dict[str, Any]) -> 
                     "checker": lambda x: (
                         x["name"]
                         and not re.match(r"^\s*$", x["name"])
-                        and len(x["name"]) <= EntityAttr._meta.get_field("name").max_length
+                        and len(x["name"]) <= (EntityAttr._meta.get_field("name").max_length or 0)
                     ),
                 },
                 {
@@ -253,6 +264,8 @@ def do_edit(request: HttpRequest, entity_id: int, recv_data: dict[str, Any]) -> 
     ]
 )
 def do_create(request: HttpRequest, recv_data: dict[str, Any]) -> HttpResponse:
+    user = request.user
+    assert isinstance(user, User)
     # validation checks
     for attr in recv_data["attrs"]:
         # formalize recv_data format
@@ -283,13 +296,13 @@ def do_create(request: HttpRequest, recv_data: dict[str, Any]) -> HttpResponse:
     if custom_view.is_custom("create_entity"):
         resp = custom_view.call_custom("create_entity", None, recv_data["name"], recv_data["attrs"])
         if resp:
-            return resp
+            return cast(HttpResponse, resp)
 
     # create EntityAttr objects
     entity = Entity(
         name=recv_data["name"],
         note=recv_data["note"],
-        created_user=request.user,
+        created_user=user,
         status=Entity.STATUS_CREATING,
     )
 
@@ -300,7 +313,7 @@ def do_create(request: HttpRequest, recv_data: dict[str, Any]) -> HttpResponse:
     entity.save()
 
     # Create a new job to edit entity and run it
-    job = Job.new_create_entity(request.user, entity, params=recv_data)
+    job = Job.new_create_entity(user, entity, params=recv_data)
     job.run()
 
     return JsonResponse(
@@ -314,24 +327,28 @@ def do_create(request: HttpRequest, recv_data: dict[str, Any]) -> HttpResponse:
 
 @http_get
 def export(request: HttpRequest) -> HttpResponse:
+    user = request.user
+    assert isinstance(user, User)
     output = io.StringIO()
 
     data: dict[str, list[dict[str, Any]]] = {"Entity": [], "EntityAttr": []}
 
-    entities = get_permitted_objects(request.user, Entity, ACLType.Readable)
-    for entity in entities:
+    entities = get_permitted_objects(user, Entity, ACLType.Readable)
+    for entity_obj in entities:
+        assert isinstance(entity_obj, Entity)
         data["Entity"].append(
             {
-                "created_user": entity.created_user.username,
-                "id": entity.id,
-                "name": entity.name,
-                "note": entity.note,
-                "status": entity.status,
+                "created_user": entity_obj.created_user.username,
+                "id": entity_obj.id,
+                "name": entity_obj.name,
+                "note": entity_obj.note,
+                "status": entity_obj.status,
             }
         )
 
-    attrs = get_permitted_objects(request.user, EntityAttr, ACLType.Readable)
+    attrs = get_permitted_objects(user, EntityAttr, ACLType.Readable)
     for attr in attrs:
+        assert isinstance(attr, EntityAttr)
         data["EntityAttr"].append(
             {
                 "created_user": attr.created_user.username,
@@ -352,9 +369,13 @@ def export(request: HttpRequest) -> HttpResponse:
 
 @http_post([])
 def do_delete(request: HttpRequest, entity_id: int, recv_data: dict[str, Any]) -> HttpResponse:
-    entity, error = get_obj_with_check_perm(request.user, Entity, entity_id, ACLType.Full)
-    if error or entity is None:
+    user = request.user
+    assert isinstance(user, User)
+    entity, error = get_obj_with_check_perm(user, cast(Any, Entity), entity_id, ACLType.Full)
+    if error is not None or entity is None:
+        assert error is not None
         return error
+    assert isinstance(entity, Entity)
 
     if not entity.is_active:
         return HttpResponse("Target entity is now under processing", status=400)
@@ -368,7 +389,7 @@ def do_delete(request: HttpRequest, entity_id: int, recv_data: dict[str, Any]) -
     if custom_view.is_custom("delete_entity"):
         resp = custom_view.call_custom("delete_entity", None, entity)
         if resp:
-            return resp
+            return cast(HttpResponse, resp)
 
     ret = {}
     # save deleting target name before do it
@@ -379,7 +400,7 @@ def do_delete(request: HttpRequest, entity_id: int, recv_data: dict[str, Any]) -
     entity.save_without_historical_record(update_fields=["is_active"])
 
     # Create a new job to delete entry and run it
-    job = Job.new_delete_entity(request.user, entity)
+    job = Job.new_delete_entity(user, entity)
     job.run()
 
     return JsonResponse(ret)
@@ -426,7 +447,9 @@ def dashboard(request: HttpRequest, entity_id: int) -> HttpResponse:
                         }
                     ).count(),
                 }
-                for r in Entry.objects.filter(schema=attr.referral.first(), is_active=True)
+                for r in Entry.objects.filter(
+                    schema=cast(Any, attr.referral.first()), is_active=True
+                )
             ],
         }
 
