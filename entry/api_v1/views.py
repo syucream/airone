@@ -1,7 +1,7 @@
 import json
 import re
 from datetime import date, datetime
-from typing import Any
+from typing import Any, cast
 from zoneinfo import ZoneInfo
 
 from django.db import models
@@ -21,6 +21,7 @@ from entry.settings import CONFIG
 from entry.utils import get_sort_order
 from group.models import Group
 from role.models import Role
+from user.models import User
 
 
 @http_get
@@ -36,8 +37,9 @@ def get_referrals(request: HttpRequest, entry_id: str) -> HttpResponse:
     total_count = len(entries)
 
     # filters the result by keyword
-    if "keyword" in request.GET:
-        entries = [x for x in entries if request.GET.get("keyword") in x.name]
+    keyword = request.GET.get("keyword")
+    if keyword is not None:
+        entries = [x for x in entries if keyword in x.name]
 
     # serialize data for each entries to convert json format
     entries_data = [
@@ -93,7 +95,10 @@ def search_entries(
         if cond["type"] == "text":
             return re.match(r".*%s" % cond["value"], attrv.value)
         else:
-            return int(cond["value"]) == attrv.referral.id
+            referral = attrv.referral
+            if referral is None:
+                return False
+            return int(cond["value"]) == referral.id
 
     def _is_match_attrs(attrs: QuerySet[Attribute], cond: dict[str, Any]) -> bool:
         # Ignore he case a value is not specified
@@ -197,7 +202,9 @@ def get_attr_referrals(request: HttpRequest, attr_id: str) -> HttpResponse:
     """
 
     def _get_referral_objects(
-        attr: EntityAttr, model: type[models.Model], query_params: dict[str, Any] = {}
+        attr: EntityAttr,
+        manager: models.Manager[Any],
+        query_params: dict[str, Any] = {},
     ) -> list[dict[str, Any]]:
         query_name = Q()
 
@@ -207,7 +214,7 @@ def get_attr_referrals(request: HttpRequest, attr_id: str) -> HttpResponse:
 
         return [
             {"id": x.id, "name": x.name}
-            for x in model.objects.filter(Q(**query_params), query_name).order_by("name")[
+            for x in manager.filter(Q(**query_params), query_name).order_by("name")[
                 0 : CONFIG.MAX_LIST_REFERRALS
             ]
         ]
@@ -215,15 +222,15 @@ def get_attr_referrals(request: HttpRequest, attr_id: str) -> HttpResponse:
     def _get_referral_entries(attr: EntityAttr) -> list[dict[str, Any]]:
         return _get_referral_objects(
             attr,
-            Entry,
+            Entry.objects,
             {"schema__in": [x for x in attr.referral.all()], "is_active": True},
         )
 
     def _get_referral_groups(attr: EntityAttr) -> list[dict[str, Any]]:
-        return _get_referral_objects(attr, Group, {"is_active": True})
+        return _get_referral_objects(attr, Group.objects, {"is_active": True})
 
     def _get_referral_roles(attr: EntityAttr) -> list[dict[str, Any]]:
-        return _get_referral_objects(attr, Role, {"is_active": True})
+        return _get_referral_objects(attr, Role.objects, {"is_active": True})
 
     if (
         not Attribute.objects.filter(id=attr_id).exists()
@@ -261,7 +268,9 @@ def get_entry_history(request: HttpRequest, entry_id: str) -> HttpResponse:
         except ValueError:
             return HttpResponse('invaid parameter value "%s" is specified' % key, status=400)
 
-    if not all([isinstance(x, int) for x in params.values()]):
+    count = params["count"]
+    index = params["index"]
+    if count is None or index is None:
         return HttpResponse('parameter "index" and "count" are mandatory', status=400)
 
     entry = Entry.objects.filter(id=entry_id).first()
@@ -278,7 +287,9 @@ def get_entry_history(request: HttpRequest, entry_id: str) -> HttpResponse:
 
         raise TypeError("Type %s not serializable" % type(obj))
 
-    history = entry.get_value_history(request.user, count=params["count"], index=params["index"])
+    # http_get already rejects unauthenticated requests, so request.user is a User.
+    user = cast(User, request.user)
+    history = entry.get_value_history(user, count=count, index=index)
 
     return JsonResponse(
         {
@@ -296,6 +307,12 @@ def get_entry_info(request: HttpRequest, entry_id: str) -> HttpResponse:
     if not entry:
         return HttpResponse("There is no entry which is specified by entry_id", status=400)
 
+    # http_get already rejects unauthenticated requests, so request.user is a User.
+    user = cast(User, request.user)
+
+    # Attribute.get_latest_value() issues a DB query (and can create a new
+    # AttributeValue as a side effect when the stored data_type has drifted from
+    # the schema type), so call it exactly once per attribute via the walrus.
     return JsonResponse(
         {
             "id": entry.id,
@@ -307,10 +324,12 @@ def get_entry_info(request: HttpRequest, entry_id: str) -> HttpResponse:
                 [
                     dict(
                         {"id": x.id, "name": x.schema.name, "index": x.schema.index},
-                        **x.get_latest_value().get_value(with_metainfo=True, is_active=False),
+                        **latest.get_value(with_metainfo=True, is_active=False),
                     )
                     for x in entry.attrs.all()
-                    if request.user.has_permission(x, ACLType.Readable) and x.schema.is_active
+                    if user.has_permission(x, ACLType.Readable)
+                    and x.schema.is_active
+                    and (latest := x.get_latest_value()) is not None
                 ],
                 key=lambda x: x["index"],
             ),
@@ -335,6 +354,7 @@ def create_entry_attr(
 
     attr = entry.attrs.filter(schema=entity_attr, is_active=True).first()
     if not attr:
-        attr = entry.add_attribute_from_base(entity_attr, request.user)
+        # http_post already rejects unauthenticated requests, so request.user is a User.
+        attr = entry.add_attribute_from_base(entity_attr, cast(User, request.user))
 
     return JsonResponse({"id": attr.id})
