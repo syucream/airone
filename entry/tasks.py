@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import csv
 import io
 import json
 from datetime import date, datetime
-from typing import Any, Callable, List, TypeAlias
+from typing import Any, Callable, List, TypeAlias, cast
 
 import yaml
 from celery import Task
@@ -37,6 +39,7 @@ from entity.models import Entity, EntityAttr
 from entry.api_v2.serializers import (
     AdvancedSearchJoinAttrInfoList,
     AdvancedSearchResultExportSerializer,
+    EntryBaseSerializer,
     EntryCreateSerializer,
     EntryImportEntitySerializer,
     EntryUpdateSerializer,
@@ -150,6 +153,7 @@ def _convert_data_value(attr: Attribute, info: dict[str, Any]) -> Any:
 
 def _do_import_entries(job: Job) -> None:
     user: User = job.user
+    assert job.target is not None, "import job must have a target Entity"
     entity: Entity = Entity.objects.get(id=job.target.id)
     import_data = json.loads(job.params)
 
@@ -174,24 +178,21 @@ def _do_import_entries(job: Job) -> None:
         if job.is_canceled():
             return
 
-        entry: Entry = Entry.objects.filter(name=entry_data["name"], schema=entity).first()
-        if not entry:
+        entry = Entry.objects.filter(name=entry_data["name"], schema=entity).first()
+        if entry is None:
             # skip to create Item when another duplicated Alias exists
             if not entity.is_available(entry_data["name"]):
                 continue
 
             entry = Entry(name=entry_data["name"], schema=entity, created_user=user)
-
-            # for history record
+            # for history record (simple-history dynamic attr, invisible to django-stubs)
             entry._history_user = user
-
             entry.save()
 
             # create job to notify create event to the WebHook URL
             job_notify = Job.new_notify_create_entry(user, entry)
-
         else:
-            # for history record
+            # for history record (simple-history dynamic attr, invisible to django-stubs)
             entry._history_user = user
 
         if not user.has_permission(entry, ACLType.Writable):
@@ -221,7 +222,10 @@ def _do_import_entries(job: Job) -> None:
                 )
                 break
 
-            attr: Attribute = attr_query.last()
+            last_attr: Attribute | None = attr_query.last()
+            if last_attr is None:
+                continue
+            attr = last_attr
             if not user.has_permission(attr.schema, ACLType.Writable) or not user.has_permission(
                 attr, ACLType.Writable
             ):
@@ -307,7 +311,7 @@ def _yaml_export_v2(
                     isinstance(value.get("id"), int)
                     and Group.objects.filter(id=value["id"]).exists()
                 ):
-                    return value["name"]
+                    return cast(str, value["name"])
                 else:
                     return None
 
@@ -317,7 +321,7 @@ def _yaml_export_v2(
                     isinstance(value.get("id"), int)
                     and Role.objects.filter(id=value["id"]).exists()
                 ):
-                    return value["name"]
+                    return cast(str, value["name"])
                 else:
                     return None
 
@@ -393,25 +397,34 @@ def _yaml_export_v2(
     return output
 
 
+def _on_create_entry_cancelled(job: Job) -> None:
+    """on_cancelled handler for CREATE_ENTRY.
+
+    Extracted so that None-guarding job.target and Entry.objects.first() reads
+    cleanly, rather than layering both into a lambda expression.
+    """
+    if job.target is None:
+        return
+    entry = Entry.objects.filter(id=job.target.id, is_active=True).first()
+    if entry is not None:
+        entry.delete()
+
+
 @register_job_task(JobOperation.CREATE_ENTRY)
-@app.task(bind=True)  # type: ignore[misc]
-@may_schedule_until_job_is_ready_with_handlers(
-    on_cancelled=lambda job: (
-        Entry.objects.filter(id=job.target.id, is_active=True).first().delete()
-        if Entry.objects.filter(id=job.target.id, is_active=True).exists()
-        else None
-    )
-)
-def create_entry_attrs(self: Task, job: Job) -> JobStatus | None:
+@app.task(bind=True)
+@may_schedule_until_job_is_ready_with_handlers(on_cancelled=_on_create_entry_cancelled)
+def create_entry_attrs(self: Task[Any, Any], job: Job) -> JobStatus | None:
+    if job.target is None:
+        return JobStatus.CANCELED
     user = User.objects.filter(id=job.user.id).first()
     entry = Entry.objects.filter(id=job.target.id, is_active=True).first()
-
-    # for history record
-    entry._history_user = user
 
     if not entry or not user:
         # Abort when specified entry doesn't exist
         return JobStatus.CANCELED
+
+    # for history record (simple-history dynamic attr, invisible to django-stubs)
+    entry._history_user = user
 
     recv_data = json.loads(job.params)
     # Create new Attributes objects based on the specified value
@@ -447,7 +460,9 @@ def create_entry_attrs(self: Task, job: Job) -> JobStatus | None:
     for entity_attr in entry.schema.attrs.filter(is_active=True):
         if entry.attrs.filter(schema=entity_attr, is_active=True).count() > 1:
             query = entry.attrs.filter(schema=entity_attr, is_active=True)
-            query.exclude(id=query.first().id).delete()
+            first_query = query.first()
+            if first_query is not None:
+                query.exclude(id=first_query.id).delete()
 
     if custom_view.is_custom("after_create_entry", entry.schema.name):
         custom_view.call_custom("after_create_entry", entry.schema.name, recv_data, user, entry)
@@ -468,25 +483,27 @@ def create_entry_attrs(self: Task, job: Job) -> JobStatus | None:
 
 
 @register_job_task(JobOperation.EDIT_ENTRY)
-@app.task(bind=True)  # type: ignore[misc]
+@app.task(bind=True)
 @may_schedule_until_job_is_ready
-def edit_entry_attrs(self: Task, job: Job) -> JobStatus:
+def edit_entry_attrs(self: Task[Any, Any], job: Job) -> JobStatus:
+    assert job.target is not None, "EDIT_ENTRY job must have a target Entry"
     user = User.objects.get(id=job.user.id)
     entry = Entry.objects.get(id=job.target.id)
 
-    # for history record
+    # for history record (simple-history dynamic attr, invisible to django-stubs)
     entry._history_user = user
 
     recv_data = json.loads(job.params)
 
     for info in recv_data["attrs"]:
+        attr: Attribute
         if info["id"]:
             attr = Attribute.objects.get(id=info["id"])
         else:
             entity_attr = EntityAttr.objects.get(id=info["entity_attr_id"])
-            attr = entry.attrs.filter(schema=entity_attr, is_active=True).first()
-            if not attr:
-                attr = entry.add_attribute_from_base(entity_attr, user)
+            attr = entry.attrs.filter(
+                schema=entity_attr, is_active=True
+            ).first() or entry.add_attribute_from_base(entity_attr, user)
 
         # check permission of EntityAttr
         if not user.has_permission(attr, ACLType.Writable):
@@ -522,12 +539,13 @@ def edit_entry_attrs(self: Task, job: Job) -> JobStatus:
 
 
 @register_job_task(JobOperation.DELETE_ENTRY)
-@app.task(bind=True)  # type: ignore[misc]
+@app.task(bind=True)
 @may_schedule_until_job_is_ready
-def delete_entry(self: Task, job: Job) -> JobStatus:
+def delete_entry(self: Task[Any, Any], job: Job) -> JobStatus:
+    assert job.target is not None, "DELETE_ENTRY job must have a target Entry"
     entry = Entry.objects.get(id=job.target.id)
 
-    # for history record
+    # for history record (simple-history dynamic attr, invisible to django-stubs)
     entry._history_user = job.user
 
     entry.delete(deleted_user=job.user)
@@ -543,12 +561,13 @@ def delete_entry(self: Task, job: Job) -> JobStatus:
 
 
 @register_job_task(JobOperation.RESTORE_ENTRY)
-@app.task(bind=True)  # type: ignore[misc]
+@app.task(bind=True)
 @may_schedule_until_job_is_ready
-def restore_entry(self: Task, job: Job) -> JobStatus:
+def restore_entry(self: Task[Any, Any], job: Job) -> JobStatus:
+    assert job.target is not None, "RESTORE_ENTRY job must have a target Entry"
     entry = Entry.objects.get(id=job.target.id)
 
-    # for history record
+    # for history record (simple-history dynamic attr, invisible to django-stubs)
     entry._history_user = job.user
 
     entry.restore()
@@ -568,9 +587,10 @@ def restore_entry(self: Task, job: Job) -> JobStatus:
 
 
 @register_job_task(JobOperation.COPY_ENTRY)
-@app.task(bind=True)  # type: ignore[misc]
+@app.task(bind=True)
 @may_schedule_until_job_is_ready
-def copy_entry(self: Task, job: Job) -> tuple[JobStatus, str, None] | None:
+def copy_entry(self: Task[Any, Any], job: Job) -> tuple[JobStatus, str, None] | None:
+    assert job.target is not None, "COPY_ENTRY job must have a target Entry"
     src_entry = Entry.objects.get(id=job.target.id)
 
     params = json.loads(job.params)
@@ -594,9 +614,10 @@ def copy_entry(self: Task, job: Job) -> tuple[JobStatus, str, None] | None:
 
 
 @register_job_task(JobOperation.DO_COPY_ENTRY)
-@app.task(bind=True)  # type: ignore[misc]
+@app.task(bind=True)
 @may_schedule_until_job_is_ready
-def do_copy_entry(self: Task, job: Job) -> tuple[JobStatus, str, None]:
+def do_copy_entry(self: Task[Any, Any], job: Job) -> tuple[JobStatus, str, Entry | None]:
+    assert job.target is not None, "DO_COPY_ENTRY job must have a target Entry"
     src_entry = Entry.objects.get(id=job.target.id)
     params = json.loads(job.params)
 
@@ -609,8 +630,11 @@ def do_copy_entry(self: Task, job: Job) -> tuple[JobStatus, str, None]:
         )
 
     dest_entry = Entry.objects.filter(schema=src_entry.schema, name=params["new_name"]).first()
-    if not dest_entry:
+    if dest_entry is None:
         dest_entry = src_entry.clone(job.user, name=params["new_name"])
+        # Entry.clone is annotated Optional but only returns None when the clone
+        # source is inactive, which the earlier alias/name validation excludes.
+        assert dest_entry is not None, "Entry.clone must return a new Entry"
 
         # for updating its name from attribute values
         dest_entry.save_autoname()
@@ -636,9 +660,9 @@ def do_copy_entry(self: Task, job: Job) -> tuple[JobStatus, str, None]:
 
 
 @register_job_task(JobOperation.IMPORT_ENTRY)
-@app.task(bind=True)  # type: ignore[misc]
+@app.task(bind=True)
 @may_schedule_until_job_is_ready
-def import_entries(self: Task, job: Job) -> tuple[JobStatus, str, None] | None:
+def import_entries(self: Task[Any, Any], job: Job) -> tuple[JobStatus, str, None] | None:
     try:
         _do_import_entries(job)
     except Exception as e:
@@ -648,10 +672,11 @@ def import_entries(self: Task, job: Job) -> tuple[JobStatus, str, None] | None:
 
 
 @register_job_task(JobOperation.IMPORT_ENTRY_V2)
-@app.task(bind=True)  # type: ignore[misc]
+@app.task(bind=True)
 @may_schedule_until_job_is_ready
-def import_entries_v2(self: Task, job: Job) -> tuple[JobStatus, str, None] | None:
+def import_entries_v2(self: Task[Any, Any], job: Job) -> tuple[JobStatus, str, None] | None:
     user: User = job.user
+    assert job.target is not None, "IMPORT_ENTRY_V2 job must have a target Entity"
     entity = Entity.objects.get(id=job.target.id)
     import_serializer = EntryImportEntitySerializer(data=json.loads(job.params))
     import_serializer.is_valid()
@@ -681,10 +706,11 @@ def import_entries_v2(self: Task, job: Job) -> tuple[JobStatus, str, None] | Non
                 name=entry_data["name"], schema=entity, is_active=True
             ).first()
 
-        if entry:
-            serializer = EntryUpdateSerializer(instance=entry, data=entry_data, context=context)
-        else:
-            serializer = EntryCreateSerializer(data=entry_data, context=context)
+        serializer: EntryBaseSerializer = (
+            EntryUpdateSerializer(instance=entry, data=entry_data, context=context)
+            if entry
+            else EntryCreateSerializer(data=entry_data, context=context)
+        )
         try:
             serializer.is_valid(raise_exception=True)
             serializer.save()
@@ -706,14 +732,15 @@ def import_entries_v2(self: Task, job: Job) -> tuple[JobStatus, str, None] | Non
 
 
 @register_job_task(JobOperation.EXPORT_ENTRY)
-@app.task(bind=True)  # type: ignore[misc]
+@app.task(bind=True)
 @may_schedule_until_job_is_ready
-def export_entries(self: Task, job: Job) -> None:
+def export_entries(self: Task[Any, Any], job: Job) -> None:
     user = job.user
+    assert job.target is not None, "EXPORT_ENTRY job must have a target Entity"
     entity = Entity.objects.get(id=job.target.id)
     params = json.loads(job.params)
 
-    exported_data = []
+    exported_data: list[Any] = []
 
     # This variable is used for job status check. When it's checked at every loop, this might send
     # tons of query to the database. To prevent the sort of tragedy situation, checking status of
@@ -772,10 +799,11 @@ def export_entries(self: Task, job: Job) -> None:
 
 
 @register_job_task(JobOperation.EXPORT_ENTRY_V2)
-@app.task(bind=True)  # type: ignore[misc]
+@app.task(bind=True)
 @may_schedule_until_job_is_ready
-def export_entries_v2(self: Task, job: Job) -> None:
+def export_entries_v2(self: Task[Any, Any], job: Job) -> None:
     user = job.user
+    assert job.target is not None, "EXPORT_ENTRY_V2 job must have a target Entity"
     entity = Entity.objects.get(id=job.target.id)
     params = ExportTaskParams.model_validate_json(job.params)
     with_entity = params.export_format != "csv"
@@ -798,7 +826,11 @@ def export_entries_v2(self: Task, job: Job) -> None:
             return
 
         if user.has_permission(entry, ACLType.Readable):
-            exported_entries.append(entry.export_v2(user, with_entity=with_entity))
+            # Entry.export_v2 returns a dict shaped like ExportedEntry but is annotated
+            # as a plain dict; trust the shape at the call site.
+            exported_entries.append(
+                cast(ExportedEntry, entry.export_v2(user, with_entity=with_entity))
+            )
 
         # increment loop counter
         export_item_counter += 1
@@ -923,7 +955,7 @@ def _csv_export_v2(
 
 
 @register_job_task(JobOperation.EXPORT_SEARCH_RESULT_V2)
-@app.task(bind=True)  # type: ignore[misc]
+@app.task(bind=True)
 @may_schedule_until_job_is_ready
 def export_search_result_v2(self: Any, job: Job) -> tuple[JobStatus, str, ACLBase | None] | None:
     user = job.user
@@ -996,13 +1028,16 @@ def export_search_result_v2(self: Any, job: Job) -> tuple[JobStatus, str, ACLBas
 
 
 @register_job_task(JobOperation.REGISTER_REFERRALS)
-@app.task(bind=True)  # type: ignore[misc]
+@app.task(bind=True)
 @may_schedule_until_job_is_ready
-def register_referrals(self: Task, job: Job) -> None:
+def register_referrals(self: Task[Any, Any], job: Job) -> None:
+    if job.target is None:
+        return
     # register entries data which refer target entry to elasticsearch
     entry = Entry.objects.filter(id=job.target.id, is_active=True).first()
     if entry:
-        [r.register_es() for r in entry.get_referred_objects()]
+        for r in entry.get_referred_objects():
+            r.register_es()
 
 
 def _notify_event(
@@ -1020,11 +1055,12 @@ def _notify_event(
 
 
 @register_job_task(JobOperation.UPDATE_DOCUMENT)
-@app.task(bind=True)  # type: ignore[misc]
+@app.task(bind=True)
 @may_schedule_until_job_is_ready
-def update_es_documents(self: Task, job: Job) -> JobStatus:
+def update_es_documents(self: Task[Any, Any], job: Job) -> JobStatus:
     params = json.loads(job.params)
 
+    assert job.target is not None, "UPDATE_DOCUMENT job must have a target Entity"
     entity = Entity.objects.get(id=job.target.id)
     AdvancedSearchService.update_documents(entity, params.get("is_update", False))
 
@@ -1032,30 +1068,36 @@ def update_es_documents(self: Task, job: Job) -> JobStatus:
 
 
 @register_job_task(JobOperation.NOTIFY_CREATE_ENTRY)
-@app.task(bind=True)  # type: ignore[misc]
+@app.task(bind=True)
 @may_schedule_until_job_is_ready
-def notify_create_entry(self: Task, job: Job) -> tuple[JobStatus, str, None] | None:
+def notify_create_entry(self: Task[Any, Any], job: Job) -> tuple[JobStatus, str, None] | None:
+    if job.target is None:
+        return JobStatus.ERROR, "notify_create_entry job has no target", None
     return _notify_event(notify_entry_create, job.target.id, job.user)
 
 
 @register_job_task(JobOperation.NOTIFY_UPDATE_ENTRY)
-@app.task(bind=True)  # type: ignore[misc]
+@app.task(bind=True)
 @may_schedule_until_job_is_ready
-def notify_update_entry(self: Task, job: Job) -> tuple[JobStatus, str, None] | None:
+def notify_update_entry(self: Task[Any, Any], job: Job) -> tuple[JobStatus, str, None] | None:
+    if job.target is None:
+        return JobStatus.ERROR, "notify_update_entry job has no target", None
     return _notify_event(notify_entry_update, job.target.id, job.user)
 
 
 @register_job_task(JobOperation.NOTIFY_DELETE_ENTRY)
-@app.task(bind=True)  # type: ignore[misc]
+@app.task(bind=True)
 @may_schedule_until_job_is_ready
-def notify_delete_entry(self: Task, job: Job) -> tuple[JobStatus, str, None] | None:
+def notify_delete_entry(self: Task[Any, Any], job: Job) -> tuple[JobStatus, str, None] | None:
+    if job.target is None:
+        return JobStatus.ERROR, "notify_delete_entry job has no target", None
     return _notify_event(notify_entry_delete, job.target.id, job.user)
 
 
 @register_job_task(JobOperation.CREATE_ENTRY_V2)
-@app.task(bind=True)  # type: ignore[misc]
+@app.task(bind=True)
 @may_schedule_until_job_is_ready
-def create_entry_v2(self: Task, job: Job) -> JobStatus:
+def create_entry_v2(self: Task[Any, Any], job: Job) -> JobStatus:
     serializer = EntryCreateSerializer(data=json.loads(job.params), context={"_user": job.user})
     if not serializer.is_valid():
         return JobStatus.ERROR
@@ -1074,9 +1116,11 @@ def create_entry_v2(self: Task, job: Job) -> JobStatus:
 
 
 @register_job_task(JobOperation.EDIT_ENTRY_V2)
-@app.task(bind=True)  # type: ignore[misc]
+@app.task(bind=True)
 @may_schedule_until_job_is_ready
-def edit_entry_v2(self: Task, job: Job) -> JobStatus:
+def edit_entry_v2(self: Task[Any, Any], job: Job) -> JobStatus:
+    if job.target is None:
+        return JobStatus.ERROR
     entry: Entry | None = Entry.objects.filter(id=job.target.id, is_active=True).first()
     if not entry:
         return JobStatus.ERROR
@@ -1093,9 +1137,11 @@ def edit_entry_v2(self: Task, job: Job) -> JobStatus:
 
 
 @register_job_task(JobOperation.DELETE_ENTRY_V2)
-@app.task(bind=True)  # type: ignore[misc]
+@app.task(bind=True)
 @may_schedule_until_job_is_ready
-def delete_entry_v2(self: Task, job: Job) -> JobStatus:
+def delete_entry_v2(self: Task[Any, Any], job: Job) -> JobStatus:
+    if job.target is None:
+        return JobStatus.ERROR
     entry: Entry | None = Entry.objects.filter(id=job.target.id, is_active=True).first()
     if not entry:
         return JobStatus.ERROR
@@ -1119,7 +1165,7 @@ def delete_entry_v2(self: Task, job: Job) -> JobStatus:
 
 
 @register_job_task(JobOperation.BULK_EDIT_ENTRY)
-@app.task(bind=True)  # type: ignore[misc]
+@app.task(bind=True)
 @may_schedule_until_job_is_ready
 def bulk_update_entries(
     self: Any, job: Job

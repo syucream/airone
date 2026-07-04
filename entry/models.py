@@ -1732,6 +1732,10 @@ class Entry(ACLBase):
 
     history = HistoricalRecords(excluded_fields=["status", "updated_time"])
 
+    # HistoricalRecords sets `_history_user` dynamically to pick up the acting user
+    # for each save; declare it here so callers can assign without a type: ignore.
+    _history_user: Optional[User]
+
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.objtype = ACLObjType.Entry
@@ -2220,7 +2224,7 @@ class Entry(ACLBase):
         cloned_entry = Entry(**params)
 
         # for history record
-        cloned_entry._history_user = user  # type: ignore[attr-defined]
+        cloned_entry._history_user = user
 
         cloned_entry.save()
 

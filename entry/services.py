@@ -11,6 +11,7 @@ from airone.lib.elasticsearch import (
     AdvancedSearchResultRecordAttr,
     AdvancedSearchResults,
     AttrHint,
+    EntryDocument,
     EntryHint,
     execute_query,
     make_attr_sort_clauses,
@@ -36,7 +37,9 @@ class AdvancedSearchService:
     def search_entries(
         kls,
         user: User,
-        hint_entity_ids: list[str],
+        # Callers pass entity id lists coming from both the request layer (strings
+        # from URL/query params) and the ORM (int PKs); accept either at the boundary.
+        hint_entity_ids: list[str] | list[int],
         hint_attrs: list[AttrHint] | None = None,
         limit: int = CONFIG.MAX_LIST_ENTRIES,
         entry_name: str | None = None,
@@ -523,7 +526,7 @@ class AdvancedSearchService:
         exists: bool = True
         while exists:
             exists = False
-            register_docs = []
+            register_docs: list[dict[str, dict[str, int]] | EntryDocument] = []
             for entry in entry_list[start_pos : start_pos + 1000]:
                 exists = True
                 es_doc = entry.get_es_document(entity_attrs=entity_attrs)
