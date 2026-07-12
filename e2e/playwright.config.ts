@@ -18,6 +18,7 @@ export default defineConfig({
     ["list"],
     ["json", { outputFile: path.join(testResultsDir, "results.json") }],
     ["html", { open: "never", outputFolder: path.join(testResultsDir, "html") }],
+    [path.resolve(process.cwd(), "e2e", "approvalReporter.ts")],
   ],
   outputDir: path.join(testResultsDir, "artifacts"),
   use: {

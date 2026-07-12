@@ -7,9 +7,6 @@ import {
 } from "./browserQuality";
 import {
   captureEvidence,
-  recordTestResult,
-  resetE2eReport,
-  writeE2eReport,
 } from "./reportEvidence";
 
 const browserFailureMap = new WeakMap<object, string[]>();
@@ -35,14 +32,6 @@ const allAttributeNames = [
   "capabilities",
 ];
 
-test.beforeAll(() => {
-  resetE2eReport();
-});
-
-test.afterAll(() => {
-  writeE2eReport();
-});
-
 test.beforeEach(async ({ page }, testInfo) => {
   browserFailureMap.set(testInfo, collectBrowserFailures(page));
   await page.addInitScript(() => {
@@ -52,12 +41,8 @@ test.beforeEach(async ({ page }, testInfo) => {
 
 test.afterEach(async ({ page }, testInfo) => {
   const failures = browserFailureMap.get(testInfo) ?? [];
-  try {
-    await expectUiQualityGate(page, testInfo);
-    expectNoBrowserFailures(failures);
-  } finally {
-    recordTestResult(testInfo);
-  }
+  await expectUiQualityGate(page, testInfo);
+  expectNoBrowserFailures(failures);
 });
 
 test("@smoke @dashboard renders dashboard cards", async ({ page }, testInfo) => {

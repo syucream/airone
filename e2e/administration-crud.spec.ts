@@ -61,7 +61,8 @@ test("@crud @group performs browser UI CRUD", async ({ page, request }, testInfo
   await page.getByRole("button", { name: "保存" }).click();
   await page.reload();
   const updated = page.getByText("Browser Group Updated", { exact: true });
-  const item = updated.locator("xpath=ancestor::li[1]");
+  await expect(updated).toBeVisible();
+  const item = updated.locator("xpath=ancestor::*[descendant::button][1]");
   await item.getByRole("button").click();
   await page.getByText("削除", { exact: true }).click();
   await page.getByRole("button", { name: "Yes" }).click();

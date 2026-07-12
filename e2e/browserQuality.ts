@@ -44,6 +44,9 @@ export const expectNoBrowserFailures = (failures: string[]) => {
 };
 
 export const expectUiQualityGate = async (page: Page, testInfo: TestInfo) => {
+  await expect(page.locator('[role="progressbar"]')).toHaveCount(0, {
+    timeout: 10_000,
+  });
   const viewport = page.viewportSize();
   const pageSize = await page.evaluate(() => ({
     scrollWidth: document.documentElement.scrollWidth,
