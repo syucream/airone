@@ -104,9 +104,7 @@ def generate_plugin_cache_key(plugin_id: str, key: str) -> str:
     return f"pagoda:plugin:{sanitized_id}:{key}"
 
 
-def log_plugin_activity(
-    plugin_id: str, action: str, details: dict[str, Any] | None = None
-) -> None:
+def log_plugin_activity(plugin_id: str, action: str, details: dict[str, Any] | None = None) -> None:
     """Log plugin activity
 
     Args:

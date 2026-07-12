@@ -7,7 +7,7 @@ from collections.abc import Callable
 from datetime import date, datetime, timedelta
 from importlib import import_module
 from types import ModuleType
-from typing import Any, cast
+from typing import Any, Self, cast
 from zoneinfo import ZoneInfo
 
 from django.conf import settings
@@ -18,15 +18,14 @@ from acl.models import ACLBase
 from airone.lib import auto_complement
 from airone.lib.log import Logger
 from airone.lib.plugin_task import PluginTaskRegistry
-from airone.lib.types import BaseIntEnum
 from entity.models import Entity
 from entry.models import Entry
 from job.settings import CONFIG as JOB_CONFIG
 from user.models import User
 
-type TaskReturnType = "JobStatus | tuple[JobStatus, str, ACLBase | None] | None"
+type TaskReturnType = JobStatus | tuple[JobStatus, str, ACLBase | None] | None
 
-type TaskHandler = Callable[[Any, "Job"], TaskReturnType]
+type TaskHandler = Callable[[Any, Job], TaskReturnType]
 
 # Free-form parameter payload carried by a Job (JSON-serialized for storage).
 type JobParams = dict[str, Any]
@@ -47,7 +46,7 @@ else:
     CUSTOM_PARALLELIZABLE_OPERATIONS = []
     CUSTOM_TASKS = {}
 
-    class JobOperationCustom(BaseIntEnum):  # type: ignore
+    class JobOperationCustom(enum.IntEnum):  # type: ignore
         pass
 
 
@@ -58,7 +57,7 @@ def _support_time_default(o: Any) -> str:
 
 
 @enum.unique
-class JobOperation(BaseIntEnum):
+class JobOperation(enum.IntEnum):
     # Constant to describes status of each jobs
     CREATE_ENTRY = 1
     EDIT_ENTRY = 2
@@ -94,14 +93,14 @@ class JobOperation(BaseIntEnum):
 
 
 @enum.unique
-class JobTarget(BaseIntEnum):
+class JobTarget(enum.IntEnum):
     UNKNOWN = 0
     ENTRY = 1
     ENTITY = 2
 
 
 @enum.unique
-class JobStatus(BaseIntEnum):
+class JobStatus(enum.IntEnum):
     PREPARING = 1
     DONE = 2
     ERROR = 3
@@ -305,7 +304,7 @@ class Job(models.Model):
     def run(self, will_delay: bool = True) -> Any:
         method_table = self.method_table()
         if self.operation not in method_table:
-            Logger.error("Job %s has invalid operation type" % self.id)
+            Logger.error(f"Job {self.id} has invalid operation type")
             return
 
         # initiate job processing
@@ -325,8 +324,8 @@ class Job(models.Model):
         operation: int,
         text: str | None,
         params: JobParams | list[Any] | None = None,
-        depend_on: "Job | None" = None,
-    ) -> "Job":
+        depend_on: Job | None = None,
+    ) -> Self:
         t_type = JobTarget.UNKNOWN
         if target is not None:
             if isinstance(target, Entry):
@@ -415,13 +414,13 @@ class Job(models.Model):
         kls._METHOD_TABLE[operation] = method
 
     @classmethod
-    def get_job_with_params(kls, user: User, params: JobParams) -> models.QuerySet["Job"]:
+    def get_job_with_params(kls, user: User, params: JobParams) -> models.QuerySet[Job]:
         return kls.objects.filter(
             user=user, params=json.dumps(params, default=_support_time_default, sort_keys=True)
         )
 
     @classmethod
-    def new_create(kls, user: User, target: Entry, text: str = "", params: JobParams = {}) -> "Job":
+    def new_create(kls, user: User, target: Entry, text: str = "", params: JobParams = {}) -> Self:
         return kls._create_new_job(
             user=user,
             target=target,
@@ -431,7 +430,7 @@ class Job(models.Model):
         )
 
     @classmethod
-    def new_edit(kls, user: User, target: Entry, text: str = "", params: JobParams = {}) -> "Job":
+    def new_edit(kls, user: User, target: Entry, text: str = "", params: JobParams = {}) -> Self:
         return kls._create_new_job(
             user=user,
             target=target,
@@ -441,13 +440,13 @@ class Job(models.Model):
         )
 
     @classmethod
-    def new_delete(kls, user: User, target: Entry, text: str = "") -> "Job":
+    def new_delete(kls, user: User, target: Entry, text: str = "") -> Self:
         return kls._create_new_job(
             user=user, target=target, operation=JobOperation.DELETE_ENTRY, text=text
         )
 
     @classmethod
-    def new_copy(kls, user: User, target: Entry, text: str = "", params: JobParams = {}) -> "Job":
+    def new_copy(kls, user: User, target: Entry, text: str = "", params: JobParams = {}) -> Self:
         return kls._create_new_job(
             user=user,
             target=target,
@@ -457,9 +456,7 @@ class Job(models.Model):
         )
 
     @classmethod
-    def new_do_copy(
-        kls, user: User, target: Entry, text: str = "", params: JobParams = {}
-    ) -> "Job":
+    def new_do_copy(kls, user: User, target: Entry, text: str = "", params: JobParams = {}) -> Self:
         return kls._create_new_job(
             user=user,
             target=target,
@@ -469,9 +466,7 @@ class Job(models.Model):
         )
 
     @classmethod
-    def new_import(
-        kls, user: User, entity: Entity, text: str = "", params: JobParams = {}
-    ) -> "Job":
+    def new_import(kls, user: User, entity: Entity, text: str = "", params: JobParams = {}) -> Self:
         return kls._create_new_job(
             user=user,
             target=entity,
@@ -483,7 +478,7 @@ class Job(models.Model):
     @classmethod
     def new_import_v2(
         kls, user: User, entity: Entity, text: str = "", params: JobParams = {}
-    ) -> "Job":
+    ) -> Self:
         return kls._create_new_job(
             user=user,
             target=entity,
@@ -495,7 +490,7 @@ class Job(models.Model):
     @classmethod
     def new_export(
         kls, user: User, target: ACLBase | None = None, text: str = "", params: JobParams = {}
-    ) -> "Job":
+    ) -> Self:
         return kls._create_new_job(
             user=user,
             target=target,
@@ -507,7 +502,7 @@ class Job(models.Model):
     @classmethod
     def new_export_v2(
         kls, user: User, target: ACLBase | None = None, text: str = "", params: JobParams = {}
-    ) -> "Job":
+    ) -> Self:
         return kls._create_new_job(
             user=user,
             target=target,
@@ -517,9 +512,7 @@ class Job(models.Model):
         )
 
     @classmethod
-    def new_restore(
-        kls, user: User, target: Entry, text: str = "", params: JobParams = {}
-    ) -> "Job":
+    def new_restore(kls, user: User, target: Entry, text: str = "", params: JobParams = {}) -> Self:
         return kls._create_new_job(
             user=user,
             target=target,
@@ -531,7 +524,7 @@ class Job(models.Model):
     @classmethod
     def new_export_search_result(
         kls, user: User, target: ACLBase | None = None, text: str = "", params: JobParams = {}
-    ) -> "Job":
+    ) -> Self:
         return kls._create_new_job(
             user=user,
             target=target,
@@ -543,7 +536,7 @@ class Job(models.Model):
     @classmethod
     def new_export_search_result_v2(
         kls, user: User, target: ACLBase | None = None, text: str = "", params: JobParams = {}
-    ) -> "Job":
+    ) -> Self:
         return kls._create_new_job(
             user=user,
             target=target,
@@ -559,7 +552,7 @@ class Job(models.Model):
         target: ACLBase | None,
         operation_value: int = JobOperation.REGISTER_REFERRALS,
         params: JobParams = {},
-    ) -> "Job":
+    ) -> Self:
         return kls._create_new_job(
             user=user,
             target=target,
@@ -571,7 +564,7 @@ class Job(models.Model):
     @classmethod
     def new_create_entity(
         kls, user: User, target: Entity, text: str = "", params: JobParams = {}
-    ) -> "Job":
+    ) -> Self:
         return kls._create_new_job(
             user=user,
             target=target,
@@ -583,7 +576,7 @@ class Job(models.Model):
     @classmethod
     def new_edit_entity(
         kls, user: User, target: Entity, text: str = "", params: JobParams = {}
-    ) -> "Job":
+    ) -> Self:
         return kls._create_new_job(
             user=user,
             target=target,
@@ -593,7 +586,7 @@ class Job(models.Model):
         )
 
     @classmethod
-    def new_delete_entity(kls, user: User, target: Entity, text: str = "") -> "Job":
+    def new_delete_entity(kls, user: User, target: Entity, text: str = "") -> Self:
         return kls._create_new_job(
             user=user, target=target, operation=JobOperation.DELETE_ENTITY, text=text
         )
@@ -601,7 +594,7 @@ class Job(models.Model):
     @classmethod
     def new_update_documents(
         kls, target: ACLBase | None, text: str = "", params: JobParams = {}
-    ) -> "Job":
+    ) -> Self:
         user = auto_complement.get_auto_complement_user(None)
         if not user:
             user = User.objects.create(username=settings.AIRONE["AUTO_COMPLEMENT_USER"])
@@ -614,19 +607,19 @@ class Job(models.Model):
         )
 
     @classmethod
-    def new_notify_create_entry(kls, user: User, target: Entry, text: str = "") -> "Job":
+    def new_notify_create_entry(kls, user: User, target: Entry, text: str = "") -> Self:
         return kls._create_new_job(
             user=user, target=target, operation=JobOperation.NOTIFY_CREATE_ENTRY, text=text
         )
 
     @classmethod
-    def new_notify_update_entry(kls, user: User, target: Entry, text: str = "") -> "Job":
+    def new_notify_update_entry(kls, user: User, target: Entry, text: str = "") -> Self:
         return kls._create_new_job(
             user=user, target=target, operation=JobOperation.NOTIFY_UPDATE_ENTRY, text=text
         )
 
     @classmethod
-    def new_notify_delete_entry(kls, user: User, target: Entry, text: str = "") -> "Job":
+    def new_notify_delete_entry(kls, user: User, target: Entry, text: str = "") -> Self:
         return kls._create_new_job(
             user=user, target=target, operation=JobOperation.NOTIFY_DELETE_ENTRY, text=text
         )
@@ -637,8 +630,8 @@ class Job(models.Model):
         user: User,
         target_entry: Entry,
         recv_attrs: list[Any] | dict[str, Any] = {},
-        dependent_job: "Job | None" = None,
-    ) -> "Job":
+        dependent_job: Job | None = None,
+    ) -> Self:
         return kls._create_new_job(
             user=user,
             target=target_entry,
@@ -651,7 +644,7 @@ class Job(models.Model):
     @classmethod
     def new_create_entity_v2(
         kls, user: User, target: Entity, text: str = "", params: JobParams = {}
-    ) -> "Job":
+    ) -> Self:
         return kls._create_new_job(
             user=user,
             target=target,
@@ -663,7 +656,7 @@ class Job(models.Model):
     @classmethod
     def new_edit_entity_v2(
         kls, user: User, target: Entity, text: str = "", params: JobParams = {}
-    ) -> "Job":
+    ) -> Self:
         return kls._create_new_job(
             user=user,
             target=target,
@@ -675,7 +668,7 @@ class Job(models.Model):
     @classmethod
     def new_delete_entity_v2(
         kls, user: User, target: Entity, text: str = "", params: JobParams = {}
-    ) -> "Job":
+    ) -> Self:
         return kls._create_new_job(
             user=user,
             target=target,
@@ -687,7 +680,7 @@ class Job(models.Model):
     @classmethod
     def new_create_entry_v2(
         kls, user: User, target: Entry | None, text: str = "", params: JobParams = {}
-    ) -> "Job":
+    ) -> Self:
         return kls._create_new_job(
             user=user,
             target=target,
@@ -699,7 +692,7 @@ class Job(models.Model):
     @classmethod
     def new_edit_entry_v2(
         kls, user: User, target: Entry, text: str = "", params: JobParams = {}
-    ) -> "Job":
+    ) -> Self:
         return kls._create_new_job(
             user=user,
             target=target,
@@ -711,7 +704,7 @@ class Job(models.Model):
     @classmethod
     def new_delete_entry_v2(
         kls, user: User, target: Entry, text: str = "", params: JobParams = {}
-    ) -> "Job":
+    ) -> Self:
         return kls._create_new_job(
             user=user,
             target=target,
@@ -721,12 +714,12 @@ class Job(models.Model):
         )
 
     def set_cache(self, value: Any) -> None:
-        with default_storage.open("job_%d" % self.id, "wb") as fp:
+        with default_storage.open(f"job_{self.id}", "wb") as fp:
             pickle.dump(value, fp)
 
     def get_cache(self) -> Any:
         value = ""
-        with default_storage.open("job_%d" % self.id, "rb") as fp:
+        with default_storage.open(f"job_{self.id}", "rb") as fp:
             value = pickle.load(fp)
         return value
 
@@ -740,13 +733,13 @@ class Job(models.Model):
     @classmethod
     def new_role_import_v2(
         kls, user: User, text: str = "", params: JobParams | None = None
-    ) -> "Job":
+    ) -> Self:
         return kls._create_new_job(
             user=user, target=None, operation=JobOperation.IMPORT_ROLE_V2, text=text, params=params
         )
 
     @classmethod
-    def new_bulk_edit_entry_v2(kls, user: User, target: Entity, params: JobParams = {}) -> "Job":
+    def new_bulk_edit_entry_v2(kls, user: User, target: Entity, params: JobParams = {}) -> Self:
         return kls._create_new_job(
             user=user, target=target, operation=JobOperation.BULK_EDIT_ENTRY, text="", params=params
         )

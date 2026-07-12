@@ -1,7 +1,6 @@
 import importlib
 import logging
-from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, Optional, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from django.urls import URLResolver, include, path
 from pagoda_plugin_sdk.exceptions import PluginError
@@ -9,6 +8,8 @@ from pagoda_plugin_sdk.exceptions import PluginError
 from .hook_manager import hook_manager
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from pagoda_plugin_sdk.plugin import Plugin
 else:
     # Runtime import to avoid import errors when plugin system is disabled
@@ -27,7 +28,7 @@ class PluginRegistry:
         self._plugins: dict[str, Plugin] = {}
         self._api_v2_patterns: list[dict[str, Any]] = []
 
-    def register(self, plugin_class: type["Plugin"]) -> "Plugin":
+    def register(self, plugin_class: type[Plugin]) -> Plugin:
         """Register a plugin
 
         Args:
@@ -147,7 +148,7 @@ class PluginRegistry:
 
         return cast("Callable[..., Any]", getattr(module, func_name))
 
-    def get(self, plugin_id: str) -> Optional["Plugin"]:
+    def get(self, plugin_id: str) -> Plugin | None:
         """Get a plugin by ID
 
         Args:
@@ -158,7 +159,7 @@ class PluginRegistry:
         """
         return self._plugins.get(plugin_id)
 
-    def get_all_plugins(self) -> list["Plugin"]:
+    def get_all_plugins(self) -> list[Plugin]:
         """Get all plugins
 
         Returns:
@@ -166,7 +167,7 @@ class PluginRegistry:
         """
         return list(self._plugins.values())
 
-    def get_enabled_plugins(self) -> list["Plugin"]:
+    def get_enabled_plugins(self) -> list[Plugin]:
         """Get enabled plugins
 
         Returns:

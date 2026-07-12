@@ -1,25 +1,26 @@
 import enum
 import re
 from datetime import datetime
-from typing import Any, NotRequired
+from typing import TYPE_CHECKING, Any, NotRequired, TypedDict
 
 from django.conf import settings
 from elasticsearch import Elasticsearch
 from pydantic import BaseModel
-from typing_extensions import TypedDict
 
 from airone.lib.acl import ACLType
 from airone.lib.log import Logger
-from airone.lib.types import AttrType, BaseIntEnum, coerce_number
-from entity.models import Entity
+from airone.lib.types import AttrType, coerce_number
 from entry.settings import CONFIG
-from user.models import User
+
+if TYPE_CHECKING:
+    from entity.models import Entity
+    from user.models import User
 
 
 class AdvancedSearchResultRecordIdNamePair(TypedDict):
     id: int
     name: str
-    schema: NotRequired["AdvancedSearchResultRecordIdNamePair"]
+    schema: NotRequired[AdvancedSearchResultRecordIdNamePair]
 
 
 class AdvancedSearchResultRecordAttr(TypedDict, total=False):
@@ -42,7 +43,7 @@ class AdvancedSearchResults(BaseModel):
 
 
 @enum.unique
-class FilterKey(BaseIntEnum):
+class FilterKey(enum.IntEnum):
     CLEARED = 0
     EMPTY = 1
     NON_EMPTY = 2
@@ -52,7 +53,7 @@ class FilterKey(BaseIntEnum):
 
 
 @enum.unique
-class EntryFilterKey(BaseIntEnum):
+class EntryFilterKey(enum.IntEnum):
     CLEARED = 0
     TEXT_CONTAINED = 1
     TEXT_NOT_CONTAINED = 2
@@ -527,7 +528,7 @@ def _get_regex_pattern(keyword: str) -> str:
         end = ""
         escaped = escaped.rstrip("$")
 
-    body = "".join(["[%s%s]" % (x.lower(), x.upper()) if x.isalpha() else x for x in escaped])
+    body = "".join([f"[{x.lower()}{x.upper()}]" if x.isalpha() else x for x in escaped])
 
     return begin + body + end
 
@@ -1192,8 +1193,8 @@ def make_search_results(
                 attr = entry.attrs.filter(schema__name=attrinfo["name"], is_active=True).first()
                 if not attr:
                     Logger.warning(
-                        "Non exist Attribute (entry:%s, name:%s) is registered in ESS."
-                        % (entry.id, attrinfo["name"])
+                        f"Non exist Attribute "
+                        f"(entry:{entry.id}, name:{attrinfo['name']}) is registered in ESS."
                     )
                     continue
 
@@ -1205,7 +1206,7 @@ def make_search_results(
                 attr_type = AttrType(attrinfo["type"])
             except ValueError:
                 # For compatibility; continue that, and record the error
-                Logger.error("Invalid attribute type: %s" % attrinfo["type"])
+                Logger.error(f"Invalid attribute type: {attrinfo['type']}")
                 continue
 
             match attr_type:
@@ -1341,21 +1342,16 @@ def _is_date_check(value: str) -> tuple[str, datetime | tuple[datetime, datetime
     # Check for legacy date format
     try:
         for delimiter in ["-", "/"]:
-            date_format = "%%Y%(del)s%%m%(del)s%%d" % {"del": delimiter}
+            date_format = f"%Y{delimiter}%m{delimiter}%d"
 
             # Detect date range separated by tilde (~)
             if "~" in value:
                 date_parts = value.split("~")
                 if len(date_parts) == 2:
                     # Verify both dates have the same format
-                    start_date_match = re.match(
-                        r"^[0-9]{4}%(del)s[0-9]+%(del)s[0-9]+" % {"del": delimiter},
-                        date_parts[0].strip(),
-                    )
-                    end_date_match = re.match(
-                        r"^[0-9]{4}%(del)s[0-9]+%(del)s[0-9]+" % {"del": delimiter},
-                        date_parts[1].strip(),
-                    )
+                    date_pattern = rf"^[0-9]{{4}}{delimiter}[0-9]+{delimiter}[0-9]+"
+                    start_date_match = re.match(date_pattern, date_parts[0].strip())
+                    end_date_match = re.match(date_pattern, date_parts[1].strip())
 
                     if start_date_match and end_date_match:
                         start_date = datetime.strptime(date_parts[0].strip(), date_format)
@@ -1366,7 +1362,7 @@ def _is_date_check(value: str) -> tuple[str, datetime | tuple[datetime, datetime
                             return ("~", (start_date, end_date))
 
             # Process existing date searches with < and > operators
-            if re.match(r"^[<>]?[0-9]{4}%(del)s[0-9]+%(del)s[0-9]+" % {"del": delimiter}, value):
+            if re.match(rf"^[<>]?[0-9]{{4}}{delimiter}[0-9]+{delimiter}[0-9]+", value):
                 if value[0] in ["<", ">"]:
                     return (
                         value[0],

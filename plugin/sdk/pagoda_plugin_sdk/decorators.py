@@ -4,14 +4,10 @@ Decorators for plugin hook registration
 
 from collections.abc import Callable
 from functools import wraps
-from typing import Any, TypeVar, cast
-
-# Type variable for preserving the decorated function's signature, so that
-# applying these decorators does not erase the wrapped function's type.
-F = TypeVar("F", bound=Callable[..., Any])
+from typing import Any, cast
 
 
-def entry_hook(
+def entry_hook[F: Callable[..., Any]](
     hook_type: str, entity: str | None = None, priority: int = 100
 ) -> Callable[[F], F]:
     """
@@ -44,7 +40,7 @@ def entry_hook(
     return decorator
 
 
-def entity_hook(
+def entity_hook[F: Callable[..., Any]](
     hook_type: str, entity: str | None = None, priority: int = 100
 ) -> Callable[[F], F]:
     """
@@ -77,7 +73,9 @@ def entity_hook(
     return decorator
 
 
-def validation_hook(entity: str | None = None, priority: int = 100) -> Callable[[F], F]:
+def validation_hook[F: Callable[..., Any]](
+    entity: str | None = None, priority: int = 100
+) -> Callable[[F], F]:
     """
     Decorator for entry validation hooks.
 
@@ -108,7 +106,7 @@ def validation_hook(entity: str | None = None, priority: int = 100) -> Callable[
     return decorator
 
 
-def get_attrs_hook(
+def get_attrs_hook[F: Callable[..., Any]](
     hook_target: str, entity: str | None = None, priority: int = 100
 ) -> Callable[[F], F]:
     """

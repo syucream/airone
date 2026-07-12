@@ -5,17 +5,18 @@ This module provides access to host application models through a safe injection 
 Models are injected by the host application during plugin system initialization.
 """
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from .protocols import (
-    AttributeProtocol,
-    AttributeValueProtocol,
-    EntityAttrProtocol,
-    EntityProtocol,
-    EntryProtocol,
-    JobProtocol,
-    UserProtocol,
-)
+if TYPE_CHECKING:
+    from .protocols import (
+        AttributeProtocol,
+        AttributeValueProtocol,
+        EntityAttrProtocol,
+        EntityProtocol,
+        EntryProtocol,
+        JobProtocol,
+        UserProtocol,
+    )
 
 # Model references - injected by the host application
 Entity: type[EntityProtocol] | None = None

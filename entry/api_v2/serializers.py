@@ -1,6 +1,6 @@
 import re
 from datetime import date, datetime
-from typing import Any, Literal
+from typing import Any, Literal, TypedDict
 
 from django.db.models import Prefetch, QuerySet
 from drf_spectacular.types import OpenApiTypes
@@ -9,7 +9,6 @@ from pydantic import BaseModel, RootModel, field_validator
 from pydantic import ValidationError as PydanticValidationError
 from rest_framework import serializers
 from rest_framework.exceptions import PermissionDenied, ValidationError
-from typing_extensions import TypedDict
 
 from acl.models import ACLBase
 from airone.lib import custom_view, drf
@@ -357,7 +356,7 @@ class EntryBaseSerializer(serializers.ModelSerializer):
         if name and Entry.objects.filter(name=name, schema=schema, is_active=True).exists():
             # In update case, there is no problem with the same name
             if not (self.instance and self.instance.name == name):
-                raise DuplicatedObjectExistsError("specified name(%s) already exists" % name)
+                raise DuplicatedObjectExistsError(f"specified name({name}) already exists")
         if "\t" in name:
             raise InvalidValueError("Names containing tab characters cannot be specified.")
 
@@ -370,7 +369,7 @@ class EntryBaseSerializer(serializers.ModelSerializer):
             pass
         else:
             raise InvalidValueError(
-                'Specified name doesn\'t match configured pattern "%s"' % schema.item_name_pattern
+                f'Specified name doesn\'t match configured pattern "{schema.item_name_pattern}"'
             )
 
         return name
@@ -403,12 +402,12 @@ class EntryBaseSerializer(serializers.ModelSerializer):
             for mandatory_attr in schema.attrs.filter(is_mandatory=True, is_active=True):
                 if not user.has_permission(mandatory_attr, ACLType.Writable):
                     raise PermissionDenied(
-                        "mandatory attrs id(%s) is permission denied" % mandatory_attr.id
+                        f"mandatory attrs id({mandatory_attr.id}) is permission denied"
                     )
 
                 if mandatory_attr.id not in [attr["id"] for attr in attrs]:
                     raise RequiredParameterError(
-                        "mandatory attrs id(%s) is not specified" % mandatory_attr.id
+                        f"mandatory attrs id({mandatory_attr.id}) is not specified"
                     )
 
         exclude_items = [self.instance.id] if self.instance else []
@@ -421,14 +420,14 @@ class EntryBaseSerializer(serializers.ModelSerializer):
             # check attrs id
             entity_attr = schema.attrs.filter(id=attr["id"], is_active=True).first()
             if not entity_attr:
-                raise ObjectNotExistsError("attrs id(%s) does not exist" % attr["id"])
+                raise ObjectNotExistsError(f"attrs id({attr['id']}) does not exist")
 
             # check attrs value
             (is_valid, msg) = AttributeValue.validate_attr_value(
                 entity_attr.type, attr["value"], entity_attr.is_mandatory, entity_attr=entity_attr
             )
             if not is_valid:
-                raise IncorrectTypeError("attrs id(%s) - %s" % (attr["id"], msg))
+                raise IncorrectTypeError(f"attrs id({attr['id']}) - {msg}")
 
         # check custom validate
         if custom_view.is_custom("validate_entry", schema.name):
@@ -744,7 +743,7 @@ class EntryRetrieveSerializer(EntryBaseSerializer):
             try:
                 attr_type = AttrType(attr.schema.type)
             except ValueError:
-                Logger.error("Invalid attribute type: %s" % attr.schema.type)
+                Logger.error(f"Invalid attribute type: {attr.schema.type}")
                 return {}
 
             match attr_type:
@@ -1021,8 +1020,7 @@ class EntryCopySerializer(serializers.Serializer):
         )
         if duplicated_entries.exists():
             raise DuplicatedObjectExistsError(
-                "specified names(%s) already exists"
-                % ",".join([e.name for e in duplicated_entries])
+                f"specified names({','.join([e.name for e in duplicated_entries])}) already exists"
             )
         # check custom validate
         user = self.context["request"].user
@@ -1276,7 +1274,7 @@ class EntryHistoryAttributeValueSerializer(serializers.ModelSerializer):
         try:
             attr_type = AttrType(obj.data_type)
         except ValueError:
-            Logger.error("Invalid attribute type: %s" % obj.data_type)
+            Logger.error(f"Invalid attribute type: {obj.data_type}")
             return {}
 
         match attr_type:
@@ -1686,7 +1684,7 @@ class AdvancedSearchResultExportSerializer(serializers.Serializer):
         # create a job to export search result and run it
         job = Job.new_export_search_result_v2(
             user=user,
-            text="search_results.%s" % self.validated_data["export_style"],
+            text=f"search_results.{self.validated_data['export_style']}",
             params=self.validated_data,
         )
         job.run()

@@ -5,7 +5,7 @@ Provides utility functions that plugins can use to interact with AirOne core fun
 """
 
 import logging
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from django.conf import settings
 
@@ -60,9 +60,7 @@ def get_airone_settings(key: str | None = None, default: Any = None) -> Any:
     return getattr(settings, key, default)
 
 
-def log_plugin_activity(
-    plugin_id: str, action: str, details: dict[str, Any] | None = None
-) -> None:
+def log_plugin_activity(plugin_id: str, action: str, details: dict[str, Any] | None = None) -> None:
     """Log plugin activity
 
     Provides centralized logging for plugin activities.
@@ -108,7 +106,7 @@ def validate_plugin_data(data: dict[str, Any], required_fields: list[str]) -> di
     }
 
 
-def format_datetime_for_api(dt: Optional["datetime.datetime"]) -> str | None:
+def format_datetime_for_api(dt: datetime.datetime | None) -> str | None:
     """Format datetime for API response
 
     Args:

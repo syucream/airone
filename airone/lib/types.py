@@ -29,14 +29,8 @@ def coerce_number(raw: str | int | float | None) -> int | float | None:
     return int(f) if f.is_integer() else f
 
 
-class BaseIntEnum(enum.IntEnum):
-    @classmethod
-    def isin(cls, v: int) -> bool:
-        return v in cls.__members__.values()
-
-
 @enum.unique
-class AttrType(BaseIntEnum):
+class AttrType(enum.IntEnum):
     OBJECT = 1 << 0
     STRING = 1 << 1
     TEXT = 1 << 2
