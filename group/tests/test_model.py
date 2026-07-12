@@ -66,13 +66,13 @@ class ModelTest(AironeTestCase):
             entity = self.create_entity(
                 **{
                     "user": self.user1,
-                    "name": "Entity%d" % index,
+                    "name": f"Entity{index}",
                     "attrs": [{"name": "group", "type": AttrType.GROUP}],
                 }
             )
             self.add_entry(
                 self.user1,
-                "e-%d" % index,
+                f"e-{index}",
                 entity,
                 values={
                     "group": self.group1,
@@ -100,13 +100,13 @@ class ModelTest(AironeTestCase):
             entity = self.create_entity(
                 **{
                     "user": self.user1,
-                    "name": "Entity%d" % index,
+                    "name": f"Entity{index}",
                     "attrs": [{"name": "groups", "type": AttrType.ARRAY_GROUP}],
                 }
             )
             self.add_entry(
                 self.user1,
-                "e-%d" % index,
+                f"e-{index}",
                 entity,
                 values={
                     "groups": [self.group1, self.group2],

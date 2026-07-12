@@ -1244,7 +1244,7 @@ class APITest(AironeViewTest):
         another_ipaddrs = [
             self.add_entry(
                 self.user,
-                "10.0.10.%d" % i,
+                f"10.0.10.{i}",
                 self.entity_ipv4,
                 values={
                     "network": {"id": self.entry_network, "name": ""},
@@ -1308,7 +1308,7 @@ class APITest(AironeViewTest):
         another_ipaddrs = [
             self.add_entry(
                 self.user,
-                "10.0.10.%d" % i,
+                f"10.0.10.{i}",
                 self.entity_ipv4,
                 values={
                     "network": {"id": self.entry_network, "name": ""},
@@ -1355,7 +1355,7 @@ class APITest(AironeViewTest):
         [
             self.add_entry(
                 self.user,
-                "test-%s" % x,
+                f"test-{x}",
                 self.entity_vm,
                 values={
                     "Status": self.entry_service_in,

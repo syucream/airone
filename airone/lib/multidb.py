@@ -1,9 +1,12 @@
-from collections.abc import Callable
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
-from django.http import HttpRequest, HttpResponse
 from multidb.middleware import PinningRouterMiddleware
 from multidb.pinning import unpin_this_thread
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from django.http import HttpRequest, HttpResponse
 
 ViewT = Any  # may be a function, a DRF view class, or a DRF view_func with .cls
 

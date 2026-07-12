@@ -20,8 +20,8 @@ os.environ.setdefault("DJANGO_CONFIGURATION", "Dev")
 
 for extension in settings.AIRONE["EXTENSIONS"]:
     try:
-        importlib.import_module("%s.settings" % extension)
+        importlib.import_module(f"{extension}.settings")
     except ImportError:
-        Logger.warning("Failed to load settings %s" % extension)
+        Logger.warning(f"Failed to load settings {extension}")
 
 application = get_wsgi_application()

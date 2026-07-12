@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 User = get_user_model()
 
 
-def get_current_user_info(user: "UserType | AnonymousUser") -> dict[str, Any]:
+def get_current_user_info(user: UserType | AnonymousUser) -> dict[str, Any]:
     """Get current user information
 
     Provides safe access to user information for plugins.
@@ -49,7 +49,7 @@ def get_current_user_info(user: "UserType | AnonymousUser") -> dict[str, Any]:
     }
 
 
-def check_user_permission(user: "UserType | AnonymousUser", permission: str) -> bool:
+def check_user_permission(user: UserType | AnonymousUser, permission: str) -> bool:
     """Check if user has specific permission
 
     Args:
@@ -65,7 +65,7 @@ def check_user_permission(user: "UserType | AnonymousUser", permission: str) -> 
     return user.has_perm(permission)
 
 
-def get_user_groups(user: "UserType | AnonymousUser") -> list[str]:
+def get_user_groups(user: UserType | AnonymousUser) -> list[str]:
     """Get user's group names
 
     Args:

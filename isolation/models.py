@@ -19,7 +19,7 @@ class IsolationParent(models.Model):
         conditions: Manager["IsolationCondition"]
         action: "IsolationAction"
 
-    def conditions_match(self, entry: "Entry") -> bool:
+    def conditions_match(self, entry: Entry) -> bool:
         """Returns True if ALL conditions match the entry (AND logic)."""
         return all(
             c.is_match_for_entry(entry) for c in self.conditions.filter(attr__is_active=True)
@@ -35,12 +35,12 @@ class IsolationParent(models.Model):
             return True
         return bool(action.prevent_from_id == requesting_entity.id)
 
-    def is_entry_isolated(self, entry: "Entry", requesting_entity: Any) -> bool:
+    def is_entry_isolated(self, entry: Entry, requesting_entity: Any) -> bool:
         return self.applies_to(requesting_entity) and self.conditions_match(entry)
 
     @classmethod
     def get_isolated_entry_ids(
-        cls, candidate_entries: "QuerySet[Entry]", requesting_entity: Any
+        cls, candidate_entries: QuerySet[Entry], requesting_entity: Any
     ) -> set[int]:
         """
         Returns the set of entry IDs that are isolated from requesting_entity.
@@ -115,7 +115,7 @@ class IsolationCondition(models.Model):
     def ATTR_TYPE(self) -> AttrType:
         return AttrType(self.attr.type)
 
-    def is_match_for_entry(self, entry: "Entry") -> bool:
+    def is_match_for_entry(self, entry: Entry) -> bool:
         """Check if the entry's current attribute value matches this condition."""
         from entry.models import Attribute
 

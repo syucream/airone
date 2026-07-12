@@ -106,10 +106,7 @@ class ACLBase(models.Model):
 
     def delete(self, *args: Any, **kwargs: Any) -> None:  # type: ignore[override]
         self.is_active = False
-        self.name = "%s_deleted_%s" % (
-            self.name,
-            datetime.now().strftime("%Y%m%d_%H%M%S"),
-        )
+        self.name = f"{self.name}_deleted_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
         self.deleted_time = make_aware(datetime.now())
         self.deleted_user = kwargs.get("deleted_user")
         self.save()
@@ -121,7 +118,7 @@ class ACLBase(models.Model):
         self.deleted_time = None
         self.save()
 
-    def inherit_acl(self, aclobj: "ACLBase") -> None:
+    def inherit_acl(self, aclobj: ACLBase) -> None:
         if not isinstance(aclobj, ACLBase):
             raise TypeError("specified object(%s) is not ACLBase object")
 
@@ -150,10 +147,10 @@ class ACLBase(models.Model):
 
     def _get_permission(self, acltype: int) -> HistoricalPermission:
         return HistoricalPermission.objects.get(  # type: ignore[return-value]
-            codename="%s.%s" % (self.id, acltype)
+            codename=f"{self.id}.{acltype}"
         )
 
-    def get_subclass_object(self) -> "ACLBase":
+    def get_subclass_object(self) -> ACLBase:
         # Use importlib to prevent circular import
         match self.objtype:
             case ACLObjType.Entity:
@@ -171,7 +168,7 @@ class ACLBase(models.Model):
 
         return cast("ACLBase", model.objects.get(id=self.id))
 
-    def is_same_object(self, comp: "ACLBase") -> bool:
+    def is_same_object(self, comp: ACLBase) -> bool:
         # _IMPORT_INFO and __getitem__ are provided by concrete subclasses
         # (e.g. Entity) for import/export feature; ACLBase itself doesn't define them.
         return all(
@@ -182,7 +179,7 @@ class ACLBase(models.Model):
         )
 
     @classmethod
-    def search(kls, query: str) -> "list[dict[str, str | ACLBase]]":
+    def search(kls, query: str) -> list[dict[str, str | ACLBase]]:
         results: list[dict[str, str | ACLBase]] = []
         for obj in kls.objects.filter(name__icontains=query):
             results.append(

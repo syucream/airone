@@ -1,6 +1,5 @@
 import itertools
 import json
-from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any, cast
 
 from django.db import models
@@ -15,6 +14,8 @@ from entry.api_v2.serializers import EntryUpdateSerializer
 from entry.models import Entry
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping, Sequence
+
     from django.db.models import Manager
 
     from user.models import User
@@ -27,7 +28,7 @@ class InputTriggerCondition:
         attr_id = input.get("attr_id", 0)
         attr = EntityAttr.objects.filter(id=attr_id, is_active=True).first()
         if not attr:
-            raise InvalidInputException("Specified attr(%s) is invalid" % attr_id)
+            raise InvalidInputException(f"Specified attr({attr_id}) is invalid")
         self.attr: EntityAttr = attr
 
         # initialize each condition parameters
@@ -39,13 +40,10 @@ class InputTriggerCondition:
         self.parse_input_condition(input.get("cond"), input.get("hint"))
 
     def __repr__(self) -> str:
-        return "(attr:%s[%s]) str_cond:%s, ref_cond:%s, bool_cond:%s is_unmatch:%s" % (
-            self.attr.name,
-            self.attr.id,
-            str(self.str_cond),
-            str(self.ref_cond),
-            str(self.bool_cond),
-            self.is_unmatch,
+        return (
+            f"(attr:{self.attr.name}[{self.attr.id}]) str_cond:{self.str_cond}, "
+            f"ref_cond:{self.ref_cond}, bool_cond:{self.bool_cond} "
+            f"is_unmatch:{self.is_unmatch}"
         )
 
     def initialize_condition(self) -> None:
@@ -121,7 +119,7 @@ class InputTriggerAction:
         attr_id = input.get("attr_id", 0)
         attr = EntityAttr.objects.filter(id=attr_id, is_active=True).first()
         if not attr:
-            raise InvalidInputException("Specified attr(%s) is invalid" % attr_id)
+            raise InvalidInputException(f"Specified attr({attr_id}) is invalid")
         self.attr: EntityAttr = attr
 
         self.values: list[Any] = []
@@ -223,7 +221,7 @@ class TriggerParent(models.Model):
             if not TriggerCondition.objects.filter(**params).exists():
                 TriggerCondition.objects.create(**params)
 
-    def get_actions(self, recv_attrs: Sequence[Mapping[str, Any]]) -> list["TriggerAction"]:
+    def get_actions(self, recv_attrs: Sequence[Mapping[str, Any]]) -> list[TriggerAction]:
         """
         This method checks whether specified entity's Trigger is invoked by recv_attrs context.
         The recv_attrs format should be compatible with APIv2 standard.
@@ -429,16 +427,15 @@ class TriggerCondition(models.Model):
 
         except ValueError:
             Logger.error(
-                "Invalid Attribute Type(%s) was registered (attr_id: %s)"
-                % (self.attr.type, self.attr.id)
+                f"Invalid Attribute Type({self.attr.type}) was registered (attr_id: {self.attr.id})"
             )
 
         return False
 
     @classmethod
     def get_invoked_actions_on_delete(
-        cls, deleted_entry: "Entry"
-    ) -> list[tuple["Entry", list["TriggerAction"]]]:
+        cls, deleted_entry: Entry
+    ) -> list[tuple[Entry, list[TriggerAction]]]:
         """
         When an entry is deleted, return (entry, actions) pairs for entries that
         referenced it via object-type attributes whose trigger conditions now match.
@@ -526,7 +523,7 @@ class TriggerCondition(models.Model):
     @classmethod
     def get_invoked_actions(
         cls, entity: Entity, recv_data: Sequence[Mapping[str, Any]]
-    ) -> list["TriggerAction"]:
+    ) -> list[TriggerAction]:
         # The APIv1 and APIv2 format is different.
         # In the APIv2, the "id" parameter in the recv_data variable means EntityAttr ID.
         # But in the APIv1, the "id" parameter in the recv_data variable means Attribute ID
@@ -588,7 +585,7 @@ class TriggerAction(models.Model):
             TriggerActionValue.objects.create(**params)
 
     def get_serializer_acceptable_value(
-        self, value: "TriggerActionValue | None" = None, attr_type: int | None = None
+        self, value: TriggerActionValue | None = None, attr_type: int | None = None
     ) -> Any:
         """
         This converts TriggerActionValue to the value that EntryUpdateSerializer can accept.
@@ -618,7 +615,7 @@ class TriggerAction(models.Model):
         elif attr_type == AttrType.OBJECT:
             return value.ref_cond.id if isinstance(value.ref_cond, Entry) else None
 
-    def run(self, user: "User", entry: Entry, call_stacks: list[int] = []) -> None:
+    def run(self, user: User, entry: Entry, call_stacks: list[int] = []) -> None:
         # When self.id contains in call_stacks, it means that this action is already invoked.
         # This prevents infinite loop.
         if self.id in call_stacks:

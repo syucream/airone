@@ -1,10 +1,13 @@
+from typing import TYPE_CHECKING
 
 import ldap
 from django.conf import settings
-from django.http import HttpRequest
 
 from airone.lib.log import Logger
 from user.models import User
+
+if TYPE_CHECKING:
+    from django.http import HttpRequest
 
 
 class LDAPBackend:
@@ -27,7 +30,7 @@ class LDAPBackend:
         elif user:
             # This is necessary not to send a request to check authentication even though
             # the specified user is in the local database.
-            Logger.info("Failed to authenticate user(%s) in local" % username)
+            Logger.info(f"Failed to authenticate user({username}) in local")
             return None
 
         if not hasattr(settings, "AUTH_CONFIG"):
@@ -60,7 +63,7 @@ class LDAPBackend:
             )
             return user
         else:
-            Logger.info("Failed to authenticate user(%s) in LDAP" % username)
+            Logger.info(f"Failed to authenticate user({username}) in LDAP")
             return None
 
     # This method is necessary because this called by Django to identify user object from id.

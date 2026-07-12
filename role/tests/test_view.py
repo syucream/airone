@@ -70,7 +70,7 @@ class ViewTest(RoleTestBase):
             },
         )
         resp = self.client.post(
-            "/role/do_edit/%d/" % self.role.id, json.dumps(params), "application/json"
+            f"/role/do_edit/{self.role.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
 
@@ -81,14 +81,14 @@ class ViewTest(RoleTestBase):
         # set test user as an administrative one
         role.admin_users.add(user)
 
-        resp = self.client.get("/role/edit/%d/" % role.id)
+        resp = self.client.get(f"/role/edit/{role.id}/")
         self.assertEqual(resp.status_code, 200)
 
     def test_get_edit_without_permission(self):
         self.guest_login()
         role = Role.objects.create(name="Role")
 
-        resp = self.client.get("/role/edit/%d/" % role.id)
+        resp = self.client.get(f"/role/edit/{role.id}/")
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
             resp.content.decode("utf-8"),
@@ -123,9 +123,7 @@ class ViewTest(RoleTestBase):
                 "admin_groups": [{"id": self.groups["groupB"].id}],
             },
         )
-        resp = self.client.post(
-            "/role/do_edit/%d/" % role.id, json.dumps(params), "application/json"
-        )
+        resp = self.client.post(f"/role/do_edit/{role.id}/", json.dumps(params), "application/json")
         self.assertEqual(resp.status_code, 200)
 
         # check role attributes are updated expectedly

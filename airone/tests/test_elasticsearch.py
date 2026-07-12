@@ -595,7 +595,7 @@ class ElasticSearchTest(TestCase):
 
     def test_make_search_results_with_limit(self):
         entries = [
-            Entry.objects.create(name="entry-%d" % i, schema=self._entity, created_user=self._user)
+            Entry.objects.create(name=f"entry-{i}", schema=self._entity, created_user=self._user)
             for i in range(1, 16)
         ]
 

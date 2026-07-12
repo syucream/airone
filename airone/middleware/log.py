@@ -1,12 +1,15 @@
 import traceback
-from collections.abc import Callable
 from time import time
+from typing import TYPE_CHECKING
 
 from django.conf import settings
 from django.core.mail import mail_admins
 from django.http import HttpRequest, HttpResponse, HttpResponseServerError
 
 from airone.lib.log import Logger
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 class LoggingRequestMiddleware:
@@ -19,12 +22,9 @@ class LoggingRequestMiddleware:
         response = self.get_response(request)
 
         user_id = request.user.id if hasattr(request, "user") else None
-        logger_msg = "(Profiling result: %fs) (user-id: %s) %s %s %s" % (
-            time() - start_time,
-            user_id,
-            request.method,
-            request.path,
-            response.status_code,
+        logger_msg = (
+            f"(Profiling result: {time() - start_time:f}s) (user-id: {user_id}) "
+            f"{request.method} {request.path} {response.status_code}"
         )
         if response.status_code >= 500:
             Logger.error(logger_msg)
@@ -35,9 +35,7 @@ class LoggingRequestMiddleware:
 
         return response
 
-    def process_exception(
-        self, request: HttpRequest, exception: Exception
-    ) -> HttpResponse | None:
+    def process_exception(self, request: HttpRequest, exception: Exception) -> HttpResponse | None:
         traceback_msg = traceback.format_exc()
         subject = "ERROR Django Request " + request.path
         message = f"""

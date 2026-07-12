@@ -7,7 +7,6 @@ from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import generics, mixins, viewsets
 from rest_framework.permissions import BasePermission, IsAuthenticated
-from rest_framework.request import Request
 from rest_framework.response import Response
 
 from acl.api_v2.serializers import ACLHistorySerializer, ACLSerializer
@@ -17,6 +16,8 @@ from entity.models import Entity, EntityAttr
 from role.models import HistoricalPermission
 
 if TYPE_CHECKING:
+    from rest_framework.request import Request
+
     from entry.models import Attribute, Entry
     from user.models import User
 
@@ -75,9 +76,9 @@ class ACLHistoryAPI(generics.ListAPIView):
         # 1. Bulk fetch ACL history data (including history_user information)
         acl_history = list(instance.history.select_related("history_user").all())
         codename_query = (
-            Q(codename="%s.%s" % (instance.id, ACLType.Full.id))
-            | Q(codename="%s.%s" % (instance.id, ACLType.Writable.id))
-            | Q(codename="%s.%s" % (instance.id, ACLType.Readable.id))
+            Q(codename=f"{instance.id}.{ACLType.Full.id}")
+            | Q(codename=f"{instance.id}.{ACLType.Writable.id}")
+            | Q(codename=f"{instance.id}.{ACLType.Readable.id}")
         )
         # Also fetch Entity attribute history with same optimization
         if instance.objtype == ACLObjType.Entity:
@@ -89,9 +90,9 @@ class ACLHistoryAPI(generics.ListAPIView):
             )
             for attr in attrs:
                 codename_query |= (
-                    Q(codename="%s.%s" % (attr.id, ACLType.Full.id))
-                    | Q(codename="%s.%s" % (attr.id, ACLType.Writable.id))
-                    | Q(codename="%s.%s" % (attr.id, ACLType.Readable.id))
+                    Q(codename=f"{attr.id}.{ACLType.Full.id}")
+                    | Q(codename=f"{attr.id}.{ACLType.Writable.id}")
+                    | Q(codename=f"{attr.id}.{ACLType.Readable.id}")
                 )
 
         # 2. Bulk fetch Permission history data (including related information)

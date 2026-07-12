@@ -131,7 +131,7 @@ class ViewTest(BaseViewTest):
             }
         )
 
-        resp = self.client.get("/entry/api/v2/%d/" % entry.id)
+        resp = self.client.get(f"/entry/api/v2/{entry.id}/")
         self.assertEqual(resp.status_code, 200)
 
         resp_data = resp.json()
@@ -445,7 +445,7 @@ class ViewTest(BaseViewTest):
         # permission nothing entity
         self.entity.is_public = False
         self.entity.save()
-        resp = self.client.get("/entry/api/v2/%d/" % entry.id)
+        resp = self.client.get(f"/entry/api/v2/{entry.id}/")
         self.assertEqual(resp.status_code, 403)
         self.assertEqual(
             resp.json(),
@@ -458,13 +458,13 @@ class ViewTest(BaseViewTest):
         # permission readble entity
         self.role.users.add(self.user)
         self.entity.readable.roles.add(self.role)
-        resp = self.client.get("/entry/api/v2/%d/" % entry.id)
+        resp = self.client.get(f"/entry/api/v2/{entry.id}/")
         self.assertEqual(resp.status_code, 200)
 
         # permission nothing entry
         entry.is_public = False
         entry.save()
-        resp = self.client.get("/entry/api/v2/%d/" % entry.id)
+        resp = self.client.get(f"/entry/api/v2/{entry.id}/")
         self.assertEqual(resp.status_code, 403)
         self.assertEqual(
             resp.json(),
@@ -476,14 +476,14 @@ class ViewTest(BaseViewTest):
 
         # permission readble entry
         entry.readable.roles.add(self.role)
-        resp = self.client.get("/entry/api/v2/%d/" % entry.id)
+        resp = self.client.get(f"/entry/api/v2/{entry.id}/")
         self.assertEqual(resp.status_code, 200)
 
         # permission nothing entity attr
         entity_attr = entry.attrs.get(schema__name="val").schema
         entity_attr.is_public = False
         entity_attr.save()
-        resp = self.client.get("/entry/api/v2/%d/" % entry.id)
+        resp = self.client.get(f"/entry/api/v2/{entry.id}/")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(
             next(filter(lambda x: x["schema"]["name"] == "val", resp.json()["attrs"])),
@@ -502,7 +502,7 @@ class ViewTest(BaseViewTest):
 
         # permission readable entity attr
         entity_attr.readable.roles.add(self.role)
-        resp = self.client.get("/entry/api/v2/%d/" % entry.id)
+        resp = self.client.get(f"/entry/api/v2/{entry.id}/")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(
             next(filter(lambda x: x["schema"]["name"] == "val", resp.json()["attrs"])),
@@ -523,7 +523,7 @@ class ViewTest(BaseViewTest):
         attr = entry.attrs.get(schema=entity_attr)
         attr.is_public = False
         attr.save()
-        resp = self.client.get("/entry/api/v2/%d/" % entry.id)
+        resp = self.client.get(f"/entry/api/v2/{entry.id}/")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(
             next(filter(lambda x: x["schema"]["name"] == "val", resp.json()["attrs"])),
@@ -542,7 +542,7 @@ class ViewTest(BaseViewTest):
 
         # permission readable attr
         attr.readable.roles.add(self.role)
-        resp = self.client.get("/entry/api/v2/%d/" % entry.id)
+        resp = self.client.get(f"/entry/api/v2/{entry.id}/")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(
             next(filter(lambda x: x["schema"]["name"] == "val", resp.json()["attrs"])),
@@ -560,10 +560,10 @@ class ViewTest(BaseViewTest):
         )
 
     def test_retrieve_entry_with_invalid_param(self):
-        resp = self.client.get("/entry/api/v2/%s/" % "hoge")
+        resp = self.client.get("/entry/api/v2/hoge/")
         self.assertEqual(resp.status_code, 404)
 
-        resp = self.client.get("/entry/api/v2/%s/" % 9999)
+        resp = self.client.get(f"/entry/api/v2/{9999}/")
         self.assertEqual(resp.status_code, 404)
         self.assertEqual(
             resp.json(), {"code": "AE-230000", "message": "No Entry matches the given query."}
@@ -598,7 +598,7 @@ class ViewTest(BaseViewTest):
 
         entry: Entry = self.add_entry(self.user, "test-entry", self.entity)
 
-        resp = self.client.get("/entry/api/v2/%s/" % entry.id)
+        resp = self.client.get(f"/entry/api/v2/{entry.id}/")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(
             len(resp.json()["attrs"]), len(self.ALL_TYPED_ATTR_PARAMS_FOR_CREATING_ENTITY) + 1
@@ -634,7 +634,7 @@ class ViewTest(BaseViewTest):
         # delete referring entry
         self.ref_entry.delete()
 
-        resp = self.client.get("/entry/api/v2/%d/" % entry.id)
+        resp = self.client.get(f"/entry/api/v2/{entry.id}/")
         self.assertEqual(resp.status_code, 200)
 
         resp_data = resp.json()
@@ -743,9 +743,7 @@ class ViewTest(BaseViewTest):
                 {"id": attr["datetime"].id, "value": "2018-12-31T00:00:00+00:00"},
             ],
         }
-        resp = self.client.put(
-            "/entry/api/v2/%s/" % entry.id, json.dumps(params), "application/json"
-        )
+        resp = self.client.put(f"/entry/api/v2/{entry.id}/", json.dumps(params), "application/json")
         self.assertEqual(resp.status_code, status.HTTP_202_ACCEPTED)
 
         self.assertEqual(entry.status, 0)
@@ -833,9 +831,7 @@ class ViewTest(BaseViewTest):
         # permission nothing entity
         self.entity.is_public = False
         self.entity.save()
-        resp = self.client.put(
-            "/entry/api/v2/%s/" % entry.id, json.dumps(params), "application/json"
-        )
+        resp = self.client.put(f"/entry/api/v2/{entry.id}/", json.dumps(params), "application/json")
         self.assertEqual(resp.status_code, 403)
         self.assertEqual(
             resp.json(),
@@ -848,9 +844,7 @@ class ViewTest(BaseViewTest):
         # permission readable entity
         self.role.users.add(self.user)
         self.entity.readable.roles.add(self.role)
-        resp = self.client.put(
-            "/entry/api/v2/%s/" % entry.id, json.dumps(params), "application/json"
-        )
+        resp = self.client.put(f"/entry/api/v2/{entry.id}/", json.dumps(params), "application/json")
         self.assertEqual(resp.status_code, 403)
         self.assertEqual(
             resp.json(),
@@ -862,17 +856,13 @@ class ViewTest(BaseViewTest):
 
         # permission writable entity
         self.entity.writable.roles.add(self.role)
-        resp = self.client.put(
-            "/entry/api/v2/%s/" % entry.id, json.dumps(params), "application/json"
-        )
+        resp = self.client.put(f"/entry/api/v2/{entry.id}/", json.dumps(params), "application/json")
         self.assertEqual(resp.status_code, status.HTTP_202_ACCEPTED)
 
         # permission nothing entry
         entry.is_public = False
         entry.save()
-        resp = self.client.put(
-            "/entry/api/v2/%s/" % entry.id, json.dumps(params), "application/json"
-        )
+        resp = self.client.put(f"/entry/api/v2/{entry.id}/", json.dumps(params), "application/json")
         self.assertEqual(resp.status_code, 403)
         self.assertEqual(
             resp.json(),
@@ -884,9 +874,7 @@ class ViewTest(BaseViewTest):
 
         # permission readable entry
         entry.readable.roles.add(self.role)
-        resp = self.client.put(
-            "/entry/api/v2/%s/" % entry.id, json.dumps(params), "application/json"
-        )
+        resp = self.client.put(f"/entry/api/v2/{entry.id}/", json.dumps(params), "application/json")
         self.assertEqual(resp.status_code, 403)
         self.assertEqual(
             resp.json(),
@@ -898,9 +886,7 @@ class ViewTest(BaseViewTest):
 
         # permission writable entry
         entry.writable.roles.add(self.role)
-        resp = self.client.put(
-            "/entry/api/v2/%s/" % entry.id, json.dumps(params), "application/json"
-        )
+        resp = self.client.put(f"/entry/api/v2/{entry.id}/", json.dumps(params), "application/json")
         self.assertEqual(resp.status_code, status.HTTP_202_ACCEPTED)
 
     @patch("entry.tasks.edit_entry_v2.delay", Mock(side_effect=tasks.edit_entry_v2))
@@ -921,9 +907,7 @@ class ViewTest(BaseViewTest):
 
         entity_attr["vals"].is_public = False
         entity_attr["vals"].save()
-        resp = self.client.put(
-            "/entry/api/v2/%s/" % entry.id, json.dumps(params), "application/json"
-        )
+        resp = self.client.put(f"/entry/api/v2/{entry.id}/", json.dumps(params), "application/json")
         self.assertEqual(resp.status_code, status.HTTP_202_ACCEPTED)
         self.assertEqual(attr["val"].get_latest_value().get_value(), "hoge")
         self.assertEqual(attr["vals"].get_latest_value().get_value(), [])
@@ -939,21 +923,19 @@ class ViewTest(BaseViewTest):
         entity_attr["vals"].save()
         attr["vals"].is_public = False
         attr["vals"].save()
-        resp = self.client.put(
-            "/entry/api/v2/%s/" % entry.id, json.dumps(params), "application/json"
-        )
+        resp = self.client.put(f"/entry/api/v2/{entry.id}/", json.dumps(params), "application/json")
         self.assertEqual(resp.status_code, status.HTTP_202_ACCEPTED)
         self.assertEqual(attr["val"].get_latest_value().get_value(), "fuga")
         self.assertEqual(attr["vals"].get_latest_value().get_value(), [])
 
     def test_update_entry_with_invalid_param_entry_id(self):
         resp = self.client.put(
-            "/entry/api/v2/%s/" % "hoge", json.dumps({"name": "entry1"}), "application/json"
+            "/entry/api/v2/hoge/", json.dumps({"name": "entry1"}), "application/json"
         )
         self.assertEqual(resp.status_code, 404)
 
         resp = self.client.put(
-            "/entry/api/v2/%s/" % 9999, json.dumps({"name": "entry1"}), "application/json"
+            f"/entry/api/v2/{9999}/", json.dumps({"name": "entry1"}), "application/json"
         )
         self.assertEqual(resp.status_code, 404)
         self.assertEqual(
@@ -963,7 +945,7 @@ class ViewTest(BaseViewTest):
     def test_update_entry_with_invalid_param_name(self):
         entry: Entry = self.add_entry(self.user, "entry", self.entity)
         resp = self.client.put(
-            "/entry/api/v2/%s/" % entry.id,
+            f"/entry/api/v2/{entry.id}/",
             json.dumps({"name": "a" * (Entry._meta.get_field("name").max_length + 1)}),
             "application/json",
         )
@@ -981,7 +963,7 @@ class ViewTest(BaseViewTest):
         )
 
         resp = self.client.put(
-            "/entry/api/v2/%s/" % entry.id,
+            f"/entry/api/v2/{entry.id}/",
             json.dumps({"name": "a" * (Entry._meta.get_field("name").max_length)}),
             "application/json",
         )
@@ -989,7 +971,7 @@ class ViewTest(BaseViewTest):
 
         hoge_entry: Entry = self.add_entry(self.user, "hoge", self.entity)
         resp = self.client.put(
-            "/entry/api/v2/%s/" % entry.id, json.dumps({"name": "hoge"}), "application/json"
+            f"/entry/api/v2/{entry.id}/", json.dumps({"name": "hoge"}), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
@@ -998,7 +980,7 @@ class ViewTest(BaseViewTest):
         )
 
         resp = self.client.put(
-            "/entry/api/v2/%s/" % entry.id,
+            f"/entry/api/v2/{entry.id}/",
             json.dumps({"name": "hoge\thoge"}),
             "application/json",
         )
@@ -1017,7 +999,7 @@ class ViewTest(BaseViewTest):
 
         hoge_entry.delete()
         resp = self.client.put(
-            "/entry/api/v2/%s/" % entry.id, json.dumps({"name": "hoge"}), "application/json"
+            f"/entry/api/v2/{entry.id}/", json.dumps({"name": "hoge"}), "application/json"
         )
         self.assertEqual(resp.status_code, status.HTTP_202_ACCEPTED)
 
@@ -1028,7 +1010,7 @@ class ViewTest(BaseViewTest):
 
         entry: Entry = self.add_entry(self.user, "The highest mountain in the world", self.entity)
         resp = self.client.put(
-            "/entry/api/v2/%s/" % entry.id,
+            f"/entry/api/v2/{entry.id}/",
             json.dumps({"name": "Chomolungma"}),  # This is same name with other Alias
             "application/json",
         )
@@ -1128,7 +1110,7 @@ class ViewTest(BaseViewTest):
                     "non_field_errors": [
                         {
                             "code": "AE-121000",
-                            "message": "attrs id(%s) - value(hoge) is not int" % attr["ref"].id,
+                            "message": f"attrs id({attr['ref'].id}) - value(hoge) is not int",
                         }
                     ]
                 },
@@ -1138,7 +1120,7 @@ class ViewTest(BaseViewTest):
         for test_value in test_values:
             params = {"attrs": test_value["input"]}
             resp = self.client.put(
-                "/entry/api/v2/%s/" % entry.id, json.dumps(params), "application/json"
+                f"/entry/api/v2/{entry.id}/", json.dumps(params), "application/json"
             )
             self.assertEqual(resp.status_code, 400)
             self.assertEqual(resp.json(), test_value["error_msg"])
@@ -1148,7 +1130,7 @@ class ViewTest(BaseViewTest):
     def test_update_entry_notify(self, mock_task):
         entry: Entry = self.add_entry(self.user, "entry", self.entity)
         self.client.put(
-            "/entry/api/v2/%s/" % entry.id, json.dumps({"name": "hoge"}), "application/json"
+            f"/entry/api/v2/{entry.id}/", json.dumps({"name": "hoge"}), "application/json"
         )
 
         self.assertTrue(mock_task.called)
@@ -1173,9 +1155,7 @@ class ViewTest(BaseViewTest):
             raise ValidationError("update error")
 
         mock_call_custom.side_effect = side_effect
-        resp = self.client.put(
-            "/entry/api/v2/%s/" % entry.id, json.dumps(params), "application/json"
-        )
+        resp = self.client.put(f"/entry/api/v2/{entry.id}/", json.dumps(params), "application/json")
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertTrue(mock_call_custom.called)
 
@@ -1198,9 +1178,7 @@ class ViewTest(BaseViewTest):
                 self.assertEqual(args[0], entry)
 
         mock_call_custom.side_effect = side_effect
-        resp = self.client.put(
-            "/entry/api/v2/%s/" % entry.id, json.dumps(params), "application/json"
-        )
+        resp = self.client.put(f"/entry/api/v2/{entry.id}/", json.dumps(params), "application/json")
         self.assertEqual(resp.status_code, status.HTTP_202_ACCEPTED)
         self.assertTrue(mock_call_custom.called)
 
@@ -1228,7 +1206,7 @@ class ViewTest(BaseViewTest):
             ]
         }
         self.client.put(
-            "/entry/api/v2/%s/" % self.ref_entry.id, json.dumps(params), "application/json"
+            f"/entry/api/v2/{self.ref_entry.id}/", json.dumps(params), "application/json"
         )
 
         self.assertEqual(attr["val"].values.count(), 1)
@@ -1252,7 +1230,7 @@ class ViewTest(BaseViewTest):
             "name": "ref-change",
         }
         self.client.put(
-            "/entry/api/v2/%s/" % self.ref_entry.id, json.dumps(params), "application/json"
+            f"/entry/api/v2/{self.ref_entry.id}/", json.dumps(params), "application/json"
         )
 
         ret = AdvancedSearchService.search_entries(
@@ -1264,7 +1242,7 @@ class ViewTest(BaseViewTest):
 
     def test_update_entry_without_attrs(self):
         resp = self.client.put(
-            "/entry/api/v2/%s/" % self.ref_entry.id, json.dumps({}), "application/json"
+            f"/entry/api/v2/{self.ref_entry.id}/", json.dumps({}), "application/json"
         )
         self.assertEqual(resp.status_code, status.HTTP_202_ACCEPTED)
 
@@ -1300,9 +1278,7 @@ class ViewTest(BaseViewTest):
                 {"id": attr["val"].id, "value": "hoge"},
             ],
         }
-        resp = self.client.put(
-            "/entry/api/v2/%s/" % entry.id, json.dumps(params), "application/json"
-        )
+        resp = self.client.put(f"/entry/api/v2/{entry.id}/", json.dumps(params), "application/json")
         self.assertEqual(resp.status_code, status.HTTP_202_ACCEPTED)
 
         # check Attribute "text", which is specified by TriggerCondition, was changed to "fuga"
@@ -1312,7 +1288,7 @@ class ViewTest(BaseViewTest):
     def test_destroy_entry(self):
         entry: Entry = self.add_entry(self.user, "entry", self.entity)
 
-        resp = self.client.delete("/entry/api/v2/%s/" % entry.id, None, "application/json")
+        resp = self.client.delete(f"/entry/api/v2/{entry.id}/", None, "application/json")
         self.assertEqual(resp.status_code, 204)
         self.assertEqual(resp.content, b"")
 
@@ -1322,7 +1298,7 @@ class ViewTest(BaseViewTest):
         self.assertEqual(entry.deleted_user, self.user)
         self.assertIsNotNone(entry.deleted_time)
 
-        resp = self.client.delete("/entry/api/v2/%s/" % entry.id, None, "application/json")
+        resp = self.client.delete(f"/entry/api/v2/{entry.id}/", None, "application/json")
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
             resp.json(),
@@ -1335,7 +1311,7 @@ class ViewTest(BaseViewTest):
         # permission nothing entity
         self.entity.is_public = False
         self.entity.save()
-        resp = self.client.delete("/entry/api/v2/%s/" % entry.id, None, "application/json")
+        resp = self.client.delete(f"/entry/api/v2/{entry.id}/", None, "application/json")
         self.assertEqual(resp.status_code, 403)
         self.assertEqual(
             resp.json(),
@@ -1348,7 +1324,7 @@ class ViewTest(BaseViewTest):
         # permission readable entity
         self.role.users.add(self.user)
         self.entity.readable.roles.add(self.role)
-        resp = self.client.delete("/entry/api/v2/%s/" % entry.id, None, "application/json")
+        resp = self.client.delete(f"/entry/api/v2/{entry.id}/", None, "application/json")
         self.assertEqual(resp.status_code, 403)
         self.assertEqual(
             resp.json(),
@@ -1360,7 +1336,7 @@ class ViewTest(BaseViewTest):
 
         # permission writable entity
         self.entity.writable.roles.add(self.role)
-        resp = self.client.delete("/entry/api/v2/%s/" % entry.id, None, "application/json")
+        resp = self.client.delete(f"/entry/api/v2/{entry.id}/", None, "application/json")
         self.assertEqual(resp.status_code, 204)
 
         entry.restore()
@@ -1368,7 +1344,7 @@ class ViewTest(BaseViewTest):
         # permission nothing entry
         entry.is_public = False
         entry.save()
-        resp = self.client.delete("/entry/api/v2/%s/" % entry.id, None, "application/json")
+        resp = self.client.delete(f"/entry/api/v2/{entry.id}/", None, "application/json")
         self.assertEqual(resp.status_code, 403)
         self.assertEqual(
             resp.json(),
@@ -1380,7 +1356,7 @@ class ViewTest(BaseViewTest):
 
         # permission readable entry
         entry.readable.roles.add(self.role)
-        resp = self.client.delete("/entry/api/v2/%s/" % entry.id, None, "application/json")
+        resp = self.client.delete(f"/entry/api/v2/{entry.id}/", None, "application/json")
         self.assertEqual(resp.status_code, 403)
         self.assertEqual(
             resp.json(),
@@ -1392,14 +1368,14 @@ class ViewTest(BaseViewTest):
 
         # permission writable entry
         entry.writable.roles.add(self.role)
-        resp = self.client.delete("/entry/api/v2/%s/" % entry.id, None, "application/json")
+        resp = self.client.delete(f"/entry/api/v2/{entry.id}/", None, "application/json")
         self.assertEqual(resp.status_code, 204)
 
     def test_destory_entry_with_invalid_param(self):
-        resp = self.client.delete("/entry/api/v2/%s/" % "hoge", None, "application/json")
+        resp = self.client.delete("/entry/api/v2/hoge/", None, "application/json")
         self.assertEqual(resp.status_code, 404)
 
-        resp = self.client.delete("/entry/api/v2/%s/" % 9999, None, "application/json")
+        resp = self.client.delete(f"/entry/api/v2/{9999}/", None, "application/json")
         self.assertEqual(resp.status_code, 404)
         self.assertEqual(
             resp.json(), {"code": "AE-230000", "message": "No Entry matches the given query."}
@@ -1415,7 +1391,7 @@ class ViewTest(BaseViewTest):
             raise ValidationError("delete error")
 
         mock_call_custom.side_effect = side_effect
-        resp = self.client.delete("/entry/api/v2/%s/" % entry.id, None, "application/json")
+        resp = self.client.delete(f"/entry/api/v2/{entry.id}/", None, "application/json")
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertTrue(mock_call_custom.called)
 
@@ -1426,7 +1402,7 @@ class ViewTest(BaseViewTest):
             self.assertEqual(entry, entry)
 
         mock_call_custom.side_effect = side_effect
-        resp = self.client.delete("/entry/api/v2/%s/" % entry.id, None, "application/json")
+        resp = self.client.delete(f"/entry/api/v2/{entry.id}/", None, "application/json")
         self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)
         self.assertTrue(mock_call_custom.called)
 
@@ -1434,7 +1410,7 @@ class ViewTest(BaseViewTest):
     @mock.patch("entry.tasks.notify_delete_entry.delay")
     def test_destroy_entry_notify(self, mock_task):
         entry: Entry = self.add_entry(self.user, "entry", self.entity)
-        self.client.delete("/entry/api/v2/%s/" % entry.id, None, "application/json")
+        self.client.delete(f"/entry/api/v2/{entry.id}/", None, "application/json")
 
         self.assertTrue(mock_task.called)
 
@@ -1442,7 +1418,7 @@ class ViewTest(BaseViewTest):
         entry: Entry = self.add_entry(self.user, "entry", self.entity)
         entry.delete()
 
-        resp = self.client.post("/entry/api/v2/%s/restore/" % entry.id, None, "application/json")
+        resp = self.client.post(f"/entry/api/v2/{entry.id}/restore/", None, "application/json")
         self.assertEqual(resp.status_code, 201)
         self.assertEqual(resp.content, b"{}")
 
@@ -1451,7 +1427,7 @@ class ViewTest(BaseViewTest):
         self.assertTrue(entry.is_active)
         self.assertEqual(entry.status, 0)
 
-        resp = self.client.post("/entry/api/v2/%s/restore/" % entry.id, None, "application/json")
+        resp = self.client.post(f"/entry/api/v2/{entry.id}/restore/", None, "application/json")
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
             resp.json(), [{"code": "AE-230000", "message": "specified entry has not deleted"}]
@@ -1464,7 +1440,7 @@ class ViewTest(BaseViewTest):
         # permission nothing entity
         self.entity.is_public = False
         self.entity.save()
-        resp = self.client.post("/entry/api/v2/%s/restore/" % entry.id, None, "application/json")
+        resp = self.client.post(f"/entry/api/v2/{entry.id}/restore/", None, "application/json")
         self.assertEqual(resp.status_code, 403)
         self.assertEqual(
             resp.json(),
@@ -1477,7 +1453,7 @@ class ViewTest(BaseViewTest):
         # permission readable entity
         self.role.users.add(self.user)
         self.entity.readable.roles.add(self.role)
-        resp = self.client.post("/entry/api/v2/%s/restore/" % entry.id, None, "application/json")
+        resp = self.client.post(f"/entry/api/v2/{entry.id}/restore/", None, "application/json")
         self.assertEqual(resp.status_code, 403)
         self.assertEqual(
             resp.json(),
@@ -1489,7 +1465,7 @@ class ViewTest(BaseViewTest):
 
         # permission writable entity
         self.entity.writable.roles.add(self.role)
-        resp = self.client.post("/entry/api/v2/%s/restore/" % entry.id, None, "application/json")
+        resp = self.client.post(f"/entry/api/v2/{entry.id}/restore/", None, "application/json")
         self.assertEqual(resp.status_code, 201)
 
         entry.delete()
@@ -1497,7 +1473,7 @@ class ViewTest(BaseViewTest):
         # permission nothing entry
         entry.is_public = False
         entry.save()
-        resp = self.client.post("/entry/api/v2/%s/restore/" % entry.id, None, "application/json")
+        resp = self.client.post(f"/entry/api/v2/{entry.id}/restore/", None, "application/json")
         self.assertEqual(resp.status_code, 403)
         self.assertEqual(
             resp.json(),
@@ -1509,7 +1485,7 @@ class ViewTest(BaseViewTest):
 
         # permission readable entry
         entry.readable.roles.add(self.role)
-        resp = self.client.post("/entry/api/v2/%s/restore/" % entry.id, None, "application/json")
+        resp = self.client.post(f"/entry/api/v2/{entry.id}/restore/", None, "application/json")
         self.assertEqual(resp.status_code, 403)
         self.assertEqual(
             resp.json(),
@@ -1521,14 +1497,14 @@ class ViewTest(BaseViewTest):
 
         # permission writable entry
         entry.writable.roles.add(self.role)
-        resp = self.client.post("/entry/api/v2/%s/restore/" % entry.id, None, "application/json")
+        resp = self.client.post(f"/entry/api/v2/{entry.id}/restore/", None, "application/json")
         self.assertEqual(resp.status_code, 201)
 
     def test_restore_entry_with_invalid_param(self):
-        resp = self.client.post("/entry/api/v2/%s/restore/" % "hoge", None, "application/json")
+        resp = self.client.post("/entry/api/v2/hoge/restore/", None, "application/json")
         self.assertEqual(resp.status_code, 404)
 
-        resp = self.client.post("/entry/api/v2/%s/restore/" % 9999, None, "application/json")
+        resp = self.client.post(f"/entry/api/v2/{9999}/restore/", None, "application/json")
         self.assertEqual(resp.status_code, 404)
         self.assertEqual(
             resp.json(), {"code": "AE-230000", "message": "No Entry matches the given query."}
@@ -1538,7 +1514,7 @@ class ViewTest(BaseViewTest):
         entry.delete()
         self.add_entry(self.user, "entry", self.entity)
 
-        resp = self.client.post("/entry/api/v2/%s/restore/" % entry.id, None, "application/json")
+        resp = self.client.post(f"/entry/api/v2/{entry.id}/restore/", None, "application/json")
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
             resp.json(),
@@ -1550,7 +1526,7 @@ class ViewTest(BaseViewTest):
         other_entry = self.add_entry(self.user, "other_entry", self.entity)
         other_entry.add_alias("entry2")
 
-        resp = self.client.post("/entry/api/v2/%s/restore/" % entry2.id, None, "application/json")
+        resp = self.client.post(f"/entry/api/v2/{entry2.id}/restore/", None, "application/json")
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
             resp.json(),
@@ -1567,7 +1543,7 @@ class ViewTest(BaseViewTest):
             raise ValidationError("restore error")
 
         mock_call_custom.side_effect = side_effect
-        resp = self.client.post("/entry/api/v2/%s/restore/" % entry.id, None, "application/json")
+        resp = self.client.post(f"/entry/api/v2/{entry.id}/restore/", None, "application/json")
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(resp.json(), [{"code": "AE-121000", "message": "restore error"}])
 
@@ -1578,7 +1554,7 @@ class ViewTest(BaseViewTest):
             self.assertEqual(entry, entry)
 
         mock_call_custom.side_effect = side_effect
-        resp = self.client.post("/entry/api/v2/%s/restore/" % entry.id, None, "application/json")
+        resp = self.client.post(f"/entry/api/v2/{entry.id}/restore/", None, "application/json")
         self.assertEqual(resp.status_code, 201)
         self.assertTrue(mock_call_custom.called)
 
@@ -1586,7 +1562,7 @@ class ViewTest(BaseViewTest):
     def test_restore_entry_notify(self, mock_task):
         entry: Entry = self.add_entry(self.user, "entry", self.entity)
         entry.delete()
-        self.client.post("/entry/api/v2/%s/restore/" % entry.id, None, "application/json")
+        self.client.post(f"/entry/api/v2/{entry.id}/restore/", None, "application/json")
 
         self.assertTrue(mock_task.called)
 
@@ -1604,14 +1580,12 @@ class ViewTest(BaseViewTest):
                 {"id": attr.id, "value": "updated"},
             ],
         }
-        resp = self.client.put(
-            "/entry/api/v2/%s/" % entry.id, json.dumps(params), "application/json"
-        )
+        resp = self.client.put(f"/entry/api/v2/{entry.id}/", json.dumps(params), "application/json")
         self.assertEqual(resp.status_code, status.HTTP_202_ACCEPTED)
 
         # restore to previous value
         resp = self.client.patch(
-            "/entry/api/v2/%s/attrv_restore/" % prev_attrv.id, json.dumps({}), "application/json"
+            f"/entry/api/v2/{prev_attrv.id}/attrv_restore/", json.dumps({}), "application/json"
         )
         self.assertEqual(resp.status_code, 200)
 
@@ -1698,7 +1672,7 @@ class ViewTest(BaseViewTest):
             ],
         }
         resp = self.client.put(
-            "/entry/api/v2/%s/" % entry.id, json.dumps(update_params), "application/json"
+            f"/entry/api/v2/{entry.id}/", json.dumps(update_params), "application/json"
         )
         self.assertEqual(resp.status_code, status.HTTP_202_ACCEPTED)
 
@@ -1712,7 +1686,7 @@ class ViewTest(BaseViewTest):
             try:
                 # Restore to previous value
                 resp = self.client.patch(
-                    "/entry/api/v2/%s/attrv_restore/" % prev_attrv.id,
+                    f"/entry/api/v2/{prev_attrv.id}/attrv_restore/",
                     json.dumps({}),
                     "application/json",
                 )
@@ -1769,13 +1743,13 @@ class ViewTest(BaseViewTest):
             ],
         }
         resp = self.client.put(
-            "/entry/api/v2/%s/" % entry.id, json.dumps(update_params), "application/json"
+            f"/entry/api/v2/{entry.id}/", json.dumps(update_params), "application/json"
         )
         self.assertEqual(resp.status_code, status.HTTP_202_ACCEPTED)
 
         # Restore to previous value (without referral)
         resp = self.client.patch(
-            "/entry/api/v2/%s/attrv_restore/" % prev_attrv.id, json.dumps({}), "application/json"
+            f"/entry/api/v2/{prev_attrv.id}/attrv_restore/", json.dumps({}), "application/json"
         )
         self.assertEqual(resp.status_code, 200)
 
@@ -1790,7 +1764,7 @@ class ViewTest(BaseViewTest):
         params = {"copy_entry_names": ["copy1", "copy2"]}
 
         resp = self.client.post(
-            "/entry/api/v2/%s/copy/" % entry.id, json.dumps(params), "application/json"
+            f"/entry/api/v2/{entry.id}/copy/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 200)
         self.assertTrue(
@@ -1821,7 +1795,7 @@ class ViewTest(BaseViewTest):
         # copy 2 Items from item_sg
         params = {"copy_entry_names": ["copy1", "copy2"]}
         resp = self.client.post(
-            "/entry/api/v2/%s/copy/" % item_sg.id, json.dumps(params), "application/json"
+            f"/entry/api/v2/{item_sg.id}/copy/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(
@@ -1833,7 +1807,7 @@ class ViewTest(BaseViewTest):
         )
         self.assertEqual(
             Entry.objects.filter(
-                name__contains="%s -- duplicate of ID:%s --" % (item_sg.autoname, item_sg.id),
+                name__contains=f"{item_sg.autoname} -- duplicate of ID:{item_sg.id} --",
                 schema=model_sg,
                 is_active=True,
             ).count(),
@@ -1848,7 +1822,7 @@ class ViewTest(BaseViewTest):
         self.entity.is_public = False
         self.entity.save()
         resp = self.client.post(
-            "/entry/api/v2/%s/copy/" % entry.id, json.dumps(params), "application/json"
+            f"/entry/api/v2/{entry.id}/copy/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 403)
         self.assertEqual(
@@ -1863,7 +1837,7 @@ class ViewTest(BaseViewTest):
         self.role.users.add(self.user)
         self.entity.readable.roles.add(self.role)
         resp = self.client.post(
-            "/entry/api/v2/%s/copy/" % entry.id, json.dumps(params), "application/json"
+            f"/entry/api/v2/{entry.id}/copy/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 403)
         self.assertEqual(
@@ -1877,7 +1851,7 @@ class ViewTest(BaseViewTest):
         # permission writable entity
         self.entity.writable.roles.add(self.role)
         resp = self.client.post(
-            "/entry/api/v2/%s/copy/" % entry.id, json.dumps(params), "application/json"
+            f"/entry/api/v2/{entry.id}/copy/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 200)
 
@@ -1887,7 +1861,7 @@ class ViewTest(BaseViewTest):
         entry.is_public = False
         entry.save()
         resp = self.client.post(
-            "/entry/api/v2/%s/copy/" % entry.id, json.dumps(params), "application/json"
+            f"/entry/api/v2/{entry.id}/copy/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 403)
         self.assertEqual(
@@ -1901,7 +1875,7 @@ class ViewTest(BaseViewTest):
         # permission readable entry
         entry.readable.roles.add(self.role)
         resp = self.client.post(
-            "/entry/api/v2/%s/copy/" % entry.id, json.dumps(params), "application/json"
+            f"/entry/api/v2/{entry.id}/copy/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 403)
         self.assertEqual(
@@ -1915,20 +1889,18 @@ class ViewTest(BaseViewTest):
         # permission writable entry
         entry.writable.roles.add(self.role)
         resp = self.client.post(
-            "/entry/api/v2/%s/copy/" % entry.id, json.dumps(params), "application/json"
+            f"/entry/api/v2/{entry.id}/copy/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 200)
 
     def test_copy_entry_with_invalid_param(self):
         params = {"copy_entry_names": ["copy1"]}
 
-        resp = self.client.post(
-            "/entry/api/v2/%s/copy/" % "hoge", json.dumps(params), "application/json"
-        )
+        resp = self.client.post("/entry/api/v2/hoge/copy/", json.dumps(params), "application/json")
         self.assertEqual(resp.status_code, 404)
 
         resp = self.client.post(
-            "/entry/api/v2/%s/copy/" % 9999, json.dumps(params), "application/json"
+            f"/entry/api/v2/{9999}/copy/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 404)
         self.assertEqual(
@@ -1939,7 +1911,7 @@ class ViewTest(BaseViewTest):
 
         params = {}
         resp = self.client.post(
-            "/entry/api/v2/%s/copy/" % entry.id, json.dumps(params), "application/json"
+            f"/entry/api/v2/{entry.id}/copy/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
@@ -1949,7 +1921,7 @@ class ViewTest(BaseViewTest):
 
         params = {"copy_entry_names": "hoge"}
         resp = self.client.post(
-            "/entry/api/v2/%s/copy/" % entry.id, json.dumps(params), "application/json"
+            f"/entry/api/v2/{entry.id}/copy/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
@@ -1966,7 +1938,7 @@ class ViewTest(BaseViewTest):
 
         params = {"copy_entry_names": [{}]}
         resp = self.client.post(
-            "/entry/api/v2/%s/copy/" % entry.id, json.dumps(params), "application/json"
+            f"/entry/api/v2/{entry.id}/copy/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
@@ -1976,7 +1948,7 @@ class ViewTest(BaseViewTest):
 
         params = {"copy_entry_names": []}
         resp = self.client.post(
-            "/entry/api/v2/%s/copy/" % entry.id, json.dumps(params), "application/json"
+            f"/entry/api/v2/{entry.id}/copy/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
@@ -1986,7 +1958,7 @@ class ViewTest(BaseViewTest):
 
         params = {"copy_entry_names": ["entry"]}
         resp = self.client.post(
-            "/entry/api/v2/%s/copy/" % entry.id, json.dumps(params), "application/json"
+            f"/entry/api/v2/{entry.id}/copy/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
@@ -2010,7 +1982,7 @@ class ViewTest(BaseViewTest):
 
         mock_call_custom.side_effect = side_effect
         resp = self.client.post(
-            "/entry/api/v2/%s/copy/" % entry.id, json.dumps(params), "application/json"
+            f"/entry/api/v2/{entry.id}/copy/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertTrue(mock_call_custom.called)
@@ -2033,7 +2005,7 @@ class ViewTest(BaseViewTest):
 
         mock_call_custom.side_effect = side_effect
         resp = self.client.post(
-            "/entry/api/v2/%s/copy/" % entry.id, json.dumps(params), "application/json"
+            f"/entry/api/v2/{entry.id}/copy/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertTrue(mock_call_custom.called)
@@ -2078,7 +2050,7 @@ class ItemRollbackAPITest(BaseViewTest):
     def test_rollback_entry(self):
         """Rolling back to state before `at` restores the attribute value"""
         model_ref = self.create_entity(name="ref", user=self.user)
-        item_refs = [self.add_entry(self.user, "item-%d" % i, model_ref) for i in range(3)]
+        item_refs = [self.add_entry(self.user, f"item-{i}", model_ref) for i in range(3)]
         item_tgt: Entry = self.add_entry(
             self.user,
             "entry",

@@ -2,13 +2,10 @@ import codecs
 import importlib
 import json
 import urllib.parse
-from collections.abc import Callable
-from io import StringIO
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from urllib.parse import quote
 
 from django.conf import settings
-from django.db import models
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import render as django_render
 from django.utils.encoding import smart_str
@@ -20,6 +17,12 @@ from entity import models as entity_models
 from entry import models as entry_models
 from job.models import JobOperation, JobStatus
 from user.models import History, User
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from io import StringIO
+
+    from django.db import models
 
 
 class HttpResponseSeeOther(HttpResponseRedirect):
@@ -38,9 +41,9 @@ def http_get(func: Callable[..., HttpResponse]) -> Callable[..., HttpResponse]:
             return HttpResponse("Invalid HTTP method is specified", status=400)
 
         if not request.user.is_authenticated:
-            redirect_url = "/auth/login?next=%s?%s" % (request.path, quote(request.GET.urlencode()))
+            redirect_url = f"/auth/login?next={request.path}?{quote(request.GET.urlencode())}"
             if len(redirect_url) > MAX_URL_LENGTH:
-                redirect_url = "/auth/login?next=%s" % (request.path)
+                redirect_url = f"/auth/login?next={request.path}"
             return HttpResponseSeeOther(redirect_url)
 
         return func(*args, **kwargs)
@@ -194,7 +197,7 @@ def render(request: HttpRequest, template: str, context: dict[str, Any] = {}) ->
     # set constant values which are defined in each applications
     context["config"] = {}
     for app in ["entry"]:
-        config = importlib.import_module("%s.settings" % app).CONFIG
+        config = importlib.import_module(f"{app}.settings").CONFIG
         context["config"][app] = config.TEMPLATE_CONFIG
 
     context["attr_type"] = {}

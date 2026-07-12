@@ -1,5 +1,5 @@
 import json
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 import requests
 import urllib3
@@ -7,8 +7,10 @@ from django.conf import settings
 from urllib3.exceptions import InsecureRequestWarning
 
 from airone.lib.log import Logger
-from entry.models import Entry
-from user.models import User
+
+if TYPE_CHECKING:
+    from entry.models import Entry
+    from user.models import User
 
 urllib3.disable_warnings(InsecureRequestWarning)
 

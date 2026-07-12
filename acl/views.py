@@ -90,7 +90,7 @@ def set(request: HttpRequest, recv_data: dict[str, Any]) -> JsonResponse | HttpR
     # This checks that user currently has permission to change it
     if not request.user.has_permission(acl_obj, ACLType.Full):
         return HttpResponse(
-            "User(%s) doesn't have permission to change this ACL" % request.user.username,
+            f"User({request.user.username}) doesn't have permission to change this ACL",
             status=400,
         )
 
@@ -135,11 +135,11 @@ def set(request: HttpRequest, recv_data: dict[str, Any]) -> JsonResponse | HttpR
     if isinstance(acl_obj, Entity):
         redirect_url = "/entity/"
     elif isinstance(acl_obj, EntityAttr):
-        redirect_url = "/entity/edit/%s" % acl_obj.parent_entity.id
+        redirect_url = f"/entity/edit/{acl_obj.parent_entity.id}"
     elif isinstance(acl_obj, Entry):
-        redirect_url = "/entry/show/%s" % acl_obj.id
+        redirect_url = f"/entry/show/{acl_obj.id}"
     elif isinstance(acl_obj, Attribute):
-        redirect_url = "/entry/edit/%s" % acl_obj.parent_entry.id
+        redirect_url = f"/entry/edit/{acl_obj.parent_entry.id}"
 
     if isinstance(acl_obj, Attribute):
         acl_obj = acl_obj.parent_entry
@@ -150,7 +150,7 @@ def set(request: HttpRequest, recv_data: dict[str, Any]) -> JsonResponse | HttpR
     return JsonResponse(
         {
             "redirect_url": redirect_url,
-            "msg": 'Success to update ACL of "%s"' % acl_obj.name,
+            "msg": f'Success to update ACL of "{acl_obj.name}"',
         }
     )
 

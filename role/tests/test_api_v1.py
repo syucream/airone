@@ -25,11 +25,11 @@ class ModelTest(RoleTestBase):
     def test_delete_role_without_permission(self):
         self.guest_login()
 
-        resp = self.client.delete("/role/api/v1/%d/" % self.role.id)
+        resp = self.client.delete(f"/role/api/v1/{self.role.id}/")
         self.assertEqual(resp.status_code, 401)
         self.assertEqual(
             resp.content.decode("utf-8"),
-            '"Permission error to delete the Role(%s)"' % self.role.name,
+            f'"Permission error to delete the Role({self.role.name})"',
         )
 
     def test_delete_role(self):
@@ -38,7 +38,7 @@ class ModelTest(RoleTestBase):
         # set login user as an administrative user of test Role to be deleted
         self.role.admin_users.add(login_user)
 
-        resp = self.client.delete("/role/api/v1/%d/" % self.role.id)
+        resp = self.client.delete(f"/role/api/v1/{self.role.id}/")
         self.assertEqual(resp.status_code, 204)
 
     @mock.patch(

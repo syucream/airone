@@ -1,12 +1,14 @@
 import importlib.util
-from collections.abc import Callable
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from django.conf import settings
 from django.http import HttpResponse
 
 from airone.plugins.hook_manager import hook_manager
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 # to cache custom view
 CUSTOM_VIEW: dict[str, dict[str, Callable[..., Any]]] = {}
@@ -45,14 +47,14 @@ def is_custom(handler_name: str, entity_name: str | None = None) -> bool:
     # But it tries to load Entity's custom_view when 'entity_name' parameter doesn't specified.
     if entity_name:
         spec_name = entity_name
-        filepath = "%s/views/%s.py" % (BASE_DIR, entity_name)
+        filepath = f"{BASE_DIR}/views/{entity_name}.py"
         if Path(filepath).is_file() and _does_custom_method_defined(
             handler_name, spec_name, filepath
         ):
             return True
     else:
         spec_name = "entity"
-        filepath = "%s/entity.py" % BASE_DIR
+        filepath = f"{BASE_DIR}/entity.py"
         if Path(filepath).is_file() and _does_custom_method_defined(
             handler_name, spec_name, filepath
         ):
@@ -64,9 +66,9 @@ def is_custom(handler_name: str, entity_name: str | None = None) -> bool:
 
 def call_custom(handler_name: str, spec_name: str | None = None, *args: Any, **kwargs: Any) -> Any:
     if not spec_name:
-        filepath = "%s/entity.py" % BASE_DIR
+        filepath = f"{BASE_DIR}/entity.py"
     else:
-        filepath = "%s/views/%s.py" % (BASE_DIR, spec_name)
+        filepath = f"{BASE_DIR}/views/{spec_name}.py"
 
     # Priority 1: Execute custom_view file-based handler if available
     if _isin_cache(filepath, handler_name):
@@ -78,4 +80,4 @@ def call_custom(handler_name: str, spec_name: str | None = None, *args: Any, **k
         # Return the last result (if multiple plugins registered)
         return results[-1]
 
-    return HttpResponse("Custom view of %s doesn't exist" % handler_name, status=500)
+    return HttpResponse(f"Custom view of {handler_name} doesn't exist", status=500)

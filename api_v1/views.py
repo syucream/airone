@@ -27,7 +27,7 @@ class EntryAPI(APIView):
         if not sel.is_valid():
             ret = {
                 "result": "Validation Error",
-                "details": ["(%s) %s" % (k, ",".join(e)) for k, e in sel._errors.items()],
+                "details": [f"({k}) {','.join(e)}" for k, e in sel._errors.items()],
             }
             return Response(ret, status=status.HTTP_400_BAD_REQUEST)
 
@@ -75,7 +75,7 @@ class EntryAPI(APIView):
                 Q(**entry_condition) & ~Q(id=sel.validated_data["id"])
             ).exists():
                 return Response(
-                    {"result": '"%s" is duplicate name with other Entry' % entry_condition["name"]},
+                    {"result": f'"{entry_condition["name"]}" is duplicate name with other Entry'},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
@@ -198,7 +198,7 @@ class EntryAPI(APIView):
             entity = Entity.objects.filter(name=param_entity).first()
             if not entity:
                 return Response(
-                    {"result": "Failed to find specified Entity (%s)" % param_entity},
+                    {"result": f"Failed to find specified Entity ({param_entity})"},
                     status=status.HTTP_404_NOT_FOUND,
                 )
 
@@ -237,14 +237,14 @@ class EntryAPI(APIView):
         entity = Entity.objects.filter(name=request.data["entity"]).first()
         if not entity:
             return Response(
-                "Failed to find specified Entity (%s)" % request.data["entity"],
+                f"Failed to find specified Entity ({request.data['entity']})",
                 status=status.HTTP_404_NOT_FOUND,
             )
 
         entry = Entry.objects.filter(name=request.data["entry"], schema=entity).first()
         if not entry:
             return Response(
-                "Failed to find specified Entry (%s)" % request.data["entry"],
+                f"Failed to find specified Entry ({request.data['entry']})",
                 status=status.HTTP_404_NOT_FOUND,
             )
 

@@ -333,8 +333,8 @@ class UserActivityAPI(viewsets.GenericViewSet):
             if effective_since - to >= timedelta(days=self.LIMIT_DAYS):
                 return Response(
                     {
-                        "to": "The interval between 'since' and 'to' must be less than %s days."
-                        % self.LIMIT_DAYS
+                        "to": f"The interval between 'since' and 'to' must be "
+                        f"less than {self.LIMIT_DAYS} days."
                     },
                     status=status.HTTP_400_BAD_REQUEST,
                 )
@@ -451,7 +451,7 @@ class UserImportAPI(generics.GenericAPIView):
         for user_data in import_datas:
             for param in ["username", "groups", "email"]:
                 if param not in user_data:
-                    return Response("'%s' is required" % param, status=400)
+                    return Response(f"'{param}' is required", status=400)
 
             user: User | None = None
             if "id" in user_data:
@@ -459,16 +459,16 @@ class UserImportAPI(generics.GenericAPIView):
                 user = User.objects.filter(id=user_data["id"]).first()
                 if not user:
                     return Response(
-                        "Specified id user does not exist(id:%s, user:%s)"
-                        % (user_data["id"], user_data["username"]),
+                        f"Specified id user does not exist"
+                        f"(id:{user_data['id']}, user:{user_data['username']})",
                         status=status.HTTP_400_BAD_REQUEST,
                     )
                 if (user.username != user_data["username"]) and (
                     User.objects.filter(username=user_data["username"]).count() > 0
                 ):
                     return Response(
-                        "New username is already used(id:%s, user:%s->%s)"
-                        % (user_data["id"], user.username, user_data["username"]),
+                        f"New username is already used"
+                        f"(id:{user_data['id']}, user:{user.username}->{user_data['username']})",
                         status=status.HTTP_400_BAD_REQUEST,
                     )
             else:
@@ -489,8 +489,8 @@ class UserImportAPI(generics.GenericAPIView):
                 new_group: Group | None = Group.objects.filter(name=group_name).first()
                 if not new_group:
                     return Response(
-                        "Specified group does not exist(user:%s, group:%s)"
-                        % (user_data["username"], group_name),
+                        f"Specified group does not exist"
+                        f"(user:{user_data['username']}, group:{group_name})",
                         status=status.HTTP_400_BAD_REQUEST,
                     )
                 new_groups.append(new_group)
@@ -562,7 +562,7 @@ class PasswordResetAPI(viewsets.GenericViewSet):
         username = serializer.validated_data.get("username")
         user = self._get_user(username)
         if not user:
-            return Response("user %s not found" % username, status=status.HTTP_400_BAD_REQUEST)
+            return Response(f"user {username} not found", status=status.HTTP_400_BAD_REQUEST)
 
         user_email = getattr(user, UserModel.get_email_field_name())
         use_https = request.is_secure()
@@ -596,7 +596,7 @@ class PasswordResetAPI(viewsets.GenericViewSet):
         """
         active_users = UserModel._default_manager.filter(
             **{
-                "%s__iexact" % UserModel.USERNAME_FIELD: username,
+                f"{UserModel.USERNAME_FIELD}__iexact": username,
                 "is_active": True,
             }
         )

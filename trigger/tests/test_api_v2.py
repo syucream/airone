@@ -219,7 +219,7 @@ class APITest(AironeViewTest):
         )
 
         # list specified Entity's triggers
-        resp = self.client.get("/trigger/api/v2/?entity_id=%s" % self.entity_book.id)
+        resp = self.client.get(f"/trigger/api/v2/?entity_id={self.entity_book.id}")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(
             [t["entity"]["name"] for t in resp.json()["results"]],
@@ -519,7 +519,7 @@ class APITest(AironeViewTest):
             ],
         }
         resp = self.client.put(
-            "/trigger/api/v2/%s" % trigger_parent.id,
+            f"/trigger/api/v2/{trigger_parent.id}",
             json.dumps(params),
             "application/json",
         )
@@ -568,9 +568,7 @@ class APITest(AironeViewTest):
                 }
             ],
         )
-        resp = self.client.delete(
-            "/trigger/api/v2/%s" % trigger_parent.id, None, "application/json"
-        )
+        resp = self.client.delete(f"/trigger/api/v2/{trigger_parent.id}", None, "application/json")
         self.assertEqual(resp.status_code, 204)
 
         # This checks associated instances are also removed by this request.

@@ -129,7 +129,7 @@ class ViewTest(AironeViewTest):
         # create an entry through the new UI (api_v2) endpoint
         params = {"name": "new_entry", "schema": entity.id, "attrs": []}
         resp = self.client.post(
-            "/entity/api/v2/%d/entries/" % entity.id,
+            f"/entity/api/v2/{entity.id}/entries/",
             json.dumps(params),
             "application/json",
         )
@@ -147,7 +147,7 @@ class ViewTest(AironeViewTest):
         self.assertIn(
             JobOperation.CREATE_ENTRY_V2,
             operations,
-            "CREATE_ENTRY_V2 job should be listed but was not: %s" % operations,
+            f"CREATE_ENTRY_V2 job should be listed but was not: {operations}",
         )
 
     def test_get_non_target_job(self):
@@ -227,7 +227,7 @@ class ViewTest(AironeViewTest):
         entry = Entry.objects.create(name="entry", created_user=user, schema=entity)
         job = Job.new_create(user, entry, "hoge")
 
-        resp = self.client.get("/job/api/v2/%d/" % job.id)
+        resp = self.client.get(f"/job/api/v2/{job.id}/")
         self.assertEqual(resp.status_code, 200)
         body = resp.json()
         self.assertEqual(body["id"], job.id)
@@ -236,7 +236,7 @@ class ViewTest(AironeViewTest):
 
     def test_get_job_with_invalid_param(self):
         self.guest_login()
-        resp = self.client.get("/job/api/v2/%d/" % 9999)
+        resp = self.client.get(f"/job/api/v2/{9999}/")
         self.assertEqual(resp.status_code, 404)
         self.assertEqual(
             resp.json(), {"code": "AE-230000", "message": "No Job matches the given query."}
@@ -252,13 +252,13 @@ class ViewTest(AironeViewTest):
         self.admin_login()
 
         # admin can retrieve any job by ID without extra parameters
-        resp = self.client.get("/job/api/v2/%d/" % job.id)
+        resp = self.client.get(f"/job/api/v2/{job.id}/")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["id"], job.id)
         self.assertEqual(resp.json()["user"], guest.username)
 
         # admin cannot cancel another user's job
-        resp = self.client.delete("/job/api/v2/%d/" % job.id)
+        resp = self.client.delete(f"/job/api/v2/{job.id}/")
         self.assertEqual(resp.status_code, 403)
 
     def test_non_admin_cannot_use_all_users(self):
@@ -281,7 +281,7 @@ class ViewTest(AironeViewTest):
         self.assertEqual(resp.json()["count"], 1)
 
         # non-admin cannot retrieve another user's job by ID
-        resp = self.client.get("/job/api/v2/%d/" % other_job.id)
+        resp = self.client.get(f"/job/api/v2/{other_job.id}/")
         self.assertEqual(resp.status_code, 404)
 
     def test_cancel_job(self):
@@ -295,17 +295,17 @@ class ViewTest(AironeViewTest):
         self.assertEqual(job.status, JobStatus.PREPARING)
 
         # send request with invalid job id
-        resp = self.client.delete("/job/api/v2/%d/" % 99999)
+        resp = self.client.delete(f"/job/api/v2/{99999}/")
         self.assertEqual(resp.status_code, 404)
 
         # target jobs that cannot be canceled
-        resp = self.client.delete("/job/api/v2/%d/" % job.id)
+        resp = self.client.delete(f"/job/api/v2/{job.id}/")
         self.assertEqual(resp.status_code, 400)
 
         # make a cancellable job
         job = Job.new_create(user, entry)
         self.assertEqual(job.status, JobStatus.PREPARING)
-        resp = self.client.delete("/job/api/v2/%d/" % job.id)
+        resp = self.client.delete(f"/job/api/v2/{job.id}/")
         self.assertEqual(resp.status_code, 204)
 
     def test_rerun_jobs(self):
@@ -336,7 +336,7 @@ class ViewTest(AironeViewTest):
         )
 
         # send request to run job
-        resp = self.client.patch("/job/api/v2/%d/rerun" % job.id)
+        resp = self.client.patch(f"/job/api/v2/{job.id}/rerun")
         self.assertEqual(resp.status_code, 200)
 
         job = Job.objects.get(id=job.id)
@@ -347,11 +347,11 @@ class ViewTest(AironeViewTest):
         self.assertEqual(attrv.value, "hoge")
 
         # send request to run job with finished job-id
-        resp = self.client.patch("/job/api/v2/%d/rerun" % job.id)
+        resp = self.client.patch(f"/job/api/v2/{job.id}/rerun")
         self.assertEqual(resp.status_code, 200)
 
         # send request to run job with invalid job-id
-        resp = self.client.patch("/job/api/v2/%d/rerun" % 9999)
+        resp = self.client.patch(f"/job/api/v2/{9999}/rerun")
         self.assertEqual(resp.status_code, 404)
 
         # make and send a job to update entry
@@ -368,14 +368,14 @@ class ViewTest(AironeViewTest):
                 ]
             },
         )
-        resp = self.client.patch("/job/api/v2/%d/rerun" % job.id)
+        resp = self.client.patch(f"/job/api/v2/{job.id}/rerun")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(Job.objects.get(id=job.id).status, JobStatus.DONE)
         self.assertEqual(entry.attrs.first().get_latest_value().value, "fuga")
 
         # make and send a job to copy entry
         job = Job.new_do_copy(user, entry, params={"new_name": "new_entry"})
-        resp = self.client.patch("/job/api/v2/%d/rerun" % job.id)
+        resp = self.client.patch(f"/job/api/v2/{job.id}/rerun")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(Job.objects.get(id=job.id).status, JobStatus.DONE)
 
@@ -385,7 +385,7 @@ class ViewTest(AironeViewTest):
 
         # make and send a job to delete entry
         job = Job.new_delete(user, entry)
-        resp = self.client.patch("/job/api/v2/%d/rerun" % job.id)
+        resp = self.client.patch(f"/job/api/v2/{job.id}/rerun")
         self.assertEqual(resp.status_code, 200)
         self.assertFalse(Entry.objects.get(id=entry.id).is_active)
 
@@ -399,14 +399,14 @@ class ViewTest(AironeViewTest):
         # delete target entry
         entry.delete()
 
-        resp = self.client.patch("/job/api/v2/%d/rerun" % job.id)
+        resp = self.client.patch(f"/job/api/v2/{job.id}/rerun")
         self.assertEqual(resp.status_code, 400)
 
     def test_download_job_with_invalid_param(self):
         user = self.guest_login()
 
         # send request to download job with invalid job-id
-        resp = self.client.get("/job/api/v2/%d/download" % 9999)
+        resp = self.client.get(f"/job/api/v2/{9999}/download")
         self.assertEqual(resp.status_code, 404)
         self.assertEqual(
             resp.json(), {"message": "No Job matches the given query.", "code": "AE-230000"}
@@ -415,7 +415,7 @@ class ViewTest(AironeViewTest):
         # Send a request to a job that cannot be downloaded
         job = Job.new_create(user, None)
 
-        resp = self.client.get("/job/api/v2/%d/download" % job.id)
+        resp = self.client.get(f"/job/api/v2/{job.id}/download")
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
             resp.json(), [{"message": "Target job cannot be downloaded", "code": "AE-250000"}]
@@ -424,7 +424,7 @@ class ViewTest(AironeViewTest):
         # send request to download job when job is not done
         job = Job.new_export(user, text="hoge")
 
-        resp = self.client.get("/job/api/v2/%d/download" % job.id)
+        resp = self.client.get(f"/job/api/v2/{job.id}/download")
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
             resp.json(), [{"message": "Target job has not yet done", "code": "AE-270000"}]
@@ -434,7 +434,7 @@ class ViewTest(AironeViewTest):
         job.status = JobStatus.DONE
         job.save()
 
-        resp = self.client.get("/job/api/v2/%d/download" % job.id)
+        resp = self.client.get(f"/job/api/v2/{job.id}/download")
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
             resp.json(), [{"message": "Target file is not exists", "code": "AE-280000"}]
@@ -443,23 +443,23 @@ class ViewTest(AironeViewTest):
         # send request to download job
         job.set_cache("日本語")
 
-        resp = self.client.get("/job/api/v2/%d/download" % job.id)
+        resp = self.client.get(f"/job/api/v2/{job.id}/download")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp["Content-Disposition"], 'attachment; filename="hoge"')
         self.assertEqual(resp.content.decode("utf-8"), "日本語")
 
         # send request to download job with utf-8 param
-        resp = self.client.get("/job/api/v2/%d/download?encode=utf-8" % job.id)
+        resp = self.client.get(f"/job/api/v2/{job.id}/download?encode=utf-8")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.content.decode("utf-8"), "日本語")
 
         # send request to download job with shift_jis param
-        resp = self.client.get("/job/api/v2/%d/download?encode=shift_jis" % job.id)
+        resp = self.client.get(f"/job/api/v2/{job.id}/download?encode=shift_jis")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.content.decode("shift_jis"), "日本語")
 
         # send request to download job with invalid encoding param
-        resp = self.client.get("/job/api/v2/%d/download?encode=hoge" % job.id)
+        resp = self.client.get(f"/job/api/v2/{job.id}/download?encode=hoge")
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
             resp.json(), [{"message": "Invalid encode parameter", "code": "AE-250000"}]
@@ -467,5 +467,5 @@ class ViewTest(AironeViewTest):
 
         # send request to download job with different user (superuser can retrieve but not download)
         self.admin_login()
-        resp = self.client.get("/job/api/v2/%d/download" % job.id)
+        resp = self.client.get(f"/job/api/v2/{job.id}/download")
         self.assertEqual(resp.status_code, 403)

@@ -239,10 +239,10 @@ class ViewImportExportTest(BaseViewTest):
 
             content = Job.objects.last().get_cache()
             header = content.splitlines()[0]
-            self.assertEqual(header, 'Name,"%s,""ATTR"""' % type_name)
+            self.assertEqual(header, f'Name,"{type_name},""ATTR"""')
 
             data = content.replace(header, "", 1).strip()
-            self.assertEqual(data, '"%s,""ENTRY""",' % type_name + expected)
+            self.assertEqual(data, f'"{type_name},""ENTRY""",' + expected)
 
     @patch("entry.tasks.delete_entry.delay", Mock(side_effect=tasks.delete_entry))
     @patch(
@@ -346,7 +346,7 @@ class ViewImportExportTest(BaseViewTest):
         ]
         for index, test_params in enumerate(TEST_PARAMS_SET):
             entry = Entry.objects.create(
-                name="test-entry-%d" % index,
+                name=f"test-entry-{index}",
                 schema=entity,
                 created_user=user,
                 is_public=False,
@@ -400,7 +400,7 @@ class ViewImportExportTest(BaseViewTest):
 
         # try to import data which has invalid data structure
         for index in range(3):
-            fp = self.open_fixture_file("invalid_import_data%d.yaml" % index)
+            fp = self.open_fixture_file(f"invalid_import_data{index}.yaml")
             resp = self.client.post(reverse("entry:do_import", args=[entity.id]), {"file": fp})
             fp.close()
             self.assertEqual(resp.status_code, 400)
@@ -408,7 +408,7 @@ class ViewImportExportTest(BaseViewTest):
 
         # invalid data couldn't scan
         for index in range(2):
-            fp = self.open_fixture_file("invalid_import_data_scan%d.yaml" % index)
+            fp = self.open_fixture_file(f"invalid_import_data_scan{index}.yaml")
             resp = self.client.post(reverse("entry:do_import", args=[entity.id]), {"file": fp})
             fp.close()
             self.assertEqual(resp.status_code, 400)
@@ -763,7 +763,7 @@ class ViewImportExportTest(BaseViewTest):
         )
 
         for encoding in ["UTF-8", "Shift-JIS", "EUC-JP"]:
-            fp = self.open_fixture_file("import_data_%s.yaml" % encoding)
+            fp = self.open_fixture_file(f"import_data_{encoding}.yaml")
             resp = self.client.post(reverse("entry:do_import", args=[entity.id]), {"file": fp})
 
             # check the import is success
@@ -912,7 +912,7 @@ class ViewImportExportTest(BaseViewTest):
 
         # check Chomolungma copy job was failed
         copy_job = Job.objects.filter(user=user, operation=JobOperation.COPY_ENTRY).first()
-        self.assertEqual(copy_job.text, "Copy completed [%5d/%5d]" % (3, 3))
+        self.assertEqual(copy_job.text, f"Copy completed [{3:5}/{3:5}]")
         self.assertEqual(copy_job.target.entry, item_src)
         self.assertEqual(copy_job.status, JobStatus.DONE)
 
@@ -972,7 +972,7 @@ class ViewImportExportTest(BaseViewTest):
 
         # checks jobs were created as expected
         copy_job = Job.objects.filter(user=user, operation=JobOperation.COPY_ENTRY).first()
-        self.assertEqual(copy_job.text, "Copy completed [%5d/%5d]" % (3, 3))
+        self.assertEqual(copy_job.text, f"Copy completed [{3:5}/{3:5}]")
         self.assertEqual(copy_job.target.entry, entry)
         self.assertEqual(copy_job.status, JobStatus.DONE)
 
@@ -980,7 +980,7 @@ class ViewImportExportTest(BaseViewTest):
         self.assertEqual(do_copy_jobs.count(), 3)
         for obj in do_copy_jobs.all():
             self.assertTrue(any([obj.target.name == x for x in ["foo", "bar", "baz"]]))
-            self.assertEqual(obj.text, "original entry: %s" % entry.name)
+            self.assertEqual(obj.text, f"original entry: {entry.name}")
             self.assertEqual(obj.target_type, JobTarget.ENTRY)
             self.assertEqual(obj.status, JobStatus.DONE)
             self.assertNotEqual(obj.created_at, obj.updated_at)
@@ -1016,7 +1016,7 @@ class ViewImportExportTest(BaseViewTest):
         # Check expected log was dispatched
         self.assertEqual(
             cm.output[0],
-            ("ERROR:airone:[task.import_entry] Abnormal entry was detected(entry:%d)" % entry.id),
+            f"ERROR:airone:[task.import_entry] Abnormal entry was detected(entry:{entry.id})",
         )
 
         # Check Job processing was ended successfully
@@ -1047,7 +1047,7 @@ class ViewImportExportTest(BaseViewTest):
         self.assertEqual(job.status, JobStatus.ERROR)
         self.assertEqual(
             job.text,
-            "[task.import] [job:%d] Unexpected situation was happened" % job.id,
+            f"[task.import] [job:{job.id}] Unexpected situation was happened",
         )
 
     @patch("entry.tasks.import_entries.delay", Mock(side_effect=tasks.import_entries))

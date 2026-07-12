@@ -17,12 +17,12 @@ class ViewTest(BaseViewTest):
         ref_entries = [
             self.add_entry(
                 self.user,
-                "RefEntry-%s" % i,
+                f"RefEntry-{i}",
                 self.ref_entity,
                 values={
-                    "val": "hoge-%s" % i if i % 2 == 0 else "",
+                    "val": f"hoge-{i}" if i % 2 == 0 else "",
                     "ref": self.ref_entry.id,
-                    "name": {"name": "abcd-%s" % i, "id": self.ref_entry.id},
+                    "name": {"name": f"abcd-{i}", "id": self.ref_entry.id},
                 },
             )
             for i in range(2)
@@ -39,14 +39,14 @@ class ViewTest(BaseViewTest):
         ):
             self.add_entry(
                 self.user,
-                "Entry%s" % index,
+                f"Entry{index}",
                 self.entity,
                 values={
                     "val": val,
                     "ref": ref_id,
                     "name": {"name": "fuga", "id": ref_id},
                     "refs": [r.id for r in refs],
-                    "names": [{"name": "fuga-%s" % index, "id": r.id} for r in refs],
+                    "names": [{"name": f"fuga-{index}", "id": r.id} for r in refs],
                 },
             )
 

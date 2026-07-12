@@ -215,7 +215,7 @@ class ModelElasticsearchTest(BaseModelTest):
                 attr.referral.add(ref_entity)
 
         for index in range(0, ENTRY_COUNTS):
-            entry = Entry.objects.create(name="e-%d" % index, schema=entity, created_user=user)
+            entry = Entry.objects.create(name=f"e-{index}", schema=entity, created_user=user)
             entry.complement_attrs(user)
 
             for attr_name, info in attr_info.items():
@@ -379,7 +379,7 @@ class ModelElasticsearchTest(BaseModelTest):
             entities.append(entity)
             for index in range(0, 2):
                 EntityAttr.objects.create(
-                    name="attr-%s" % index,
+                    name=f"attr-{index}",
                     type=AttrType.STRING,
                     created_user=user,
                     parent_entity=entity,
@@ -545,7 +545,7 @@ class ModelElasticsearchTest(BaseModelTest):
             attr.referral.add(ref_entity)
 
         for i in range(0, 20):
-            entry = Entry.objects.create(name="e%3d" % i, schema=entity, created_user=user)
+            entry = Entry.objects.create(name=f"e{i:3}", schema=entity, created_user=user)
             entry.complement_attrs(user)
 
             if i < 10:
@@ -581,7 +581,7 @@ class ModelElasticsearchTest(BaseModelTest):
 
             # create entries for this entity
             for i in range(0, 5):
-                e = Entry.objects.create(name="entry-%d" % i, created_user=user, schema=entity)
+                e = Entry.objects.create(name=f"entry-{i}", created_user=user, schema=entity)
                 e.register_es()
 
         resp = AdvancedSearchService.search_entries(user, entities, [AttrHint(name="foo")])
@@ -607,11 +607,11 @@ class ModelElasticsearchTest(BaseModelTest):
 
         # register AAA5, AAA0, AAA4, AAA1, AAA3, AAA2 in this order
         for i in range(3):
-            e1 = Entry.objects.create(name="AAA%d" % (5 - i), schema=entity, created_user=user)
+            e1 = Entry.objects.create(name=f"AAA{5 - i}", schema=entity, created_user=user)
             e1.save()
             e1.register_es()
 
-            e2 = Entry.objects.create(name="AAA%d" % i, schema=entity, created_user=user)
+            e2 = Entry.objects.create(name=f"AAA{i}", schema=entity, created_user=user)
             e2.save()
             e2.register_es()
 
@@ -622,7 +622,7 @@ class ModelElasticsearchTest(BaseModelTest):
         self.assertEqual(resp.ret_count, 6)
         # 6 results should be sorted
         for i in range(6):
-            self.assertEqual(resp.ret_values[i].entry["name"], "AAA%d" % i)
+            self.assertEqual(resp.ret_values[i].entry["name"], f"AAA{i}")
 
     def test_search_entries_with_date(self):
         user = User.objects.create(username="hoge")
@@ -642,11 +642,11 @@ class ModelElasticsearchTest(BaseModelTest):
         #   - entry-2  :  2018-02-01
         #   - entry-3  :  2018-03-01
         for month in range(1, 4):
-            entry = Entry.objects.create(name="entry-%d" % month, schema=entity, created_user=user)
+            entry = Entry.objects.create(name=f"entry-{month}", schema=entity, created_user=user)
             entry.complement_attrs(user)
 
             attr = entry.attrs.first()
-            attr.add_value(user, "2018-%02d-01" % month)
+            attr.add_value(user, f"2018-{month:02}-01")
 
             entry.register_es()
 
@@ -888,7 +888,7 @@ class ModelElasticsearchTest(BaseModelTest):
         entry = Entry.objects.create(name="entry", schema=entity, created_user=user)
         entry.complement_attrs(user)
         entry_refs = [
-            Entry.objects.create(name="ref-%d" % i, schema=entity_ref, created_user=user)
+            Entry.objects.create(name=f"ref-{i}", schema=entity_ref, created_user=user)
             for i in range(2)
         ]
 
@@ -970,7 +970,7 @@ class ModelElasticsearchTest(BaseModelTest):
         entry = Entry.objects.create(name="entry", schema=entity, created_user=user)
         entry.complement_attrs(user)
         entry_refs = [
-            Entry.objects.create(name="ref-%d" % i, schema=entity_ref, created_user=user)
+            Entry.objects.create(name=f"ref-{i}", schema=entity_ref, created_user=user)
             for i in range(2)
         ]
 
@@ -1130,7 +1130,7 @@ class ModelElasticsearchTest(BaseModelTest):
         # by setting 'is_delete_in_chain' flag
         ref_entity = Entity.objects.create(name="ReferredEntity", created_user=self._user)
         ref_entries = [
-            Entry.objects.create(name="ref-%d" % i, created_user=self._user, schema=ref_entity)
+            Entry.objects.create(name=f"ref-{i}", created_user=self._user, schema=ref_entity)
             for i in range(3)
         ]
 
@@ -1517,7 +1517,7 @@ class ModelElasticsearchTest(BaseModelTest):
                 attr.referral.add(ref_entity)
 
         for index in range(0, 11):
-            entry = Entry.objects.create(name="e-%d" % index, schema=entity, created_user=user)
+            entry = Entry.objects.create(name=f"e-{index}", schema=entity, created_user=user)
             entry.complement_attrs(user)
 
             for attr_name, info in attr_info.items():
@@ -1680,7 +1680,7 @@ class ModelElasticsearchTest(BaseModelTest):
             )
 
         for i, x in enumerate(attr_info):
-            entry = Entry.objects.create(name="e-%s" % i, schema=entity, created_user=user)
+            entry = Entry.objects.create(name=f"e-{i}", schema=entity, created_user=user)
             entry.complement_attrs(user)
 
             for attr_name, info in x.items():
@@ -1911,7 +1911,7 @@ class ModelElasticsearchTest(BaseModelTest):
         ]
         test_suites = []
         for i, add_char in enumerate(add_chars):
-            entry_name = "test%s%s" % (add_char, i)
+            entry_name = f"test{add_char}{i}"
             entry = Entry.objects.create(name=entry_name, schema=entity, created_user=user)
             entry.register_es()
 
@@ -1967,7 +1967,7 @@ class ModelElasticsearchTest(BaseModelTest):
         for i in range(3):
             entity = self.create_entity(
                 self._user,
-                "Entity%d" % i,
+                f"Entity{i}",
                 [
                     {
                         "name": "test",
@@ -1977,7 +1977,7 @@ class ModelElasticsearchTest(BaseModelTest):
             )
             entities.append(entity.id)
             for num in range(5):
-                self.add_entry(self._user, "Entry%d" % num, entity)
+                self.add_entry(self._user, f"Entry{num}", entity)
 
         ret = AdvancedSearchService.search_entries(
             self._user, [entities[0]], [AttrHint(name="test")], limit=2, offset=2

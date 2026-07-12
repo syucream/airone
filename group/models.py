@@ -45,10 +45,7 @@ class Group(DjangoGroup):
 
         self.is_active = False
         current_name: str = self.name
-        self.name = "%s_deleted_%s" % (
-            current_name,
-            datetime.now().strftime("%Y%m%d_%H%M%S"),
-        )
+        self.name = f"{current_name}_deleted_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
         self.save()
 
         user = auto_complement.get_auto_complement_user(None)
@@ -64,7 +61,7 @@ class Group(DjangoGroup):
 
         job_register_referrals.run()
 
-    def has_permission(self, target_obj: "ACLBase", permission_level: "ACLType") -> bool:
+    def has_permission(self, target_obj: ACLBase, permission_level: ACLType) -> bool:
         """[NOTE]
         This function will be obsoleted, then will be alternated by Role feature
         """
@@ -81,7 +78,7 @@ class Group(DjangoGroup):
             ]
         )
 
-    def get_referred_entries(self, entity_name: str | None = None) -> "QuerySet[Any]":
+    def get_referred_entries(self, entity_name: str | None = None) -> QuerySet[Any]:
         # make query to identify AttributeValue that specify this Group instance
         query = Q(
             Q(

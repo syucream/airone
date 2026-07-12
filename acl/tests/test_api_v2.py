@@ -23,7 +23,7 @@ class ViewTest(AironeViewTest):
 
         acl = ACLBase.objects.create(name="test", created_user=self.user)
 
-        resp = self.client.get("/acl/api/v2/acls/%s" % acl.id)
+        resp = self.client.get(f"/acl/api/v2/acls/{acl.id}")
         self.assertEqual(resp.status_code, 200)
         body = resp.json()
         self.assertEqual(body["id"], acl.id)
@@ -57,7 +57,7 @@ class ViewTest(AironeViewTest):
         entity_attr = entity.attrs.first()
 
         # check response has expected parent parameter
-        resp = self.client.get("/acl/api/v2/acls/%s" % entity_attr.id)
+        resp = self.client.get(f"/acl/api/v2/acls/{entity_attr.id}")
         body = resp.json()
         self.assertEqual(
             body.get("parent"),
@@ -76,7 +76,7 @@ class ViewTest(AironeViewTest):
         entry = self.add_entry(self.user, "entry", entity)
 
         # check response has expected parent parameter
-        resp = self.client.get("/acl/api/v2/acls/%s" % entry.id)
+        resp = self.client.get(f"/acl/api/v2/acls/{entry.id}")
         body = resp.json()
         self.assertEqual(
             body.get("parent"),
@@ -105,7 +105,7 @@ class ViewTest(AironeViewTest):
         attr = entry.attrs.first()
 
         # check response has expected parent parameter
-        resp = self.client.get("/acl/api/v2/acls/%s" % attr.id)
+        resp = self.client.get(f"/acl/api/v2/acls/{attr.id}")
         body = resp.json()
         self.assertEqual(
             body.get("parent"),
@@ -122,7 +122,7 @@ class ViewTest(AironeViewTest):
         acl = ACLBase.objects.create(name="test", created_user=user, is_public=False)
 
         self.guest_login()
-        resp = self.client.get("/acl/api/v2/acls/%s" % acl.id)
+        resp = self.client.get(f"/acl/api/v2/acls/{acl.id}")
         self.assertEqual(resp.status_code, 403)
 
     def test_update(self):
@@ -144,7 +144,7 @@ class ViewTest(AironeViewTest):
             ],
         }
         resp = self.client.put(
-            "/acl/api/v2/acls/%s" % acl.id, json.dumps(param), "application/json;charset=utf-8"
+            f"/acl/api/v2/acls/{acl.id}", json.dumps(param), "application/json;charset=utf-8"
         )
         self.assertEqual(resp.status_code, 200)
         self.assertTrue(acl.is_public, False)
@@ -153,7 +153,7 @@ class ViewTest(AironeViewTest):
 
         param = {"is_public": True}
         resp = self.client.put(
-            "/acl/api/v2/acls/%s" % acl.id, json.dumps(param), "application/json;charset=utf-8"
+            f"/acl/api/v2/acls/{acl.id}", json.dumps(param), "application/json;charset=utf-8"
         )
         self.assertEqual(resp.status_code, 200)
         self.assertTrue(acl.is_public, True)
@@ -162,7 +162,7 @@ class ViewTest(AironeViewTest):
 
         param = {"default_permission": ACLType.Full.id}
         resp = self.client.put(
-            "/acl/api/v2/acls/%s" % acl.id, json.dumps(param), "application/json;charset=utf-8"
+            f"/acl/api/v2/acls/{acl.id}", json.dumps(param), "application/json;charset=utf-8"
         )
         self.assertEqual(resp.status_code, 200)
         self.assertTrue(acl.is_public, True)
@@ -178,7 +178,7 @@ class ViewTest(AironeViewTest):
             ],
         }
         resp = self.client.put(
-            "/acl/api/v2/acls/%s" % acl.id, json.dumps(param), "application/json;charset=utf-8"
+            f"/acl/api/v2/acls/{acl.id}", json.dumps(param), "application/json;charset=utf-8"
         )
         self.assertEqual(resp.status_code, 200)
         self.assertTrue(acl.is_public, True)
@@ -193,7 +193,7 @@ class ViewTest(AironeViewTest):
 
         # send request to update ACL of Role that is not permitted to be edited
         resp = self.client.put(
-            "/acl/api/v2/acls/%s" % acl.id,
+            f"/acl/api/v2/acls/{acl.id}",
             json.dumps(
                 {
                     "is_public": False,
@@ -220,7 +220,7 @@ class ViewTest(AironeViewTest):
         acl.full.roles.add(role)
 
         resp = self.client.put(
-            "/acl/api/v2/acls/%s" % acl.id,
+            f"/acl/api/v2/acls/{acl.id}",
             json.dumps(
                 {
                     "is_public": False,
@@ -244,11 +244,11 @@ class ViewTest(AironeViewTest):
             },
         )
 
-        resp = self.client.put("/acl/api/v2/acls/%s" % acl.id, {}, "application/json;charset=utf-8")
+        resp = self.client.put(f"/acl/api/v2/acls/{acl.id}", {}, "application/json;charset=utf-8")
         self.assertEqual(resp.status_code, 200)
 
         resp = self.client.put(
-            "/acl/api/v2/acls/%s" % acl.id,
+            f"/acl/api/v2/acls/{acl.id}",
             json.dumps({"is_public": False}),
             "application/json;charset=utf-8",
         )
@@ -257,7 +257,7 @@ class ViewTest(AironeViewTest):
         self.assertEqual(acl.is_public, False)
 
         resp = self.client.put(
-            "/acl/api/v2/acls/%s" % acl.id,
+            f"/acl/api/v2/acls/{acl.id}",
             json.dumps({"is_public": True}),
             "application/json;charset=utf-8",
         )
@@ -266,7 +266,7 @@ class ViewTest(AironeViewTest):
         self.assertEqual(acl.is_public, True)
 
         resp = self.client.put(
-            "/acl/api/v2/acls/%s" % acl.id,
+            f"/acl/api/v2/acls/{acl.id}",
             json.dumps({"default_permission": str(ACLType.Nothing.id)}),
             "application/json;charset=utf-8",
         )
@@ -275,7 +275,7 @@ class ViewTest(AironeViewTest):
         self.assertEqual(acl.default_permission, ACLType.Nothing)
 
         resp = self.client.put(
-            "/acl/api/v2/acls/%s" % acl.id,
+            f"/acl/api/v2/acls/{acl.id}",
             json.dumps({"default_permission": str(ACLType.Full.id)}),
             "application/json;charset=utf-8",
         )
@@ -284,7 +284,7 @@ class ViewTest(AironeViewTest):
         self.assertEqual(acl.default_permission, ACLType.Full)
 
         resp = self.client.put(
-            "/acl/api/v2/acls/%s" % acl.id,
+            f"/acl/api/v2/acls/{acl.id}",
             json.dumps(
                 {
                     "acl_settings": [
@@ -301,7 +301,7 @@ class ViewTest(AironeViewTest):
         self.assertEqual(acl.full.roles.filter(id=role.id).exists(), False)
 
         resp = self.client.put(
-            "/acl/api/v2/acls/%s" % acl.id,
+            f"/acl/api/v2/acls/{acl.id}",
             json.dumps(
                 {
                     "acl_settings": [
@@ -322,7 +322,7 @@ class ViewTest(AironeViewTest):
         acl.full.roles.remove(role)
 
         resp = self.client.put(
-            "/acl/api/v2/acls/%s" % acl.id,
+            f"/acl/api/v2/acls/{acl.id}",
             json.dumps({"is_public": False}),
             "application/json;charset=utf-8",
         )
@@ -333,7 +333,7 @@ class ViewTest(AironeViewTest):
         acl.save()
 
         resp = self.client.put(
-            "/acl/api/v2/acls/%s" % acl.id,
+            f"/acl/api/v2/acls/{acl.id}",
             json.dumps({"default_permission": str(ACLType.Nothing.id)}),
             "application/json;charset=utf-8",
         )
@@ -344,7 +344,7 @@ class ViewTest(AironeViewTest):
         acl.full.roles.add(role)
 
         resp = self.client.put(
-            "/acl/api/v2/acls/%s" % acl.id,
+            f"/acl/api/v2/acls/{acl.id}",
             json.dumps(
                 {
                     "acl_settings": [
@@ -367,7 +367,7 @@ class ViewTest(AironeViewTest):
         acl.full.roles.add(role2)
 
         resp = self.client.put(
-            "/acl/api/v2/acls/%s" % acl.id,
+            f"/acl/api/v2/acls/{acl.id}",
             json.dumps(
                 {
                     "is_public": False,
@@ -387,13 +387,13 @@ class ViewTest(AironeViewTest):
         user = self.guest_login()
         acl = ACLBase.objects.create(name="test", created_user=user)
 
-        roles = [Role.objects.create(name="role-%d" % i) for i in range(2)]
+        roles = [Role.objects.create(name=f"role-{i}") for i in range(2)]
         for role in roles:
             role.admin_users.add(user)
             acl.full.roles.add(role)
 
         resp = self.client.put(
-            "/acl/api/v2/acls/%s" % acl.id,
+            f"/acl/api/v2/acls/{acl.id}",
             json.dumps(
                 {
                     "is_public": False,
@@ -418,7 +418,7 @@ class ViewTest(AironeViewTest):
 
         def _put_acl():
             return self.client.put(
-                "/acl/api/v2/acls/%s" % acl.id,
+                f"/acl/api/v2/acls/{acl.id}",
                 json.dumps(
                     {
                         "is_public": True,
@@ -486,7 +486,7 @@ class ViewTest(AironeViewTest):
         entity = Entity.objects.get(name="test", is_active=True)
         history = entity.history.first()
 
-        resp = self.client.get("/acl/api/v2/acls/%s/history" % entity.id)
+        resp = self.client.get(f"/acl/api/v2/acls/{entity.id}/history")
         self.assertEqual(resp.status_code, 200)
 
         # initial values should be recorded
@@ -515,7 +515,7 @@ class ViewTest(AironeViewTest):
         entity.default_permission = ACLType.Readable.id
         entity.save()
 
-        resp = self.client.get("/acl/api/v2/acls/%s/history" % entity.id)
+        resp = self.client.get(f"/acl/api/v2/acls/{entity.id}/history")
         self.assertEqual(resp.status_code, 200)
 
         # 2 changed values should be recorded
@@ -551,10 +551,10 @@ class ViewTest(AironeViewTest):
                 },
             ],
         }
-        self.client.put("/acl/api/v2/acls/%d" % entity.id, json.dumps(param), "application/json")
+        self.client.put(f"/acl/api/v2/acls/{entity.id}", json.dumps(param), "application/json")
         history = entity.writable.history.first()
 
-        resp = self.client.get("/acl/api/v2/acls/%s/history" % entity.id)
+        resp = self.client.get(f"/acl/api/v2/acls/{entity.id}/history")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(len(resp.json()), 2)
         self.assertEqual(
@@ -582,9 +582,9 @@ class ViewTest(AironeViewTest):
                 },
             ],
         }
-        self.client.put("/acl/api/v2/acls/%d" % entity.id, json.dumps(param), "application/json")
+        self.client.put(f"/acl/api/v2/acls/{entity.id}", json.dumps(param), "application/json")
 
-        resp = self.client.get("/acl/api/v2/acls/%s/history" % entity.id)
+        resp = self.client.get(f"/acl/api/v2/acls/{entity.id}/history")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(len(resp.json()), 3)
         self.assertEqual(
@@ -621,7 +621,7 @@ class ViewTest(AironeViewTest):
         entity_attr: EntityAttr = entity.attrs.get(name="string", is_active=True)
         entity_attr.writable.roles.add(self.role)
 
-        resp = self.client.get("/acl/api/v2/acls/%s/history" % entity.id)
+        resp = self.client.get(f"/acl/api/v2/acls/{entity.id}/history")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(len(resp.json()), 3)
         self.assertEqual([h["name"] for h in resp.json()], ["string", "string", "test"])

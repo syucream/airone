@@ -52,7 +52,7 @@ class ViewTest(AironeViewTest):
         user = self.guest_login()
 
         # create test entities
-        [Entity.objects.create(name="e-%d" % i, created_user=user) for i in range(5)]
+        [Entity.objects.create(name=f"e-{i}", created_user=user) for i in range(5)]
 
         # send a request to get entities with page parameter and check returned context
         resp = self.client.get("/entity/?page=1")
@@ -1353,7 +1353,7 @@ class ViewTest(AironeViewTest):
         # make entities/entries associated with "entity"
         ref_entity = Entity.objects.create(name="ref_entity", created_user=user)
         ref_entries = [
-            Entry.objects.create(name="ref_entry-%d" % i, schema=ref_entity, created_user=user)
+            Entry.objects.create(name=f"ref_entry-{i}", schema=ref_entity, created_user=user)
             for i in range(0, CONFIG.DASHBOARD_NUM_ITEMS + 3)
         ]
 
@@ -1368,7 +1368,7 @@ class ViewTest(AironeViewTest):
 
         # create entries
         for i in range(0, CONFIG.DASHBOARD_NUM_ITEMS + 2):
-            entry = Entry.objects.create(name="entry-%d" % i, schema=entity, created_user=user)
+            entry = Entry.objects.create(name=f"entry-{i}", schema=entity, created_user=user)
             entry.complement_attrs(user)
 
             if i < CONFIG.DASHBOARD_NUM_ITEMS + 1:
@@ -1390,7 +1390,7 @@ class ViewTest(AironeViewTest):
             self.assertEqual(ret_info["no_referral_count"], 1)
             self.assertEqual(
                 ret_info["no_referral_ratio"],
-                "%2.1f" % (100 / resp.context["total_entry_count"]),
+                f"{100 / resp.context['total_entry_count']:2.1f}",
             )
             self.assertTrue(
                 any(
@@ -1410,9 +1410,7 @@ class ViewTest(AironeViewTest):
         entry1.save(update_fields=["is_active"])
 
         # delete no referral entry
-        Entry.objects.get(
-            name="entry-%d" % (CONFIG.DASHBOARD_NUM_ITEMS + 1), schema=entity
-        ).delete()
+        Entry.objects.get(name=f"entry-{CONFIG.DASHBOARD_NUM_ITEMS + 1}", schema=entity).delete()
 
         resp = self.client.get(reverse("entity:dashboard", args=[entity.id]))
         self.assertEqual(resp.status_code, 200)
@@ -1421,7 +1419,7 @@ class ViewTest(AironeViewTest):
             self.assertEqual(len(ret_info["referral_count"]), CONFIG.DASHBOARD_NUM_ITEMS - 1)
             self.assertEqual(ret_info["no_referral_count"], 0)
 
-            for no_referral in ["ref_entry-%d" % i for i in range(0, 2)]:
+            for no_referral in [f"ref_entry-{i}" for i in range(0, 2)]:
                 self.assertFalse(
                     any([x["referral"] == no_referral for x in ret_info["referral_count"]])
                 )

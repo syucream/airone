@@ -82,22 +82,22 @@ class ViewTest(BaseViewTest):
 
         # test value attribute
         for x in range(1, 3):
-            resp = self.client.get("/entry/api/v2/search/?query=hoge%s" % x)
+            resp = self.client.get(f"/entry/api/v2/search/?query=hoge{x}")
             self.assertEqual(resp.status_code, 200)
             resp_data = resp.json()
             self.assertEqual(len(resp_data), 1)
-            entry: Entry = Entry.objects.get(name="entry%s" % x)
+            entry: Entry = Entry.objects.get(name=f"entry{x}")
             self.assertEqual(resp_data[0]["id"], entry.id)
             self.assertEqual(resp_data[0]["name"], entry.name)
 
         # test object attribute
         for x in range(4, 4):
-            resp = self.client.get("/entry/api/v2/search/?query=hoge%s" % x)
+            resp = self.client.get(f"/entry/api/v2/search/?query=hoge{x}")
             self.assertEqual(resp.status_code, 200)
             resp_data = resp.json()
             self.assertEqual(len(resp_data), 2)
-            ref_entry: Entry = Entry.objects.get(name="hoge%s" % x)
-            entry: Entry = Entry.objects.get(name="entry%s" % x)
+            ref_entry: Entry = Entry.objects.get(name=f"hoge{x}")
+            entry: Entry = Entry.objects.get(name=f"entry{x}")
             self.assertEqual(resp_data[0]["id"], ref_entry.id)
             self.assertEqual(resp_data[0]["name"], ref_entry.name)
             self.assertEqual(resp_data[1]["id"], entry.id)
@@ -105,11 +105,11 @@ class ViewTest(BaseViewTest):
 
         # test named_object attribute
         for x in range(6, 2):
-            resp = self.client.get("/entry/api/v2/search/?query=index%s" % x)
+            resp = self.client.get(f"/entry/api/v2/search/?query=index{x}")
             self.assertEqual(resp.status_code, 200)
             resp_data = resp.json()
             self.assertEqual(len(resp_data), 1)
-            entry: Entry = Entry.objects.get(name="entry%s" % x)
+            entry: Entry = Entry.objects.get(name=f"entry{x}")
             self.assertEqual(resp_data[0]["id"], entry.id)
             self.assertEqual(resp_data[0]["name"], entry.name)
 
@@ -210,7 +210,7 @@ class ViewTest(BaseViewTest):
         self.ref_entry.delete()
 
         for query in ["entry1", "hoge", "ref_entry"]:
-            resp = self.client.get("/entry/api/v2/search/?query=%s" % query)
+            resp = self.client.get(f"/entry/api/v2/search/?query={query}")
             self.assertEqual(resp.status_code, 200)
             resp_data = resp.json()
             self.assertEqual(len(resp_data), 0)
@@ -253,7 +253,7 @@ class ViewTest(BaseViewTest):
         # delete EntityAttr, then check it won't be returned in response
         self.entity.attrs.get(name="val", is_active=True).delete()
 
-        resp = self.client.get("/entry/api/v2/%d/" % entry.id)
+        resp = self.client.get(f"/entry/api/v2/{entry.id}/")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(
             sorted([attr["schema"]["name"] for attr in resp.json()["attrs"]]),
@@ -288,7 +288,7 @@ class ViewTest(BaseViewTest):
             },
         )
 
-        resp = self.client.get("/entry/api/v2/%s/referral/" % self.ref_entry.id)
+        resp = self.client.get(f"/entry/api/v2/{self.ref_entry.id}/referral/")
         self.assertEqual(resp.status_code, 200)
 
         resp_data = resp.json()
@@ -315,7 +315,7 @@ class ViewTest(BaseViewTest):
         )
 
     def test_referral_unrelated_to_entry(self):
-        resp = self.client.get("/entry/api/v2/%s/referral/" % 99999)  # invalid entry id
+        resp = self.client.get(f"/entry/api/v2/{99999}/referral/")  # invalid entry id
         self.assertEqual(resp.status_code, 200)
 
         resp_data = resp.json()
@@ -334,7 +334,7 @@ class ViewTest(BaseViewTest):
 
         # test to get groups through API calling of get_attr_referrals
         for attr in entity.attrs.all():
-            resp = self.client.get("/entry/api/v2/%d/attr_referrals/" % attr.id)
+            resp = self.client.get(f"/entry/api/v2/{attr.id}/attr_referrals/")
             self.assertEqual(resp.status_code, 200)
 
             # This expects results has all role information.
@@ -364,7 +364,7 @@ class ViewTest(BaseViewTest):
 
         # test to get groups through API calling of get_attr_referrals
         for attr in entity.attrs.all():
-            resp = self.client.get("/entry/api/v2/%d/attr_referrals/" % attr.id)
+            resp = self.client.get(f"/entry/api/v2/{attr.id}/attr_referrals/")
             self.assertEqual(resp.status_code, 200)
 
             # This expects results has all groups information.
@@ -379,7 +379,7 @@ class ViewTest(BaseViewTest):
         # test to get groups which are only active and matched with keyword
         groups[2].delete()
         for attr in entity.attrs.all():
-            resp = self.client.get("/entry/api/v2/%d/attr_referrals/" % attr.id, {"keyword": "ba"})
+            resp = self.client.get(f"/entry/api/v2/{attr.id}/attr_referrals/", {"keyword": "ba"})
             self.assertEqual(resp.status_code, 200)
 
             # This expects results has only information of 'g-bar' because 'g-foo' is
@@ -405,7 +405,7 @@ class ViewTest(BaseViewTest):
         entity_attr.referral.add(ref_entity)
 
         for index in range(CONFIG.MAX_LIST_REFERRALS, -1, -1):
-            Entry.objects.create(name="e-%s" % index, schema=ref_entity, created_user=admin)
+            Entry.objects.create(name=f"e-{index}", schema=ref_entity, created_user=admin)
 
         entry = Entry.objects.create(name="entry", schema=entity, created_user=admin)
 
@@ -414,7 +414,7 @@ class ViewTest(BaseViewTest):
         attr = entry.attrs.get(name="Refer")
 
         # try to get entries without keyword
-        resp = self.client.get("/entry/api/v2/%d/attr_referrals/" % attr.id)
+        resp = self.client.get(f"/entry/api/v2/{attr.id}/attr_referrals/")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(len(resp.json()), CONFIG.MAX_LIST_REFERRALS)
 
@@ -428,11 +428,11 @@ class ViewTest(BaseViewTest):
             )
             + 1
         )
-        resp = self.client.get("/entry/api/v2/%d/attr_referrals/" % invalid_attr_id)
+        resp = self.client.get(f"/entry/api/v2/{invalid_attr_id}/attr_referrals/")
         self.assertEqual(resp.status_code, 404)
 
         # speify valid Attribute ID and a enalbed keyword
-        resp = self.client.get("/entry/api/v2/%d/attr_referrals/" % attr.id, {"keyword": "e-1"})
+        resp = self.client.get(f"/entry/api/v2/{attr.id}/attr_referrals/", {"keyword": "e-1"})
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp["Content-Type"], "application/json")
 
@@ -440,16 +440,16 @@ class ViewTest(BaseViewTest):
         self.assertEqual(len(resp.json()), 11)
 
         # speify valid Attribute ID and a unabailabe keyword
-        resp = self.client.get("/entry/api/v2/%d/attr_referrals/" % attr.id, {"keyword": "hoge"})
+        resp = self.client.get(f"/entry/api/v2/{attr.id}/attr_referrals/", {"keyword": "hoge"})
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(len(resp.json()), 0)
 
         # Add new data
         for index in [101, 111, 100, 110]:
-            Entry.objects.create(name="e-%s" % index, schema=ref_entity, created_user=admin)
+            Entry.objects.create(name=f"e-{index}", schema=ref_entity, created_user=admin)
 
         # Run with 'e-1' as keyword
-        resp = self.client.get("/entry/api/v2/%d/attr_referrals/" % attr.id, {"keyword": "e-1"})
+        resp = self.client.get(f"/entry/api/v2/{attr.id}/attr_referrals/", {"keyword": "e-1"})
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp["Content-Type"], "application/json")
 
@@ -465,7 +465,7 @@ class ViewTest(BaseViewTest):
         # send request with keywords that hit more than MAX_LIST_REFERRALS
         Entry.objects.create(name="e", schema=ref_entity, created_user=admin)
 
-        resp = self.client.get("/entry/api/v2/%d/attr_referrals/" % attr.id, {"keyword": "e"})
+        resp = self.client.get(f"/entry/api/v2/{attr.id}/attr_referrals/", {"keyword": "e"})
         self.assertEqual(resp.status_code, 200)
 
         self.assertEqual(resp.json()[0]["name"], "e")
@@ -481,7 +481,7 @@ class ViewTest(BaseViewTest):
         # create Entity&Entries
         ref_entity = Entity.objects.create(name="Referred Entity", created_user=admin)
         for index in range(0, CONFIG.MAX_LIST_REFERRALS + 1):
-            Entry.objects.create(name="e-%s" % index, schema=ref_entity, created_user=admin)
+            Entry.objects.create(name=f"e-{index}", schema=ref_entity, created_user=admin)
 
         entity = Entity.objects.create(name="Entity", created_user=admin)
         entity_attr = EntityAttr.objects.create(
@@ -495,7 +495,7 @@ class ViewTest(BaseViewTest):
         entity_attr.referral.add(ref_entity)
 
         resp = self.client.get(
-            "/entry/api/v2/%d/attr_referrals/" % entity_attr.id, {"keyword": "e-1"}
+            f"/entry/api/v2/{entity_attr.id}/attr_referrals/", {"keyword": "e-1"}
         )
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp["Content-Type"], "application/json")
@@ -1075,13 +1075,13 @@ class ViewTest(BaseViewTest):
         #   * [hoge] item1 --> ref0
         #   * [fuga] item2 --> ref0
         #   * [fuga] item3 --> ref1  (note: referring item is different)
-        item_refs = [self.add_entry(self.user, "ref%d" % i, self.ref_entity) for i in range(2)]
+        item_refs = [self.add_entry(self.user, f"ref{i}", self.ref_entity) for i in range(2)]
         for item_index, (prefix, ref_index) in enumerate(
             [("hoge", 0), ("hoge", 0), ("fuga", 0), ("fuga", 1)]
         ):
             self.add_entry(
                 self.user,
-                "[%s] item%d" % (prefix, item_index),
+                f"[{prefix}] item{item_index}",
                 self.entity,
                 values={
                     "ref": item_refs[ref_index],

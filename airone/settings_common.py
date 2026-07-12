@@ -304,7 +304,7 @@ class Common(Configuration):
 
     try:
         proc = subprocess.Popen(
-            "cd %s && git tag --points-at | grep -v pagoda-core- | head -1" % BASE_DIR,
+            f"cd {BASE_DIR} && git tag --points-at | grep -v pagoda-core- | head -1",
             shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,

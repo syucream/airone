@@ -1,5 +1,4 @@
-from collections.abc import Sequence
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from django.contrib import admin
 from import_export import fields, widgets
@@ -13,6 +12,9 @@ from entity.models import Entity, EntityAttr
 from user.models import User
 
 from .models import Attribute, AttributeValue, Entry
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 admin.site.register(Entry)
 admin.site.register(Attribute)
@@ -204,7 +206,7 @@ class EntryResource(AironeModelResource):
     def import_instance(self, instance: Entry, row: dict[str, Any], **kwargs: Any) -> None:
         # will not import entry which refers invalid entity
         if not Entity.objects.filter(name=row["entity"]).exists():
-            raise RuntimeError("Specified entity(%s) doesn't exist" % row["entity"])
+            raise RuntimeError(f"Specified entity({row['entity']}) doesn't exist")
 
         # will not import entry which has same name and refers same entity
         entity = Entity.objects.get(name=row["entity"])

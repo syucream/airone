@@ -31,7 +31,7 @@ class APITest(AironeViewTest):
         another_item.add_alias("hoge")
 
         # send request to list aliases
-        resp = self.client.get("/entity/api/v2/%d/entries/?is_active=true" % self.model.id)
+        resp = self.client.get(f"/entity/api/v2/{self.model.id}/entries/?is_active=true")
         self.assertEqual(resp.status_code, 200)
 
         # check this returned only Aliases that are associated with self.item
@@ -52,7 +52,7 @@ class APITest(AironeViewTest):
         another_item.add_alias("hoge")
 
         # send request to list aliases
-        resp = self.client.get("/entry/api/v2/%d/alias/" % self.item.id)
+        resp = self.client.get(f"/entry/api/v2/{self.item.id}/alias/")
         self.assertEqual(resp.status_code, 200)
 
         # check this returned only Aliases that are associated with self.item
@@ -126,7 +126,7 @@ class APITest(AironeViewTest):
         alias = self.item.add_alias("Deleting Alias")
 
         # send request to list aliases
-        resp = self.client.delete("/entry/api/v2/alias/%s" % alias.id, None, "application/json")
+        resp = self.client.delete(f"/entry/api/v2/alias/{alias.id}", None, "application/json")
         self.assertEqual(resp.status_code, 204)
 
         # check specified Alias was deleted actually

@@ -1,6 +1,5 @@
-from typing import Self
+from typing import TYPE_CHECKING, Self
 
-from celery import Task
 from pydantic import BaseModel, Field, ValidationError, field_validator, model_validator
 
 from airone.celery import app
@@ -12,6 +11,9 @@ from entity.api_v2.serializers import EntityCreateSerializer, EntityUpdateSerial
 from entity.models import Entity, EntityAttr
 from job.models import Job, JobOperation, JobStatus
 from user.models import History, User
+
+if TYPE_CHECKING:
+    from celery import Task
 
 # ============================================================================
 # Pydantic Models for Job Parameters
@@ -354,7 +356,7 @@ def edit_entity(self: Task, job: Job) -> JobStatus:
     # register history to modify Entity
     history = user.seth_entity_mod(entity)
     if entity.name != params.name:
-        history.mod_entity(entity, 'old name: "%s"' % (entity.name))
+        history.mod_entity(entity, f'old name: "{entity.name}"')
 
     if entity.name != params.name:
         entity.name = params.name
@@ -385,7 +387,7 @@ def edit_entity(self: Task, job: Job) -> JobStatus:
 
             # register operaion history if the parameters are changed
             if attr_obj.name != attr.name:
-                history.mod_attr(attr_obj, 'old name: "%s"' % (attr_obj.name))
+                history.mod_attr(attr_obj, f'old name: "{attr_obj.name}"')
 
             if attr_obj.is_mandatory != attr.is_mandatory:
                 if attr.is_mandatory:

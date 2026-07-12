@@ -118,7 +118,7 @@ class ViewTest(AironeViewTest):
         resp = self.send_set_request(attrbase, self._role)
 
         self.assertEqual(resp.status_code, 200)
-        self.assertEqual(resp.json()["redirect_url"], "/entity/edit/%s" % entity.id)
+        self.assertEqual(resp.json()["redirect_url"], f"/entity/edit/{entity.id}")
         self.assertEqual(self._role.permissions.last(), attrbase.writable)
         self.assertFalse(EntityAttr.objects.get(id=attrbase.id).is_public)
 
@@ -146,7 +146,7 @@ class ViewTest(AironeViewTest):
         resp = self.send_set_request(attr, self._role)
 
         self.assertEqual(resp.status_code, 200)
-        self.assertEqual(resp.json()["redirect_url"], "/entry/edit/%s" % entry.id)
+        self.assertEqual(resp.json()["redirect_url"], f"/entry/edit/{entry.id}")
         self.assertEqual(self._role.permissions.last(), attr.writable)
         self.assertFalse(Attribute.objects.get(id=attr.id).is_public)
         search_result = self._es.search(body={"query": {"term": {"name": entry.name}}})
@@ -160,7 +160,7 @@ class ViewTest(AironeViewTest):
         resp = self.send_set_request(entry, self._role)
 
         self.assertEqual(resp.status_code, 200)
-        self.assertEqual(resp.json()["redirect_url"], "/entry/show/%s" % entry.id)
+        self.assertEqual(resp.json()["redirect_url"], f"/entry/show/{entry.id}")
         self.assertEqual(self._role.permissions.last(), entry.writable)
         self.assertFalse(Entry.objects.get(id=entry.id).is_public)
         search_result = self._es.search(body={"query": {"term": {"name": entry.name}}})

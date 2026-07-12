@@ -19,7 +19,7 @@ class ViewTest(AironeViewTest):
             "members": ["1", 2, "cat ../../../../../../../etc/os-release"],
         }
         resp = self.client.put(
-            "/group/api/v2/groups/%s" % group.id, json.dumps(update_params), "application/json"
+            f"/group/api/v2/groups/{group.id}", json.dumps(update_params), "application/json"
         )
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(

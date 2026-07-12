@@ -104,13 +104,13 @@ class RoleCreateUpdateSerializer(serializers.ModelSerializer):
         )
         if duplicate_user_names:
             raise RequiredParameterError(
-                "following users are duplicated: %s" % ", ".join(duplicate_user_names)
+                f"following users are duplicated: {', '.join(duplicate_user_names)}"
             )
 
         duplicate_group_names = set([x.name for x in groups]) & set([x.name for x in admin_groups])
         if duplicate_group_names:
             raise RequiredParameterError(
-                "following groups are duplicated: %s" % ", ".join(duplicate_group_names)
+                f"following groups are duplicated: {', '.join(duplicate_group_names)}"
             )
 
         return role

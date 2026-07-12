@@ -40,7 +40,7 @@ class EntityResource(AironeModelResource):
         if Entity.objects.filter(name=row["name"]).exists():
             entity = Entity.objects.filter(name=row["name"]).get()
             if "id" not in row or not row["id"] or entity.id != row["id"]:
-                raise RuntimeError("There is a duplicate entity object (%s)" % row["name"])
+                raise RuntimeError(f"There is a duplicate entity object ({row['name']})")
 
         # Set event handler for custom-view. When it returns not None, then it abort to import.
         if custom_view.is_custom("import_entity"):

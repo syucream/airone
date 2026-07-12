@@ -165,14 +165,12 @@ class ACLSerializer(serializers.ModelSerializer):
         obj.save()
 
         permissions = {
-            "full": HistoricalPermission.objects.get(
-                codename="%s.%d" % (instance.id, ACLType.Full.id)
-            ),
+            "full": HistoricalPermission.objects.get(codename=f"{instance.id}.{ACLType.Full.id}"),
             "writable": HistoricalPermission.objects.get(
-                codename="%s.%d" % (instance.id, ACLType.Writable.id)
+                codename=f"{instance.id}.{ACLType.Writable.id}"
             ),
             "readable": HistoricalPermission.objects.get(
-                codename="%s.%d" % (instance.id, ACLType.Readable.id)
+                codename=f"{instance.id}.{ACLType.Readable.id}"
             ),
         }
 
@@ -210,7 +208,7 @@ class ACLSerializer(serializers.ModelSerializer):
     ) -> None:
         # clear unset permissions of target ACLbased object
         permission: HistoricalPermission
-        for permission in role.permissions.filter(codename__startswith="%s." % acl_obj.id):
+        for permission in role.permissions.filter(codename__startswith=f"{acl_obj.id}."):
             if acl_type == ACLType.Nothing:
                 permission.roles.remove(role)
             if acl_type.name != permission.name:

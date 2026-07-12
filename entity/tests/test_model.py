@@ -321,7 +321,7 @@ class ModelTest(TestCase):
     def test_add_referral(self):
         # create Entities to be referred by test EntityAttr
         ref_entities = [
-            Entity.objects.create(name="r-%d" % i, created_user=self._test_user) for i in range(3)
+            Entity.objects.create(name=f"r-{i}", created_user=self._test_user) for i in range(3)
         ]
 
         # create EntityAttr for test
@@ -384,7 +384,7 @@ class ModelTest(TestCase):
 
         for i in range(max_attributes_per_entity):
             EntityAttr.objects.create(
-                name="entity_attr-%d" % i,
+                name=f"entity_attr-{i}",
                 type=AttrType.STRING,
                 created_user=self._test_user,
                 parent_entity=entity,
@@ -394,7 +394,7 @@ class ModelTest(TestCase):
         settings.MAX_ATTRIBUTES_PER_ENTITY = max_attributes_per_entity
         with self.assertRaises(RuntimeError):
             EntityAttr.objects.create(
-                name="entity_attr-%d" % max_attributes_per_entity,
+                name=f"entity_attr-{max_attributes_per_entity}",
                 type=AttrType.STRING,
                 created_user=self._test_user,
                 parent_entity=entity,
@@ -403,7 +403,7 @@ class ModelTest(TestCase):
         # if the limit is not set, RuntimeError should not be raised
         settings.MAX_ATTRIBUTES_PER_ENTITY = None
         EntityAttr.objects.create(
-            name="entity_attr-%d" % max_attributes_per_entity,
+            name=f"entity_attr-{max_attributes_per_entity}",
             type=AttrType.STRING,
             created_user=self._test_user,
             parent_entity=entity,
@@ -411,11 +411,10 @@ class ModelTest(TestCase):
 
     def test_category(self):
         models = [
-            Entity.objects.create(name="Model-%d" % n, created_user=self._test_user)
-            for n in range(3)
+            Entity.objects.create(name=f"Model-{n}", created_user=self._test_user) for n in range(3)
         ]
         categories = [
-            Category.objects.create(name="Category-%d" % n, created_user=self._test_user)
+            Category.objects.create(name=f"Category-{n}", created_user=self._test_user)
             for n in range(3)
         ]
 

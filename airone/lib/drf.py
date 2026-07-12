@@ -1,6 +1,5 @@
 from collections import OrderedDict
-from collections.abc import Mapping
-from typing import IO, Any, cast
+from typing import IO, TYPE_CHECKING, Any, cast
 
 import yaml
 from django.conf import settings
@@ -8,13 +7,18 @@ from rest_framework import serializers
 from rest_framework.exceptions import APIException, ParseError, ValidationError
 from rest_framework.parsers import BaseParser
 from rest_framework.renderers import BaseRenderer
-from rest_framework.response import Response
 from rest_framework.utils.serializer_helpers import ReturnDict, ReturnList
 from rest_framework.views import exception_handler
 from yaml import SafeDumper
 
 from airone.lib.log import Logger
-from user.models import User
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
+
+    from rest_framework.response import Response
+
+    from user.models import User
 
 SafeDumper.add_representer(OrderedDict, yaml.representer.SafeRepresenter.represent_dict)
 SafeDumper.add_representer(ReturnDict, yaml.representer.SafeRepresenter.represent_dict)
@@ -44,7 +48,7 @@ class YAMLParser(BaseParser):
             data = stream.read().decode(encoding)
             return cast("dict[str, object]", yaml.safe_load(data))
         except (ValueError, yaml.parser.ParserError, yaml.scanner.ScannerError) as exc:
-            raise ParseError("YAML parse error - %s" % str(exc))
+            raise ParseError(f"YAML parse error - {exc}")
 
 
 class YAMLRenderer(BaseRenderer):
@@ -144,7 +148,7 @@ def custom_exception_handler(exc: Exception, context: dict[str, Any]) -> Respons
         airone_error_code = error_code.get(detail["code"])
         if not airone_error_code:
             airone_error_code = "AE-999999"  # unknown error
-            Logger.warning("unknown error(%s) has occurred" % detail)
+            Logger.warning(f"unknown error({detail}) has occurred")
 
         detail["code"] = airone_error_code
         return detail

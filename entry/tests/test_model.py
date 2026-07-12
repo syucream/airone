@@ -392,7 +392,7 @@ class ModelTest(BaseModelTest):
         r_entries = []
         for i in range(0, 3):
             r_entry = Entry.objects.create(
-                name="r_%d" % i, created_user=self._user, schema=ref_entity
+                name=f"r_{i}", created_user=self._user, schema=ref_entity
             )
             r_entries.append({"id": r_entry.id})
 
@@ -444,7 +444,7 @@ class ModelTest(BaseModelTest):
             self._user,
             [
                 {
-                    "name": "key_%d" % x,
+                    "name": f"key_{x}",
                     "id": r_entries[x]["id"],
                 }
                 for x in range(0, 3)
@@ -634,7 +634,7 @@ class ModelTest(BaseModelTest):
         self.assertIsInstance(
             latest_value,
             int,
-            "NUMBER attr with integer input should keep int type, got %r" % latest_value,
+            f"NUMBER attr with integer input should keep int type, got {latest_value!r}",
         )
         self.assertNotIsInstance(latest_value, float)
 

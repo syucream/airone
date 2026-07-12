@@ -69,7 +69,7 @@ class ViewTest(BaseViewTest):
         )
 
         resp = self.client.post(
-            "/entry/api/v2/%d/export/" % entity.id,
+            f"/entry/api/v2/{entity.id}/export/",
             json.dumps({}),
             "application/json",
         )
@@ -103,7 +103,7 @@ class ViewTest(BaseViewTest):
         self.assertTrue(all([x["value"] in ["hoge", "fuga"] for x in attrs_data]))
 
         resp = self.client.post(
-            "/entry/api/v2/%d/export/" % entity.id,
+            f"/entry/api/v2/{entity.id}/export/",
             json.dumps({"format": "CSV"}),
             "application/json",
         )
@@ -131,7 +131,7 @@ class ViewTest(BaseViewTest):
         self.guest_login("guest2")
 
         resp = self.client.post(
-            "/entry/api/v2/%d/export/" % entity.id,
+            f"/entry/api/v2/{entity.id}/export/",
             json.dumps({}),
             "application/json",
         )
@@ -149,7 +149,7 @@ class ViewTest(BaseViewTest):
         ###
         with patch.object(Job, "is_canceled", return_value=True):
             resp = self.client.post(
-                "/entry/api/v2/%d/export/" % entity.id,
+                f"/entry/api/v2/{entity.id}/export/",
                 json.dumps({}),
                 "application/json",
             )
@@ -239,7 +239,7 @@ class ViewTest(BaseViewTest):
         self.ref_entry.delete()
 
         resp = self.client.post(
-            "/entry/api/v2/%d/export/" % entity.id,
+            f"/entry/api/v2/{entity.id}/export/",
             json.dumps({}),
             "application/json",
         )
@@ -288,7 +288,7 @@ class ViewTest(BaseViewTest):
         )
 
         resp = self.client.post(
-            "/entry/api/v2/%d/export/" % entity.id,
+            f"/entry/api/v2/{entity.id}/export/",
             json.dumps({"format": "CSV"}),
             "application/json",
         )
@@ -324,7 +324,7 @@ class ViewTest(BaseViewTest):
         )
 
         resp = self.client.post(
-            "/entry/api/v2/%d/export/" % self.entity.id,
+            f"/entry/api/v2/{self.entity.id}/export/",
             json.dumps({}),
             "application/json",
         )
@@ -455,7 +455,7 @@ class ViewTest(BaseViewTest):
             test_attr.save()
 
             resp = self.client.post(
-                "/entry/api/v2/%d/export/" % test_entity.id,
+                f"/entry/api/v2/{test_entity.id}/export/",
                 json.dumps({"format": "CSV"}),
                 "application/json",
             )
@@ -463,10 +463,10 @@ class ViewTest(BaseViewTest):
 
             content = Job.objects.filter(target=test_entity).last().get_cache()
             header = content.splitlines()[0]
-            self.assertEqual(header, 'Name,"%s,""ATTR"""' % type_name)
+            self.assertEqual(header, f'Name,"{type_name},""ATTR"""')
 
             data = content.replace(header, "", 1).strip()
-            self.assertEqual(data, '"%s,""ENTRY""",' % type_name + expected)
+            self.assertEqual(data, f'"{type_name},""ENTRY""",' + expected)
 
     @patch("entry.tasks.notify_create_entry.delay", Mock(side_effect=tasks.notify_create_entry))
     @patch("entry.tasks.import_entries_v2.delay", Mock(side_effect=tasks.import_entries_v2))
@@ -626,7 +626,7 @@ class ViewTest(BaseViewTest):
 
         # export Items that includes the created one
         resp = self.client.post(
-            "/entry/api/v2/%d/export/" % model.id, json.dumps({}), "application/json"
+            f"/entry/api/v2/{model.id}/export/", json.dumps({}), "application/json"
         )
         self.assertEqual(resp.status_code, 200)
         exported_data = yaml.load(Job.objects.last().get_cache(), Loader=yaml.SafeLoader)
@@ -665,11 +665,11 @@ class ViewTest(BaseViewTest):
         model = self.create_entity(
             self.user, "TestModel", attrs=[{"name": "val", "type": AttrType.STRING}]
         )
-        [self.add_entry(self.user, "item-%s" % x, model) for x in range(2)]
+        [self.add_entry(self.user, f"item-{x}", model) for x in range(2)]
 
         # export Items that includes the created one
         resp = self.client.post(
-            "/entry/api/v2/%d/export/" % model.id, json.dumps({}), "application/json"
+            f"/entry/api/v2/{model.id}/export/", json.dumps({}), "application/json"
         )
         self.assertEqual(resp.status_code, 200)
         exported_data = yaml.load(Job.objects.last().get_cache(), Loader=yaml.SafeLoader)
@@ -1406,12 +1406,12 @@ class ViewTest(BaseViewTest):
 
         # checks all attribute are exported in order of specified sequence
         self.assertEqual(
-            csv_contents[0], "Name,Entity,%s" % ",".join([x["name"] for x in exporting_attrs])
+            csv_contents[0], f"Name,Entity,{','.join([x['name'] for x in exporting_attrs])}"
         )
 
         # checks all data value are exported
         self.assertEqual(
-            csv_contents[1], "entry,Entity,%s" % ",".join([x["value"] for x in exporting_attrs])
+            csv_contents[1], f"entry,Entity,{','.join([x['value'] for x in exporting_attrs])}"
         )
 
     @patch(
@@ -1619,10 +1619,10 @@ class ViewTest(BaseViewTest):
 
             content = Job.objects.last().get_cache()
             header = content.splitlines()[0]
-            self.assertEqual(header, 'Name,Entity,"%s,""ATTR"""' % type_name)
+            self.assertEqual(header, f'Name,Entity,"{type_name},""ATTR"""')
 
             data = content.replace(header, "", 1).strip()
-            self.assertEqual(data, '"%s,""ENTRY""",%s,%s' % (type_name, test_entity.name, expected))
+            self.assertEqual(data, f'"{type_name},""ENTRY""",{test_entity.name},{expected}')
 
     @patch(
         "entry.tasks.export_search_result_v2.delay", Mock(side_effect=tasks.export_search_result_v2)
@@ -1682,7 +1682,7 @@ class ViewTest(BaseViewTest):
         self.assertFalse(
             has_crlf and has_bare_lf,
             "CSV export mixes CRLF row terminators with bare-LF in-cell separators, "
-            "which makes editors render the CR as a stray ^M. raw=%r" % content,
+            f"which makes editors render the CR as a stray ^M. raw={content!r}",
         )
 
     @patch("entry.tasks.import_entries_v2.delay", Mock(side_effect=tasks.import_entries_v2))
@@ -1745,7 +1745,7 @@ class ViewTest(BaseViewTest):
         }
         entities = []
         for index in range(2):
-            entity = Entity.objects.create(name="Entity-%d" % index, created_user=user)
+            entity = Entity.objects.create(name=f"Entity-{index}", created_user=user)
             for attr_name, info in attr_info.items():
                 attr = EntityAttr.objects.create(
                     name=attr_name,
@@ -1759,9 +1759,7 @@ class ViewTest(BaseViewTest):
 
             # create an entry of Entity
             for e_index in range(2):
-                entry = Entry.objects.create(
-                    name="e-%d" % e_index, schema=entity, created_user=user
-                )
+                entry = Entry.objects.create(name=f"e-{e_index}", schema=entity, created_user=user)
                 entry.complement_attrs(user)
 
                 for attr_name, info in attr_info.items():
@@ -1787,7 +1785,7 @@ class ViewTest(BaseViewTest):
 
         resp_data = yaml.load(Job.objects.last().get_cache(), Loader=yaml.FullLoader)
         for index in range(2):
-            entity = Entity.objects.get(name="Entity-%d" % index)
+            entity = Entity.objects.get(name=f"Entity-{index}")
             found = next(filter(lambda x: x["entity"] == entity.name, resp_data), None)
             self.assertEqual(len(found["entries"]), Entry.objects.filter(schema=entity).count())
             for e_data in found["entries"]:
@@ -2121,7 +2119,7 @@ class ViewTest(BaseViewTest):
         entry.attrs.get(name="val").add_value(user, "hoge")
 
         resp = self.client.post(
-            "/entry/api/v2/%d/export/" % entity.id,
+            f"/entry/api/v2/{entity.id}/export/",
             json.dumps({}),
             "application/json",
         )
@@ -2186,11 +2184,9 @@ class ViewTest(BaseViewTest):
 
         # verifying result
         csv_contents = [x for x in Job.objects.last().get_cache().splitlines() if x]
+        self.assertEqual(csv_contents[0], f"Name,Entity,{','.join([x['column'] for x in results])}")
         self.assertEqual(
-            csv_contents[0], "Name,Entity,%s" % ",".join([x["column"] for x in results])
-        )
-        self.assertEqual(
-            csv_contents[1], "test-entry,test-entity,%s" % ",".join([x["csv"] for x in results])
+            csv_contents[1], f"test-entry,test-entity,{','.join([x['csv'] for x in results])}"
         )
 
         # send request to export data

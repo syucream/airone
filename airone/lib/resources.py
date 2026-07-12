@@ -1,14 +1,19 @@
 import importlib
-from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
 import tablib
 from import_export.exceptions import ImportError as ImportExportError
 from import_export.resources import ModelResource
-from import_export.results import Result
 
 from acl.models import ACLBase
 from airone.lib.acl import ACLType
-from user.models import User
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from import_export.results import Result
+
+    from user.models import User
 
 
 class AironeModelResource(ModelResource):
@@ -87,9 +92,7 @@ class AironeModelResource(ModelResource):
         if "mandatory_values" in cls._IMPORT_INFO and any(
             not data[x] for x in cls._IMPORT_INFO["mandatory_values"]
         ):
-            raise RuntimeError(
-                "The value of '%s' is needed" % str(cls._IMPORT_INFO["mandatory_values"])
-            )
+            raise RuntimeError(f"The value of '{cls._IMPORT_INFO['mandatory_values']}' is needed")
 
         # check unnecessary parameters are specified, or not
         if not all([x in cls._IMPORT_INFO["header"] for x in data.keys()]):

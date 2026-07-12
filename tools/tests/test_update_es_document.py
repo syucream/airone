@@ -37,11 +37,11 @@ class UpdateESDocuemntlTest(AironeTestCase):
         self.entries = []
         for index in range(3):
             entry = Entry.objects.create(
-                name="entry-%d" % index, created_user=self.user, schema=self.entity1
+                name=f"entry-{index}", created_user=self.user, schema=self.entity1
             )
 
             entry.complement_attrs(self.user)
-            entry.attrs.first().add_value(self.user, "value-%d" % index)
+            entry.attrs.first().add_value(self.user, f"value-{index}")
 
             self.entries.append(entry)
 
@@ -97,7 +97,7 @@ class UpdateESDocuemntlTest(AironeTestCase):
             update_es_document([])
             self.assertTrue(
                 warning_log.output[0],
-                "WARNING:airone:Update elasticsearch document (entry_id: %s)" % entry.id,
+                f"WARNING:airone:Update elasticsearch document (entry_id: {entry.id})",
             )
 
         ret = AdvancedSearchService.search_entries(
@@ -128,7 +128,7 @@ class UpdateESDocuemntlTest(AironeTestCase):
             update_es_document([])
             self.assertTrue(
                 warning_log.output[0],
-                "WARNING:airone:Delete elasticsearch document (entry_id: %s)" % entry.id,
+                f"WARNING:airone:Delete elasticsearch document (entry_id: {entry.id})",
             )
 
         ret = AdvancedSearchService.search_entries(self.user, [self.entity1.id])
