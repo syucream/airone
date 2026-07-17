@@ -33,7 +33,7 @@ import { AironeLink } from "components/common";
 import { PaginationFooter } from "components/common/PaginationFooter";
 import { AttributeValue } from "components/entry/AttributeValue";
 import { entryDetailsPath, entryEditPath } from "routes/Routes";
-import { AdvancedSerarchResultListParam } from "services/Constants";
+import { AdvancedSearchResultListParam } from "services/Constants";
 import { AttrsFilter } from "services/entry/AdvancedSearch";
 
 const StyledIconButton = styled(IconButton)(({ theme }) => ({
@@ -259,7 +259,7 @@ export const SearchResults: FC<Props> = ({
         {!disablePaginationFooter && (
           <PaginationFooter
             count={results.totalCount ?? results.count}
-            maxRowCount={AdvancedSerarchResultListParam.MAX_ROW_COUNT}
+            maxRowCount={AdvancedSearchResultListParam.MAX_ROW_COUNT}
             page={page}
             changePage={changePage}
           />

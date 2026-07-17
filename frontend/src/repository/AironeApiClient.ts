@@ -61,7 +61,7 @@ import {
 } from "@dmm-com/airone-apiclient-typescript-fetch";
 
 import {
-  AdvancedSerarchResultListParam,
+  AdvancedSearchResultListParam,
   EntityHistoryListParam,
   EntityListParam,
   EntryHistoryListParam,
@@ -867,7 +867,7 @@ class AironeApiClient {
     referralName = "",
     searchAllEntities = false,
     page: number,
-    limit: number = AdvancedSerarchResultListParam.MAX_ROW_COUNT,
+    limit: number = AdvancedSearchResultListParam.MAX_ROW_COUNT,
     offset: number = 0,
     entryHint?: EntryHint,
     excludeReferrals: number[] = [],

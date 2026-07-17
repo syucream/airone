@@ -36,7 +36,7 @@ import { SearchResults } from "components/entry/SearchResults";
 import { usePage } from "hooks/usePage";
 import { aironeApiClient } from "repository/AironeApiClient";
 import { advancedSearchPath, topPath } from "routes/Routes";
-import { AdvancedSerarchResultListParam } from "services/Constants";
+import { AdvancedSearchResultListParam } from "services/Constants";
 import { NotificationMessages } from "services/NotificationMessages";
 import { extractAdvancedSearchParams } from "services/entry/AdvancedSearch";
 
@@ -182,7 +182,7 @@ export const AdvancedSearchResultsPage: FC = () => {
         referralName,
         searchAllEntities,
         page,
-        AdvancedSerarchResultListParam.MAX_ROW_COUNT,
+        AdvancedSearchResultListParam.MAX_ROW_COUNT,
         0,
         hintEntry,
         referralExcludeModelIds,
@@ -355,7 +355,7 @@ export const AdvancedSearchResultsPage: FC = () => {
             onClickYes={handleBulkDelete}
             content={
               bulkOperationEntryIds.length ==
-                AdvancedSerarchResultListParam.MAX_ROW_COUNT &&
+                AdvancedSearchResultListParam.MAX_ROW_COUNT &&
               joinAttrs.length == 0 ? (
                 <FormControlLabel
                   sx={
@@ -450,7 +450,7 @@ export const AdvancedSearchResultsPage: FC = () => {
                     <ArrowDropDownIcon />
                   </IconButton>
                   <Typography>
-                    {page * AdvancedSerarchResultListParam.MAX_ROW_COUNT} /{" "}
+                    {page * AdvancedSearchResultListParam.MAX_ROW_COUNT} /{" "}
                     {searchResults.totalCount} 件
                   </Typography>
                 </CenterAlignedBox>

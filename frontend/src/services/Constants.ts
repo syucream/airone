@@ -28,7 +28,7 @@ export const EntityHistoryListParam = {
   MAX_ROW_COUNT: 30,
 };
 
-export const AdvancedSerarchResultListParam = {
+export const AdvancedSearchResultListParam = {
   MAX_ROW_COUNT: 100,
 };
 
