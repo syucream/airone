@@ -74,6 +74,7 @@ describe("DateAttributeValueField", () => {
     });
 
     expect(screen.getByRole("textbox")).toHaveValue("2020/01/02");
-    expect(getValues("attrs.0.value.asString")).toEqual("2020-1-2");
+    // The value is normalized to the zero-padded ISO date format
+    expect(getValues("attrs.0.value.asString")).toEqual("2020-01-02");
   });
 });

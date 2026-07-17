@@ -5,7 +5,10 @@
 import {
   formatDateTime,
   formatDate,
+  parseLocalDate,
   setJSTdate,
+  toLocalISODateString,
+  toLocalISOString,
   DAY_OF_WEEK,
 } from "./DateUtil";
 
@@ -98,6 +101,49 @@ describe("DateUtil", () => {
       expect(result.getFullYear()).toBe(2024);
       expect(result.getMonth()).toBe(5); // June (0-indexed)
       expect(result.getDate()).toBe(20);
+    });
+  });
+
+  describe("toLocalISOString / toLocalISODateString", () => {
+    test("should format local wall-clock time as an ISO-like string", () => {
+      const date = new Date(2024, 0, 5, 14, 30, 45); // local Jan 5, 2024, 14:30:45
+
+      // Jest runs with TZ=UTC, so local time equals UTC here.
+      expect(toLocalISOString(date)).toBe("2024-01-05T14:30:45.000Z");
+      expect(toLocalISODateString(date)).toBe("2024-01-05");
+    });
+  });
+
+  describe("parseLocalDate", () => {
+    test("should parse a zero-padded date-only string as local time", () => {
+      const result = parseLocalDate("2024-01-05");
+
+      expect(result.getFullYear()).toBe(2024);
+      expect(result.getMonth()).toBe(0);
+      expect(result.getDate()).toBe(5);
+      expect(result.getHours()).toBe(0);
+    });
+
+    test("should parse a non-padded date-only string as local time", () => {
+      const result = parseLocalDate("2024-1-5");
+
+      expect(result.getFullYear()).toBe(2024);
+      expect(result.getMonth()).toBe(0);
+      expect(result.getDate()).toBe(5);
+    });
+
+    test("should round-trip with toLocalISODateString", () => {
+      const date = new Date(2024, 11, 31);
+
+      expect(parseLocalDate(toLocalISODateString(date)).getTime()).toBe(
+        date.getTime(),
+      );
+    });
+
+    test("should fall back to new Date() parsing for datetime strings", () => {
+      const result = parseLocalDate("2024-01-05T10:00:00.000Z");
+
+      expect(result.getTime()).toBe(Date.parse("2024-01-05T10:00:00.000Z"));
     });
   });
 

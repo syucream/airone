@@ -9,6 +9,7 @@ import { UseFormSetValue } from "react-hook-form/dist/types/form";
 
 import { Schema } from "./EntryFormSchema";
 
+import { parseLocalDate, toLocalISODateString } from "services/DateUtil";
 import { getStagedErrorStyle } from "services/StyleUtil";
 
 const StyledBox = styled(Box)(({}) => ({
@@ -45,14 +46,10 @@ export const DateAttributeValueField: FC<Props> = ({
           <LocalizationProvider dateAdapter={AdapterDateFns}>
             <DesktopDatePicker
               format="yyyy/MM/dd"
-              value={field.value ? new Date(field.value) : null}
+              value={field.value ? parseLocalDate(field.value) : null}
               onChange={(date: Date | null) => {
-                let settingDateValue = "";
-                if (date !== null) {
-                  settingDateValue = `${date.getFullYear()}-${
-                    date.getMonth() + 1
-                  }-${date.getDate()}`;
-                }
+                const settingDateValue =
+                  date !== null ? toLocalISODateString(date) : "";
                 setValue(`attrs.${attrId}.value.asString`, settingDateValue, {
                   shouldDirty: true,
                   shouldValidate: true,
