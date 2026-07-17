@@ -23,8 +23,12 @@ import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import { DesktopDatePicker } from "@mui/x-date-pickers/DesktopDatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { ChangeEvent, FC, KeyboardEvent, useEffect, useState } from "react";
+import { ChangeEvent, FC, KeyboardEvent, useState } from "react";
 
+import {
+  toLocalISODateString,
+  toLocalISOString,
+} from "../../services/DateUtil";
 import { AttrFilter } from "../../services/entry/AdvancedSearch";
 import { DateRangePicker } from "../common/DateRangePicker";
 import { DateTimeRangePicker } from "../common/DateTimeRangePicker";
@@ -148,17 +152,14 @@ export const SearchResultControlMenu: FC<Props> = ({
     attrFilter?.filterKey ?? AdvancedSearchResultAttrInfoFilterKeyEnum.CLEARED;
   const keyword = attrFilter?.keyword ?? "";
 
-  // 日付範囲選択のための状態管理
-  const [isRange, setIsRange] = useState(false);
-
-  // 初期状態の設定
-  useEffect(() => {
-    if (keyword && keyword.includes("~")) {
-      setIsRange(true);
-    } else {
-      setIsRange(false);
-    }
-  }, [keyword]);
+  // Range-selection mode; synced from the keyword at render time
+  // (instead of an effect) while still being user-togglable.
+  const [isRange, setIsRange] = useState(keyword.includes("~"));
+  const [prevKeyword, setPrevKeyword] = useState(keyword);
+  if (prevKeyword !== keyword) {
+    setPrevKeyword(keyword);
+    setIsRange(keyword.includes("~"));
+  }
 
   return (
     <>
@@ -274,11 +275,7 @@ export const SearchResultControlMenu: FC<Props> = ({
                     }
                     onChange={(date: Date | null) => {
                       const settingDateValue = date
-                        ? new Date(
-                            date.getTime() - date.getTimezoneOffset() * 60000,
-                          )
-                            .toISOString()
-                            .split("T")[0]
+                        ? toLocalISODateString(date)
                         : "";
                       handleSelectFilterConditions({
                         attrFilter: {
@@ -336,11 +333,7 @@ export const SearchResultControlMenu: FC<Props> = ({
                     }
                     onChange={(date: Date | null) => {
                       const settingDateValue = date
-                        ? new Date(
-                            date.getTime() - date.getTimezoneOffset() * 60000,
-                          )
-                            .toISOString()
-                            .split("T")[0]
+                        ? toLocalISODateString(date)
                         : "";
                       handleSelectFilterConditions({
                         attrFilter: {
@@ -418,9 +411,7 @@ export const SearchResultControlMenu: FC<Props> = ({
                     }
                     onAccept={(date: Date | null) => {
                       const settingDateValue = date
-                        ? new Date(
-                            date.getTime() - date.getTimezoneOffset() * 60000,
-                          ).toISOString()
+                        ? toLocalISOString(date)
                         : "";
                       handleSelectFilterConditions({
                         attrFilter: {
@@ -480,9 +471,7 @@ export const SearchResultControlMenu: FC<Props> = ({
                     }
                     onAccept={(date: Date | null) => {
                       const settingDateValue = date
-                        ? new Date(
-                            date.getTime() - date.getTimezoneOffset() * 60000,
-                          ).toISOString()
+                        ? toLocalISOString(date)
                         : "";
                       handleSelectFilterConditions({
                         attrFilter: {

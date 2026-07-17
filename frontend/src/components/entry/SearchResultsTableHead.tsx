@@ -27,7 +27,6 @@ import {
   ChangeEvent,
   FC,
   useCallback,
-  useEffect,
   useMemo,
   useReducer,
   useState,
@@ -187,6 +186,14 @@ export const SearchResultsTableHead: FC<Props> = ({
   const [attrsFilter, setAttrsFilter] = useState<AttrsFilter>(
     defaultAttrsFilter ?? {},
   );
+  // Re-sync when the filter passed from the URL changes (render-time
+  // adjustment instead of an effect).
+  const [prevDefaultAttrsFilter, setPrevDefaultAttrsFilter] =
+    useState(defaultAttrsFilter);
+  if (prevDefaultAttrsFilter !== defaultAttrsFilter) {
+    setPrevDefaultAttrsFilter(defaultAttrsFilter);
+    setAttrsFilter(defaultAttrsFilter ?? {});
+  }
 
   const [joinAttrName, setJoinAttrname] = useState<string>("");
   const [attributeMenuEls, setAttributeMenuEls] = useState<{
@@ -212,10 +219,6 @@ export const SearchResultsTableHead: FC<Props> = ({
       ),
     [defaultAttrsFilter],
   );
-
-  useEffect(() => {
-    setAttrsFilter(defaultAttrsFilter ?? {});
-  }, [defaultAttrsFilter]);
 
   const handleSelectFilterConditions =
     (attrName?: string) =>

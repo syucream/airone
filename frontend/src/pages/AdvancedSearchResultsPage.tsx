@@ -38,7 +38,10 @@ import { aironeApiClient } from "repository/AironeApiClient";
 import { advancedSearchPath, topPath } from "routes/Routes";
 import { AdvancedSearchResultListParam } from "services/Constants";
 import { NotificationMessages } from "services/NotificationMessages";
-import { extractAdvancedSearchParams } from "services/entry/AdvancedSearch";
+import {
+  AttrsFilter,
+  extractAdvancedSearchParams,
+} from "services/entry/AdvancedSearch";
 
 function isAttrInfoSet(info: AdvancedSearchResultAttrInfo) {
   switch (info.filterKey) {
@@ -154,6 +157,48 @@ export const AdvancedSearchResultsPage: FC = () => {
     const params = new URLSearchParams(location.search);
     return extractAdvancedSearchParams(params);
   }, [location.search]);
+
+  // make defaultAttrFilter to make fabric contexts of joinAttrs into the one of attrinfo
+  // for considering order of showing attribute by userdefined one and connection of
+  // attrinfo and its related joined attrinfo.
+  // Memoized so its identity changes only when the URL search params change;
+  // SearchResultsTableHead resets its local filter state when the identity changes.
+  const defaultAttrsFilter = useMemo<AttrsFilter>(
+    () =>
+      attrInfo
+        .map((info) => {
+          const base = {
+            key: info.name,
+            val: {
+              filterKey:
+                info.filterKey ||
+                AdvancedSearchResultAttrInfoFilterKeyEnum.CLEARED,
+              keyword: info.keyword || "",
+            },
+          };
+
+          const joined = joinAttrs
+            .filter((join) => join.name === info.name)
+            .flatMap((join) =>
+              join.attrinfo.map((joinedInfo) => ({
+                key: `${join.name}.${joinedInfo.name}`,
+                val: {
+                  filterKey:
+                    joinedInfo.filterKey ||
+                    AdvancedSearchResultAttrInfoFilterKeyEnum.CLEARED,
+                  keyword: joinedInfo.keyword || "",
+                  baseAttrname: join.name,
+                  joinedAttrname: joinedInfo.name,
+                },
+              })),
+            );
+
+          return [base, ...joined];
+        })
+        .flat()
+        .reduce((a, x) => ({ ...a, [x.key]: x.val }), {}),
+    [attrInfo, joinAttrs],
+  );
 
   const [searchResults, setSearchResults] =
     useState<AirOneAdvancedSearchResult>({
@@ -390,43 +435,7 @@ export const AdvancedSearchResultsPage: FC = () => {
             defaultReferralIncludeModelIds={referralIncludeModelIds}
             defaultReferralExcludeModelIds={referralExcludeModelIds}
             defaultSort={sort}
-            defaultAttrsFilter={
-              // make defaultAttrFilter to make fabric contexts of joinAttrs into the one of attrinfo
-              // for considering order of showing attribute by userdefined one and connection of
-              // attrinfo and its related joined attrinfo
-              attrInfo
-                .map((info) => {
-                  const base = {
-                    key: info.name,
-                    val: {
-                      filterKey:
-                        info.filterKey ||
-                        AdvancedSearchResultAttrInfoFilterKeyEnum.CLEARED,
-                      keyword: info.keyword || "",
-                    },
-                  };
-
-                  const joined = joinAttrs
-                    .filter((join) => join.name === info.name)
-                    .flatMap((join) =>
-                      join.attrinfo.map((joinedInfo) => ({
-                        key: `${join.name}.${joinedInfo.name}`,
-                        val: {
-                          filterKey:
-                            joinedInfo.filterKey ||
-                            AdvancedSearchResultAttrInfoFilterKeyEnum.CLEARED,
-                          keyword: joinedInfo.keyword || "",
-                          baseAttrname: join.name,
-                          joinedAttrname: joinedInfo.name,
-                        },
-                      })),
-                    );
-
-                  return [base, ...joined];
-                })
-                .flat()
-                .reduce((a, x) => ({ ...a, [x.key]: x.val }), {})
-            }
+            defaultAttrsFilter={defaultAttrsFilter}
             bulkOperationEntryIds={bulkOperationEntryIds}
             setBulkOperationEntryIds={setBulkOperationEntryIds}
             entityIds={entityIds}
