@@ -16,6 +16,10 @@ export function useAsync<T>(
     fn()
       .then((value) => setState({ value, loading: false }))
       .catch((error) => setState({ error, loading: false }));
+    // This generic hook intentionally delegates dependency management to the
+    // caller (same API as react-use's useAsync), so `fn` is deliberately
+    // excluded and the deps array cannot be a static literal.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps ?? []);
   return state;
 }
