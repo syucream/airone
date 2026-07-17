@@ -4,7 +4,7 @@ import { Control, Controller } from "react-hook-form";
 
 import { Schema } from "./EntryFormSchema";
 
-import { getStagedHelperTextStyle } from "utils/styleUtils";
+import { getStagedHelperTextStyle } from "services/StyleUtil";
 
 interface Props {
   attrId: number;

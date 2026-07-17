@@ -9,7 +9,7 @@ import { UseFormSetValue } from "react-hook-form/dist/types/form";
 
 import { Schema } from "./EntryFormSchema";
 
-import { getStagedErrorStyle } from "utils/styleUtils";
+import { getStagedErrorStyle } from "services/StyleUtil";
 
 const StyledBox = styled(Box)(({}) => ({
   display: "flex",

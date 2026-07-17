@@ -7,7 +7,7 @@ import { Control, Controller, useFieldArray } from "react-hook-form";
 
 import { Schema } from "./EntryFormSchema";
 
-import { getStagedErrorStyle } from "utils/styleUtils";
+import { getStagedErrorStyle } from "services/StyleUtil";
 
 const StyledList = styled(List)(({}) => ({
   padding: "0",

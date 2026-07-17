@@ -18,7 +18,7 @@ import { UseFormSetValue } from "react-hook-form/dist/types/form";
 import { Schema } from "./EntryFormSchema";
 import { ReferralsAutocomplete } from "./ReferralsAutocomplete";
 
-import { getStagedErrorStyle } from "utils/styleUtils";
+import { getStagedErrorStyle } from "services/StyleUtil";
 
 const StyledList = styled(List)(({}) => ({
   padding: "0",

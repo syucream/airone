@@ -4,7 +4,7 @@ import { Control, Controller } from "react-hook-form";
 
 import { Schema } from "./EntryFormSchema";
 
-import { getStagedErrorStyle } from "utils/styleUtils";
+import { getStagedErrorStyle } from "services/StyleUtil";
 
 interface Props {
   attrId: number;

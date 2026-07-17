@@ -22,7 +22,7 @@ import { UseFormSetValue } from "react-hook-form/dist/types/form";
 
 import { AttributeValueField } from "components/entry/entryForm/AttributeValueField";
 import { Schema } from "components/entry/entryForm/EntryFormSchema";
-import { getStagedErrorStyle } from "utils/styleUtils";
+import { getStagedErrorStyle } from "services/StyleUtil";
 
 const ChipBox = styled(Box)(({}) => ({
   display: "flex",

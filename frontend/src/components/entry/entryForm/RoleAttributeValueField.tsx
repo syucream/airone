@@ -14,7 +14,7 @@ import { aironeApiClient } from "../../../repository/AironeApiClient";
 
 import { Schema } from "./EntryFormSchema";
 
-import { getStagedErrorStyle } from "utils/styleUtils";
+import { getStagedErrorStyle } from "services/StyleUtil";
 
 const StyledTypography = styled(Typography)(() => ({
   color: "rgba(0, 0, 0, 0.6)",
