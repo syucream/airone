@@ -18,7 +18,6 @@ from acl.models import ACLBase
 from airone.lib import auto_complement
 from airone.lib.log import Logger
 from airone.lib.plugin_task import PluginTaskRegistry
-from airone.lib.types import BaseIntEnum
 from entity.models import Entity
 from entry.models import Entry
 from job.settings import CONFIG as JOB_CONFIG
@@ -47,7 +46,7 @@ else:
     CUSTOM_PARALLELIZABLE_OPERATIONS = []
     CUSTOM_TASKS = {}
 
-    class JobOperationCustom(BaseIntEnum):  # type: ignore
+    class JobOperationCustom(enum.IntEnum):  # type: ignore
         pass
 
 
@@ -58,7 +57,7 @@ def _support_time_default(o: Any) -> str:
 
 
 @enum.unique
-class JobOperation(BaseIntEnum):
+class JobOperation(enum.IntEnum):
     # Constant to describes status of each jobs
     CREATE_ENTRY = 1
     EDIT_ENTRY = 2
@@ -94,14 +93,14 @@ class JobOperation(BaseIntEnum):
 
 
 @enum.unique
-class JobTarget(BaseIntEnum):
+class JobTarget(enum.IntEnum):
     UNKNOWN = 0
     ENTRY = 1
     ENTITY = 2
 
 
 @enum.unique
-class JobStatus(BaseIntEnum):
+class JobStatus(enum.IntEnum):
     PREPARING = 1
     DONE = 2
     ERROR = 3
@@ -305,7 +304,7 @@ class Job(models.Model):
     def run(self, will_delay: bool = True) -> Any:
         method_table = self.method_table()
         if self.operation not in method_table:
-            Logger.error("Job %s has invalid operation type" % self.id)
+            Logger.error(f"Job {self.id} has invalid operation type")
             return
 
         # initiate job processing
@@ -715,12 +714,12 @@ class Job(models.Model):
         )
 
     def set_cache(self, value: Any) -> None:
-        with default_storage.open("job_%d" % self.id, "wb") as fp:
+        with default_storage.open(f"job_{self.id}", "wb") as fp:
             pickle.dump(value, fp)
 
     def get_cache(self) -> Any:
         value = ""
-        with default_storage.open("job_%d" % self.id, "rb") as fp:
+        with default_storage.open(f"job_{self.id}", "rb") as fp:
             value = pickle.load(fp)
         return value
 

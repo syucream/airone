@@ -48,7 +48,7 @@ class YAMLParser(BaseParser):
             data = stream.read().decode(encoding)
             return cast("dict[str, object]", yaml.safe_load(data))
         except (ValueError, yaml.parser.ParserError, yaml.scanner.ScannerError) as exc:
-            raise ParseError("YAML parse error - %s" % str(exc))
+            raise ParseError(f"YAML parse error - {exc}")
 
 
 class YAMLRenderer(BaseRenderer):
@@ -148,7 +148,7 @@ def custom_exception_handler(exc: Exception, context: dict[str, Any]) -> Respons
         airone_error_code = error_code.get(detail["code"])
         if not airone_error_code:
             airone_error_code = "AE-999999"  # unknown error
-            Logger.warning("unknown error(%s) has occurred" % detail)
+            Logger.warning(f"unknown error({detail}) has occurred")
 
         detail["code"] = airone_error_code
         return detail

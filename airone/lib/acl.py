@@ -1,8 +1,6 @@
 import enum
 from typing import TYPE_CHECKING
 
-from airone.lib.types import BaseIntEnum
-
 if TYPE_CHECKING:
     from acl.models import ACLBase
     from user.models import User
@@ -11,7 +9,7 @@ __all__ = ["ACLType", "ACLObjType", "get_permission_level"]
 
 
 @enum.unique
-class ACLObjType(BaseIntEnum):
+class ACLObjType(enum.IntEnum):
     Entity = 1 << 0
     EntityAttr = 1 << 1
     Entry = 1 << 2
@@ -19,7 +17,7 @@ class ACLObjType(BaseIntEnum):
     Category = 1 << 4
 
 
-class ACLType(BaseIntEnum):
+class ACLType(enum.IntEnum):
     Nothing = 1 << 0
     Readable = 1 << 1
     Writable = 1 << 2

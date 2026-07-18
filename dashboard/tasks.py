@@ -82,7 +82,7 @@ def _csv_export(
 
                 case AttrType.NAMED_OBJECT:
                     [(k, v)] = vval.items()
-                    line_data.append("%s: %s" % (k, v["name"]))
+                    line_data.append(f"{k}: {v['name']}")
 
                 case AttrType.ARRAY_STRING:
                     line_data.append("\n".join(natsorted(vval)))
@@ -99,18 +99,13 @@ def _csv_export(
                     items = []
                     for vset in vval:
                         [(k, v)] = vset.items()
-                        items.append("%s: %s" % (k, v["name"]))
+                        items.append(f"{k}: {v['name']}")
 
                     line_data.append("\n".join(natsorted(items)))
 
         if has_referral is not False:
             line_data.append(
-                str(
-                    [
-                        "%s / %s" % (x["name"], x["schema"]["name"])
-                        for x in entry_info.referrals or []
-                    ]
-                )
+                str([f"{x['name']} / {x['schema']['name']}" for x in entry_info.referrals or []])
             )
 
         writer.writerow(line_data)

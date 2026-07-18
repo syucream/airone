@@ -106,10 +106,7 @@ class ACLBase(models.Model):
 
     def delete(self, *args: Any, **kwargs: Any) -> None:  # type: ignore[override]
         self.is_active = False
-        self.name = "%s_deleted_%s" % (
-            self.name,
-            datetime.now().strftime("%Y%m%d_%H%M%S"),
-        )
+        self.name = f"{self.name}_deleted_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
         self.deleted_time = make_aware(datetime.now())
         self.deleted_user = kwargs.get("deleted_user")
         self.save()
@@ -150,7 +147,7 @@ class ACLBase(models.Model):
 
     def _get_permission(self, acltype: int) -> HistoricalPermission:
         return HistoricalPermission.objects.get(  # type: ignore[return-value]
-            codename="%s.%s" % (self.id, acltype)
+            codename=f"{self.id}.{acltype}"
         )
 
     def get_subclass_object(self) -> ACLBase:

@@ -109,10 +109,7 @@ class Role(models.Model):
         from user.models import User
 
         self.is_active = False
-        self.name = "%s_deleted_%s" % (
-            self.name,
-            datetime.now().strftime("%Y%m%d_%H%M%S"),
-        )
+        self.name = f"{self.name}_deleted_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
         self.save(update_fields=["is_active", "name"])
 
         user = auto_complement.get_auto_complement_user(None)

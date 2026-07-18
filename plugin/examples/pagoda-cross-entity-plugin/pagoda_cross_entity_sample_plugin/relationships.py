@@ -6,10 +6,10 @@ In this example, we define a Service entity that has related Configurations.
 """
 
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 
 
-class RelationType(str, Enum):
+class RelationType(StrEnum):
     """Types of relationships between entities."""
 
     COMPOSITION = "composition"

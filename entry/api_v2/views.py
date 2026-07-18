@@ -4,7 +4,7 @@ import re
 from collections import Counter
 from copy import deepcopy
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from django.db.models import Q, QuerySet
 from drf_spectacular.types import OpenApiTypes
@@ -69,9 +69,7 @@ from entry.settings import CONFIG as ENTRY_CONFIG
 from group.models import Group
 from job.models import Job, JobOperation, JobStatus
 from role.models import Role
-
-if TYPE_CHECKING:
-    from user.models import User
+from user.models import User
 
 logger = logging.getLogger(__name__)
 
@@ -635,7 +633,7 @@ class EntryReferralAPI(viewsets.ReadOnlyModelViewSet):
         # if entity_name param exists, add schema name to reduce filter execution time
         query = Q(pk__in=ids, is_active=True)
         if keyword:
-            query &= Q(name__iregex=r"%s" % keyword)
+            query &= Q(name__iregex=rf"{keyword}")
 
         return Entry.objects.filter(query).select_related("schema")
 
@@ -675,14 +673,14 @@ class EntryExportAPI(generics.GenericAPIView):
         entity = Entity.objects.get(id=entity_id)
         if not request.user.has_permission(entity, ACLType.Readable):
             return Response(
-                'Permission denied to _value "%s"' % entity.name, status=status.HTTP_400_BAD_REQUEST
+                f'Permission denied to _value "{entity.name}"', status=status.HTTP_400_BAD_REQUEST
             )
 
         # create a job to export search result and run it
         job = Job.new_export_v2(
             request.user,
             **{
-                "text": "entry_%s.%s" % (entity.name, str(job_params.export_format)),
+                "text": f"entry_{entity.name}.{job_params.export_format}",
                 "target": entity,
                 "params": job_params.dict(),
             },
@@ -788,11 +786,11 @@ class EntryImportAPI(generics.GenericAPIView):
                 (e for e in entities if e.name == import_data["entity"]), None
             )
             if not entity:
-                error_list.append("%s: Entity does not exists." % import_data["entity"])
+                error_list.append(f"{import_data['entity']}: Entity does not exists.")
                 continue
 
             if not user.has_permission(entity, ACLType.Writable):
-                error_list.append("%s: Entity is permission denied." % import_data["entity"])
+                error_list.append(f"{import_data['entity']}: Entity is permission denied.")
                 continue
 
             job = Job.new_import_v2(
@@ -974,7 +972,7 @@ class EntryBulkDeleteAPI(generics.DestroyAPIView):
             for info in json_loaded_value:
                 if not any(x in info for x in ["name", "filterKey", "keyword"]):
                     raise RequiredParameterError("(00)Invalid attrinfo was specified")
-                if not FilterKey.isin(int(info["filterKey"])):
+                if int(info["filterKey"]) not in FilterKey:
                     raise RequiredParameterError("(01)Invalid attrinfo was specified")
         except Exception as e:
             raise RequiredParameterError(e)
@@ -1047,8 +1045,8 @@ class EntryAliasAPI(viewsets.ModelViewSet):
         counter = Counter([x["name"] for x in request.data])
         if any([c > 1 for c in counter.values()]):
             raise DuplicatedObjectExistsError(
-                "Duplicated names(%s) were specified"
-                % (str([name for (name, count) in counter.items() if count > 1]))
+                f"Duplicated names"
+                f"({[name for name, count in counter.items() if count > 1]}) were specified"
             )
 
         serializer = self.get_serializer(data=request.data, many=True)

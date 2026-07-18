@@ -205,7 +205,7 @@ def do_edit(request: HttpRequest, entity_id: int, recv_data: dict[str, Any]) -> 
         {
             "entity_id": entity.id,
             "entity_name": new_name,
-            "msg": 'Success to schedule to update Entity "%s"' % new_name,
+            "msg": f'Success to schedule to update Entity "{new_name}"',
         }
     )
 
@@ -307,7 +307,7 @@ def do_create(request: HttpRequest, recv_data: dict[str, Any]) -> HttpResponse:
         {
             "entity_id": entity.id,
             "entity_name": entity.name,
-            "msg": 'Success to create Entity "%s"' % entity.name,
+            "msg": f'Success to create Entity "{entity.name}"',
         }
     )
 
@@ -467,13 +467,13 @@ def dashboard(request: HttpRequest, entity_id: int) -> HttpResponse:
                 {
                     "referral": "(Others)",
                     "count": rest_counts,
-                    "ratio": "%2.1f" % ((rest_counts * 100) / total_entry_count),
+                    "ratio": f"{rest_counts * 100 / total_entry_count:2.1f}",
                 }
             )
 
         # set ratio for each elements
         for info in summarized_data[attr]["referral_count"]:
-            info["ratio"] = "%2.1f" % ((info["count"] * 100) / total_entry_count)
+            info["ratio"] = f"{info['count'] * 100 / total_entry_count:2.1f}"
 
     context = {
         "entity": entity,
@@ -496,7 +496,7 @@ def conf_dashboard(request: HttpRequest, entity_id: int) -> HttpResponse:
         "ref_attrs": EntityAttr.objects.filter(
             parent_entity=entity, type=AttrType.OBJECT, is_active=True
         ),
-        "redirect_url": "/entity/dashboard/config/register/%s" % entity_id,
+        "redirect_url": f"/entity/dashboard/config/register/{entity_id}",
     }
     return render(request, "conf_dashboard_entity.html", context)
 

@@ -168,11 +168,7 @@ def _do_import_entries(job: Job) -> None:
     # create or update entry
     for index, entry_data in enumerate(import_data):
         job_notify: Job | None = None
-        job.text = "Now importing... (progress: [%5d/%5d] for %s)" % (
-            index + 1,
-            total_count,
-            entity.name,
-        )
+        job.text = f"Now importing... (progress: [{index + 1:5}/{total_count:5}] for {entity.name})"
         job.save(update_fields=["text"])
 
         # abort processing when job is canceled
@@ -221,8 +217,7 @@ def _do_import_entries(job: Job) -> None:
             )
             if attr_query.count() > 1:
                 Logger.error(
-                    "[task.import_entry] Abnormal entry was detected(%s:%d)"
-                    % (entry.name, entry.id)
+                    f"[task.import_entry] Abnormal entry was detected({entry.name}:{entry.id})"
                 )
                 break
 
@@ -446,7 +441,7 @@ def create_entry_attrs(self: Task, job: Job) -> JobStatus | None:
         try:
             attr.add_value(user, _convert_data_value(attr, attr_data[0]))
         except ValueError as e:
-            Logger.warning("(%s) attr_data: %s" % (e, str(attr_data[0])))
+            Logger.warning(f"({e}) attr_data: {attr_data[0]}")
 
     # Delete duplicate attrs because this processing may execute concurrently
     for entity_attr in entry.schema.attrs.filter(is_active=True):
@@ -500,7 +495,7 @@ def edit_entry_attrs(self: Task, job: Job) -> JobStatus:
         try:
             converted_value = _convert_data_value(attr, info)
         except ValueError as e:
-            Logger.warning("(%s) attr_data: %s" % (e, str(info)))
+            Logger.warning(f"({e}) attr_data: {info}")
             continue
 
         # Check a new update value is specified, or not
@@ -583,11 +578,11 @@ def copy_entry(self: Task, job: Job) -> tuple[JobStatus, str, None] | None:
     for index, new_name in enumerate(params["new_name_list"]):
         # abort processing when job is canceled
         if job.is_canceled():
-            job.text = "Copy completed [%5d/%5d]" % (index, total_count)
+            job.text = f"Copy completed [{index:5}/{total_count:5}]"
             job.save(update_fields=["text"])
             return None
 
-        job.text = "Now copying... (progress: [%5d/%5d])" % (index + 1, total_count)
+        job.text = f"Now copying... (progress: [{index + 1:5}/{total_count:5}])"
         job.save(update_fields=["text"])
 
         params["new_name"] = new_name
@@ -595,7 +590,7 @@ def copy_entry(self: Task, job: Job) -> tuple[JobStatus, str, None] | None:
         job_do_copy_entry.run(will_delay=False)
 
     # update job status and save it
-    return JobStatus.DONE, "Copy completed [%5d/%5d]" % (total_count, total_count), None
+    return JobStatus.DONE, f"Copy completed [{total_count:5}/{total_count:5}]", None
 
 
 @register_job_task(JobOperation.DO_COPY_ENTRY)
@@ -609,7 +604,7 @@ def do_copy_entry(self: Task, job: Job) -> tuple[JobStatus, str, None]:
     if not src_entry.schema.is_available(params["new_name"]):
         return (
             JobStatus.ERROR,
-            "Duplicated Alias(name=%s) exists in this model" % params["new_name"],
+            f"Duplicated Alias(name={params['new_name']}) exists in this model",
             src_entry,
         )
 
@@ -637,7 +632,7 @@ def do_copy_entry(self: Task, job: Job) -> tuple[JobStatus, str, None]:
     job_notify_event = Job.new_notify_create_entry(job.user, dest_entry)
     job_notify_event.run()
 
-    return JobStatus.DONE, "original entry: %s" % src_entry.name, dest_entry
+    return JobStatus.DONE, f"original entry: {src_entry.name}", dest_entry
 
 
 @register_job_task(JobOperation.IMPORT_ENTRY)
@@ -647,7 +642,7 @@ def import_entries(self: Task, job: Job) -> tuple[JobStatus, str, None] | None:
     try:
         _do_import_entries(job)
     except Exception as e:
-        return JobStatus.ERROR, "[task.import] [job:%d] %s" % (job.id, str(e)), None
+        return JobStatus.ERROR, f"[task.import] [job:{job.id}] {e}", None
 
     return None
 
@@ -665,7 +660,7 @@ def import_entries_v2(self: Task, job: Job) -> tuple[JobStatus, str, None] | Non
     total_count = len(import_serializer.validated_data["entries"])
     err_msg: list[str] = []
     for index, entry_data in enumerate(import_serializer.validated_data["entries"]):
-        job.text = "Now importing... (progress: [%5d/%5d])" % (index + 1, total_count)
+        job.text = f"Now importing... (progress: [{index + 1:5}/{total_count:5}])"
         job.save(update_fields=["text"])
 
         # abort processing when job is canceled
@@ -696,18 +691,17 @@ def import_entries_v2(self: Task, job: Job) -> tuple[JobStatus, str, None] | Non
         except ValidationError as e:
             err_msg.append(entry_data["name"])
             Logger.warning(
-                "failed to validate on entry import v2: entry=%s, error=%s"
-                % (entry_data["name"], e)
+                f"failed to validate on entry import v2: entry={entry_data['name']}, error={e}"
             )
 
     if err_msg:
         return (
             JobStatus.WARNING,
-            "Imported Entry count: %d, Failed import Entry: %s" % (total_count, err_msg),
+            f"Imported Entry count: {total_count}, Failed import Entry: {err_msg}",
             None,
         )
     else:
-        return JobStatus.DONE, "Imported Entry count: %d" % total_count, None
+        return JobStatus.DONE, f"Imported Entry count: {total_count}", None
 
 
 @register_job_task(JobOperation.EXPORT_ENTRY)
@@ -883,7 +877,7 @@ def _csv_export_v2(
                 return str(vval["name"])
             case AttrType.NAMED_OBJECT:
                 [(k, v)] = vval.items()
-                return "%s: %s" % (k, v["name"])
+                return f"{k}: {v['name']}"
             case AttrType.ARRAY_STRING:
                 from natsort import natsorted
 
@@ -902,7 +896,7 @@ def _csv_export_v2(
                 items = []
                 for vset in vval:
                     [(k, v)] = vset.items()
-                    items.append("%s: %s" % (k, v["name"]))
+                    items.append(f"{k}: {v['name']}")
                 return "\n".join(natsorted(items))
         return ""
 
@@ -1016,7 +1010,7 @@ def _notify_event(
 ) -> tuple[JobStatus, str, None] | None:
     entry = Entry.objects.filter(id=object_id).first()
     if not entry:
-        return JobStatus.ERROR, "Failed to get job.target (%s)" % object_id, None
+        return JobStatus.ERROR, f"Failed to get job.target ({object_id})", None
 
     try:
         notification_method(entry, user)
@@ -1148,7 +1142,7 @@ def bulk_update_entries(
     context = {"request": DRFRequest(job.user)}
     total_count = resp.ret_count
     for index, record in enumerate(resp.ret_values):
-        job.text = "Now updating... (progress: [%5d/%5d])" % (index + 1, total_count)
+        job.text = f"Now updating... (progress: [{index + 1:5}/{total_count:5}])"
         job.save(update_fields=["text"])
 
         # abort processing when job is canceled
@@ -1173,10 +1167,10 @@ def bulk_update_entries(
         else:
             return (
                 JobStatus.ERROR,
-                "Validation error during bulk update (%s)" % serializer.error_messages,
+                f"Validation error during bulk update ({serializer.error_messages})",
                 None,
             )
 
-    job.text = "Bulk update completed [%5d/%5d]" % (total_count, total_count)
+    job.text = f"Bulk update completed [{total_count:5}/{total_count:5}]"
     job.save(update_fields=["text"])
     return JobStatus.DONE

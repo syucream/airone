@@ -92,9 +92,7 @@ class AironeModelResource(ModelResource):
         if "mandatory_values" in cls._IMPORT_INFO and any(
             not data[x] for x in cls._IMPORT_INFO["mandatory_values"]
         ):
-            raise RuntimeError(
-                "The value of '%s' is needed" % str(cls._IMPORT_INFO["mandatory_values"])
-            )
+            raise RuntimeError(f"The value of '{cls._IMPORT_INFO['mandatory_values']}' is needed")
 
         # check unnecessary parameters are specified, or not
         if not all([x in cls._IMPORT_INFO["header"] for x in data.keys()]):

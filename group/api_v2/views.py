@@ -73,8 +73,8 @@ class GroupImportAPI(generics.GenericAPIView):
                 group: Group | None = Group.objects.filter(id=group_data["id"]).first()
                 if not group:
                     return Response(
-                        "Specified id group does not exist(id:%s, group:%s)"
-                        % (group_data["id"], group_data["name"]),
+                        f"Specified id group does not exist"
+                        f"(id:{group_data['id']}, group:{group_data['name']})",
                         status=status.HTTP_400_BAD_REQUEST,
                     )
 
@@ -83,8 +83,8 @@ class GroupImportAPI(generics.GenericAPIView):
                     Group.objects.filter(name=group_data["name"]).count() > 0
                 ):
                     return Response(
-                        "New group name is already used(id:%s, group:%s->%s)"
-                        % (group_data["id"], group.name, group_data["name"]),
+                        f"New group name is already used"
+                        f"(id:{group_data['id']}, group:{group.name}->{group_data['name']})",
                         status=status.HTTP_400_BAD_REQUEST,
                     )
 

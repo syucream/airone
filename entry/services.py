@@ -1,3 +1,4 @@
+from itertools import batched
 from typing import TYPE_CHECKING, Any
 
 from django.conf import settings
@@ -398,13 +399,12 @@ class AdvancedSearchService:
             CHUNK_SIZE = 1000
             matched_results: dict[int, AdvancedSearchResultRecord] = {}
             for entity_id, ref_ids_in_entity in ref_entries_by_entity.items():
-                for i in range(0, len(ref_ids_in_entity), CHUNK_SIZE):
-                    chunk = ref_ids_in_entity[i : i + CHUNK_SIZE]
+                for chunk in batched(ref_ids_in_entity, CHUNK_SIZE):
                     search_result = kls.search_entries(
                         user,
                         [str(entity_id)],
                         hint_attrs,
-                        entry_ids=chunk,
+                        entry_ids=list(chunk),
                     )
                     for record in search_result.ret_values:
                         matched_results[record.entry["id"]] = record
@@ -529,7 +529,7 @@ class AdvancedSearchService:
                 es_doc = entry.get_es_document(entity_attrs=entity_attrs)
                 if es_doc not in results_from_es:
                     if not is_update:
-                        Logger.warning("Update elasticsearch document (entry_id: %s)" % entry.id)
+                        Logger.warning(f"Update elasticsearch document (entry_id: {entry.id})")
 
                     # Elasticsearch bulk API format is add meta information and data pairs as sets.
                     # [
@@ -551,7 +551,7 @@ class AdvancedSearchService:
         )
         for entry_id in set(entry_ids_from_es) - set(entry_ids_from_db):
             if not is_update:
-                Logger.warning("Delete elasticsearch document (entry_id: %s)" % entry.id)
+                Logger.warning(f"Delete elasticsearch document (entry_id: {entry.id})")
             try:
                 es.delete(id=entry_id)
             except NotFoundError:

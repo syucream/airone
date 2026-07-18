@@ -3,11 +3,12 @@ from typing import TYPE_CHECKING, cast
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_protect
 from rest_framework.authtoken.models import Token
-from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 if TYPE_CHECKING:
+    from rest_framework.request import Request
+
     from user.models import User
 
 

@@ -81,7 +81,7 @@ def search_entries(
     total_entries: list[Entry] = []
     for entity_id in entity_ids.split(","):
         if not Entity.objects.filter(id=entity_id).exists():
-            return HttpResponse("Failed to get entity(%s)" % entity_id, status=400)
+            return HttpResponse(f"Failed to get entity({entity_id})", status=400)
 
         entries = Entry.objects.order_by("name").filter(schema__id=entity_id, is_active=True)
         total_entries += entries.all()
@@ -91,7 +91,7 @@ def search_entries(
 
     def _is_match_value(attrv: AttributeValue, cond: dict[str, Any]) -> Any:
         if cond["type"] == "text":
-            return re.match(r".*%s" % cond["value"], attrv.value)
+            return re.match(rf".*{cond['value']}", attrv.value)
         else:
             return int(cond["value"]) == attrv.referral.id
 
@@ -229,7 +229,7 @@ def get_attr_referrals(request: HttpRequest, attr_id: str) -> HttpResponse:
         not Attribute.objects.filter(id=attr_id).exists()
         and not EntityAttr.objects.filter(id=attr_id).exists()
     ):
-        return HttpResponse("Failed to get target attribute(%s)" % attr_id, status=400)
+        return HttpResponse(f"Failed to get target attribute({attr_id})", status=400)
 
     attr = None
     if Attribute.objects.filter(id=attr_id).exists():
@@ -259,7 +259,7 @@ def get_entry_history(request: HttpRequest, entry_id: str) -> HttpResponse:
         try:
             params[key] = int(request.GET.get(key, 0))
         except ValueError:
-            return HttpResponse('invaid parameter value "%s" is specified' % key, status=400)
+            return HttpResponse(f'invaid parameter value "{key}" is specified', status=400)
 
     if not all([isinstance(x, int) for x in params.values()]):
         return HttpResponse('parameter "index" and "count" are mandatory', status=400)
@@ -276,7 +276,7 @@ def get_entry_history(request: HttpRequest, entry_id: str) -> HttpResponse:
         elif isinstance(obj, date):
             return str(obj)
 
-        raise TypeError("Type %s not serializable" % type(obj))
+        raise TypeError(f"Type {type(obj)} not serializable")
 
     history = entry.get_value_history(request.user, count=params["count"], index=params["index"])
 

@@ -243,7 +243,7 @@ class PostEntrySerializer(serializers.Serializer):
     def validate(self, data: dict[str, Any]) -> dict[str, Any]:
         # checks specified entity is existed
         if not Entity.objects.filter(is_active=True, name=data["entity"]).exists():
-            raise ValidationError("Invalid Entity is specified (%s)" % data["entity"])
+            raise ValidationError(f"Invalid Entity is specified ({data['entity']})")
         entity = data["entity"] = Entity.objects.get(is_active=True, name=data["entity"])
 
         entry = None
@@ -255,7 +255,7 @@ class PostEntrySerializer(serializers.Serializer):
             if Entry.objects.filter(schema=entity, id=data["id"]).exists():
                 entry = Entry.objects.get(schema=entity, id=data["id"])
             else:
-                raise ValidationError("Invalid Entry-ID is specified (%d)" % data["id"])
+                raise ValidationError(f"Invalid Entry-ID is specified ({data['id']})")
 
         # checks mandatory keys are specified when a new Entry will be created
         if not entry and not all(
@@ -270,12 +270,12 @@ class PostEntrySerializer(serializers.Serializer):
         # checks specified attr values are valid
         for attr_name, attr_value in data["attrs"].items():
             if not entity.attrs.filter(is_active=True, name=attr_name).exists():
-                raise ValidationError("Target entity doesn't specified attr(%s)" % (attr_name))
+                raise ValidationError(f"Target entity doesn't specified attr({attr_name})")
 
             attr = entity.attrs.get(name=attr_name)
             validated_value = self._validate_attr(attr, attr_value)
             if validated_value is None:
-                raise ValidationError("Invalid attribute value(%s) is specified" % (attr_name))
+                raise ValidationError(f"Invalid attribute value({attr_name}) is specified")
 
             data["attrs"][attr_name] = validated_value
 

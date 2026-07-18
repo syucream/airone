@@ -300,7 +300,7 @@ def change_ldap_auth(request: HttpRequest, recv_data: dict[str, Any]) -> HttpRes
         return HttpResponse("Succeeded")
     else:
         return HttpResponse(
-            "LDAP authentication was Failed of user %s" % request.user.username,
+            f"LDAP authentication was Failed of user {request.user.username}",
             status=400,
         )
 

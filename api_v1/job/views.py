@@ -71,9 +71,7 @@ class JobAPI(APIView):
 
         job = Job.objects.filter(id=job_id).first()
         if not job:
-            return Response(
-                "Failed to find Job(id=%s)" % job_id, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response(f"Failed to find Job(id={job_id})", status=status.HTTP_400_BAD_REQUEST)
 
         if job.status == JobStatus.DONE:
             return Response("Target job has already been done")
@@ -91,9 +89,7 @@ class SpecificJobAPI(APIView):
     def post(self, request: Request, job_id: int, format: str | None = None) -> Response:
         job = Job.objects.filter(id=job_id).first()
         if not job:
-            return Response(
-                "Failed to find Job(id=%s)" % job_id, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response(f"Failed to find Job(id={job_id})", status=status.HTTP_400_BAD_REQUEST)
 
         # check job status before starting processing
         if job.status == JobStatus.DONE:

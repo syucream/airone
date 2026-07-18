@@ -1,4 +1,5 @@
 from datetime import datetime
+from itertools import batched
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -81,11 +82,11 @@ class EntrySearchChainAPI(APIView):
             # search processing into 100 pieces to prevent hung-up
             # while AdvancedSearchService.search_entries() because of big input data.
             ret_values: list[AdvancedSearchResultRecord] = []
-            for i in range(0, len(ret_data), 100):
+            for chunk in batched(ret_data, 100):
                 entry_info = AdvancedSearchService.search_entries(
                     request.user,
                     serializer.validated_data["entities"],
-                    entry_name="|".join(["^%s$" % x["name"] for x in ret_data[i : i + 100]]),
+                    entry_name="|".join([f"^{x['name']}$" for x in chunk]),
                     is_output_all=True,
                 )
                 ret_values.extend(entry_info.ret_values)
@@ -342,7 +343,7 @@ class UpdateHistory(APIView):
             attr = entry.attrs.filter(schema__name=p_attr, is_active=True).first()
             if not attr:
                 return Response(
-                    "There is no attribute(%s) in entry(%s)" % (p_attr, entry.name),
+                    f"There is no attribute({p_attr}) in entry({entry.name})",
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 

@@ -28,7 +28,7 @@ class InputTriggerCondition:
         attr_id = input.get("attr_id", 0)
         attr = EntityAttr.objects.filter(id=attr_id, is_active=True).first()
         if not attr:
-            raise InvalidInputException("Specified attr(%s) is invalid" % attr_id)
+            raise InvalidInputException(f"Specified attr({attr_id}) is invalid")
         self.attr: EntityAttr = attr
 
         # initialize each condition parameters
@@ -40,13 +40,10 @@ class InputTriggerCondition:
         self.parse_input_condition(input.get("cond"), input.get("hint"))
 
     def __repr__(self) -> str:
-        return "(attr:%s[%s]) str_cond:%s, ref_cond:%s, bool_cond:%s is_unmatch:%s" % (
-            self.attr.name,
-            self.attr.id,
-            str(self.str_cond),
-            str(self.ref_cond),
-            str(self.bool_cond),
-            self.is_unmatch,
+        return (
+            f"(attr:{self.attr.name}[{self.attr.id}]) str_cond:{self.str_cond}, "
+            f"ref_cond:{self.ref_cond}, bool_cond:{self.bool_cond} "
+            f"is_unmatch:{self.is_unmatch}"
         )
 
     def initialize_condition(self) -> None:
@@ -122,7 +119,7 @@ class InputTriggerAction:
         attr_id = input.get("attr_id", 0)
         attr = EntityAttr.objects.filter(id=attr_id, is_active=True).first()
         if not attr:
-            raise InvalidInputException("Specified attr(%s) is invalid" % attr_id)
+            raise InvalidInputException(f"Specified attr({attr_id}) is invalid")
         self.attr: EntityAttr = attr
 
         self.values: list[Any] = []
@@ -430,8 +427,7 @@ class TriggerCondition(models.Model):
 
         except ValueError:
             Logger.error(
-                "Invalid Attribute Type(%s) was registered (attr_id: %s)"
-                % (self.attr.type, self.attr.id)
+                f"Invalid Attribute Type({self.attr.type}) was registered (attr_id: {self.attr.id})"
             )
 
         return False

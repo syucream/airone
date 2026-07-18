@@ -16,7 +16,7 @@ from .models import ACLBase
 def create_permission(instance: ACLBase) -> None:
     content_type = ContentType.objects.get_for_model(instance)
     for acltype in ACLType.availables():
-        codename = "%s.%s" % (instance.id, acltype.id)
+        codename = f"{instance.id}.{acltype.id}"
         HistoricalPermission(name=acltype.name, codename=codename, content_type=content_type).save()
 
 

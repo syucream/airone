@@ -39,7 +39,7 @@ def edit(request: HttpRequest, group_id: int) -> HttpResponse:
         "current_group_members": User.objects.filter(groups__id=group.id, is_active=True).order_by(
             "username"
         ),
-        "submit_ref": "/group/do_edit/%s" % group_id,
+        "submit_ref": f"/group/do_edit/{group_id}",
         "parent_group_id": group.parent_group.id if group.parent_group else 0,
     }
 
@@ -125,7 +125,7 @@ def do_edit(request: HttpRequest, group_id: int, recv_data: dict[str, Any]) -> H
 
     return JsonResponse(
         {
-            "msg": 'Success to update Group "%s"' % group.name,
+            "msg": f'Success to update Group "{group.name}"',
         }
     )
 
@@ -194,7 +194,7 @@ def do_create(request: HttpRequest, recv_data: dict[str, Any]) -> HttpResponse:
 
     return JsonResponse(
         {
-            "msg": 'Success to create a new Group "%s"' % new_group.name,
+            "msg": f'Success to create a new Group "{new_group.name}"',
         }
     )
 
@@ -285,8 +285,8 @@ def do_import_user_and_group(request: HttpRequest, context: str) -> HttpResponse
             group = Group.objects.filter(id=group_data["id"]).first()
             if not group:
                 return HttpResponse(
-                    "Specified id group does not exist(id:%s, group:%s)"
-                    % (group_data["id"], group_data["name"]),
+                    f"Specified id group does not exist"
+                    f"(id:{group_data['id']}, group:{group_data['name']})",
                     status=400,
                 )
 
@@ -295,8 +295,8 @@ def do_import_user_and_group(request: HttpRequest, context: str) -> HttpResponse
                 Group.objects.filter(name=group_data["name"]).count() > 0
             ):
                 return HttpResponse(
-                    "New group name is already used(id:%s, group:%s->%s)"
-                    % (group_data["id"], group.name, group_data["name"]),
+                    f"New group name is already used"
+                    f"(id:{group_data['id']}, group:{group.name}->{group_data['name']})",
                     status=400,
                 )
 
@@ -314,7 +314,7 @@ def do_import_user_and_group(request: HttpRequest, context: str) -> HttpResponse
     for user_data in data["User"]:
         for param in ["username", "groups", "email"]:
             if param not in user_data:
-                return HttpResponse("'%s' is required" % param, status=400)
+                return HttpResponse(f"'{param}' is required", status=400)
 
         user = None
         if "id" in user_data:
@@ -322,16 +322,16 @@ def do_import_user_and_group(request: HttpRequest, context: str) -> HttpResponse
             user = User.objects.filter(id=user_data["id"]).first()
             if not user:
                 return HttpResponse(
-                    "Specified id user does not exist(id:%s, user:%s)"
-                    % (user_data["id"], user_data["username"]),
+                    f"Specified id user does not exist"
+                    f"(id:{user_data['id']}, user:{user_data['username']})",
                     status=400,
                 )
             if (user.username != user_data["username"]) and (
                 User.objects.filter(username=user_data["username"]).count() > 0
             ):
                 return HttpResponse(
-                    "New username is already used(id:%s, user:%s->%s)"
-                    % (user_data["id"], user.username, user_data["username"]),
+                    f"New username is already used"
+                    f"(id:{user_data['id']}, user:{user.username}->{user_data['username']})",
                     status=400,
                 )
         else:
@@ -352,8 +352,8 @@ def do_import_user_and_group(request: HttpRequest, context: str) -> HttpResponse
             new_group = Group.objects.filter(name=group_name).first()
             if not new_group:
                 return HttpResponse(
-                    "Specified group does not exist(user:%s, group:%s)"
-                    % (user_data["username"], group_name),
+                    f"Specified group does not exist"
+                    f"(user:{user_data['username']}, group:{group_name})",
                     status=400,
                 )
             new_groups.append(new_group)

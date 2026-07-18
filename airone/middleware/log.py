@@ -22,12 +22,9 @@ class LoggingRequestMiddleware:
         response = self.get_response(request)
 
         user_id = request.user.id if hasattr(request, "user") else None
-        logger_msg = "(Profiling result: %fs) (user-id: %s) %s %s %s" % (
-            time() - start_time,
-            user_id,
-            request.method,
-            request.path,
-            response.status_code,
+        logger_msg = (
+            f"(Profiling result: {time() - start_time:f}s) (user-id: {user_id}) "
+            f"{request.method} {request.path} {response.status_code}"
         )
         if response.status_code >= 500:
             Logger.error(logger_msg)

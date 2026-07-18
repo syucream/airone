@@ -165,7 +165,7 @@ class WebhookCreateUpdateSerializer(serializers.ModelSerializer):
     def validate_id(self, id: int | None) -> int | None:
         entity: Entity = self.parent.parent.instance
         if id is not None and not entity.webhooks.filter(id=id).exists():
-            raise ObjectNotExistsError("Invalid id(%s) object does not exist" % id)
+            raise ObjectNotExistsError(f"Invalid id({id}) object does not exist")
 
         return id
 
@@ -210,7 +210,7 @@ class EntityAttrCreateSerializer(serializers.ModelSerializer):
 
     def validate_type(self, type: int | None) -> int | None:
         if type is not None and type not in AttrTypeValue.values():
-            raise ObjectNotExistsError("attrs type(%s) does not exist" % type)
+            raise ObjectNotExistsError(f"attrs type({type}) does not exist")
 
         return type
 
@@ -346,14 +346,14 @@ class EntityAttrUpdateSerializer(serializers.ModelSerializer):
                 id=id, is_active=True
             ).first()
             if not entity_attr:
-                raise ObjectNotExistsError("Invalid id(%s) object does not exist" % id)
+                raise ObjectNotExistsError(f"Invalid id({id}) object does not exist")
             return id
 
         # Normal case when used as nested serializer
         entity: Entity = self.parent.parent.instance
         nested_entity_attr: EntityAttr | None = entity.attrs.filter(id=id, is_active=True).first()
         if not nested_entity_attr:
-            raise ObjectNotExistsError("Invalid id(%s) object does not exist" % id)
+            raise ObjectNotExistsError(f"Invalid id({id}) object does not exist")
 
         return id
 
@@ -363,7 +363,7 @@ class EntityAttrUpdateSerializer(serializers.ModelSerializer):
         if type == AttrType.ARRAY_NAMED_OBJECT_BOOLEAN:
             type = AttrType.ARRAY_NAMED_OBJECT
         if type is not None and type not in AttrTypeValue.values():
-            raise ObjectNotExistsError("attrs type(%s) does not exist" % type)
+            raise ObjectNotExistsError(f"attrs type({type}) does not exist")
 
         return type
 
@@ -1422,7 +1422,7 @@ class EntityImportExportRootSerializer(serializers.Serializer):
                     result = resource.import_data_from_request(data, user)
                     results.append({"result": result, "data": data})
                 except RuntimeError as e:
-                    Logger.warning(("(%s) %s " % (resource, data)) + str(e))
+                    Logger.warning(f"({resource}) {data} " + str(e))
             if results:
                 resource.after_import_completion(results)
 

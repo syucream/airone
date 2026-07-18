@@ -178,8 +178,8 @@ def create(request: HttpRequest, entity_id: int) -> HttpResponse:
 
     context = {
         "entity": entity,
-        "form_url": "/entry/do_create/%s/" % entity.id,
-        "redirect_url": "/entry/%s" % entity.id,
+        "form_url": f"/entry/do_create/{entity.id}/",
+        "redirect_url": f"/entry/{entity.id}",
         "groups": Group.objects.filter(is_active=True),
         "roles": Role.objects.filter(is_active=True),
         "attributes": [
@@ -296,8 +296,8 @@ def edit(request: HttpRequest, entry_id: int) -> HttpResponse:
         "groups": Group.objects.filter(is_active=True),
         "roles": Role.objects.filter(is_active=True),
         "attributes": entry.get_available_attrs(request.user, ACLType.Writable),
-        "form_url": "/entry/do_edit/%s" % entry.id,
-        "redirect_url": "/entry/show/%s" % entry.id,
+        "form_url": f"/entry/do_edit/{entry.id}",
+        "redirect_url": f"/entry/show/{entry.id}",
     }
 
     if custom_view.is_custom("edit_entry", entry.schema.name):
@@ -489,13 +489,13 @@ def export(request: HttpRequest, entity_id: int, recv_data: dict[str, Any]) -> H
 
     entity = Entity.objects.get(id=entity_id)
     if not request.user.has_permission(entity, ACLType.Readable):
-        return HttpResponse('Permission denied to export "%s"' % entity.name, status=400)
+        return HttpResponse(f'Permission denied to export "{entity.name}"', status=400)
 
     # create a job to export search result and run it
     job = Job.new_export(
         request.user,
         **{
-            "text": "entry_%s.%s" % (entity.name, job_params["export_format"]),
+            "text": f"entry_{entity.name}.{job_params['export_format']}",
             "target": entity,
             "params": job_params,
         },
@@ -532,11 +532,11 @@ def do_import_data(request: HttpRequest, entity_id: int, context: str) -> HttpRe
     except yaml.parser.ParserError:
         return HttpResponse("Couldn't parse uploaded file", status=400)
     except ValueError as e:
-        return HttpResponse("Invalid value is found: %s" % e, status=400)
+        return HttpResponse(f"Invalid value is found: {e}", status=400)
     except yaml.scanner.ScannerError:
         return HttpResponse("Couldn't scan uploaded file", status=400)
     except Exception as e:
-        return HttpResponse("Unknown exception: %s" % e, status=500)
+        return HttpResponse(f"Unknown exception: {e}", status=500)
 
     if not Entry.is_importable_data(data):
         return HttpResponse("Uploaded file has invalid data structure to import", status=400)
@@ -544,11 +544,9 @@ def do_import_data(request: HttpRequest, entity_id: int, context: str) -> HttpRe
     for entity_name in data.keys():
         import_entity: Entity = Entity.objects.filter(name=entity_name, is_active=True).first()
         if not import_entity:
-            return HttpResponse("Specified entity does not exist (%s)" % entity_name, status=400)
+            return HttpResponse(f"Specified entity does not exist ({entity_name})", status=400)
         if not user.has_permission(import_entity, ACLType.Writable):
-            return HttpResponse(
-                "You don't have permission to access (%s)" % entity_name, status=400
-            )
+            return HttpResponse(f"You don't have permission to access ({entity_name})", status=400)
 
         import_data = data[entity_name]
 
@@ -569,7 +567,7 @@ def do_import_data(request: HttpRequest, entity_id: int, context: str) -> HttpRe
         )
         job.run()
 
-    return HttpResponseSeeOther("/entry/%s/" % entity_id)
+    return HttpResponseSeeOther(f"/entry/{entity_id}/")
 
 
 @http_post([])  # check only that request is POST, id will be given by url
@@ -634,8 +632,8 @@ def copy(request: HttpRequest, entry_id: int) -> HttpResponse:
         return _redirect_restore_entry(entry)
 
     context = {
-        "form_url": "/entry/do_copy/%s" % entry.id,
-        "redirect_url": "/entry/%s" % entry.schema.id,
+        "form_url": f"/entry/do_copy/{entry.id}",
+        "redirect_url": f"/entry/{entry.schema.id}",
         "entry": entry,
     }
 
@@ -670,7 +668,7 @@ def do_copy(request: HttpRequest, entry_id: int, recv_data: dict[str, Any]) -> H
             ret.append(
                 {
                     "status": "fail",
-                    "msg": "A same named entry (%s) already exists" % new_name,
+                    "msg": f"A same named entry ({new_name}) already exists",
                 }
             )
             continue
@@ -698,7 +696,7 @@ def do_copy(request: HttpRequest, entry_id: int, recv_data: dict[str, Any]) -> H
         ret.append(
             {
                 "status": "success",
-                "msg": "Success to create new entry '%s'" % new_name,
+                "msg": f"Success to create new entry '{new_name}'",
             }
         )
 
@@ -782,9 +780,8 @@ def do_restore(request: HttpRequest, entry_id: int, recv_data: dict[str, Any]) -
     if entry.check_duplication_entry_at_restoring(entry_chain=[]):
         return JsonResponse(
             data={
-                "msg": "Failed to restore entry. %s has referral that will be duplicate \
+                "msg": f"Failed to restore entry. {entry.name} has referral that will be duplicate \
                 with other Entry."
-                % entry.name
             },
             status=400,
         )
@@ -893,13 +890,10 @@ def revert_attrv(request: HttpRequest, recv_data: dict[str, Any]) -> HttpRespons
                 ]
             )
 
-    return HttpResponse('Succeed in updating Attribute "%s"' % attr.schema.name)
+    return HttpResponse(f'Succeed in updating Attribute "{attr.schema.name}"')
 
 
 def _redirect_restore_entry(entry: Entry) -> HttpResponse:
     return redirect(
-        "{}?{}".format(
-            reverse("entry:restore", args=[entry.schema.id]),
-            urlencode({"keyword": entry.name}),
-        )
+        f"{reverse('entry:restore', args=[entry.schema.id])}?{urlencode({'keyword': entry.name})}"
     )

@@ -138,7 +138,7 @@ def do_create(request: HttpRequest, recv_data: dict[str, Any]) -> HttpResponse:
     # set users and groups, which include administrative ones, to role instance
     set_role_members(role, recv_data)
 
-    return JsonResponse({"msg": 'Succeeded in creating new Role "%s"' % recv_data["name"]})
+    return JsonResponse({"msg": f'Succeeded in creating new Role "{recv_data["name"]}"'})
 
 
 @http_get
@@ -146,14 +146,14 @@ def edit(request: HttpRequest, role_id: int) -> HttpResponse:
     user = request.user
     role = Role.objects.filter(id=role_id, is_active=True).first()
     if not role:
-        return HttpResponse("Specified Role(id:%d) does not exist" % role_id, status=400)
+        return HttpResponse(f"Specified Role(id:{role_id}) does not exist", status=400)
 
     if not role.is_editable(user):
         return HttpResponse("You do not have permission to change this role", status=400)
 
     # get user and group members that are selectable as role members
     context = initialize_role_context()
-    context["submit_ref"] = "/role/do_edit/%d/" % role.id
+    context["submit_ref"] = f"/role/do_edit/{role.id}/"
 
     # update users/groups context to set what users and groups are registered on role
     context["name"] = role.name
@@ -189,7 +189,7 @@ def do_edit(request: HttpRequest, role_id: int, recv_data: dict[str, Any]) -> Ht
     user = request.user
     role = Role.objects.filter(id=role_id, is_active=True).first()
     if not role:
-        return HttpResponse("Specified Role(id:%d) does not exist" % role_id, status=400)
+        return HttpResponse(f"Specified Role(id:{role_id}) does not exist", status=400)
 
     dup_role = Role.objects.filter(name=recv_data["name"], is_active=True).first()
     if dup_role and dup_role.id != int(role_id):
@@ -233,4 +233,4 @@ def do_edit(request: HttpRequest, role_id: int, recv_data: dict[str, Any]) -> Ht
     if job_register_referrals:
         job_register_referrals.run()
 
-    return JsonResponse({"msg": 'Succeeded in updating Role "%s"' % recv_data["name"]})
+    return JsonResponse({"msg": f'Succeeded in updating Role "{recv_data["name"]}"'})

@@ -82,7 +82,7 @@ def do_import_data(request: HttpRequest, context: str) -> HttpResponse:
 
                 results.append({"result": result, "data": data})
             except RuntimeError as e:
-                Logger.warning(("(%s) %s " % (resource, data)) + str(e))
+                Logger.warning(f"({resource}) {data} " + str(e))
 
         if results:
             resource.after_import_completion(results)
@@ -129,13 +129,13 @@ def search(request: HttpRequest) -> HttpResponse:
     if entity_name:
         entry = Entry.objects.filter(name=query, schema__name=entity_name, is_active=True).first()
         if entry and request.user.has_permission(entry, ACLType.Readable):
-            return redirect("/entry/show/%s/" % entry.id)
+            return redirect(f"/entry/show/{entry.id}/")
 
     per_page = CONFIG.MAXIMUM_SEARCH_RESULTS
     (count, entries) = _search_by_keyword(modified_query, entity_name, per_page, page_num)
 
     if count == 1:
-        return redirect("/entry/show/%s/" % entries[0]["id"])
+        return redirect(f"/entry/show/{entries[0]['id']}/")
 
     p = Paginator(["" for x in range(count)], per_page)
     try:
@@ -320,7 +320,7 @@ def export_search_result(request: HttpRequest, recv_data: dict[str, Any]) -> Htt
     # create a job to export search result and run it
     job = Job.new_export_search_result(
         request.user,
-        text="search_results.%s" % recv_data["export_style"],
+        text=f"search_results.{recv_data['export_style']}",
         params=recv_data,
     )
     job.run()

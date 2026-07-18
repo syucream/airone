@@ -161,7 +161,7 @@ class TriggerParentBaseSerializer(serializers.ModelSerializer):
     def validate(self, data: dict[str, Any]) -> dict[str, Any]:
         entity = Entity.objects.filter(id=data["entity_id"], is_active=True).first()
         if not entity:
-            raise ValidationError("Invalid entity_id(%s) was specified" % data["entity_id"])
+            raise ValidationError(f"Invalid entity_id({data['entity_id']}) was specified")
 
         # Element in conditions and actions is necessary at least one
         if not data["conditions"] or not data["actions"]:
@@ -174,7 +174,7 @@ class TriggerParentBaseSerializer(serializers.ModelSerializer):
             attr_id_list = [x["attr_id"] for x in data[key]]
             if not EntityAttr.objects.filter(id__in=attr_id_list, parent_entity=entity).exists():
                 raise InvalidValueError(
-                    "%s.attr_id contains non EntityAttr of specified Entity" % key
+                    f"{key}.attr_id contains non EntityAttr of specified Entity"
                 )
 
         return data

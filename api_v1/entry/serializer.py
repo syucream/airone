@@ -28,7 +28,7 @@ class ReferSerializer(serializers.Serializer):
 
     def validate_entity(self, entity_name: str) -> str:
         if not Entity.objects.filter(name=entity_name, is_active=True).exists():
-            raise ValidationError("There is no specified Entity (%s)" % entity_name)
+            raise ValidationError(f"There is no specified Entity ({entity_name})")
 
         return entity_name
 
@@ -47,7 +47,7 @@ class AttrSerializer(serializers.Serializer):
 
     def validate_name(self, name: str) -> str:
         if not EntityAttr.objects.filter(name=name, is_active=True).exists():
-            raise ValidationError("There is no specified Attribute (%s)" % name)
+            raise ValidationError(f"There is no specified Attribute ({name})")
 
         return name
 
@@ -97,7 +97,7 @@ class EntrySearchChainSerializer(serializers.Serializer):
                     for x in entities
                 ]
             ):
-                raise ValidationError("Invalid Attribute name (%s) was specified" % str(attrname))
+                raise ValidationError(f"Invalid Attribute name ({attrname}) was specified")
 
         def _complement_entities(condition: dict[str, Any], entities: list[Entity]) -> None:
             if "name" in condition:
@@ -120,10 +120,10 @@ class EntrySearchChainSerializer(serializers.Serializer):
         ) -> dict[str, Any]:
             serializer = serializer_class(data=condition)
             if not serializer.is_valid():
-                raise ValidationError("Invalid condition(%s) was specified" % str(condition))
+                raise ValidationError(f"Invalid condition({condition}) was specified")
 
             if not entities:
-                raise ValidationError("Condition(%s) couldn't find valid Entities" % str(condition))
+                raise ValidationError(f"Condition({condition}) couldn't find valid Entities")
 
             validated_data = serializer.validated_data
             if "name" in validated_data:
@@ -218,7 +218,7 @@ class EntrySearchChainSerializer(serializers.Serializer):
         ) -> list[AdvancedSearchResultRecordIdNamePair]:
             # make query to search Entries using AdvancedSearchService.search_entries()
             search_keyword = CONFIG.OR_SEARCH_CHARACTER.join(
-                ["^%s$" % x["name"] for x in sub_query_result]
+                [f"^{x['name']}$" for x in sub_query_result]
             )
             if isinstance(sub_query.get("entry"), str) and len(sub_query["entry"]) > 0:
                 if not search_keyword:
@@ -245,7 +245,7 @@ class EntrySearchChainSerializer(serializers.Serializer):
             try:
                 search_result = AdvancedSearchService.search_entries(**query_params)
             except Exception as e:
-                Logger.warning("Search Chain API error:%s" % e)
+                Logger.warning(f"Search Chain API error:{e}")
                 raise ElasticsearchException()
 
             if search_result.ret_count > CONFIG.SEARCH_CHAIN_ACCEPTABLE_RESULT_COUNT:
@@ -307,7 +307,7 @@ class EntrySearchChainSerializer(serializers.Serializer):
             sub_query: dict[str, Any], sub_query_result: list[dict[str, Any]]
         ) -> list[AdvancedSearchResultRecordIdNamePair]:
             # make query to search Entries using AdvancedSearchService.search_entries()
-            search_keyword = "|".join(["^%s$" % x["name"] for x in sub_query_result])
+            search_keyword = "|".join([f"^{x['name']}$" for x in sub_query_result])
             if isinstance(sub_query.get("value"), str) and len(sub_query["value"]) > 0:
                 search_keyword = sub_query["value"]
 
@@ -342,7 +342,7 @@ class EntrySearchChainSerializer(serializers.Serializer):
                     hint_entry=hint_item,
                 )
             except Exception as e:
-                Logger.warning("Search Chain API error:%s" % e)
+                Logger.warning(f"Search Chain API error:{e}")
                 raise ElasticsearchException()
 
             # All results of this request would be joined and pass to next request. It might be

@@ -41,8 +41,8 @@ class PagodaLoginView(django_auth_views.LoginView):
 
         except (json.JSONDecodeError, TypeError):
             Logger.warning(
-                "Unexpected extra_param was specified from client (%s)"
-                % (str(self.request.POST.get("extra_param", "")))
+                f"Unexpected extra_param was specified from client "
+                f"({self.request.POST.get('extra_param', '')})"
             )
 
             return JsonResponse(

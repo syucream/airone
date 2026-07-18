@@ -33,7 +33,7 @@ def import_role_v2(self: Any, job: Job) -> tuple[JobStatus, str, None] | None:
     total_count = len(import_data)
 
     for index, role_data in enumerate(import_data):
-        job.text = "Now importing roles... (progress: [%5d/%5d])" % (index + 1, total_count)
+        job.text = f"Now importing roles... (progress: [{index + 1:5}/{total_count:5}])"
         job.save(update_fields=["text"])
 
         # Interrupt processing if the job is canceled
@@ -58,8 +58,8 @@ def import_role_v2(self: Any, job: Job) -> tuple[JobStatus, str, None] | None:
                 Role.objects.filter(name=role_data["name"]).count() > 0
             ):
                 err_msg.append(
-                    "New role name is already used(id:%s, group:%s->%s)"
-                    % (role_data["id"], role.name, role_data["name"])
+                    f"New role name is already used"
+                    f"(id:{role_data['id']}, group:{role.name}->{role_data['name']})"
                 )
                 continue
 
@@ -83,7 +83,7 @@ def import_role_v2(self: Any, job: Job) -> tuple[JobStatus, str, None] | None:
             for name in role_data[key]:
                 instance = User.objects.filter(username=name, is_active=True).first()
                 if not instance:
-                    err_msg.append("specified user is not found (username: %s)" % name)
+                    err_msg.append(f"specified user is not found (username: {name})")
                     continue
                 getattr(role, key).add(instance)
 
@@ -91,7 +91,7 @@ def import_role_v2(self: Any, job: Job) -> tuple[JobStatus, str, None] | None:
             for name in role_data[key]:
                 instance = Group.objects.filter(name=name, is_active=True).first()
                 if not instance:
-                    err_msg.append("specified group is not found (name: %s)" % name)
+                    err_msg.append(f"specified group is not found (name: {name})")
                     continue
                 getattr(role, key).add(instance)
 
@@ -111,15 +111,14 @@ def import_role_v2(self: Any, job: Job) -> tuple[JobStatus, str, None] | None:
             role.save()
         except Exception as e:
             err_msg.append(role_data["name"])
-            Logger.warning("failed to save role: name=%s, error=%s" % (role_data["name"], str(e)))
+            Logger.warning(f"failed to save role: name={role_data['name']}, error={e}")
 
     # Update the job based on the result of the process
     if err_msg:
         return (
             JobStatus.WARNING,
-            "Imported Role count: %d, Failed import Roles: %s"
-            % (total_count - len(err_msg), err_msg),
+            f"Imported Role count: {total_count - len(err_msg)}, Failed import Roles: {err_msg}",
             None,
         )
     else:
-        return JobStatus.DONE, "Imported Role count: %d" % total_count, None
+        return JobStatus.DONE, f"Imported Role count: {total_count}", None

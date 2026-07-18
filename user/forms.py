@@ -62,7 +62,7 @@ class UsernameBasedPasswordResetForm(forms.Form):
         """
         active_users = UserModel._default_manager.filter(
             **{
-                "%s__iexact" % self.USERNAME_FIELD: username,
+                f"{self.USERNAME_FIELD}__iexact": username,
                 "is_active": True,
             }
         )

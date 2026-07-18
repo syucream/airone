@@ -69,7 +69,7 @@ class UserCreateSerializer(UserBaseSerializer):
         # check specified username has already been used at co-users of login user
         request_user = self.context["request"].user
         if not request_user.is_superuser:
-            candidate_name = "%s-%s" % (request_user.username, username)
+            candidate_name = f"{request_user.username}-{username}"
 
             if User.objects.filter(username=candidate_name).exists():
                 raise ValidationError("A user with that username already exists.")
@@ -325,7 +325,7 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
         try:
             password_validation.validate_password(password1)
         except DjangoCoreValidationError as e:
-            raise ValidationError("invalid password given. details: %s" % e)
+            raise ValidationError(f"invalid password given. details: {e}")
 
         return attrs
 
@@ -353,7 +353,7 @@ class UserAuthSerializer(serializers.Serializer):
 
         ldap_password = attrs.get("ldap_password")
         if ldap_password is None or not LDAPBackend.is_authenticated(user.username, ldap_password):
-            raise ValidationError("LDAP authentication was Failed of user %s" % user.username)
+            raise ValidationError(f"LDAP authentication was Failed of user {user.username}")
 
         return attrs
 

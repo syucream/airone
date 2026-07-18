@@ -346,7 +346,7 @@ class AttributeValue(models.Model):
                 {
                     "type": entry.__class__.__name__,
                     "object": entry,
-                    "hint": "attribute '%s' has '%s'" % (attr.name, obj.value),
+                    "hint": f"attribute '{attr.name}' has '{obj.value}'",
                 }
             )
 
@@ -401,7 +401,7 @@ class AttributeValue(models.Model):
 
         def _is_validate_attr_str(value: str) -> bool:
             if not isinstance(value, str):
-                raise Exception("value(%s) is not str" % value)
+                raise Exception(f"value({value}) is not str")
             if len(str(value).encode("utf-8")) > AttributeValue.MAXIMUM_VALUE_SIZE:
                 raise ExceedLimitError("value is exceeded the limit")
             if is_mandatory and value == "":
@@ -417,9 +417,9 @@ class AttributeValue(models.Model):
                     isinstance(value, ACLBase)
                     and Entry.objects.filter(id=value.id, is_active=True).exists()
                 ):
-                    raise Exception("value(%s) is not valid entry" % value.name)
+                    raise Exception(f"value({value.name}) is not valid entry")
                 elif value and not Entry.objects.filter(id=value, is_active=True).exists():
-                    raise Exception("value(%s) is not entry id" % value)
+                    raise Exception(f"value({value}) is not entry id")
                 elif is_mandatory and not value:
                     return False
                 elif value:
@@ -431,11 +431,11 @@ class AttributeValue(models.Model):
 
                     qs = Entry.objects.filter(id=entry_id, is_active=True)
                     if IsolationParent.get_isolated_entry_ids(qs, parent_entity):
-                        raise Exception("value(%s) is isolated entry" % value)
+                        raise Exception(f"value({value}) is isolated entry")
 
                 return True
             except (ValueError, TypeError):
-                raise Exception("value(%s) is not int" % value)
+                raise Exception(f"value({value}) is not int")
 
         def _is_validate_attr(t: int, value: Any) -> bool:
             match t:
@@ -449,21 +449,21 @@ class AttributeValue(models.Model):
                         return True
                     if isinstance(value, int | float):
                         if isinstance(value, float) and (math.isnan(value) or math.isinf(value)):
-                            raise Exception("value(%s) is NaN or Infinity" % value)
+                            raise Exception(f"value({value}) is NaN or Infinity")
                         return True
                     if isinstance(value, str):
                         try:
                             f_val = float(value)
                             if math.isnan(f_val) or math.isinf(f_val):
-                                raise Exception("value(%s) is NaN or Infinity" % value)
+                                raise Exception(f"value({value}) is NaN or Infinity")
                             if len(value.encode("utf-8")) > AttributeValue.MAXIMUM_VALUE_SIZE:
                                 raise ExceedLimitError("value is exceeded the limit")
                             return True
                         except ValueError:
-                            raise Exception("value(%s) is not a valid number string" % value)
+                            raise Exception(f"value({value}) is not a valid number string")
                         except ExceedLimitError as e:
                             raise e
-                    raise Exception("value(%s) is not a valid number type or format" % value)
+                    raise Exception(f"value({value}) is not a valid number type or format")
 
                 case AttrType.OBJECT:
                     return _is_validate_attr_object(value)
@@ -471,9 +471,9 @@ class AttributeValue(models.Model):
                 case AttrType.NAMED_OBJECT:
                     if value:
                         if not isinstance(value, dict):
-                            raise Exception("value(%s) is not dict" % value)
+                            raise Exception(f"value({value}) is not dict")
                         if not ("name" in value.keys() and "id" in value.keys()):
-                            raise Exception("value(%s) is not key('name', 'id')" % value)
+                            raise Exception(f"value({value}) is not key('name', 'id')")
                         if not any(
                             [
                                 _is_validate_attr_str(value["name"]),
@@ -493,15 +493,15 @@ class AttributeValue(models.Model):
                                 is_active=True,  # type: ignore[misc]
                             ).exists()
                         ):
-                            raise Exception("value(%s) is not group id" % value)
+                            raise Exception(f"value({value}) is not group id")
                         if is_mandatory and not value:
                             return False
                     except (ValueError, TypeError):
-                        raise Exception("value(%s) is not int" % value)
+                        raise Exception(f"value({value}) is not int")
 
                 case AttrType.BOOLEAN:
                     if not isinstance(value, bool):
-                        raise Exception("value(%s) is not bool" % value)
+                        raise Exception(f"value({value}) is not bool")
 
                 case AttrType.DATE:
                     try:
@@ -510,7 +510,7 @@ class AttributeValue(models.Model):
                         elif is_mandatory:
                             return False
                     except (ValueError, TypeError):
-                        raise Exception("value(%s) is not format(YYYY-MM-DD)" % value)
+                        raise Exception(f"value({value}) is not format(YYYY-MM-DD)")
 
                 case AttrType.ROLE:
                     try:
@@ -524,12 +524,12 @@ class AttributeValue(models.Model):
                                 and not Role.objects.filter(name=value, is_active=True).exists()
                             )
                         ):
-                            raise Exception("value(%s) is not Role id" % value)
+                            raise Exception(f"value({value}) is not Role id")
 
                         if is_mandatory and not value:
                             return False
                     except (ValueError, TypeError):
-                        raise Exception("value(%s) is not int" % value)
+                        raise Exception(f"value({value}) is not int")
 
                 case AttrType.DATETIME:
                     try:
@@ -538,14 +538,14 @@ class AttributeValue(models.Model):
                         elif is_mandatory:
                             return False
                     except (ValueError, TypeError):
-                        raise Exception("value(%s) is not ISO8601 format" % value)
+                        raise Exception(f"value({value}) is not ISO8601 format")
 
             return True
 
         try:
             if type & AttrType._ARRAY:
                 if not isinstance(input_value, list):
-                    raise Exception("value(%s) is not list" % input_value)
+                    raise Exception(f"value({input_value}) is not list")
                 if is_mandatory and input_value == []:
                     raise Exception("mandatory attrs value is not specified")
                 _is_mandatory = False
@@ -868,9 +868,9 @@ class Attribute(ACLBase):
         where_cond = [] + where_extra
 
         if self.is_array():
-            where_cond.append("status & %d > 0" % AttributeValue.STATUS_DATA_ARRAY_PARENT)
+            where_cond.append(f"status & {AttributeValue.STATUS_DATA_ARRAY_PARENT} > 0")
         else:
-            where_cond.append("status & %d = 0" % AttributeValue.STATUS_DATA_ARRAY_PARENT)
+            where_cond.append(f"status & {AttributeValue.STATUS_DATA_ARRAY_PARENT} = 0")
 
         return self.values.extra(where=where_cond).order_by("created_time")
 
@@ -1263,8 +1263,7 @@ class Attribute(ACLBase):
         # checks the type of specified value is acceptable for this Attribute object
         if not self._validate_value(value):
             raise TypeError(
-                '[%s] "%s" is not acceptable [attr_type:%d]'
-                % (self.schema.name, str(value), self.schema.type)
+                f'[{self.schema.name}] "{value}" is not acceptable [attr_type:{self.schema.type}]'
             )
 
         # Initialize AttrValue as None, because this may not created
@@ -1780,11 +1779,7 @@ class Entry(ACLBase):
                 schema=self.schema, name=autoname, is_active=True
             ).first()
             if duplicated_item:
-                self.name = "%s -- duplicate of ID:%s -- %s" % (
-                    autoname,
-                    str(duplicated_item.id),
-                    str(uuid.uuid4()),
-                )
+                self.name = f"{autoname} -- duplicate of ID:{duplicated_item.id} -- {uuid.uuid4()}"
             else:
                 self.name = autoname
 
@@ -2329,65 +2324,70 @@ class Entry(ACLBase):
             if entity_attr.type & AttrType.BOOLEAN:
                 attrinfo["value"] = False
 
-            # Convert data format for mapping of Elasticsearch according to the data type
-            if attrv is None:
-                # This is the processing to be safe even if the empty AttributeValue was passed.
-                pass
+            # Convert data format for mapping of Elasticsearch according to the data type.
+            # Array types share the scalar branches because this method is called
+            # recursively with each child AttributeValue of an array parent.
+            if attrv is not None:
+                match entity_attr.type:
+                    case AttrType.STRING | AttrType.TEXT | AttrType.ARRAY_STRING:
+                        attrinfo["value"] = truncate(attrv.value)
 
-            elif entity_attr.type & AttrType.STRING or entity_attr.type & AttrType.TEXT:
-                attrinfo["value"] = truncate(attrv.value)
+                    # ARRAY_NAMED_OBJECT_BOOLEAN (3081) contains the BOOLEAN bit and
+                    # historically hit the boolean branch of the old bitmask chain
+                    # before the named-object branch, so it stays here.
+                    case AttrType.BOOLEAN | AttrType.ARRAY_NAMED_OBJECT_BOOLEAN:
+                        attrinfo["value"] = attrv.boolean
 
-            elif entity_attr.type & AttrType.BOOLEAN:
-                attrinfo["value"] = attrv.boolean
+                    case AttrType.DATE:
+                        attrinfo["date_value"] = (
+                            attrv.date.strftime("%Y-%m-%d") if attrv.date else None
+                        )
 
-            elif entity_attr.type & AttrType.DATE:
-                attrinfo["date_value"] = attrv.date.strftime("%Y-%m-%d") if attrv.date else None
+                    case AttrType.DATETIME:
+                        attrinfo["date_value"] = (
+                            attrv.datetime.isoformat() if attrv.datetime else None
+                        )
 
-            elif entity_attr.type & AttrType.DATETIME:
-                attrinfo["date_value"] = attrv.datetime.isoformat() if attrv.datetime else None
+                    case AttrType.NAMED_OBJECT | AttrType.ARRAY_NAMED_OBJECT:
+                        attrinfo["key"] = attrv.value
 
-            elif entity_attr.type & AttrType._NAMED:
-                attrinfo["key"] = attrv.value
+                        if attrv.referral and attrv.referral.is_active:
+                            attrinfo["value"] = truncate(attrv.referral.name)
+                            attrinfo["referral_id"] = attrv.referral.id
+                        elif (
+                            entity_attr.type & AttrType._ARRAY
+                            and attrv.referral
+                            and not attrv.referral.is_active
+                        ):
+                            attrinfo["key"] = ""
 
-                if attrv.referral and attrv.referral.is_active:
-                    attrinfo["value"] = truncate(attrv.referral.name)
-                    attrinfo["referral_id"] = attrv.referral.id
-                elif (
-                    entity_attr.type & AttrType._ARRAY
-                    and attrv.referral
-                    and not attrv.referral.is_active
-                ):
-                    attrinfo["key"] = ""
+                    case AttrType.OBJECT | AttrType.ARRAY_OBJECT:
+                        if attrv.referral and attrv.referral.is_active:
+                            attrinfo["value"] = truncate(attrv.referral.name)
+                            attrinfo["referral_id"] = attrv.referral.id
 
-            elif entity_attr.type & AttrType.OBJECT:
-                if attrv.referral and attrv.referral.is_active:
-                    attrinfo["value"] = truncate(attrv.referral.name)
-                    attrinfo["referral_id"] = attrv.referral.id
+                    case AttrType.GROUP | AttrType.ARRAY_GROUP:
+                        group = attrv.group
+                        if group and group.is_active:
+                            attrinfo["value"] = truncate(group.name)
+                            attrinfo["referral_id"] = group.id
 
-            elif entity_attr.type & AttrType.GROUP:
-                group = attrv.group
-                if group:
-                    if group.is_active:
-                        attrinfo["value"] = truncate(group.name)
-                        attrinfo["referral_id"] = group.id
+                    case AttrType.ROLE | AttrType.ARRAY_ROLE:
+                        role = attrv.role
+                        if role and role.is_active:
+                            attrinfo["value"] = truncate(role.name)
+                            attrinfo["referral_id"] = role.id
 
-            elif entity_attr.type & AttrType.ROLE:
-                role = attrv.role
-                if role:
-                    if role.is_active:
-                        attrinfo["value"] = truncate(role.name)
-                        attrinfo["referral_id"] = role.id
-
-            elif entity_attr.type & AttrType.NUMBER:
-                # Convert string value to number, preserving int when possible
-                coerced = coerce_number(attrv.value)
-                attrinfo["value"] = "" if coerced is None else coerced
+                    case AttrType.NUMBER | AttrType.ARRAY_NUMBER:
+                        # Convert string value to number, preserving int when possible
+                        coerced = coerce_number(attrv.value)
+                        attrinfo["value"] = "" if coerced is None else coerced
 
             # Basically register attribute information whatever value doesn't exist
             if not (entity_attr.type & AttrType._ARRAY and not is_recursive):
                 container.append(attrinfo)
 
-            elif entity_attr.type & AttrType._ARRAY and not is_recursive:
+            else:
                 if attrv is not None:
                     # Here is the case of parent array, set each child values
                     for x in attrv.data_array.all():
@@ -2659,19 +2659,24 @@ class Entry(ACLBase):
             if isinstance(value, list):
                 return [_get_value(attrname, attrtype, x) for x in value]
 
-            elif attrtype & AttrType._NAMED:
-                [name, ref] = list(value.keys()) + list(value.values())
+            match attrtype:
+                case (
+                    AttrType.NAMED_OBJECT
+                    | AttrType.ARRAY_NAMED_OBJECT
+                    | AttrType.ARRAY_NAMED_OBJECT_BOOLEAN
+                ):
+                    [name, ref] = list(value.keys()) + list(value.values())
 
-                return {
-                    "id": ref["id"] if ref else None,
-                    "name": name,
-                }
+                    return {
+                        "id": ref["id"] if ref else None,
+                        "name": name,
+                    }
 
-            elif attrtype & AttrType.OBJECT:
-                return value["id"] if value else None
+                case AttrType.OBJECT | AttrType.ARRAY_OBJECT:
+                    return value["id"] if value else None
 
-            else:
-                return value
+                case _:
+                    return value
 
         trigger_params = []
         for attrname in attrnames:
@@ -2861,7 +2866,7 @@ class PrefetchedItemWrapper:
 
         try:
             if self.pi is None:
-                raise KeyError("Invalid attribute name was specified (%s)" % attrname)
+                raise KeyError(f"Invalid attribute name was specified ({attrname})")
 
             # return empty item wrapped by PrefetchedItemWrapper
             # when specified attribute doesn't have valid AttributeValue.
