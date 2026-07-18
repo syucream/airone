@@ -133,6 +133,27 @@ class AttributeValue(models.Model):
 
         return cloned_value
 
+    # Label surfaced when an AttributeValue references a choice that is no
+    # longer present in EntityAttr.choices (e.g. type-changed schema, legacy
+    # fixture). Keeps the internal value intact while preventing raw UUID hex
+    # from surfacing in the UI / CSV / ES.
+    DELETED_CHOICE_LABEL = "(deleted choice)"
+
+    def _resolve_choice(self, raw_value: str) -> dict[str, str] | None:
+        """Resolves a raw choice value into {"value", "label"} using EntityAttr.choices.
+
+        Falls back to a tombstone label when the choice no longer exists in the
+        schema so the UI never displays raw choice ids (e.g. UUID hex) as if
+        they were human-readable labels. Returns None for empty input.
+        """
+        if not raw_value:
+            return None
+        choices = self.parent_attr.schema.choices or []
+        for c in choices:
+            if isinstance(c, dict) and c.get("value") == raw_value:
+                return {"value": str(c.get("value")), "label": str(c.get("label", raw_value))}
+        return {"value": raw_value, "label": self.DELETED_CHOICE_LABEL}
+
     def get_value(
         self,
         with_metainfo: bool = False,
@@ -144,13 +165,17 @@ class AttributeValue(models.Model):
         This returns registered value according to the type of Attribute
         """
 
-        def _get_named_value(attrv: AttributeValue, is_active: bool = True) -> dict[str, Any]:
+        def _get_named_value(
+            attrv: AttributeValue, is_active: bool = True, is_boolean: bool = False
+        ) -> dict[str, Any]:
+            boolean_info = {"boolean": attrv.boolean} if is_boolean else {}
             if attrv.referral and (attrv.referral.is_active or not is_active):
                 if with_metainfo:
                     return {
                         attrv.value: {
                             "id": attrv.referral.id,
                             "name": attrv.referral.name,
+                            **boolean_info,
                         }
                     }
                 elif with_entity:
@@ -161,12 +186,16 @@ class AttributeValue(models.Model):
                         attrv.value: {
                             "name": attrv.referral.name,
                             "entity": referral_entry.schema.name,
+                            **boolean_info,
                         }
                     }
                 else:
-                    return {attrv.value: attrv.referral.name}
+                    return {
+                        attrv.value: attrv.referral.name,
+                        **boolean_info,
+                    }
             else:
-                return {attrv.value: None}
+                return {attrv.value: None, **boolean_info}
 
         def _get_object_value(attrv: AttributeValue, is_active: bool = True) -> Any:
             if attrv.referral and (attrv.referral.is_active or not is_active):
@@ -223,6 +252,9 @@ class AttributeValue(models.Model):
             case AttrType.NAMED_OBJECT:
                 value = _get_named_value(self, is_active)
 
+            case AttrType.NAMED_OBJECT_BOOLEAN:
+                value = _get_named_value(self, is_active, is_boolean=True)
+
             case AttrType.GROUP if self.group:
                 value = _get_model_value(self)
 
@@ -238,11 +270,26 @@ class AttributeValue(models.Model):
                 else:
                     value = self.datetime
 
-            case AttrType.ARRAY_NAMED_OBJECT | AttrType.ARRAY_NAMED_OBJECT_BOOLEAN:
+            case AttrType.ARRAY_NAMED_OBJECT:
                 value = [_get_named_value(x, is_active) for x in self.data_array.all()]
+
+            case AttrType.ARRAY_NAMED_OBJECT_BOOLEAN:
+                value = [
+                    _get_named_value(x, is_active, is_boolean=True) for x in self.data_array.all()
+                ]
 
             case AttrType.ARRAY_STRING:
                 value = [x.value for x in self.data_array.all()]
+
+            case AttrType.SELECT:
+                value = self._resolve_choice(self.value)
+
+            case AttrType.MULTI_SELECT:
+                # Preserve insertion order (matches ARRAY_STRING / ARRAY_NUMBER)
+                # so the user's chosen ordering survives round-trips.
+                value = [
+                    c for c in (self._resolve_choice(x.value) for x in self.data_array.all()) if c
+                ]
 
             case AttrType.ARRAY_NUMBER:
                 value = [coerce_number(x.value) for x in self.data_array.all()]
@@ -275,6 +322,12 @@ class AttributeValue(models.Model):
 
     def format_for_history(self) -> Any:
         match self.data_type:
+            case AttrType.SELECT:
+                return self._resolve_choice(self.value)
+            case AttrType.MULTI_SELECT:
+                return [
+                    c for c in (self._resolve_choice(x.value) for x in self.data_array.all()) if c
+                ]
             case AttrType.ARRAY_STRING:
                 return [x.value for x in self.data_array.all()]
             case AttrType.ARRAY_NUMBER:
@@ -441,6 +494,28 @@ class AttributeValue(models.Model):
             match t:
                 case AttrType.STRING | AttrType.TEXT:
                     return _is_validate_attr_str(value)
+
+                case AttrType.SELECT:
+                    if not isinstance(value, str):
+                        if value is None:
+                            if is_mandatory:
+                                return False
+                            return True
+                        raise Exception("value(%s) is not str" % value)
+                    if is_mandatory and value == "":
+                        return False
+                    if value and entity_attr is not None:
+                        allowed = {
+                            c.get("value")
+                            for c in (entity_attr.choices or [])
+                            if isinstance(c, dict)
+                        }
+                        if allowed and value not in allowed:
+                            raise Exception(
+                                "value(%s) is not in choices of EntityAttr(%s)"
+                                % (value, entity_attr.name)
+                            )
+                    return True
 
                 case AttrType.NUMBER:
                     if value is None or value == "":
@@ -657,6 +732,47 @@ class Attribute(ACLBase):
                     if not last_value.data_array.filter(value=value).exists():
                         return True
 
+            case AttrType.SELECT:
+
+                def _normalize_select(v: Any) -> str:
+                    # Callers may pass either the raw choice value (str) or the
+                    # {value, label} dict shape used by the API. Normalize so
+                    # str(dict) repr never sneaks into comparison.
+                    if v is None:
+                        return ""
+                    if isinstance(v, dict):
+                        return str(v.get("value", "") or "")
+                    return str(v)
+
+                stored = last_value.value or ""
+                incoming = _normalize_select(recv_value)
+                return stored != incoming
+
+            case AttrType.MULTI_SELECT:
+
+                def _normalize_multi_select_item(v: Any) -> str | None:
+                    if v is None or v == "":
+                        return None
+                    if isinstance(v, dict):
+                        raw = v.get("value")
+                        return str(raw) if raw else None
+                    return str(v)
+
+                if not recv_value:
+                    return last_value.data_array.count() > 0
+                # Order matters: get_value / add_value preserve insertion order,
+                # so a reorder of the same choices must register as an update.
+                stored_list = [x.value for x in last_value.data_array.all()]
+                incoming_list = [
+                    norm
+                    for norm in (_normalize_multi_select_item(v) for v in recv_value)
+                    if norm is not None
+                ]
+                # add_value dedupes incoming preserving order before persisting; mirror
+                # that here so callers sending duplicates don't trigger spurious updates.
+                incoming_list = list(dict.fromkeys(incoming_list))
+                return stored_list != incoming_list
+
             case AttrType.ARRAY_NUMBER:
                 # the case that specified value is empty or invalid
                 if not recv_value:
@@ -786,7 +902,7 @@ class Attribute(ACLBase):
                 ):
                     return True
 
-            case AttrType.ARRAY_NAMED_OBJECT:
+            case AttrType.ARRAY_NAMED_OBJECT | AttrType.ARRAY_NAMED_OBJECT_BOOLEAN:
 
                 def get_entry_id(value: int | str | Entry | None) -> int | None:
                     if not value:
@@ -1027,11 +1143,21 @@ class Attribute(ACLBase):
                         return False
                 return False
 
-            case AttrType.NAMED_OBJECT:
+            case AttrType.NAMED_OBJECT | AttrType.NAMED_OBJECT_BOOLEAN:
                 return isinstance(value, dict)
 
             case AttrType.STRING | AttrType.TEXT:
                 return True
+
+            case AttrType.SELECT:
+                if value is None or value == "":
+                    return True
+                if not isinstance(value, str):
+                    return False
+                allowed = {
+                    c.get("value") for c in (self.schema.choices or []) if isinstance(c, dict)
+                }
+                return value in allowed
 
             case AttrType.OBJECT:
                 return isinstance(value, str | int | Entry) or value is None
@@ -1084,7 +1210,7 @@ class Attribute(ACLBase):
                     return True
 
                 match self.schema.type:
-                    case AttrType.ARRAY_NAMED_OBJECT:
+                    case AttrType.ARRAY_NAMED_OBJECT | AttrType.ARRAY_NAMED_OBJECT_BOOLEAN:
                         return all(
                             isinstance(x, dict) or isinstance(x, type({}.values())) for x in value
                         )
@@ -1094,6 +1220,16 @@ class Attribute(ACLBase):
 
                     case AttrType.ARRAY_STRING:
                         return True
+
+                    case AttrType.MULTI_SELECT:
+                        if not all(isinstance(x, str) for x in value):
+                            return False
+                        allowed = {
+                            c.get("value")
+                            for c in (self.schema.choices or [])
+                            if isinstance(c, dict)
+                        }
+                        return all(x == "" or x in allowed for x in value)
 
                     case AttrType.ARRAY_NUMBER:
                         return (
@@ -1132,6 +1268,12 @@ class Attribute(ACLBase):
                     attrv.value = str(val)
                     if not attrv.value:  # if empty string or None coerced to ""
                         return None  # For STRING, empty means no AttributeValue
+
+                case AttrType.SELECT:
+                    attrv.boolean = boolean
+                    attrv.value = "" if val is None else str(val)
+                    if not attrv.value:
+                        return None
 
                 case AttrType.NUMBER:
                     if val is None or val == "":
@@ -1222,7 +1364,7 @@ class Attribute(ACLBase):
 
                     attrv.boolean = boolean
 
-                case AttrType.NAMED_OBJECT:
+                case AttrType.NAMED_OBJECT | AttrType.NAMED_OBJECT_BOOLEAN:
                     attrv.value = val["name"] if "name" in val else ""
                     if "boolean" in val:
                         attrv.boolean = val["boolean"]
@@ -1276,6 +1418,12 @@ class Attribute(ACLBase):
             attr_value.set_status(AttributeValue.STATUS_DATA_ARRAY_PARENT)
 
             if value and isinstance(value, Iterable):
+                # MULTI_SELECT must hold a deduplicated set of choice values.
+                # Preserve insertion order so the resulting AttributeValues remain stable
+                # against unchanged input even if the caller passes duplicates.
+                if self.schema.type == AttrType.MULTI_SELECT and isinstance(value, list):
+                    value = list(dict.fromkeys(v for v in value if isinstance(v, str) and v))
+
                 co_attrv_params = {
                     "created_user": user,
                     "parent_attr": self,
@@ -1352,9 +1500,31 @@ class Attribute(ACLBase):
 
             return ret_value
 
+        def _resolve_choice_value(raw: Any) -> str | None:
+            """Map a raw input (value or label) to an EntityAttr.choices value.
+
+            Imports may carry either the internal `value` or the human-facing
+            `label`. Try value first (the immutable identifier), then label.
+            """
+            if raw is None:
+                return None
+            if not isinstance(raw, str):
+                return None
+            choices = self.schema.choices or []
+            for c in choices:
+                if isinstance(c, dict) and c.get("value") == raw:
+                    return raw
+            for c in choices:
+                if isinstance(c, dict) and c.get("label") == raw:
+                    return str(c.get("value"))
+            return raw  # Fallback: pass through unknown values to surface in validation
+
         match self.schema.type:
             case AttrType.STRING | AttrType.TEXT:
                 return value
+
+            case AttrType.SELECT:
+                return _resolve_choice_value(value)
 
             case AttrType.OBJECT:
                 if isinstance(value, ACLBase):
@@ -1421,6 +1591,10 @@ class Attribute(ACLBase):
 
                     case AttrType.ARRAY_STRING:
                         return value
+
+                    case AttrType.MULTI_SELECT:
+                        resolved = [_resolve_choice_value(x) for x in value]
+                        return list(dict.fromkeys(v for v in resolved if v))
 
                     case AttrType.ARRAY_NUMBER:
                         return [
@@ -2315,13 +2489,16 @@ class Entry(ACLBase):
                 "value": "",
                 "date_value": None,
                 "referral_id": "",
+                "boolean": False,
                 "is_readable": True
                 if (not attr or attr.is_public or attr.default_permission >= ACLType.Readable)
                 else False,
             }
 
-            # default value for boolean attributes is False.
-            if entity_attr.type & AttrType.BOOLEAN:
+            # default value for boolean attributes is False. _NAMED types (e.g.
+            # NAMED_OBJECT_BOOLEAN) also carry the BOOLEAN bit, but their boolean
+            # flag is stored separately in attrinfo["boolean"], so exclude them here.
+            if entity_attr.type & AttrType.BOOLEAN and not entity_attr.type & AttrType._NAMED:
                 attrinfo["value"] = False
 
             # Convert data format for mapping of Elasticsearch according to the data type.
@@ -2332,10 +2509,7 @@ class Entry(ACLBase):
                     case AttrType.STRING | AttrType.TEXT | AttrType.ARRAY_STRING:
                         attrinfo["value"] = truncate(attrv.value)
 
-                    # ARRAY_NAMED_OBJECT_BOOLEAN (3081) contains the BOOLEAN bit and
-                    # historically hit the boolean branch of the old bitmask chain
-                    # before the named-object branch, so it stays here.
-                    case AttrType.BOOLEAN | AttrType.ARRAY_NAMED_OBJECT_BOOLEAN:
+                    case AttrType.BOOLEAN:
                         attrinfo["value"] = attrv.boolean
 
                     case AttrType.DATE:
@@ -2348,8 +2522,16 @@ class Entry(ACLBase):
                             attrv.datetime.isoformat() if attrv.datetime else None
                         )
 
-                    case AttrType.NAMED_OBJECT | AttrType.ARRAY_NAMED_OBJECT:
+                    # All _NAMED members: the boolean flag of the *_BOOLEAN variants
+                    # is stored in attrinfo["boolean"], not attrinfo["value"].
+                    case (
+                        AttrType.NAMED_OBJECT
+                        | AttrType.NAMED_OBJECT_BOOLEAN
+                        | AttrType.ARRAY_NAMED_OBJECT
+                        | AttrType.ARRAY_NAMED_OBJECT_BOOLEAN
+                    ):
                         attrinfo["key"] = attrv.value
+                        attrinfo["boolean"] = attrv.boolean
 
                         if attrv.referral and attrv.referral.is_active:
                             attrinfo["value"] = truncate(attrv.referral.name)
@@ -2382,6 +2564,23 @@ class Entry(ACLBase):
                         # Convert string value to number, preserving int when possible
                         coerced = coerce_number(attrv.value)
                         attrinfo["value"] = "" if coerced is None else coerced
+
+                    case AttrType.SELECT | AttrType.MULTI_SELECT:
+                        # Store value(internal id) as key and label as value,
+                        # so regexp/keyword search on label works automatically.
+                        raw = attrv.value
+                        choices = entity_attr.choices or []
+                        label: str | None = None
+                        for c in choices:
+                            if isinstance(c, dict) and c.get("value") == raw:
+                                label = str(c.get("label", raw))
+                                break
+                        if label is None and raw:
+                            # Mirror AttributeValue._resolve_choice's tombstone so the
+                            # UI / CSV export never see raw UUID hex as a label.
+                            label = AttributeValue.DELETED_CHOICE_LABEL
+                        attrinfo["key"] = raw
+                        attrinfo["value"] = truncate(label) if label else ""
 
             # Basically register attribute information whatever value doesn't exist
             if not (entity_attr.type & AttrType._ARRAY and not is_recursive):
@@ -2662,6 +2861,7 @@ class Entry(ACLBase):
             match attrtype:
                 case (
                     AttrType.NAMED_OBJECT
+                    | AttrType.NAMED_OBJECT_BOOLEAN
                     | AttrType.ARRAY_NAMED_OBJECT
                     | AttrType.ARRAY_NAMED_OBJECT_BOOLEAN
                 ):

@@ -1,7 +1,5 @@
-from django.urls import include, re_path
+from django.urls import path
 
-from .entry.urls import urlpatterns as entry_urlpatterns
+from . import views
 
-urlpatterns = [
-    re_path(r"^entry/", include(entry_urlpatterns)),
-]
+urlpatterns = [path("", views.CustomAPI.as_view())]

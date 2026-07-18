@@ -11,6 +11,7 @@ from airone.lib.elasticsearch import (
     EntryHint,
 )
 from airone.lib.log import Logger
+from airone.lib.types import AttrType
 from entity.models import Entity, EntityAttr
 from entry.models import Entry
 from entry.services import AdvancedSearchService
@@ -19,7 +20,7 @@ from entry.settings import CONFIG
 SEARCH_ENTRY_LIMIT = 200
 
 
-class ReferSerializer(serializers.Serializer):
+class ReferSerializer(serializers.Serializer[dict[str, Any]]):
     entity = serializers.CharField(max_length=200)
     entry = serializers.CharField(max_length=200, required=False, allow_blank=True)
     is_any = serializers.BooleanField(default=False)
@@ -34,11 +35,12 @@ class ReferSerializer(serializers.Serializer):
 
     def validate(self, data: dict[str, Any]) -> dict[str, Any]:
         entity = Entity.objects.filter(name=data["entity"], is_active=True).first()
+        assert entity is not None
         data["entity_id"] = entity.id
         return data
 
 
-class AttrSerializer(serializers.Serializer):
+class AttrSerializer(serializers.Serializer[dict[str, Any]]):
     name = serializers.CharField(max_length=200)
     value = serializers.CharField(max_length=200, required=False, allow_blank=True)
     is_any = serializers.BooleanField(default=False)
@@ -55,7 +57,7 @@ class AttrSerializer(serializers.Serializer):
         return value
 
 
-class EntrySearchChainSerializer(serializers.Serializer):
+class EntrySearchChainSerializer(serializers.Serializer[dict[str, Any]]):
     entities = serializers.ListField(child=serializers.CharField(max_length=200))
     attrs = serializers.ListField(child=AttrSerializer(), required=False)
     refers = serializers.ListField(child=ReferSerializer(), required=False)
@@ -93,7 +95,7 @@ class EntrySearchChainSerializer(serializers.Serializer):
             # This validates whethere it is possible that Entity has specified Attribute
             if not any(
                 [
-                    EntityAttr.objects.filter(name=attrname, is_active=True, parent_entity__pk=x)
+                    EntityAttr.objects.filter(name=attrname, is_active=True, parent_entity__pk=x)  # type: ignore[misc]
                     for x in entities
                 ]
             ):
@@ -104,7 +106,9 @@ class EntrySearchChainSerializer(serializers.Serializer):
                 entity_ids = []
                 for entity in entities:
                     entity_attr = EntityAttr.objects.filter(
-                        name=condition["name"], is_active=True, parent_entity__pk=entity
+                        name=condition["name"],
+                        is_active=True,
+                        parent_entity__pk=entity,  # type: ignore[misc]
                     ).first()
                     if entity_attr:
                         # complements Entity IDs that this condition implicitly expects
@@ -116,7 +120,7 @@ class EntrySearchChainSerializer(serializers.Serializer):
         def _may_validate_and_complement_condition(
             condition: dict[str, Any],
             entities: list[Entity] | None,
-            serializer_class: type[serializers.Serializer],
+            serializer_class: type[serializers.Serializer[Any]],
         ) -> dict[str, Any]:
             serializer = serializer_class(data=condition)
             if not serializer.is_valid():
@@ -125,7 +129,7 @@ class EntrySearchChainSerializer(serializers.Serializer):
             if not entities:
                 raise ValidationError(f"Condition({condition}) couldn't find valid Entities")
 
-            validated_data = serializer.validated_data
+            validated_data: dict[str, Any] = serializer.validated_data
             if "name" in validated_data:
                 _validate_attribute(validated_data["name"], entities)
 
@@ -303,10 +307,10 @@ class EntrySearchChainSerializer(serializers.Serializer):
         # digging into the condition tree to get to leaf condition by depth-first search
         accumulated_result: list[dict[str, Any]] = []
 
-        def _do_forward_search(
+        def _build_attr_hint(
             sub_query: dict[str, Any], sub_query_result: list[dict[str, Any]]
-        ) -> list[AdvancedSearchResultRecordIdNamePair]:
-            # make query to search Entries using AdvancedSearchService.search_entries()
+        ) -> AttrHint:
+            # make hint to search Entries using AdvancedSearchService.search_entries()
             search_keyword = "|".join([f"^{x['name']}$" for x in sub_query_result])
             if isinstance(sub_query.get("value"), str) and len(sub_query["value"]) > 0:
                 search_keyword = sub_query["value"]
@@ -316,14 +320,14 @@ class EntrySearchChainSerializer(serializers.Serializer):
                 # which will match Entries that refers nothing Entry at specified Attribute.
                 search_keyword = "\\"
 
-            # Query for forward search
-            hint_attrs = [
-                AttrHint(
-                    name=sub_query["name"],
-                    keyword=search_keyword,
-                )
-            ]
+            return AttrHint(
+                name=sub_query["name"],
+                keyword=search_keyword,
+            )
 
+        def _run_search(
+            hint_attrs: list[AttrHint],
+        ) -> list[AdvancedSearchResultRecordIdNamePair]:
             hint_item = None
             if hint_item_name:
                 hint_item = EntryHint(
@@ -348,14 +352,38 @@ class EntrySearchChainSerializer(serializers.Serializer):
             # All results of this request would be joined and pass to next request. It might be
             # huge request and leads to glitch of Elasticsearch by just a single request.
             # This is our original curcit breaker to prevent overload because of them.
-            if len(search_result.ret_values) > CONFIG.SEARCH_CHAIN_ACCEPTABLE_RESULT_COUNT:
+            if search_result.ret_count > CONFIG.SEARCH_CHAIN_ACCEPTABLE_RESULT_COUNT:
                 Logger.warning("Search Chain API error: SEARCH_CHAIN_ACCEPTABLE_RESULT_COUNT")
                 raise ElasticsearchException()
 
             return [x.entry for x in search_result.ret_values]
 
+        def _do_forward_search(
+            sub_query: dict[str, Any], sub_query_result: list[dict[str, Any]]
+        ) -> list[AdvancedSearchResultRecordIdNamePair]:
+            return _run_search([_build_attr_hint(sub_query, sub_query_result)])
+
+        # Leaf conditions (that have no nested "attrs"/"refers") combined by AND (is_any=False)
+        # are bundled into a single Elasticsearch query with multiple AttrHints, which are
+        # AND-combined at the ES level. This avoids decomposing them into separate per-condition
+        # queries whose intermediate results might exceed SEARCH_CHAIN_ACCEPTABLE_RESULT_COUNT
+        # even though the AND-ed result is small.
+        leaf_queries: list[dict[str, Any]] = []
+        non_leaf_queries = queries
+        if not is_any:
+            leaf_queries = [q for q in queries if not q.get("attrs") and not q.get("refers")]
+            non_leaf_queries = [q for q in queries if q.get("attrs") or q.get("refers")]
+
+        if leaf_queries:
+            leaf_results = _run_search([_build_attr_hint(q, []) for q in leaf_queries])
+            if not leaf_results:
+                # These leaf conditions are real AND constraints; an empty result means no Entry
+                # can satisfy the whole condition, so it's useless to continue.
+                return (False, [])
+            accumulated_result = self.merge_search_result(accumulated_result, leaf_results, is_any)
+
         # This expects only AttrSerialized sub-query
-        for sub_query in queries:
+        for sub_query in non_leaf_queries:
             (is_leaf, sub_query_result) = self.search_entries(user, sub_query)
             if not is_leaf and not sub_query_result:
                 # In this case, it's useless to continue to search processing because
@@ -513,6 +541,7 @@ class EntrySearchChainSerializer(serializers.Serializer):
                     return False
 
             v = attrv.get_value(with_metainfo=True)
+            attr_type = attrv.parent_attr.schema.type
             if v["value"] is None:
                 if is_any or (info.get("vlaue") == "" and not is_any):
                     continue
@@ -529,6 +558,32 @@ class EntrySearchChainSerializer(serializers.Serializer):
                 # is True (it means OR condition).
                 if is_any:
                     return True
+
+            elif attr_type == AttrType.SELECT and isinstance(v["value"], dict):
+                # SELECT values are {"value", "label"} dicts that must not be routed
+                # through the referral branch (attrv.referral is always None here).
+                target = info.get("value", "")
+                matched = target in str(v["value"].get("label", "")) or target in str(
+                    v["value"].get("value", "")
+                )
+                if matched and is_any:
+                    return True
+                if not matched and not is_any:
+                    return False
+
+            elif attr_type == AttrType.MULTI_SELECT and isinstance(v["value"], list):
+                # MULTI_SELECT values are lists of {"value", "label"} dicts. Match against
+                # the human-visible label/value of each choice without consulting referral.
+                target = info.get("value", "")
+                matched = any(
+                    target in str(c.get("label", "")) or target in str(c.get("value", ""))
+                    for c in v["value"]
+                    if isinstance(c, dict)
+                )
+                if matched and is_any:
+                    return True
+                if not matched and not is_any:
+                    return False
 
             elif isinstance(v["value"], dict):
                 # this confirms simple referral value (e.g. AttrTypeValue['object'])

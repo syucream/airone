@@ -13,7 +13,7 @@ mypy_path = [".", "plugin/sdk"]
 # Each plugin package ships its own top-level "tests" package. Once
 # plugin/sdk is on mypy_path they collide as duplicate modules, so exclude
 # plugin test trees from discovery (they are already ignored for errors).
-exclude = ['plugin/.*/tests/', 'plugin/examples/', 'virtualenv_old/', 'custom_view/', 'custom_view_sample/']
+exclude = ['plugin/.*/tests/', 'plugin/examples/', 'virtualenv_old/']
 
 # Gradual type checking improvements
 check_untyped_defs = true
@@ -28,6 +28,7 @@ extra_checks = true
 disallow_untyped_decorators = true
 disallow_any_generics = true
 warn_return_any = true
+disallow_subclassing_any = true
 # Production code (including plugin/sdk and tools) must be fully annotated.
 # Test and migration trees are exempted via the ignore_errors overrides below.
 disallow_untyped_defs = true
@@ -45,60 +46,16 @@ ignore_errors = true
 module = ["*.migrations.*"]
 ignore_errors = true
 
-# Views, serializers, tasks, and services sit at the Django/DRF boundary and
-# surface a class of errors that are structural framework patterns rather than
-# bugs.  Suppress only specific, well-understood codes here; all other error
-# categories (e.g. import-untyped, name-defined, syntax) continue to be caught.
-#
-# Codes suppressed and why:
-#   type-arg     — DRF ViewSet/Serializer generics and Celery Task generics are
-#                  rarely annotated in practice; requires pervasive refactor.
-#   union-attr   — request.user is User|AnonymousUser; .first() returns T|None.
-#                  Guard patterns are implied by surrounding logic.
-#   arg-type     — AnonymousUser passed where User expected; ORM Q-objects, etc.
-#   assignment   — Type narrowing after .filter(...).first() assignments.
-#   attr-defined — django-simple-history injects _history_user dynamically.
-#   misc         — ORM lookup types, @csrf_protect on class methods, etc.
-#   no-any-return — Django ORM and DRF internals return Any in many places.
-#   return-value — DRF get_obj_with_check_perm returns T|None vs T pattern.
-#   index        — Q-object and dict indexing type inference.
-#   override     — DRF ViewSet action signatures differ from base class stubs.
-#   operator     — Q-object | / & operator typing.
+# entry is the largest, most complex app; it is typed in a follow-up PR so this
+# PR can be reviewed in a focused slice.
 [[tool.mypy.overrides]]
 module = [
-    "acl.api_v2.*",
-    "acl.views",
-    "api_v1.*",
-    "category.api_v2.*",
-    "dashboard.views",
-    "entity.api_v1.*",
-    "entity.api_v2.*",
-    "entity.tasks",
-    "entity.views",
-    "entry.api_v1.*",
-    "entry.api_v2.*",
+    "entry.api_v1.views",
+    "entry.api_v2.serializers",
+    "entry.api_v2.views",
     "entry.services",
     "entry.tasks",
     "entry.views",
-    "group.api_v1.*",
-    "group.api_v2.*",
-    "group.tasks",
-    "group.views",
-    "job.api_v2.*",
-    "pagoda_plugin_sdk.api.*",
-    "pagoda_plugin_sdk.override",
-    "role.api_v1.*",
-    "role.api_v2.*",
-    "role.tasks",
-    "role.views",
-    "tools.generate_testdata",
-    "trigger.api_v2.*",
-    "trigger.tasks",
-    "user.api_v2.*",
-    "user.forms",
-    "user.views",
-    "webhook.api_v1.*",
-    "webhook.views",
 ]
 disable_error_code = [
     "type-arg",
@@ -155,24 +112,30 @@ dependencies = [
     "boto3==1.42.62",
     "celery>=5.6.0,<6",
     "django-configurations==2.5.1",
-    "ddtrace==3.19.7",
+    "ddtrace==4.8.2",
     "django-environ==0.12.0",
     "django-filter==24.3",
     "django-import-export==4.4.0",
     "django-multidb-router>=0.11",
     "django-simple-history==3.11.0",
     "django-storages==1.14.6",
-    "django==5.2.14",
+    "django==5.2.15",
     "djangorestframework==3.16.1",
     "markdown>=3.7",
     "drf-spectacular==0.29.0",
     "elasticsearch==8.17.0",
     "gunicorn==23.0.0",
-    "lxml_html_clean==0.4.4",
     "mysqlclient>=2.2.8",
     "natsort==8.4.0",
     "python-ldap==3.4.5",
     "python3-saml==1.12.0",
+    # lxml and xmlsec are transitive dependencies of python3-saml (SAML auth).
+    # They are pinned explicitly ONLY to avoid the runtime error
+    # "lxml & xmlsec libxml2 library version mismatch": xmlsec must use a wheel
+    # built against the same libxml2 that lxml bundles. Remove these two pins if
+    # python3-saml is removed.
+    "lxml==6.1.0",
+    "xmlsec==1.3.17",
     "pyyaml==6.0.1",
     "requests==2.33.0",
     "social-auth-app-django==5.4.3",
@@ -207,6 +170,8 @@ dev = [
     "types-mock>=5.1.0.1",
     "ruff>=0.9.9",
     "tblib>=3.0.0",
+    # required by requests-html (lxml.html.clean was split into this package in
+    # lxml 5.2+). Used only in tests; remove if requests-html is removed.
     "lxml-html-clean>=0.4.0",
 ]
 plugins = [

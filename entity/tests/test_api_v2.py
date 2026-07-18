@@ -111,6 +111,9 @@ class ViewTest(AironeViewTest):
                     "referral": [],
                     "note": "",
                     "default_value": None,
+                    "display_attr": "",
+                    "choices": None,
+                    "choices_in_use": [],
                 },
                 {
                     "id": self.entity.attrs.get(name="vals").id,
@@ -127,6 +130,9 @@ class ViewTest(AironeViewTest):
                     "referral": [],
                     "note": "",
                     "default_value": None,
+                    "display_attr": "",
+                    "choices": None,
+                    "choices_in_use": [],
                 },
                 {
                     "id": self.entity.attrs.get(name="ref").id,
@@ -143,6 +149,9 @@ class ViewTest(AironeViewTest):
                     "referral": [],
                     "note": "",
                     "default_value": None,
+                    "display_attr": "",
+                    "choices": None,
+                    "choices_in_use": [],
                 },
                 {
                     "id": self.entity.attrs.get(name="refs").id,
@@ -159,6 +168,9 @@ class ViewTest(AironeViewTest):
                     "referral": [],
                     "note": "",
                     "default_value": None,
+                    "display_attr": "",
+                    "choices": None,
+                    "choices_in_use": [],
                 },
                 {
                     "id": self.entity.attrs.get(name="name").id,
@@ -175,6 +187,9 @@ class ViewTest(AironeViewTest):
                     "referral": [],
                     "note": "",
                     "default_value": None,
+                    "display_attr": "",
+                    "choices": None,
+                    "choices_in_use": [],
                 },
                 {
                     "id": self.entity.attrs.get(name="names").id,
@@ -191,6 +206,9 @@ class ViewTest(AironeViewTest):
                     "referral": [],
                     "note": "",
                     "default_value": None,
+                    "display_attr": "",
+                    "choices": None,
+                    "choices_in_use": [],
                 },
                 {
                     "id": self.entity.attrs.get(name="group").id,
@@ -207,6 +225,9 @@ class ViewTest(AironeViewTest):
                     "referral": [],
                     "note": "",
                     "default_value": None,
+                    "display_attr": "",
+                    "choices": None,
+                    "choices_in_use": [],
                 },
                 {
                     "id": self.entity.attrs.get(name="groups").id,
@@ -223,6 +244,9 @@ class ViewTest(AironeViewTest):
                     "referral": [],
                     "note": "",
                     "default_value": None,
+                    "display_attr": "",
+                    "choices": None,
+                    "choices_in_use": [],
                 },
                 {
                     "id": self.entity.attrs.get(name="bool").id,
@@ -239,6 +263,9 @@ class ViewTest(AironeViewTest):
                     "referral": [],
                     "note": "",
                     "default_value": None,
+                    "display_attr": "",
+                    "choices": None,
+                    "choices_in_use": [],
                 },
                 {
                     "id": self.entity.attrs.get(name="text").id,
@@ -255,6 +282,9 @@ class ViewTest(AironeViewTest):
                     "referral": [],
                     "note": "",
                     "default_value": None,
+                    "display_attr": "",
+                    "choices": None,
+                    "choices_in_use": [],
                 },
                 {
                     "id": self.entity.attrs.get(name="date").id,
@@ -271,6 +301,9 @@ class ViewTest(AironeViewTest):
                     "referral": [],
                     "note": "",
                     "default_value": None,
+                    "display_attr": "",
+                    "choices": None,
+                    "choices_in_use": [],
                 },
                 {
                     "id": self.entity.attrs.get(name="role").id,
@@ -287,6 +320,9 @@ class ViewTest(AironeViewTest):
                     "referral": [],
                     "note": "",
                     "default_value": None,
+                    "display_attr": "",
+                    "choices": None,
+                    "choices_in_use": [],
                 },
                 {
                     "id": self.entity.attrs.get(name="roles").id,
@@ -303,6 +339,9 @@ class ViewTest(AironeViewTest):
                     "referral": [],
                     "note": "",
                     "default_value": None,
+                    "display_attr": "",
+                    "choices": None,
+                    "choices_in_use": [],
                 },
                 {
                     "id": self.entity.attrs.get(name="datetime").id,
@@ -319,6 +358,9 @@ class ViewTest(AironeViewTest):
                     "referral": [],
                     "note": "",
                     "default_value": None,
+                    "display_attr": "",
+                    "choices": None,
+                    "choices_in_use": [],
                 },
                 {
                     "id": self.entity.attrs.get(name="num").id,
@@ -335,6 +377,9 @@ class ViewTest(AironeViewTest):
                     "type": AttrType.NUMBER,
                     "note": "",
                     "default_value": None,
+                    "display_attr": "",
+                    "choices": None,
+                    "choices_in_use": [],
                 },
                 {
                     "id": self.entity.attrs.get(name="nums").id,
@@ -351,6 +396,9 @@ class ViewTest(AironeViewTest):
                     "referral": [],
                     "note": "",
                     "default_value": None,
+                    "display_attr": "",
+                    "choices": None,
+                    "choices_in_use": [],
                 },
             ],
         )
@@ -385,6 +433,9 @@ class ViewTest(AironeViewTest):
                 ],
                 "note": "",
                 "default_value": None,
+                "display_attr": "",
+                "choices": None,
+                "choices_in_use": [],
             },
         )
 
@@ -1565,6 +1616,7 @@ class ViewTest(AironeViewTest):
                     "is_delete_in_chain": True,
                     "is_summarized": True,
                     "note": "change-attr1 note",
+                    "display_attr": "change-display-attr",
                 }
             ],
             "webhooks": [
@@ -1601,6 +1653,7 @@ class ViewTest(AironeViewTest):
         self.assertEqual(entity_attr.is_summarized, True)
         self.assertEqual(entity_attr.created_user, self.user)
         self.assertEqual(entity_attr.note, "change-attr1 note")
+        self.assertEqual(entity_attr.display_attr, "change-display-attr")
 
         self.assertEqual(entity.webhooks.count(), 1)
         webhook.refresh_from_db()
@@ -2940,7 +2993,7 @@ class ViewTest(AironeViewTest):
             resp.json(),
             [
                 {
-                    "code": "AE-121000",
+                    "code": "AE-240000",
                     "message": "cannot delete Entity because one or more Entries are not deleted",
                 }
             ],

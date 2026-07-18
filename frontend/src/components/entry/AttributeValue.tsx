@@ -62,7 +62,7 @@ const ElemObject: FC<{
       component={AironeLink}
       to={entryDetailsPath(attrValue.schema?.id ?? 0, attrValue.id)}
     >
-      {attrValue.name}
+      {attrValue.displayLabel ?? attrValue.name}
     </Box>
   ) : (
     <Box />
@@ -88,7 +88,7 @@ const ElemNamedObject: FC<{
             attrValue.object.id ?? 0,
           )}
         >
-          {attrValue.object.name}
+          {attrValue.object.displayLabel ?? attrValue.object.name}
         </Box>
       ) : (
         <Box />
@@ -118,6 +118,16 @@ const ElemRole: FC<{ attrValue: EntryAttributeValueRole | undefined }> = ({
     <Box component={AironeLink} to={rolePath(attrValue.id)}>
       {attrValue.name}
     </Box>
+  ) : (
+    <Box />
+  );
+};
+
+const ElemSelect: FC<{
+  attrValue: { value: string; label: string } | null | undefined;
+}> = ({ attrValue }) => {
+  return attrValue ? (
+    <Chip label={attrValue.label || " "} size="small" variant="outlined" />
   ) : (
     <Box />
   );
@@ -225,6 +235,7 @@ export const AttributeValue: FC<Props> = ({ attrInfo }) => {
       );
 
     case EntryAttributeTypeTypeEnum.ARRAY_NAMED_OBJECT:
+    case EntryAttributeTypeTypeEnum.ARRAY_NAMED_OBJECT_BOOLEAN:
       return (
         <StyledList>
           {attrInfo.value?.asArrayNamedObject?.map((info, n) => (
@@ -263,6 +274,26 @@ export const AttributeValue: FC<Props> = ({ attrInfo }) => {
           {attrInfo.value?.asArrayNumber?.map((info, n) => (
             <StyledListItem key={n}>
               <ElemNumber attrValue={info} />
+            </StyledListItem>
+          ))}
+        </StyledList>
+      );
+
+    case EntryAttributeTypeTypeEnum.SELECT:
+      return (
+        <StyledList>
+          <StyledListItem>
+            <ElemSelect attrValue={attrInfo.value.asSelect ?? null} />
+          </StyledListItem>
+        </StyledList>
+      );
+
+    case EntryAttributeTypeTypeEnum.MULTI_SELECT:
+      return (
+        <StyledList>
+          {attrInfo.value?.asMultiSelect?.map((info, n) => (
+            <StyledListItem key={n}>
+              <ElemSelect attrValue={info} />
             </StyledListItem>
           ))}
         </StyledList>

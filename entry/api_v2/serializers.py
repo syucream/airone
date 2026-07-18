@@ -1,6 +1,6 @@
 import re
 from datetime import date, datetime
-from typing import Any, Literal, TypedDict
+from typing import Any, Literal, NotRequired, TypedDict, cast
 
 from django.db.models import Prefetch, QuerySet
 from drf_spectacular.types import OpenApiTypes
@@ -95,6 +95,9 @@ class EntryAttributeValueObject(TypedDict):
     id: int
     name: str
     schema: EntityAttributeType
+    # Optional label to render in place of `name` on the UI. Populated only when
+    # the source EntityAttr has `display_attr` configured; None otherwise.
+    display_label: NotRequired[str | None]
 
 
 class EntryAttributeValueNamedObject(TypedDict):
@@ -120,6 +123,11 @@ class EntryAttributeValueRole(TypedDict):
     name: str
 
 
+class EntryAttributeValueSelect(TypedDict):
+    value: str
+    label: str
+
+
 # A thin container returns typed value(s)
 class EntryAttributeValue(TypedDict, total=False):
     as_object: EntryAttributeValueObject | None
@@ -137,6 +145,8 @@ class EntryAttributeValue(TypedDict, total=False):
     as_array_role: list[EntryAttributeValueRole]
     as_number: int | float | None  # Added for AttrType.NUMBER
     as_array_number: list[int | float | None]  # Added for AttrType.ARRAY_NUMBER
+    as_select: EntryAttributeValueSelect | None
+    as_multi_select: list[EntryAttributeValueSelect]
 
 
 class EntryAttributeType(TypedDict):
@@ -213,6 +223,7 @@ class EntryAttributeValueObjectSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     name = serializers.CharField()
     schema = EntityAttributeTypeSerializer()
+    display_label = serializers.CharField(allow_null=True, required=False)
 
 
 class EntryAttributeValueNamedObjectSerializer(serializers.Serializer):
@@ -234,6 +245,11 @@ class EntryAttributeValueGroupSerializer(serializers.Serializer):
 class EntryAttributeValueRoleSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     name = serializers.CharField()
+
+
+class EntryAttributeValueSelectSerializer(serializers.Serializer):
+    value = serializers.CharField()
+    label = serializers.CharField()
 
 
 class EntryAttributeValueSerializer(serializers.Serializer):
@@ -261,6 +277,10 @@ class EntryAttributeValueSerializer(serializers.Serializer):
     # (regression fix for #3458). FloatField would coerce ints back to floats.
     as_number = IntOrFloatField(allow_null=True, required=False)
     as_array_number = serializers.ListField(child=IntOrFloatField(allow_null=True), required=False)
+    as_select = EntryAttributeValueSelectSerializer(allow_null=True, required=False)
+    as_multi_select = serializers.ListField(
+        child=EntryAttributeValueSelectSerializer(), required=False
+    )
 
 
 class EntryAttributeTypeSerializer(serializers.Serializer):
@@ -296,6 +316,117 @@ class EntryAliasSerializer(serializers.ModelSerializer):
             raise DuplicatedObjectExistsError("A duplicated named Alias exists in this model")
 
         return params
+
+
+# Types allowed to source a display label. Multi-valued and complex types are
+# intentionally excluded to keep the label unambiguous and single-line.
+_DISPLAY_LABEL_ALLOWED_TYPES: frozenset[int] = frozenset(
+    {
+        AttrType.STRING,
+        AttrType.TEXT,
+        AttrType.NUMBER,
+        AttrType.BOOLEAN,
+        AttrType.DATE,
+        AttrType.DATETIME,
+        AttrType.OBJECT,
+    }
+)
+
+
+def _resolve_display_label(display_attr_name: str, referred_entry: Entry | None) -> str | None:
+    """Resolve the value of `display_attr_name` on `referred_entry` as a label string.
+
+    Returns None when: display_attr_name is empty, the referred entry has no such
+    active attribute, no latest value exists, or the source attr type is not
+    supported for label rendering. Recursion is bounded to a single hop
+    (OBJECT display_attr yields the referred entry's own name, never a chain).
+    """
+    if not display_attr_name or referred_entry is None:
+        return None
+
+    # Prefer prefetched list to avoid N+1; fall back to direct query for
+    # callers that did not set up the prefetch chain (e.g. tests).
+    prefetched_attrs = getattr(referred_entry, "_display_attr_list", None)
+    if prefetched_attrs is not None:
+        matched = [a for a in prefetched_attrs if a.schema.name == display_attr_name]
+    else:
+        matched = list(
+            referred_entry.attrs.filter(
+                is_active=True, schema__name=display_attr_name
+            ).select_related("schema")
+        )
+    if not matched:
+        return None
+    target_attr = matched[0]
+
+    prefetched_vals = getattr(target_attr, "_display_attrv_list", None)
+    if prefetched_vals is not None:
+        latest_values = prefetched_vals
+    else:
+        latest_values = list(target_attr.values.filter(is_latest=True).select_related("referral"))
+    if not latest_values:
+        return None
+    val = latest_values[0]
+
+    attr_type_int = target_attr.schema.type
+    if attr_type_int not in _DISPLAY_LABEL_ALLOWED_TYPES:
+        return None
+
+    if attr_type_int in (AttrType.STRING, AttrType.TEXT):
+        return val.value or None
+    if attr_type_int == AttrType.NUMBER:
+        coerced = coerce_number(val.value)
+        return str(coerced) if coerced is not None else None
+    if attr_type_int == AttrType.BOOLEAN:
+        return "true" if val.boolean else "false"
+    if attr_type_int == AttrType.DATE:
+        return val.date.isoformat() if val.date else None
+    if attr_type_int == AttrType.DATETIME:
+        return val.datetime.isoformat() if val.datetime else None
+    if attr_type_int == AttrType.OBJECT:
+        if val.referral and val.referral.is_active:
+            return val.referral.name
+        return None
+    return None
+
+
+def _build_object_payload(referral: ACLBase, display_attr_name: str) -> EntryAttributeValueObject:
+    """Build the object payload dict for an object-like attribute value.
+
+    Adds an optional `display_label` key only when `display_attr_name` resolves
+    to a non-None value; the key is otherwise omitted so consumers that never
+    opt into the feature see the pre-existing payload shape.
+    """
+    entry = referral.entry
+    payload: EntryAttributeValueObject = {
+        "id": referral.id,
+        "name": referral.name,
+        "schema": {"id": entry.schema.id, "name": entry.schema.name},
+    }
+    label = _resolve_display_label(display_attr_name, entry)
+    if label is not None:
+        payload["display_label"] = label
+    return payload
+
+
+def _make_display_attr_prefetch(display_attr_names: set[str]) -> Prefetch:
+    """Build a Prefetch that walks ``Entry.attrs`` -> latest values for the
+    nominated display_attr names. Prefetch instances are stateful; callers that
+    need to attach the same chain at multiple depths (e.g. once for parent
+    values, once for data_array children) must call this factory once per use.
+    """
+    display_attrv_prefetch = Prefetch(
+        "values",
+        queryset=AttributeValue.objects.filter(is_latest=True).select_related("referral"),
+        to_attr="_display_attrv_list",
+    )
+    return Prefetch(
+        "referral__entry__attrs",
+        queryset=Attribute.objects.filter(is_active=True, schema__name__in=display_attr_names)
+        .select_related("schema")
+        .prefetch_related(display_attrv_prefetch),
+        to_attr="_display_attr_list",
+    )
 
 
 class EntryBaseSerializer(serializers.ModelSerializer):
@@ -758,25 +889,33 @@ class EntryRetrieveSerializer(EntryBaseSerializer):
                     }
 
                 case AttrType.ARRAY_OBJECT:
+                    display_attr_name = attr.schema.display_attr
+                    # data_array is prefetched with select_related for the
+                    # referral chain, so bare .all() uses the cache.
                     return {
                         "as_array_object": [
-                            {
-                                "id": x.referral.id if x.referral else 0,
-                                "name": x.referral.name if x.referral else "",
-                                "schema": {
-                                    "id": x.referral.entry.schema.id,
-                                    "name": x.referral.entry.schema.name,
-                                },
-                            }
-                            for x in attrv.data_array.all().select_related(
-                                "referral__entry__schema"
-                            )
+                            _build_object_payload(x.referral, display_attr_name)
+                            for x in attrv.data_array.all()
                             if x.referral and x.referral.is_active
                         ]
                     }
 
                 case AttrType.ARRAY_NAMED_OBJECT:
+                    display_attr_name = attr.schema.display_attr
                     array_named_object: list[EntryAttributeValueNamedObject] = [
+                        {
+                            "name": x.value,
+                            "object": _build_object_payload(x.referral, display_attr_name)
+                            if x.referral and x.referral.is_active
+                            else None,
+                        }
+                        for x in attrv.data_array.all()
+                        if not (x.referral and not x.referral.is_active)
+                    ]
+                    return {"as_array_named_object": array_named_object}
+
+                case AttrType.ARRAY_NAMED_OBJECT_BOOLEAN:
+                    array_named_object_boolean: list[EntryAttributeValueNamedObjectBoolean] = [
                         {
                             "name": x.value,
                             "object": {
@@ -789,14 +928,19 @@ class EntryRetrieveSerializer(EntryBaseSerializer):
                             }
                             if x.referral and x.referral.is_active
                             else None,
+                            "boolean": x.boolean,
                         }
                         for x in attrv.data_array.all().select_related("referral__entry__schema")
                         if not (x.referral and not x.referral.is_active)
                     ]
-                    return {"as_array_named_object": array_named_object}
+                    return {
+                        "as_array_named_object": cast(
+                            "list[EntryAttributeValueNamedObject]", array_named_object_boolean
+                        )
+                    }
 
                 case AttrType.ARRAY_GROUP:
-                    groups = [v.group for v in attrv.data_array.all().select_related("group")]
+                    groups = [v.group for v in attrv.data_array.all()]
                     return {
                         "as_array_group": [
                             {
@@ -808,7 +952,7 @@ class EntryRetrieveSerializer(EntryBaseSerializer):
                     }
 
                 case AttrType.ARRAY_ROLE:
-                    roles = [v.role for v in attrv.data_array.all().select_related("role")]
+                    roles = [v.role for v in attrv.data_array.all()]
                     return {
                         "as_array_role": [
                             {
@@ -824,14 +968,7 @@ class EntryRetrieveSerializer(EntryBaseSerializer):
 
                 case AttrType.OBJECT:
                     return {
-                        "as_object": {
-                            "id": attrv.referral.id if attrv.referral else 0,
-                            "name": attrv.referral.name if attrv.referral else "",
-                            "schema": {
-                                "id": attrv.referral.entry.schema.id,
-                                "name": attrv.referral.entry.schema.name,
-                            },
-                        }
+                        "as_object": _build_object_payload(attrv.referral, attr.schema.display_attr)
                         if attrv.referral and attrv.referral.is_active
                         else None,
                     }
@@ -839,14 +976,7 @@ class EntryRetrieveSerializer(EntryBaseSerializer):
                 case AttrType.NAMED_OBJECT:
                     named: EntryAttributeValueNamedObject = {
                         "name": attrv.value,
-                        "object": {
-                            "id": attrv.referral.id if attrv.referral else 0,
-                            "name": attrv.referral.name if attrv.referral else "",
-                            "schema": {
-                                "id": attrv.referral.entry.schema.id,
-                                "name": attrv.referral.entry.schema.name,
-                            },
-                        }
+                        "object": _build_object_payload(attrv.referral, attr.schema.display_attr)
                         if attrv.referral and attrv.referral.is_active
                         else None,
                     }
@@ -860,6 +990,12 @@ class EntryRetrieveSerializer(EntryBaseSerializer):
                     # based on previous model changes.
                     val = attrv.get_value()
                     return {"as_number": val}
+
+                case AttrType.SELECT:
+                    return {"as_select": attrv.get_value()}
+
+                case AttrType.MULTI_SELECT:
+                    return {"as_multi_select": attrv.get_value() or []}
 
                 case AttrType.DATE:
                     return {"as_string": attrv.date if attrv.date else ""}
@@ -903,7 +1039,7 @@ class EntryRetrieveSerializer(EntryBaseSerializer):
                         "as_array_number": AttrDefaultValue.get(type, []),
                     }
 
-                case AttrType.ARRAY_NAMED_OBJECT:
+                case AttrType.ARRAY_NAMED_OBJECT | AttrType.ARRAY_NAMED_OBJECT_BOOLEAN:
                     return {"as_array_named_object": []}
 
                 case AttrType.ARRAY_OBJECT:
@@ -944,14 +1080,45 @@ class EntryRetrieveSerializer(EntryBaseSerializer):
                         "as_number": AttrDefaultValue.get(type)
                     }  # Use .get for safety, though type should exist
 
+                case AttrType.SELECT:
+                    return {"as_select": None}
+
+                case AttrType.MULTI_SELECT:
+                    return {"as_multi_select": []}
+
                 case _:
                     raise IncorrectTypeError(f"unexpected type: {type}")
 
+        # Collect display_attr names configured on this entity to build a bounded
+        # prefetch chain that resolves referred-entry attr values without N+1
+        # for both single OBJECT / NAMED_OBJECT branches and their ARRAY_*
+        # variants that iterate AttributeValue.data_array children.
+        display_attr_names: set[str] = {
+            ea.display_attr
+            for ea in obj.schema.attrs.filter(is_active=True).only("display_attr")
+            if ea.display_attr
+        }
+        parent_prefetches: list[Prefetch] = []
+        child_prefetches: list[Prefetch] = []
+        if display_attr_names:
+            parent_prefetches.append(_make_display_attr_prefetch(display_attr_names))
+            child_prefetches.append(_make_display_attr_prefetch(display_attr_names))
+        # Prefetch data_array uniformly so ARRAY_* iterations use the cache
+        # instead of firing a fresh select_related() per parent value. A trailing
+        # empty prefetch on non-array parents is a no-op.
+        parent_prefetches.append(
+            Prefetch(
+                "data_array",
+                queryset=AttributeValue.objects.select_related(
+                    "referral__entry__schema", "group", "role"
+                ).prefetch_related(*child_prefetches),
+            )
+        )
         attrv_prefetch = Prefetch(
             "values",
-            queryset=AttributeValue.objects.filter(is_latest=True).select_related(
-                "referral__entry__schema", "group", "role"
-            ),
+            queryset=AttributeValue.objects.filter(is_latest=True)
+            .select_related("referral__entry__schema", "group", "role")
+            .prefetch_related(*parent_prefetches),
             to_attr="attrv_list",
         )
         attr_prefetch = Prefetch(
@@ -1207,9 +1374,33 @@ class EntryImportSerializer(serializers.ListSerializer):
 
 
 class GetEntryAttrReferralSerializer(serializers.ModelSerializer):
+    # display_label is filled only when the caller-side EntityAttr has
+    # display_attr configured; declared as optional so the schema does not
+    # force clients to expect the field on every response.
+    display_label = serializers.CharField(
+        read_only=True, required=False, allow_null=True, default=None
+    )
+
     class Meta:
         model = ACLBase
-        fields = ("id", "name")
+        fields = ("id", "name", "display_label")
+
+    def to_representation(self, obj: ACLBase) -> dict[str, Any]:
+        data = super().to_representation(obj)
+        display_attr_name = self.context.get("display_attr_name")
+        # Only OBJECT-type attr pickers ever set display_attr_name (possibly
+        # empty). For GROUP / ROLE responses the caller never has an
+        # opinion about display_label, so drop the field entirely rather
+        # than pinning it to None — pre-existing consumers assert the
+        # exact {id, name} shape and adding a null key breaks them.
+        if display_attr_name is None:
+            data.pop("display_label", None)
+            return data
+        if display_attr_name and isinstance(obj, Entry):
+            data["display_label"] = _resolve_display_label(display_attr_name, obj)
+        else:
+            data["display_label"] = None
+        return data
 
 
 class AttributeSerializer(serializers.ModelSerializer):
@@ -1277,6 +1468,11 @@ class EntryHistoryAttributeValueSerializer(serializers.ModelSerializer):
             Logger.error(f"Invalid attribute type: {obj.data_type}")
             return {}
 
+        # For object-like branches we resolve display_label using the
+        # referring EntityAttr's display_attr setting. parent_attr and schema
+        # are non-null FKs, so direct attribute access is safe.
+        display_attr_name = obj.parent_attr.schema.display_attr
+
         match attr_type:
             case AttrType.ARRAY_STRING:
                 return {"as_array_string": [x.value for x in obj.data_array.all()]}
@@ -1285,26 +1481,31 @@ class EntryHistoryAttributeValueSerializer(serializers.ModelSerializer):
                 return {"as_array_number": [coerce_number(x.value) for x in obj.data_array.all()]}
 
             case AttrType.ARRAY_OBJECT:
+                # data_array is prefetched by the history endpoint with
+                # select_related for referral chain; bare .all() uses the cache.
                 return {
                     "as_array_object": [
-                        {
-                            "id": x.referral.id,
-                            "name": x.referral.name,
-                            "schema": {
-                                "id": x.referral.entry.schema.id,
-                                "name": x.referral.entry.schema.name,
-                            },
-                        }
+                        _build_object_payload(x.referral, display_attr_name)
                         if x.referral and x.referral.is_active
                         else None
-                        for x in obj.data_array.all().select_related(
-                            "referral", "referral__entry__schema"
-                        )
+                        for x in obj.data_array.all()
                     ]
                 }
 
             case AttrType.ARRAY_NAMED_OBJECT:
                 array_named_object: list[EntryAttributeValueNamedObject] = [
+                    {
+                        "name": x.value,
+                        "object": _build_object_payload(x.referral, display_attr_name)
+                        if x.referral and x.referral.is_active
+                        else None,
+                    }
+                    for x in obj.data_array.all()
+                ]
+                return {"as_array_named_object": array_named_object}
+
+            case AttrType.ARRAY_NAMED_OBJECT_BOOLEAN:
+                array_named_object_boolean: list[EntryAttributeValueNamedObjectBoolean] = [
                     {
                         "name": x.value,
                         "object": {
@@ -1317,12 +1518,17 @@ class EntryHistoryAttributeValueSerializer(serializers.ModelSerializer):
                         }
                         if x.referral and x.referral.is_active
                         else None,
+                        "boolean": x.boolean,
                     }
                     for x in obj.data_array.all().select_related(
                         "referral", "referral__entry__schema"
                     )
                 ]
-                return {"as_array_named_object": array_named_object}
+                return {
+                    "as_array_named_object": cast(
+                        "list[EntryAttributeValueNamedObject]", array_named_object_boolean
+                    )
+                }
 
             case AttrType.ARRAY_GROUP:
                 groups = [v.group for v in obj.data_array.all().select_related("group")]
@@ -1359,14 +1565,7 @@ class EntryHistoryAttributeValueSerializer(serializers.ModelSerializer):
 
             case AttrType.OBJECT:
                 return {
-                    "as_object": {
-                        "id": obj.referral.id if obj.referral else 0,
-                        "name": obj.referral.name if obj.referral else "",
-                        "schema": {
-                            "id": obj.referral.entry.schema.id,
-                            "name": obj.referral.entry.schema.name,
-                        },
-                    }
+                    "as_object": _build_object_payload(obj.referral, display_attr_name)
                     if obj.referral and obj.referral.is_active
                     else None,
                 }
@@ -1374,14 +1573,7 @@ class EntryHistoryAttributeValueSerializer(serializers.ModelSerializer):
             case AttrType.NAMED_OBJECT:
                 named: EntryAttributeValueNamedObject = {
                     "name": obj.value,
-                    "object": {
-                        "id": obj.referral.id if obj.referral else 0,
-                        "name": obj.referral.name if obj.referral else "",
-                        "schema": {
-                            "id": obj.referral.entry.schema.id,
-                            "name": obj.referral.entry.schema.name,
-                        },
-                    }
+                    "object": _build_object_payload(obj.referral, display_attr_name)
                     if obj.referral and obj.referral.is_active
                     else None,
                 }
@@ -1414,6 +1606,12 @@ class EntryHistoryAttributeValueSerializer(serializers.ModelSerializer):
 
             case AttrType.NUMBER:
                 return {"as_number": obj.get_value()}
+
+            case AttrType.SELECT:
+                return {"as_select": obj.get_value()}
+
+            case AttrType.MULTI_SELECT:
+                return {"as_multi_select": obj.get_value() or []}
 
             case _:
                 return {}
@@ -1478,7 +1676,7 @@ class EntryAttributeValueRestoreSerializer(serializers.ModelSerializer):
 
         # Prepare value based on data_type
         match instance.data_type:
-            case AttrType.STRING | AttrType.TEXT | AttrType.NUMBER:
+            case AttrType.STRING | AttrType.TEXT | AttrType.NUMBER | AttrType.SELECT:
                 value = instance.value
             case AttrType.BOOLEAN:
                 value = instance.boolean
@@ -1497,7 +1695,7 @@ class EntryAttributeValueRestoreSerializer(serializers.ModelSerializer):
                     "name": instance.value if instance.value else "",
                     "id": instance.referral.id if instance.referral else None,
                 }
-            case AttrType.ARRAY_STRING | AttrType.ARRAY_NUMBER:
+            case AttrType.ARRAY_STRING | AttrType.ARRAY_NUMBER | AttrType.MULTI_SELECT:
                 array_data = list(instance.data_array.all())
                 value = [item.value for item in array_data]
             case AttrType.ARRAY_OBJECT:
@@ -1520,6 +1718,24 @@ class EntryAttributeValueRestoreSerializer(serializers.ModelSerializer):
                 ]
             case _:
                 value = instance.value
+
+        # SELECT/MULTI_SELECT restoration may resurrect a value that has since
+        # been removed from EntityAttr.choices. add_value() now strictly
+        # validates membership and would raise TypeError, so surface a clear
+        # 400 to the caller instead of letting an opaque crash bubble up.
+        if instance.data_type in (AttrType.SELECT, AttrType.MULTI_SELECT):
+            allowed = {c.get("value") for c in (attr.schema.choices or []) if isinstance(c, dict)}
+            stale: list[str] = []
+            if instance.data_type == AttrType.SELECT and isinstance(value, str):
+                if value and value not in allowed:
+                    stale = [value]
+            elif instance.data_type == AttrType.MULTI_SELECT and isinstance(value, list):
+                stale = [v for v in value if isinstance(v, str) and v and v not in allowed]
+            if stale:
+                raise ValidationError(
+                    "cannot restore value(s) no longer in choices: %s"
+                    % ", ".join(sorted(set(stale)))
+                )
 
         attr.add_value(user, value)
         entry.register_es()
