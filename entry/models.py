@@ -501,7 +501,7 @@ class AttributeValue(models.Model):
                             if is_mandatory:
                                 return False
                             return True
-                        raise Exception("value(%s) is not str" % value)
+                        raise Exception(f"value({value}) is not str")
                     if is_mandatory and value == "":
                         return False
                     if value and entity_attr is not None:
@@ -512,8 +512,8 @@ class AttributeValue(models.Model):
                         }
                         if allowed and value not in allowed:
                             raise Exception(
-                                "value(%s) is not in choices of EntityAttr(%s)"
-                                % (value, entity_attr.name)
+                                f"value({value}) is not in choices "
+                                f"of EntityAttr({entity_attr.name})"
                             )
                     return True
 

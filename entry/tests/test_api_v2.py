@@ -474,7 +474,7 @@ class ViewTest(BaseViewTest):
         # complement_attrs pre-creates an empty latest value for array attrs
         attr.values.exclude(id=parent_attrv.id).update(is_latest=False)
 
-        resp = self.client.get("/entry/api/v2/%d/" % entry.id)
+        resp = self.client.get(f"/entry/api/v2/{entry.id}/")
         self.assertEqual(resp.status_code, 200)
 
         resp_data = resp.json()

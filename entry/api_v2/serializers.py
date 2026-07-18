@@ -1733,8 +1733,7 @@ class EntryAttributeValueRestoreSerializer(serializers.ModelSerializer):
                 stale = [v for v in value if isinstance(v, str) and v and v not in allowed]
             if stale:
                 raise ValidationError(
-                    "cannot restore value(s) no longer in choices: %s"
-                    % ", ".join(sorted(set(stale)))
+                    f"cannot restore value(s) no longer in choices: {', '.join(sorted(set(stale)))}"
                 )
 
         attr.add_value(user, value)

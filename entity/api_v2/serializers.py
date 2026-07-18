@@ -560,7 +560,7 @@ class EntityAttrUpdateSerializer(serializers.ModelSerializer[EntityAttr]):
                     in_use = existing_attr.get_choices_in_use() & removed
                     if in_use:
                         raise ValidationError(
-                            "choices in use cannot be removed: %s" % ", ".join(sorted(in_use))
+                            f"choices in use cannot be removed: {', '.join(sorted(in_use))}"
                         )
                 attr["choices"] = normalized
         elif new_choices is not None:

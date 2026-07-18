@@ -237,8 +237,8 @@ def _do_import_entries(job: Job) -> None:
                     # Skip this single attribute and continue importing the rest of
                     # the row / file instead of aborting the whole job.
                     Logger.warning(
-                        "[task.import_entry] Skipped attr '%s' on entry '%s': %s"
-                        % (attr_name, entry.name, e)
+                        f"[task.import_entry] Skipped attr '{attr_name}' "
+                        f"on entry '{entry.name}': {e}"
                     )
                     continue
                 is_update = True
