@@ -46,16 +46,19 @@ class AttrType(BaseIntEnum):
     ROLE = 1 << 6
     DATETIME = 1 << 7
     NUMBER = 1 << 8
+    SELECT = 1 << 9
     _ARRAY = 1 << 10
     _NAMED = 1 << 11
     NAMED_OBJECT = _NAMED | OBJECT
+    NAMED_OBJECT_BOOLEAN = _NAMED | OBJECT | BOOLEAN
     ARRAY_OBJECT = _ARRAY | OBJECT
     ARRAY_STRING = _ARRAY | STRING
     ARRAY_NUMBER = _ARRAY | NUMBER
     ARRAY_NAMED_OBJECT = _ARRAY | _NAMED | OBJECT
-    ARRAY_NAMED_OBJECT_BOOLEAN = 3081  # unmanaged by AttrTypeXXX
+    ARRAY_NAMED_OBJECT_BOOLEAN = _ARRAY | NAMED_OBJECT_BOOLEAN
     ARRAY_GROUP = _ARRAY | GROUP
     ARRAY_ROLE = _ARRAY | ROLE
+    MULTI_SELECT = _ARRAY | SELECT
 
 
 # Mapping from string to AttrType enum values (backwards compatibility)
@@ -69,6 +72,7 @@ AttrTypeValue = {
     "array_number": AttrType.ARRAY_NUMBER,
     "array_object": AttrType.ARRAY_OBJECT,
     "array_named_object": AttrType.ARRAY_NAMED_OBJECT,
+    "array_named_object_boolean": AttrType.ARRAY_NAMED_OBJECT_BOOLEAN,
     "array_group": AttrType.ARRAY_GROUP,
     "array_role": AttrType.ARRAY_ROLE,
     "textarea": AttrType.TEXT,
@@ -76,6 +80,8 @@ AttrTypeValue = {
     "date": AttrType.DATE,
     "datetime": AttrType.DATETIME,
     "number": AttrType.NUMBER,
+    "select": AttrType.SELECT,
+    "multi_select": AttrType.MULTI_SELECT,
 }
 
 
@@ -114,6 +120,7 @@ AttrDefaultValue: dict[int, Any] = {
     AttrType.ARRAY_STRING: [],
     AttrType.ARRAY_NUMBER: [],
     AttrType.ARRAY_NAMED_OBJECT: dict().values(),
+    AttrType.ARRAY_NAMED_OBJECT_BOOLEAN: dict().values(),
     AttrType.ARRAY_GROUP: [],
     AttrType.ARRAY_ROLE: [],
     AttrType.TEXT: "",
@@ -123,4 +130,6 @@ AttrDefaultValue: dict[int, Any] = {
     AttrType.ROLE: None,
     AttrType.DATETIME: None,
     AttrType.NUMBER: None,
+    AttrType.SELECT: None,
+    AttrType.MULTI_SELECT: [],
 }

@@ -36,11 +36,9 @@ urlpatterns = [
                 "note_desc": settings.AIRONE["NOTE_DESC"],
                 "note_link": settings.AIRONE["NOTE_LINK"],
                 "sso_desc": settings.AIRONE["SSO_DESC"],
-                "idp": (
-                    next(iter(getattr(settings, "SOCIAL_AUTH_SAML_ENABLED_IDPS", {}).keys()), None)
-                    if hasattr(settings, "SOCIAL_AUTH_SAML_ENABLED_IDPS")
-                    else None
-                ),
+                "idp": list(getattr(settings, "SOCIAL_AUTH_SAML_ENABLED_IDPS").keys())[0]
+                if hasattr(settings, "SOCIAL_AUTH_SAML_ENABLED_IDPS")
+                else None,
                 "password_reset_disabled": settings.AIRONE["PASSWORD_RESET_DISABLED"],
                 "check_term_service": settings.AIRONE["CHECK_TERM_SERVICE"],
                 "terms_of_service_url": settings.AIRONE["TERMS_OF_SERVICE_URL"],

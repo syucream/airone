@@ -1,5 +1,6 @@
 from collections import OrderedDict
-from typing import IO, TYPE_CHECKING, Any, cast
+from collections.abc import Mapping
+from typing import IO, TYPE_CHECKING, Any
 
 import yaml
 from django.conf import settings
@@ -46,7 +47,8 @@ class YAMLParser(BaseParser):
 
         try:
             data = stream.read().decode(encoding)
-            return cast("dict[str, object]", yaml.safe_load(data))
+            loaded: dict[str, object] = yaml.safe_load(data)
+            return loaded
         except (ValueError, yaml.parser.ParserError, yaml.scanner.ScannerError) as exc:
             raise ParseError("YAML parse error - %s" % str(exc))
 
@@ -180,6 +182,8 @@ class AironeUserDefault(serializers.CurrentUserDefault):
 
     def __call__(self, serializer_field: serializers.Field[Any, Any, Any, Any]) -> User:
         if "_user" in serializer_field.context:
-            return cast("User", serializer_field.context["_user"])
+            user: User = serializer_field.context["_user"]
+            return user
 
-        return cast("User", super().__call__(serializer_field))
+        result: User = super().__call__(serializer_field)
+        return result

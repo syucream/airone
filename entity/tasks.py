@@ -1,4 +1,6 @@
-from typing import TYPE_CHECKING, Self
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, Self
 
 from pydantic import BaseModel, Field, ValidationError, field_validator, model_validator
 
@@ -108,9 +110,28 @@ class CreateEntityV2Attr(BaseModel):
     referral: list[int] = Field(default_factory=list)
     note: str = ""
     default_value: str | bool | int | float | None = None
+    choices: list[dict[str, str]] | None = None
     name_order: int | None = 0  # for internal use only
     name_prefix: str | None = ""  # for internal use only
     name_postfix: str | None = ""  # for internal use only
+    display_attr: str = ""
+
+    @model_validator(mode="after")
+    def validate_choices_shape(self) -> Self:
+        """Reuse the EntityAttr authoritative choices validator so the Celery
+        path applies the same invariants (non-empty, unique value, unique label,
+        non-empty strings) as the synchronous serializer path."""
+        if self.choices is None:
+            if self.type in (AttrType.SELECT, AttrType.MULTI_SELECT):
+                raise ValueError("SELECT type requires a non-empty choices list")
+            return self
+        if self.type not in (AttrType.SELECT, AttrType.MULTI_SELECT):
+            self.choices = None
+            return self
+        from entity.models import EntityAttr
+
+        EntityAttr.validate_choices(self.choices)
+        return self
 
     @model_validator(mode="after")
     def validate_default_value_for_type(self) -> Self:
@@ -118,7 +139,12 @@ class CreateEntityV2Attr(BaseModel):
         if self.default_value is None:
             return self
 
-        supported_types = [AttrType.STRING, AttrType.TEXT, AttrType.BOOLEAN, AttrType.NUMBER]
+        supported_types = [
+            AttrType.STRING,
+            AttrType.TEXT,
+            AttrType.BOOLEAN,
+            AttrType.NUMBER,
+        ]
 
         # Clear default_value for unsupported types (don't raise error)
         if self.type not in supported_types:
@@ -186,10 +212,28 @@ class EditEntityV2Attr(BaseModel):
     referral: list[int] | None = None
     note: str | None = None
     default_value: str | bool | int | float | None = None
+    choices: list[dict[str, str]] | None = None
     is_deleted: bool = False
     name_order: int | None = 0  # for internal use only
     name_prefix: str | None = ""  # for internal use only
     name_postfix: str | None = ""  # for internal use only
+    display_attr: str | None = None
+
+    @model_validator(mode="after")
+    def validate_choices_shape(self) -> Self:
+        """Reuse EntityAttr.validate_choices when the payload provides choices."""
+        if self.choices is None:
+            return self
+        if self.type is not None and self.type not in (
+            AttrType.SELECT,
+            AttrType.MULTI_SELECT,
+        ):
+            self.choices = None
+            return self
+        from entity.models import EntityAttr
+
+        EntityAttr.validate_choices(self.choices)
+        return self
 
     @model_validator(mode="after")
     def validate_attr_fields(self) -> Self:
@@ -205,7 +249,12 @@ class EditEntityV2Attr(BaseModel):
         if self.default_value is None or self.type is None:
             return self
 
-        supported_types = [AttrType.STRING, AttrType.TEXT, AttrType.BOOLEAN, AttrType.NUMBER]
+        supported_types = [
+            AttrType.STRING,
+            AttrType.TEXT,
+            AttrType.BOOLEAN,
+            AttrType.NUMBER,
+        ]
 
         # Clear default_value for unsupported types (don't raise error)
         if self.type not in supported_types:
@@ -286,7 +335,9 @@ class EditEntityV2Params(BaseModel):
 @register_job_task(JobOperation.CREATE_ENTITY)
 @app.task(bind=True)
 @may_schedule_until_job_is_ready
-def create_entity(self: Task, job: Job) -> JobStatus:
+def create_entity(self: Task[Any, Any], job: Job) -> JobStatus:
+    if job.target is None:
+        return JobStatus.CANCELED
     user = User.objects.filter(id=job.user.id).first()
     entity = Entity.objects.filter(id=job.target.id, is_active=True).first()
 
@@ -335,7 +386,9 @@ def create_entity(self: Task, job: Job) -> JobStatus:
 @register_job_task(JobOperation.EDIT_ENTITY)
 @app.task(bind=True)
 @may_schedule_until_job_is_ready
-def edit_entity(self: Task, job: Job) -> JobStatus:
+def edit_entity(self: Task[Any, Any], job: Job) -> JobStatus:
+    if job.target is None:
+        return JobStatus.CANCELED
     user = User.objects.filter(id=job.user.id).first()
     entity = Entity.objects.filter(id=job.target.id, is_active=True).first()
 
@@ -367,10 +420,12 @@ def edit_entity(self: Task, job: Job) -> JobStatus:
         entity.save(update_fields=["note"])
 
     # update processing for each attrs
-    deleted_attr_ids = []
+    deleted_attr_ids: list[int] = []
     for attr in params.attrs:
         if attr.deleted:
             # In case of deleting attribute which has been already existed
+            if attr.id is None:
+                continue
             attr_obj = EntityAttr.objects.get(id=attr.id)
             attr_obj.delete()
 
@@ -383,7 +438,8 @@ def edit_entity(self: Task, job: Job) -> JobStatus:
 
         elif attr.id is not None and EntityAttr.objects.filter(id=attr.id).exists():
             # In case of updating attribute which has been already existed
-            attr_obj = EntityAttr.objects.get(id=attr.id)
+            attr_id = attr.id
+            attr_obj = EntityAttr.objects.get(id=attr_id)
 
             # register operaion history if the parameters are changed
             if attr_obj.name != attr.name:
@@ -397,13 +453,12 @@ def edit_entity(self: Task, job: Job) -> JobStatus:
 
             # EntityAttr.is_referral_updated() is separated from EntityAttr.is_updated()
             # to reduce unnecessary creation of HistoricalRecord.
-            update_params = {
-                "name": attr.name,
-                "index": attr.row_index,
-                "is_mandatory": attr.is_mandatory,
-                "is_delete_in_chain": attr.is_delete_in_chain,
-            }
-            if attr_obj.is_updated(**update_params):
+            if attr_obj.is_updated(
+                name=attr.name,
+                is_mandatory=attr.is_mandatory,
+                is_delete_in_chain=attr.is_delete_in_chain,
+                index=int(attr.row_index),
+            ):
                 attr_obj.name = attr.name
                 attr_obj.is_mandatory = attr.is_mandatory
                 attr_obj.is_delete_in_chain = attr.is_delete_in_chain
@@ -446,7 +501,9 @@ def edit_entity(self: Task, job: Job) -> JobStatus:
 @register_job_task(JobOperation.DELETE_ENTITY)
 @app.task(bind=True)
 @may_schedule_until_job_is_ready
-def delete_entity(self: Task, job: Job) -> JobStatus:
+def delete_entity(self: Task[Any, Any], job: Job) -> JobStatus:
+    if job.target is None:
+        return JobStatus.CANCELED
     user = User.objects.filter(id=job.user.id).first()
     entity = Entity.objects.filter(id=job.target.id, is_active=False).first()
 
@@ -472,7 +529,9 @@ def delete_entity(self: Task, job: Job) -> JobStatus:
 @register_job_task(JobOperation.CREATE_ENTITY_V2)
 @app.task(bind=True)
 @may_schedule_until_job_is_ready
-def create_entity_v2(self: Task, job: Job) -> JobStatus:
+def create_entity_v2(self: Task[Any, Any], job: Job) -> JobStatus:
+    if job.target is None:
+        return JobStatus.ERROR
     entity: Entity | None = Entity.objects.filter(id=job.target.id, is_active=True).first()
     if not entity:
         return JobStatus.ERROR
@@ -500,7 +559,9 @@ def create_entity_v2(self: Task, job: Job) -> JobStatus:
 @register_job_task(JobOperation.EDIT_ENTITY_V2)
 @app.task(bind=True)
 @may_schedule_until_job_is_ready
-def edit_entity_v2(self: Task, job: Job) -> JobStatus:
+def edit_entity_v2(self: Task[Any, Any], job: Job) -> JobStatus:
+    if job.target is None:
+        return JobStatus.ERROR
     entity: Entity | None = Entity.objects.filter(id=job.target.id, is_active=True).first()
     if not entity:
         return JobStatus.ERROR
@@ -530,7 +591,9 @@ def edit_entity_v2(self: Task, job: Job) -> JobStatus:
 @register_job_task(JobOperation.DELETE_ENTITY_V2)
 @app.task(bind=True)
 @may_schedule_until_job_is_ready
-def delete_entity_v2(self: Task, job: Job) -> JobStatus:
+def delete_entity_v2(self: Task[Any, Any], job: Job) -> JobStatus:
+    if job.target is None:
+        return JobStatus.ERROR
     entity: Entity | None = Entity.objects.filter(id=job.target.id, is_active=True).first()
     if not entity:
         return JobStatus.ERROR

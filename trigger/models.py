@@ -1,6 +1,6 @@
 import itertools
 import json
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 from django.db import models
 
@@ -72,7 +72,8 @@ class InputTriggerCondition:
 
         def _decode_value(value: Any) -> dict[str, Any]:
             try:
-                return cast("dict[str, Any]", json.loads(value))
+                decoded: dict[str, Any] = json.loads(value)
+                return decoded
             except (ValueError, TypeError):
                 return {}
 

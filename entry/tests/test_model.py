@@ -91,6 +91,118 @@ class BaseModelTest(AironeTestCase):
 
 
 class ModelTest(BaseModelTest):
+    def _make_select_attr(self, attr_type, choices):
+        """Builds an EntityAttr/Attribute pair for SELECT or MULTI_SELECT.
+
+        Returns the Attribute instance attached to self._entry.
+        """
+        entity_attr = EntityAttr.objects.create(
+            name=f"sel_{attr_type}",
+            type=attr_type,
+            created_user=self._user,
+            parent_entity=self._entity,
+            choices=choices,
+        )
+        attr = self._entry.add_attribute_from_base(entity_attr, self._user)
+        return attr
+
+    def test_select_add_and_get_value(self):
+        choices = [
+            {"value": "active", "label": "稼働中"},
+            {"value": "inactive", "label": "停止中"},
+        ]
+        attr = self._make_select_attr(AttrType.SELECT, choices)
+        attrv = attr.add_value(self._user, "active")
+        self.assertEqual(attrv.value, "active")
+        self.assertEqual(
+            attr.get_latest_value().get_value(),
+            {"value": "active", "label": "稼働中"},
+        )
+
+    def test_select_get_value_falls_back_for_stale_choice(self):
+        attr = self._make_select_attr(AttrType.SELECT, [{"value": "a", "label": "Alpha"}])
+        attr.add_value(self._user, "a")
+        # Simulate a schema change that removed the choice (e.g. legacy data).
+        attr.schema.choices = [{"value": "b", "label": "Beta"}]
+        attr.schema.save()
+        # Stale choices surface as the tombstone label so raw UUID-style values
+        # don't leak into the UI / CSV exports / ES.
+        self.assertEqual(
+            attr.get_latest_value().get_value(),
+            {"value": "a", "label": AttributeValue.DELETED_CHOICE_LABEL},
+        )
+
+    def test_select_rejects_unknown_choice_value(self):
+        attr = self._make_select_attr(AttrType.SELECT, [{"value": "active", "label": "Active"}])
+        with self.assertRaises(TypeError):
+            attr.add_value(self._user, "unknown")
+
+    def test_select_is_updated(self):
+        attr = self._make_select_attr(
+            AttrType.SELECT,
+            [
+                {"value": "a", "label": "A"},
+                {"value": "b", "label": "B"},
+            ],
+        )
+        attr.add_value(self._user, "a")
+        self.assertFalse(attr.is_updated("a"))
+        self.assertTrue(attr.is_updated("b"))
+        self.assertTrue(attr.is_updated(""))
+
+    def test_multi_select_dedup_and_get_value(self):
+        attr = self._make_select_attr(
+            AttrType.MULTI_SELECT,
+            [
+                {"value": "x", "label": "X"},
+                {"value": "y", "label": "Y"},
+            ],
+        )
+        # Duplicates should be removed but insertion order preserved.
+        attr.add_value(self._user, ["y", "x", "y", "x"])
+        latest = attr.get_latest_value()
+        stored_values = [c.value for c in latest.data_array.all().order_by("id")]
+        self.assertEqual(stored_values, ["y", "x"])
+        result = latest.get_value()
+        self.assertEqual(result, [{"value": "y", "label": "Y"}, {"value": "x", "label": "X"}])
+
+    def test_multi_select_rejects_unknown_element(self):
+        attr = self._make_select_attr(
+            AttrType.MULTI_SELECT,
+            [{"value": "a", "label": "A"}, {"value": "b", "label": "B"}],
+        )
+        with self.assertRaises(TypeError):
+            attr.add_value(self._user, ["a", "unknown"])
+
+    def test_multi_select_is_updated(self):
+        attr = self._make_select_attr(
+            AttrType.MULTI_SELECT,
+            [{"value": "a", "label": "A"}, {"value": "b", "label": "B"}],
+        )
+        attr.add_value(self._user, ["a", "b"])
+        # Same elements in the same order is a no-op.
+        self.assertFalse(attr.is_updated(["a", "b"]))
+        # Reordering the same elements must count as an update — get_value /
+        # add_value preserve insertion order so the user's reorder needs to
+        # persist.
+        self.assertTrue(attr.is_updated(["b", "a"]))
+        self.assertTrue(attr.is_updated(["a"]))
+
+    def test_get_choices_in_use_select(self):
+        attr = self._make_select_attr(
+            AttrType.SELECT, [{"value": "a", "label": "A"}, {"value": "b", "label": "B"}]
+        )
+        attr.add_value(self._user, "a")
+        self.assertEqual(attr.schema.get_choices_in_use(), {"a"})
+
+    def test_get_choices_in_use_multi_select(self):
+        attr = self._make_select_attr(
+            AttrType.MULTI_SELECT,
+            [{"value": "a", "label": "A"}, {"value": "b", "label": "B"}],
+        )
+        attr.add_value(self._user, ["a", "b"])
+        self.assertEqual(attr.schema.get_choices_in_use(), {"a", "b"})
+
     def test_make_attribute_value(self):
         AttributeValue(value="hoge", created_user=self._user, parent_attr=self._attr).save()
 
@@ -479,6 +591,51 @@ class ModelTest(BaseModelTest):
                 ]
             )
         )
+
+    def test_attr_helper_of_attribute_with_array_named_ref_boolean(self):
+        # ARRAY_NAMED_OBJECT_BOOLEAN must be handled by is_updated() just like
+        # ARRAY_NAMED_OBJECT. Previously this type fell through the match
+        # statement and always returned None (falsy), so changes — most notably
+        # clearing all members with an empty list — were never detected.
+        ref_entity = Entity.objects.create(name="referred_entity", created_user=self._user)
+        ref_entry = Entry.objects.create(
+            name="referred_entry", created_user=self._user, schema=ref_entity
+        )
+
+        entity = Entity.objects.create(name="entity", created_user=self._user)
+        attr_base = EntityAttr.objects.create(
+            name="arr_named_ref_bool",
+            type=AttrType.ARRAY_NAMED_OBJECT_BOOLEAN,
+            created_user=self._user,
+            parent_entity=entity,
+        )
+        attr_base.referral.add(ref_entity)
+
+        entry = Entry.objects.create(name="entry", created_user=self._user, schema=entity)
+        entry.complement_attrs(self._user)
+
+        attr: Attribute = entry.attrs.get(name="arr_named_ref_bool")
+
+        # no value has been set yet, so an empty list is not an update
+        self.assertFalse(attr.is_updated([]))
+        self.assertTrue(attr.is_updated([{"id": ref_entry.id, "name": "hoge"}]))
+
+        # set a value with name, referral and boolean
+        attr.add_value(self._user, [{"id": ref_entry.id, "name": "hoge", "boolean": True}])
+
+        # same content is not an update (boolean is compared as well)
+        self.assertFalse(attr.is_updated([{"id": ref_entry.id, "name": "hoge", "boolean": True}]))
+        self.assertTrue(attr.is_updated([{"id": ref_entry.id, "name": "hoge", "boolean": False}]))
+        self.assertTrue(attr.is_updated([{"id": ref_entry.id, "name": "fuga", "boolean": True}]))
+
+        # clearing all members with an empty list must be detected as an update
+        # (this is the regression that was fixed)
+        self.assertTrue(attr.is_updated([]))
+
+        # after clearing the value, an empty list is a no-op again
+        attr.add_value(self._user, [])
+        self.assertFalse(attr.is_updated([]))
+        self.assertTrue(attr.is_updated([{"id": ref_entry.id, "name": "hoge", "boolean": True}]))
 
     def test_for_boolean_attr_and_value(self):
         attr = self.make_attr("attr_bool", AttrType.BOOLEAN)

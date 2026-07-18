@@ -1,7 +1,7 @@
 import importlib
 import re
 from datetime import datetime
-from typing import Any, cast
+from typing import Any
 
 from django.contrib.auth.models import Permission
 from django.db import models
@@ -169,7 +169,8 @@ class ACLBase(models.Model):
             case _:
                 model = type(self)
 
-        return cast("ACLBase", model.objects.get(id=self.id))
+        obj: ACLBase = model.objects.get(id=self.id)
+        return obj
 
     def is_same_object(self, comp: ACLBase) -> bool:
         # _IMPORT_INFO and __getitem__ are provided by concrete subclasses

@@ -1,6 +1,6 @@
 import importlib
 import logging
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 from django.urls import URLResolver, include, path
 from pagoda_plugin_sdk.exceptions import PluginError
@@ -146,7 +146,8 @@ class PluginRegistry:
         if not hasattr(module, func_name):
             raise AttributeError(f"Function '{func_name}' not found in module '{module_path}'")
 
-        return cast("Callable[..., Any]", getattr(module, func_name))
+        handler: Callable[..., Any] = getattr(module, func_name)
+        return handler
 
     def get(self, plugin_id: str) -> Plugin | None:
         """Get a plugin by ID

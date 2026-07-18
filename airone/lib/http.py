@@ -2,7 +2,7 @@ import codecs
 import importlib
 import json
 import urllib.parse
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 from urllib.parse import quote
 
 from django.conf import settings
@@ -11,6 +11,7 @@ from django.shortcuts import render as django_render
 from django.utils.encoding import smart_str
 from django.utils.http import MAX_URL_LENGTH
 
+from acl.models import ACLBase
 from airone.lib.acl import ACLObjType
 from airone.lib.types import AttrType, AttrTypeValue
 from entity import models as entity_models
@@ -21,8 +22,6 @@ from user.models import History, User
 if TYPE_CHECKING:
     from collections.abc import Callable
     from io import StringIO
-
-    from django.db import models
 
 
 class HttpResponseSeeOther(HttpResponseRedirect):
@@ -51,15 +50,17 @@ def http_get(func: Callable[..., HttpResponse]) -> Callable[..., HttpResponse]:
     return wrapper
 
 
-def get_obj_with_check_perm(
-    user: User, model: type[models.Model], object_id: int, permission_level: int
-) -> tuple[Any | None, HttpResponse | None]:
-    target_obj = model.objects.filter(id=object_id).first()  # type: ignore[attr-defined]
+def get_obj_with_check_perm[ACLBaseT: ACLBase](
+    user: User, model: type[ACLBaseT], object_id: int, permission_level: int
+) -> tuple[ACLBaseT | None, HttpResponse | None]:
+    target_obj = model.objects.filter(id=object_id).first()
     if not target_obj:
         return (None, HttpResponse("Failed to get entity of specified id", status=400))
 
     # only requests that have correct permission are executed
-    airone_instance = target_obj.get_subclass_object()
+    # get_subclass_object() returns an ACLBase subclass instance; we trust the caller
+    # invoked us with the correct concrete model, so downcast to ACLBaseT.
+    airone_instance = cast("ACLBaseT", target_obj.get_subclass_object())
     if not user.has_permission(airone_instance, permission_level):
         return (
             None,
@@ -117,15 +118,14 @@ def http_file_upload(func: Callable[..., HttpResponse]) -> Callable[..., HttpRes
         """This returns uploaded file context whatever encoding type"""
 
         fp = request.FILES.get("file")
+        if fp is None:
+            return None
         for encoding in ["UTF-8", "Shift-JIS", "ISO-2022-JP", "EUC-JP"]:
             try:
-                if fp is None:
-                    return None
                 return codecs.getreader(encoding)(fp).read()
 
             except UnicodeDecodeError:
-                if fp is not None:
-                    fp.seek(0)
+                fp.seek(0)
 
             except Exception:
                 return None
@@ -231,8 +231,9 @@ def get_download_response(io_stream: StringIO, fname: str, encode: str = "utf-8"
         io_stream.getvalue().encode(encode, errors="replace"),
         content_type="application/force-download",
     )
-    fname_encoded = urllib.parse.quote(smart_str(fname))
-    response["Content-Disposition"] = f'attachment; filename="{fname_encoded}"'
+    response["Content-Disposition"] = (
+        f'attachment; filename="{urllib.parse.quote(smart_str(fname))}"'
+    )
     return response
 
 

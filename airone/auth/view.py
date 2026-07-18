@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 from django.conf import settings
 from django.contrib.auth import logout as django_logout
 from django.contrib.auth import views as django_auth_views
+from django.contrib.auth.forms import AuthenticationForm
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_protect
 
@@ -31,7 +32,7 @@ class PagodaLoginView(django_auth_views.LoginView):
             return response
 
         try:
-            extra_param = json.loads(self.request.POST.get("extra_param"))  # type: ignore[arg-type]
+            extra_param = json.loads(self.request.POST.get("extra_param") or "")
             if extra_param.get("AGREE_TERM_OF_SERVICE"):
                 response.set_cookie("AGREE_TERM_OF_SERVICE", "True")
             else:

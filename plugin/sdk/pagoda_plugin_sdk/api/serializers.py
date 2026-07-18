@@ -72,7 +72,7 @@ class PluginSerializerMixin:
         Raises:
             ValidationError: If validation fails
         """
-        attrs = super().validate(attrs)
+        attrs = super().validate(attrs)  # type: ignore[misc]
 
         # Add plugin-specific validation
         attrs = self.validate_plugin_data(attrs)
@@ -110,7 +110,7 @@ class PluginSerializerMixin:
         Returns:
             Serialized representation
         """
-        data = super().to_representation(instance)
+        data = super().to_representation(instance)  # type: ignore[misc]
 
         # Add plugin metadata if requested
         if self._should_include_plugin_metadata():
@@ -151,7 +151,7 @@ class PluginSerializerMixin:
         model_name = meta.model.__name__ if meta else "Unknown"
         logger.info(f"Plugin {plugin_id} creating new {model_name}")
 
-        return super().create(validated_data)
+        return super().create(validated_data)  # type: ignore[misc]
 
     def update(self, instance: Any, validated_data: dict[str, Any]) -> Any:
         """Update instance with plugin context
@@ -171,10 +171,10 @@ class PluginSerializerMixin:
         plugin_id = self.plugin_context.get("plugin_id", "unknown")
         logger.info(f"Plugin {plugin_id} updating {instance.__class__.__name__} {instance.pk}")
 
-        return super().update(instance, validated_data)
+        return super().update(instance, validated_data)  # type: ignore[misc]
 
 
-class PluginModelSerializer(PluginSerializerMixin, ModelSerializer):
+class PluginModelSerializer(PluginSerializerMixin, ModelSerializer[Any]):
     """Base model serializer for plugins
 
     Combines PluginSerializerMixin with ModelSerializer to provide
@@ -312,7 +312,7 @@ class PluginValidationMixin:
         return value
 
 
-class PluginListSerializer(PluginSerializerMixin, Serializer):
+class PluginListSerializer(PluginSerializerMixin, Serializer[Any]):
     """Base list serializer for plugin endpoints
 
     Provides common functionality for list-based plugin endpoints
@@ -345,7 +345,7 @@ class PluginListSerializer(PluginSerializerMixin, Serializer):
         }
 
 
-class PluginErrorSerializer(Serializer):
+class PluginErrorSerializer(Serializer[Any]):
     """Standardized error response serializer for plugins
 
     Provides consistent error response format across all plugins.

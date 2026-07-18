@@ -3,6 +3,7 @@ import inspect
 import logging
 import os
 import sys
+from collections.abc import Callable
 from typing import TYPE_CHECKING, cast
 from zoneinfo import ZoneInfo
 
@@ -113,6 +114,7 @@ class AironeTestCase(TestCase):
                     "name_order": attr_info.get("name_order", 0),
                     "name_prefix": attr_info.get("name_prefix", ""),
                     "name_postfix": attr_info.get("name_postfix", ""),
+                    "display_attr": attr_info.get("display_attr", ""),
                 }
             )
 
