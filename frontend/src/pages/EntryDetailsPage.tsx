@@ -82,10 +82,8 @@ const EntryDetailsContent: FC<Props> = ({
     null,
   );
 
-  const { data: entry } = usePagodaSWR(
-    ["entry", entryId],
-    () => aironeApiClient.getEntry(entryId),
-    { suspense: true },
+  const { data: entry, isLoading } = usePagodaSWR(["entry", entryId], () =>
+    aironeApiClient.getEntry(entryId),
   );
 
   const { data: triggers } = usePagodaSWR(["triggers"], () =>
@@ -93,6 +91,8 @@ const EntryDetailsContent: FC<Props> = ({
   );
 
   useEffect(() => {
+    if (entry == null) return;
+
     if (entry.schema?.id != entityId) {
       navigate(entryDetailsPath(entry.schema?.id ?? 0, entryId), {
         replace: true,
@@ -107,8 +107,10 @@ const EntryDetailsContent: FC<Props> = ({
   }, [entry, entityId, entryId, navigate]);
 
   usePageTitle(TITLE_TEMPLATES.entryDetail, {
-    prefix: entry.name,
+    prefix: entry?.name ?? "",
   });
+
+  if (isLoading || entry == null) return <Loading />;
 
   return (
     <FlexBox>

@@ -70,23 +70,18 @@ describe("DashboardPage", () => {
   });
 
   const renderPage = async () => {
+    let result!: ReturnType<typeof render>;
     await act(async () => {
-      render(<DashboardPage />, { wrapper: TestWrapper });
+      result = render(<DashboardPage />, { wrapper: TestWrapper });
     });
     await waitFor(() => {
       expect(screen.queryByTestId("loading")).not.toBeInTheDocument();
     });
+    return result;
   };
 
   test("should match snapshot", async () => {
-    const result = await act(() => {
-      return render(<DashboardPage />, {
-        wrapper: TestWrapper,
-      });
-    });
-    await waitFor(() => {
-      expect(screen.queryByTestId("loading")).not.toBeInTheDocument();
-    });
+    const result = await renderPage();
     expect(result).toMatchSnapshot();
   });
 
@@ -127,18 +122,26 @@ describe("DashboardPage", () => {
 
   describe("loading state", () => {
     test("should show loading indicator initially", async () => {
+      let resolveRequest: (() => void) | undefined;
       server.use(
         http.get("http://localhost/category/api/v2/", async () => {
-          await new Promise((resolve) => setTimeout(resolve, 100));
+          await new Promise<void>((resolve) => {
+            resolveRequest = resolve;
+          });
           return HttpResponse.json(mockCategories);
         }),
       );
 
-      await act(async () => {
-        render(<DashboardPage />, { wrapper: TestWrapper });
-      });
+      render(<DashboardPage />, { wrapper: TestWrapper });
 
       expect(screen.getByTestId("loading")).toBeInTheDocument();
+      await waitFor(() => {
+        expect(resolveRequest).toBeDefined();
+      });
+      await act(async () => {
+        resolveRequest?.();
+      });
+      expect(await screen.findByText("Category A")).toBeInTheDocument();
     });
   });
 

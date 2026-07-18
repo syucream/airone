@@ -237,7 +237,13 @@ describe("ActionForm", () => {
       const { control } = useForm<Schema>({
         defaultValues,
       });
-      return <Actions control={control} entity={entity} />;
+      return (
+        <table>
+          <tbody>
+            <Actions control={control} entity={entity} />
+          </tbody>
+        </table>
+      );
     };
 
     render(<Wrapper />, {

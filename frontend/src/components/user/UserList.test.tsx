@@ -137,6 +137,10 @@ describe("UserList", () => {
         path: "/",
         element: <UserList />,
       },
+      {
+        path: "/ui/users/new",
+        element: <div>create user</div>,
+      },
     ]);
 
     await act(async () => {
@@ -161,6 +165,10 @@ describe("UserList", () => {
       {
         path: "/",
         element: <UserList />,
+      },
+      {
+        path: "/ui/users/:userId",
+        element: <div>user details</div>,
       },
     ]);
 

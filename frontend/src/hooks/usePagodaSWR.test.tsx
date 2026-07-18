@@ -3,7 +3,7 @@
  */
 
 import { act, renderHook, waitFor } from "@testing-library/react";
-import { FC, ReactNode, Suspense } from "react";
+import { FC, ReactNode } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import { SWRConfig } from "swr";
 
@@ -96,12 +96,19 @@ describe("usePagodaSWR", () => {
         </SWRConfig>
       );
 
-      renderHook(() => usePagodaSWR(["test-error"], fetcher), {
+      const onCaughtError = jest.fn();
+      const renderOptions = {
+        onCaughtError,
         wrapper: errorWrapper,
-      });
+      } as unknown as Parameters<typeof renderHook>[1];
+      renderHook(() => usePagodaSWR(["test-error"], fetcher), renderOptions);
 
       await waitFor(() => {
         expect(caughtError).toBe(testError);
+        expect(onCaughtError).toHaveBeenCalledWith(
+          testError,
+          expect.objectContaining({ componentStack: expect.any(String) }),
+        );
       });
     });
 
@@ -126,13 +133,20 @@ describe("usePagodaSWR", () => {
         </SWRConfig>
       );
 
-      renderHook(() => usePagodaSWR(["test-403"], fetcher), {
+      const onCaughtError = jest.fn();
+      const renderOptions = {
+        onCaughtError,
         wrapper: errorWrapper,
-      });
+      } as unknown as Parameters<typeof renderHook>[1];
+      renderHook(() => usePagodaSWR(["test-403"], fetcher), renderOptions);
 
       await waitFor(() => {
         expect(caughtError).not.toBeNull();
         expect(caughtError!.name).toBe("ForbiddenError");
+        expect(onCaughtError).toHaveBeenCalledWith(
+          caughtError,
+          expect.objectContaining({ componentStack: expect.any(String) }),
+        );
       });
     });
 
@@ -157,13 +171,20 @@ describe("usePagodaSWR", () => {
         </SWRConfig>
       );
 
-      renderHook(() => usePagodaSWR(["test-404"], fetcher), {
+      const onCaughtError = jest.fn();
+      const renderOptions = {
+        onCaughtError,
         wrapper: errorWrapper,
-      });
+      } as unknown as Parameters<typeof renderHook>[1];
+      renderHook(() => usePagodaSWR(["test-404"], fetcher), renderOptions);
 
       await waitFor(() => {
         expect(caughtError).not.toBeNull();
         expect(caughtError!.name).toBe("NotFoundError");
+        expect(onCaughtError).toHaveBeenCalledWith(
+          caughtError,
+          expect.objectContaining({ componentStack: expect.any(String) }),
+        );
       });
     });
   });
@@ -185,201 +206,13 @@ describe("usePagodaSWR", () => {
         expect(result.current.data).toBe(1);
       });
 
-      await result.current.mutate();
+      await act(async () => {
+        await result.current.mutate();
+      });
 
       await waitFor(() => {
         expect(result.current.data).toBe(2);
       });
-    });
-  });
-});
-
-describe("usePagodaSWR with suspense: true", () => {
-  describe("successful data fetching", () => {
-    test("should return data (data is always T, never undefined)", async () => {
-      const expected = { id: 1, name: "test-suspense" };
-      const fetcher = () => Promise.resolve(expected);
-
-      const suspenseWrapper: FC<{ children: ReactNode }> = ({ children }) => (
-        <SWRConfig value={{ dedupingInterval: 0, provider: () => new Map() }}>
-          <Suspense fallback={<div>loading</div>}>{children}</Suspense>
-        </SWRConfig>
-      );
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let hookResult: any;
-      await act(async () => {
-        hookResult = renderHook(
-          () => usePagodaSWR(["test-suspense-1"], fetcher, { suspense: true }),
-          { wrapper: suspenseWrapper },
-        );
-      });
-
-      expect(hookResult.result.current.data).toEqual(expected);
-    });
-
-    test("should return array data", async () => {
-      const expected = [10, 20, 30];
-      const fetcher = () => Promise.resolve(expected);
-
-      const suspenseWrapper: FC<{ children: ReactNode }> = ({ children }) => (
-        <SWRConfig value={{ dedupingInterval: 0, provider: () => new Map() }}>
-          <Suspense fallback={<div>loading</div>}>{children}</Suspense>
-        </SWRConfig>
-      );
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let hookResult: any;
-      await act(async () => {
-        hookResult = renderHook(
-          () =>
-            usePagodaSWR(["test-suspense-array"], fetcher, { suspense: true }),
-          { wrapper: suspenseWrapper },
-        );
-      });
-
-      expect(hookResult.result.current.data).toEqual(expected);
-    });
-  });
-
-  describe("error handling", () => {
-    test("should throw ForbiddenError for 403 ResponseError via ErrorBoundary", async () => {
-      const responseError = Object.assign(new Error("ResponseError"), {
-        name: "ResponseError",
-        response: new Response(null, { status: 403 }),
-      });
-      const fetcher = () => Promise.reject(responseError);
-      let caughtError: Error | null = null;
-
-      const errorSuspenseWrapper: FC<{ children: ReactNode }> = ({
-        children,
-      }) => (
-        <SWRConfig value={{ dedupingInterval: 0, provider: () => new Map() }}>
-          <ErrorBoundary
-            fallbackRender={({ error }) => {
-              caughtError = error;
-              return <div>error</div>;
-            }}
-          >
-            <Suspense fallback={<div>loading</div>}>{children}</Suspense>
-          </ErrorBoundary>
-        </SWRConfig>
-      );
-
-      await act(async () => {
-        renderHook(
-          () =>
-            usePagodaSWR(["test-suspense-403"], fetcher, { suspense: true }),
-          {
-            wrapper: errorSuspenseWrapper,
-          },
-        );
-      });
-
-      expect(caughtError).not.toBeNull();
-      expect(caughtError!.name).toBe("ForbiddenError");
-    });
-
-    test("should throw NotFoundError for 404 ResponseError via ErrorBoundary", async () => {
-      const responseError = Object.assign(new Error("ResponseError"), {
-        name: "ResponseError",
-        response: new Response(null, { status: 404 }),
-      });
-      const fetcher = () => Promise.reject(responseError);
-      let caughtError: Error | null = null;
-
-      const errorSuspenseWrapper: FC<{ children: ReactNode }> = ({
-        children,
-      }) => (
-        <SWRConfig value={{ dedupingInterval: 0, provider: () => new Map() }}>
-          <ErrorBoundary
-            fallbackRender={({ error }) => {
-              caughtError = error;
-              return <div>error</div>;
-            }}
-          >
-            <Suspense fallback={<div>loading</div>}>{children}</Suspense>
-          </ErrorBoundary>
-        </SWRConfig>
-      );
-
-      await act(async () => {
-        renderHook(
-          () =>
-            usePagodaSWR(["test-suspense-404"], fetcher, { suspense: true }),
-          {
-            wrapper: errorSuspenseWrapper,
-          },
-        );
-      });
-
-      expect(caughtError).not.toBeNull();
-      expect(caughtError!.name).toBe("NotFoundError");
-    });
-
-    test("should throw non-ResponseError errors via ErrorBoundary", async () => {
-      const testError = new Error("Suspense test error");
-      const fetcher = () => Promise.reject(testError);
-      let caughtError: Error | null = null;
-
-      const errorSuspenseWrapper: FC<{ children: ReactNode }> = ({
-        children,
-      }) => (
-        <SWRConfig value={{ dedupingInterval: 0, provider: () => new Map() }}>
-          <ErrorBoundary
-            fallbackRender={({ error }) => {
-              caughtError = error;
-              return <div>error</div>;
-            }}
-          >
-            <Suspense fallback={<div>loading</div>}>{children}</Suspense>
-          </ErrorBoundary>
-        </SWRConfig>
-      );
-
-      await act(async () => {
-        renderHook(
-          () =>
-            usePagodaSWR(["test-suspense-error"], fetcher, { suspense: true }),
-          { wrapper: errorSuspenseWrapper },
-        );
-      });
-
-      expect(caughtError).toBe(testError);
-    });
-  });
-
-  describe("revalidation", () => {
-    test("should revalidate data with mutate", async () => {
-      let callCount = 0;
-      const fetcher = () => {
-        callCount++;
-        return Promise.resolve(callCount);
-      };
-
-      const suspenseWrapper: FC<{ children: ReactNode }> = ({ children }) => (
-        <SWRConfig value={{ dedupingInterval: 0, provider: () => new Map() }}>
-          <Suspense fallback={<div>loading</div>}>{children}</Suspense>
-        </SWRConfig>
-      );
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let hookResult: any;
-      await act(async () => {
-        hookResult = renderHook(
-          () =>
-            usePagodaSWR(["test-suspense-mutate"], fetcher, { suspense: true }),
-          { wrapper: suspenseWrapper },
-        );
-      });
-
-      expect(hookResult.result.current.data).toBe(1);
-
-      await act(async () => {
-        await hookResult.result.current.mutate();
-      });
-
-      expect(hookResult.result.current.data).toBe(2);
     });
   });
 });

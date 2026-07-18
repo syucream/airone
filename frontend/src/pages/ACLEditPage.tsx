@@ -54,13 +54,13 @@ const ACLEditContent: FC<{ objectId: number }> = ({ objectId }) => {
     "編集した内容は失われてしまいますが、このページを離れてもよろしいですか？",
   );
 
-  const { data: acl } = usePagodaSWR(
-    ["acl", objectId],
-    () => aironeApiClient.getAcl(objectId),
-    { suspense: true },
+  const { data: acl, isLoading } = usePagodaSWR(["acl", objectId], () =>
+    aironeApiClient.getAcl(objectId),
   );
 
   const historyReplace = () => {
+    if (acl == null) return;
+
     switch (acl.objtype) {
       case ACLObjtypeEnum.Category:
         navigate(listCategoryPath(), { replace: true });
@@ -120,6 +120,8 @@ const ACLEditContent: FC<{ objectId: number }> = ({ objectId }) => {
 
   /* initialize permissions and isPublic variables from acl parameter */
   useEffect(() => {
+    if (acl == null) return;
+
     reset({
       isPublic: acl.isPublic,
       defaultPermission: acl.defaultPermission,
@@ -176,6 +178,8 @@ const ACLEditContent: FC<{ objectId: number }> = ({ objectId }) => {
       historyReplace();
     }
   }, [isSubmitSuccessful]);
+
+  if (isLoading || acl == null) return <Loading />;
 
   return (
     <>

@@ -16,21 +16,12 @@ export function wrapFetcher<T>(fetcher: () => Promise<T>): () => Promise<T> {
   };
 }
 
-// Overload: suspense mode — data is always T
-export function usePagodaSWR<T>(
-  key: Key,
-  fetcher: () => Promise<T>,
-  config: Omit<SWRConfiguration<T>, "suspense"> & { suspense: true },
-): Omit<SWRResponse<T>, "data"> & { data: T };
-
-// Overload: normal mode — data is T | undefined
 export function usePagodaSWR<T>(
   key: Key,
   fetcher: (() => Promise<T>) | null,
   config?: SWRConfiguration<T>,
 ): SWRResponse<T>;
 
-// Implementation
 export function usePagodaSWR<T>(
   key: Key,
   fetcher: (() => Promise<T>) | null,

@@ -49,17 +49,19 @@ const EntryCopyContent: FC<Props> = ({ CopyForm = DefaultCopyForm }) => {
     }
   }, [submitted, entityId, navigate]);
 
-  const { data: entity } = usePagodaSWR(
+  const { data: entity, isLoading: entityLoading } = usePagodaSWR(
     ["entity", entityId],
     () => aironeApiClient.getEntity(entityId),
-    { suspense: true },
   );
 
-  const { data: entry } = usePagodaSWR(
+  const { data: entry, isLoading: entryLoading } = usePagodaSWR(
     ["entry", entryId],
     () => aironeApiClient.getEntry(entryId),
-    { suspense: true },
   );
+
+  if (entityLoading || entryLoading || entity == null || entry == null) {
+    return <Loading />;
+  }
 
   const setEntries = (entries: string) => {
     setEdited(true);

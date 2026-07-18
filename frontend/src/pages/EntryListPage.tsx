@@ -26,15 +26,15 @@ const EntryListContent: FC<Props> = ({ canCreateEntry = true }) => {
     useState<HTMLButtonElement | null>(null);
   const [openImportModal, setOpenImportModal] = useState(false);
 
-  const { data: entity } = usePagodaSWR(
-    ["entity", entityId],
-    () => aironeApiClient.getEntity(entityId),
-    { suspense: true },
+  const { data: entity, isLoading } = usePagodaSWR(["entity", entityId], () =>
+    aironeApiClient.getEntity(entityId),
   );
 
   usePageTitle(TITLE_TEMPLATES.entryList, {
-    prefix: entity.name,
+    prefix: entity?.name ?? "",
   });
+
+  if (isLoading || entity == null) return <Loading />;
 
   return (
     <>

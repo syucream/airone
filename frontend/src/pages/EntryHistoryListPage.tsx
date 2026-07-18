@@ -19,11 +19,12 @@ const SelfHistorySection: FC<{
   page: number;
   changePage: (page: number) => void;
 }> = ({ entryId, entityId, page, changePage }) => {
-  const { data: selfHistories } = usePagodaSWR(
+  const { data: selfHistories, isLoading } = usePagodaSWR(
     ["entrySelfHistories", entryId, page],
     () => aironeApiClient.getEntrySelfHistories(entryId, page),
-    { suspense: true },
   );
+
+  if (isLoading || selfHistories == null) return <Loading />;
 
   return (
     <EntrySelfHistoryList
@@ -42,11 +43,12 @@ const AttributeHistorySection: FC<{
   page: number;
   changePage: (page: number) => void;
 }> = ({ entryId, entityId, page, changePage }) => {
-  const { data: histories } = usePagodaSWR(
+  const { data: histories, isLoading } = usePagodaSWR(
     ["entryHistories", entryId, page],
     () => aironeApiClient.getEntryHistories(entryId, page),
-    { suspense: true },
   );
+
+  if (isLoading || histories == null) return <Loading />;
 
   return (
     <EntryHistoryList
@@ -71,11 +73,11 @@ const EntryHistoryListContent: FC = () => {
     null,
   );
 
-  const { data: entry } = usePagodaSWR(
-    ["entry", entryId],
-    () => aironeApiClient.getEntry(entryId),
-    { suspense: true },
+  const { data: entry, isLoading } = usePagodaSWR(["entry", entryId], () =>
+    aironeApiClient.getEntry(entryId),
   );
+
+  if (isLoading || entry == null) return <Loading />;
 
   return (
     <Box className="container">

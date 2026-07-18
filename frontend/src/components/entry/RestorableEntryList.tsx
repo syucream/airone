@@ -101,11 +101,12 @@ const EntryDetailModalContent: FC<{
   onRestore: (entryId: number) => void;
   onClose: () => void;
 }> = ({ entryId, onRestore, onClose }) => {
-  const { data: entryDetail } = usePagodaSWR(
+  const { data: entryDetail, isLoading } = usePagodaSWR(
     ["entry", entryId],
     () => aironeApiClient.getEntry(entryId),
-    { suspense: true },
   );
+
+  if (isLoading || entryDetail == null) return <Loading />;
 
   return (
     <>
@@ -181,10 +182,9 @@ const RestorableEntryListContent: FC<Props> = ({ entityId }) => {
   const [openModal, setOpenModal] = useState(false);
   const [selectedEntryId, setSelectedEntryId] = useState<number>();
 
-  const { data: entries } = usePagodaSWR(
+  const { data: entries, isLoading } = usePagodaSWR(
     ["entries", entityId, false, page, query],
     () => aironeApiClient.getEntries(entityId, false, page, query),
-    { suspense: true },
   );
 
   const handleChangeQuery = changeQuery;
@@ -205,6 +205,8 @@ const RestorableEntryListContent: FC<Props> = ({ entityId }) => {
         });
       });
   };
+
+  if (isLoading || entries == null) return <Loading />;
 
   return (
     <Box>

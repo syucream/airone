@@ -26,7 +26,6 @@ jest.mock("@mui/x-date-pickers", () => ({
     onChange,
     disabled,
     ampm = false,
-    slotProps,
   }: DateTimePickerProps) => {
     const formatValue = (val: Date | null) => {
       if (!val) return "";
@@ -60,7 +59,6 @@ jest.mock("@mui/x-date-pickers", () => ({
           }}
           disabled={disabled}
           aria-label={label}
-          {...(slotProps?.textField ?? {})}
         />
       </div>
     );

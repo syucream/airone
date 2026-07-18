@@ -26,11 +26,15 @@ const CategoryListContent: FC = () => {
     changeQuery(newQuery ?? "");
   };
 
-  const { data: categories, mutate: refreshCategories } = usePagodaSWR(
-    ["categories", page, query],
-    () => aironeApiClient.getCategories(page, query),
-    { suspense: true },
+  const {
+    data: categories,
+    isLoading,
+    mutate: refreshCategories,
+  } = usePagodaSWR(["categories", page, query], () =>
+    aironeApiClient.getCategories(page, query),
   );
+
+  if (isLoading || categories == null) return <Loading />;
 
   return (
     <Container>

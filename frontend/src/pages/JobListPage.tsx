@@ -30,11 +30,15 @@ const JobListContent: FC<{
   targetId?: number;
   allUsers?: boolean;
 }> = ({ page, changePage, targetId, allUsers }) => {
-  const { data: jobs, mutate: refreshJobs } = usePagodaSWR(
-    ["jobs", page, targetId, allUsers],
-    () => aironeApiClient.getJobs(page, targetId, undefined, allUsers),
-    { suspense: true },
+  const {
+    data: jobs,
+    isLoading,
+    mutate: refreshJobs,
+  } = usePagodaSWR(["jobs", page, targetId, allUsers], () =>
+    aironeApiClient.getJobs(page, targetId, undefined, allUsers),
   );
+
+  if (isLoading || jobs == null) return <Loading />;
 
   return (
     <Container maxWidth="xl">

@@ -52,11 +52,11 @@ const GroupListContent: FC = () => {
     el: HTMLButtonElement;
   } | null>();
 
-  const { data: groupTrees, mutate: refreshGroupTrees } = usePagodaSWR(
-    ["groupTrees"],
-    () => aironeApiClient.getGroupTrees(),
-    { suspense: true },
-  );
+  const {
+    data: groupTrees,
+    isLoading,
+    mutate: refreshGroupTrees,
+  } = usePagodaSWR(["groupTrees"], () => aironeApiClient.getGroupTrees());
 
   const { data: usersInGroup } = usePagodaSWR(
     selectedGroupId != null ? ["group", selectedGroupId] : null,
@@ -77,6 +77,8 @@ const GroupListContent: FC = () => {
       ) ?? []
     );
   }, [usersInGroup, keyword]);
+
+  if (isLoading || groupTrees == null) return <Loading />;
 
   const handleSelectGroupId = (groupId: number | null) => {
     setSelectedGroupId(groupId);

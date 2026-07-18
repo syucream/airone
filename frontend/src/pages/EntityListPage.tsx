@@ -17,13 +17,17 @@ import { ServerContext, TITLE_TEMPLATES } from "services";
 const EntityListContent: FC = () => {
   const { page, query, changePage, changeQuery } = usePage();
 
-  const { data: entities, mutate: refreshEntities } = usePagodaSWR(
-    ["entities", page, query],
-    () => aironeApiClient.getEntities(page, query),
-    { suspense: true },
+  const {
+    data: entities,
+    isLoading,
+    mutate: refreshEntities,
+  } = usePagodaSWR(["entities", page, query], () =>
+    aironeApiClient.getEntities(page, query),
   );
 
   usePageTitle(TITLE_TEMPLATES.entityList);
+
+  if (isLoading || entities == null) return <Loading />;
 
   return (
     <Container>

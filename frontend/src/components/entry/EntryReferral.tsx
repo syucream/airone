@@ -43,7 +43,7 @@ const EntryReferralContent: FC<Props> = ({ entryId }) => {
   const { page, changePage } = usePage();
   const [keywordQuery, setKeywordQuery] = useState("");
 
-  const { data: referredEntries } = usePagodaSWR(
+  const { data: referredEntries, isLoading } = usePagodaSWR(
     ["referralEntries", entryId, page, keywordQuery],
     () =>
       aironeApiClient.getEntryReferral(
@@ -51,16 +51,19 @@ const EntryReferralContent: FC<Props> = ({ entryId }) => {
         page,
         keywordQuery !== "" ? keywordQuery : undefined,
       ),
-    { suspense: true },
   );
 
   const [matchedEntries, count, maxPage] = useMemo(() => {
     return [
-      referredEntries.results,
-      referredEntries.count,
-      Math.ceil((referredEntries.count ?? 0) / EntryReferralList.MAX_ROW_COUNT),
+      referredEntries?.results ?? [],
+      referredEntries?.count ?? 0,
+      Math.ceil(
+        (referredEntries?.count ?? 0) / EntryReferralList.MAX_ROW_COUNT,
+      ),
     ];
   }, [referredEntries]);
+
+  if (isLoading || referredEntries == null) return <Loading />;
 
   return (
     <Box>

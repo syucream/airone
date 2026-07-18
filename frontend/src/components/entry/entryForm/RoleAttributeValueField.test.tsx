@@ -9,9 +9,10 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   act,
-  screen,
+  fireEvent,
   render,
   renderHook,
+  screen,
   within,
 } from "@testing-library/react";
 import { useForm } from "react-hook-form";
@@ -96,7 +97,13 @@ describe("RoleAttributeValueField", () => {
   ];
 
   test("should provide role value editor", async () => {
-    (aironeApiClient.getRoles as jest.Mock).mockResolvedValue(roles);
+    let resolveRoles!: (value: Role[]) => void;
+    (aironeApiClient.getRoles as jest.Mock).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveRoles = resolve;
+        }),
+    );
 
     const {
       result: {
@@ -110,16 +117,16 @@ describe("RoleAttributeValueField", () => {
       }),
     );
 
-    // ✅ Render the field component
+    render(
+      <RoleAttributeValueField
+        attrId={0}
+        control={control}
+        setValue={setValue}
+      />,
+      { wrapper: TestWrapper },
+    );
     await act(async () => {
-      render(
-        <RoleAttributeValueField
-          attrId={0}
-          control={control}
-          setValue={setValue}
-        />,
-        { wrapper: TestWrapper },
-      );
+      resolveRoles(roles);
     });
 
     // ✅ Initial value should be "role1"
@@ -127,12 +134,10 @@ describe("RoleAttributeValueField", () => {
     expect(getValues("attrs.0.value.asRole")).toEqual({ id: 1, name: "role1" });
 
     // ✅ Open dropdown and select "role2"
-    act(() => {
-      screen.getByRole("button", { name: "Open" }).click();
-    });
-    act(() => {
-      within(screen.getByRole("presentation")).getByText("role2").click();
-    });
+    fireEvent.click(screen.getByRole("button", { name: "Open" }));
+    fireEvent.click(
+      await within(screen.getByRole("presentation")).findByText("role2"),
+    );
 
     // ✅ After selection, value should be updated to "role2"
     expect(screen.getByRole("combobox")).toHaveValue("role2");
@@ -140,7 +145,13 @@ describe("RoleAttributeValueField", () => {
   });
 
   test("should provide array-role value editor", async () => {
-    (aironeApiClient.getRoles as jest.Mock).mockResolvedValue(roles);
+    let resolveRoles!: (value: Role[]) => void;
+    (aironeApiClient.getRoles as jest.Mock).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveRoles = resolve;
+        }),
+    );
 
     const {
       result: {
@@ -154,17 +165,17 @@ describe("RoleAttributeValueField", () => {
       }),
     );
 
-    // ✅ Render the field component in multiple (array) mode
+    render(
+      <RoleAttributeValueField
+        attrId={1}
+        control={control}
+        setValue={setValue}
+        multiple
+      />,
+      { wrapper: TestWrapper },
+    );
     await act(async () => {
-      render(
-        <RoleAttributeValueField
-          attrId={1}
-          control={control}
-          setValue={setValue}
-          multiple
-        />,
-        { wrapper: TestWrapper },
-      );
+      resolveRoles(roles);
     });
 
     // ✅ Initial selected role should be "role1"
@@ -174,12 +185,10 @@ describe("RoleAttributeValueField", () => {
     ]);
 
     // ✅ Open dropdown and select "role2"
-    act(() => {
-      screen.getByRole("button", { name: "Open" }).click();
-    });
-    act(() => {
-      within(screen.getByRole("presentation")).getByText("role2").click();
-    });
+    fireEvent.click(screen.getByRole("button", { name: "Open" }));
+    fireEvent.click(
+      await within(screen.getByRole("presentation")).findByText("role2"),
+    );
 
     // ✅ Both "role1" and "role2" should now be selected
     expect(screen.getByRole("button", { name: "role1" })).toBeInTheDocument();

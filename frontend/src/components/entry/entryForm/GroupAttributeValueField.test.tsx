@@ -9,12 +9,15 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   act,
-  screen,
+  fireEvent,
   render,
   renderHook,
+  screen,
   within,
 } from "@testing-library/react";
 import { useForm } from "react-hook-form";
+
+import { aironeApiClient } from "../../../repository/AironeApiClient";
 
 import { schema, Schema } from "./EntryFormSchema";
 import { GroupAttributeValueField } from "./GroupAttributeValueField";
@@ -92,24 +95,24 @@ describe("GroupAttributeValueField", () => {
       }),
     );
 
-    /* eslint-disable */
-    jest
-      .spyOn(
-        require("../../../repository/AironeApiClient").aironeApiClient,
-        "getGroups",
-      )
-      .mockResolvedValue(Promise.resolve(groups));
-    /* eslint-enable */
+    let resolveGroups!: (value: PaginatedGroupList) => void;
+    jest.spyOn(aironeApiClient, "getGroups").mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveGroups = resolve;
+        }),
+    );
 
+    render(
+      <GroupAttributeValueField
+        attrId={0}
+        control={control}
+        setValue={setValue}
+      />,
+      { wrapper: TestWrapper },
+    );
     await act(async () => {
-      render(
-        <GroupAttributeValueField
-          attrId={0}
-          control={control}
-          setValue={setValue}
-        />,
-        { wrapper: TestWrapper },
-      );
+      resolveGroups(groups);
     });
 
     expect(screen.getByRole("combobox")).toHaveValue("group1");
@@ -119,13 +122,11 @@ describe("GroupAttributeValueField", () => {
     });
 
     // Open the select options
-    act(() => {
-      screen.getByRole("button", { name: "Open" }).click();
-    });
+    fireEvent.click(screen.getByRole("button", { name: "Open" }));
     // Select "group2" element
-    act(() => {
-      within(screen.getByRole("presentation")).getByText("group2").click();
-    });
+    fireEvent.click(
+      await within(screen.getByRole("presentation")).findByText("group2"),
+    );
 
     expect(screen.getByRole("combobox")).toHaveValue("group2");
     expect(getValues("attrs.0.value.asGroup")).toEqual({
@@ -147,25 +148,25 @@ describe("GroupAttributeValueField", () => {
       }),
     );
 
-    /* eslint-disable */
-    jest
-      .spyOn(
-        require("../../../repository/AironeApiClient").aironeApiClient,
-        "getGroups",
-      )
-      .mockResolvedValue(Promise.resolve(groups));
-    /* eslint-enable */
+    let resolveGroups!: (value: PaginatedGroupList) => void;
+    jest.spyOn(aironeApiClient, "getGroups").mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveGroups = resolve;
+        }),
+    );
 
+    render(
+      <GroupAttributeValueField
+        attrId={1}
+        control={control}
+        setValue={setValue}
+        multiple
+      />,
+      { wrapper: TestWrapper },
+    );
     await act(async () => {
-      render(
-        <GroupAttributeValueField
-          attrId={1}
-          control={control}
-          setValue={setValue}
-          multiple
-        />,
-        { wrapper: TestWrapper },
-      );
+      resolveGroups(groups);
     });
 
     expect(screen.getByRole("button", { name: "group1" })).toBeInTheDocument();
@@ -174,13 +175,11 @@ describe("GroupAttributeValueField", () => {
     ]);
 
     // Open the select options
-    act(() => {
-      screen.getByRole("button", { name: "Open" }).click();
-    });
+    fireEvent.click(screen.getByRole("button", { name: "Open" }));
     // Select "group2" element
-    act(() => {
-      within(screen.getByRole("presentation")).getByText("group2").click();
-    });
+    fireEvent.click(
+      await within(screen.getByRole("presentation")).findByText("group2"),
+    );
 
     expect(screen.getByRole("button", { name: "group1" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "group2" })).toBeInTheDocument();

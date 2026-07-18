@@ -25,22 +25,22 @@ interface Props {
   triggers?: TriggerParent[];
 }
 
-const StyledTableRow = styled(TableRow)<{ highlighted?: boolean }>(
-  ({ highlighted }) => ({
-    "&:nth-of-type(odd)": {
-      backgroundColor: highlighted ? "#BBDEFB" : "#607D8B0A",
-    },
-    "&:nth-of-type(even)": {
-      backgroundColor: highlighted ? "#BBDEFB" : undefined,
-    },
-    "&:last-child td, &:last-child th": {
-      border: 0,
-    },
-    "& td": {
-      padding: "8px 16px",
-    },
-  }),
-);
+const StyledTableRow = styled(TableRow, {
+  shouldForwardProp: (prop) => prop !== "highlighted",
+})<{ highlighted?: boolean }>(({ highlighted }) => ({
+  "&:nth-of-type(odd)": {
+    backgroundColor: highlighted ? "#BBDEFB" : "#607D8B0A",
+  },
+  "&:nth-of-type(even)": {
+    backgroundColor: highlighted ? "#BBDEFB" : undefined,
+  },
+  "&:last-child td, &:last-child th": {
+    border: 0,
+  },
+  "& td": {
+    padding: "8px 16px",
+  },
+}));
 
 const HeaderTableCell = styled(TableCell)(({ theme }) => ({
   color: theme.palette.primary.contrastText,
@@ -77,7 +77,7 @@ export const EntryAttributes: FC<Props> = ({ attributes, triggers }) => {
         <TableBody>
           {attributes.map((attr) => (
             <StyledTableRow
-              key={attr.schema.name}
+              key={attr.schema.id}
               highlighted={triggeredAttrIds.has(attr.schema.id)}
             >
               <AttrNameTableCell>

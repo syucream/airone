@@ -18,11 +18,11 @@ const EntryRestoreContent: FC<{ entityId: number }> = ({ entityId }) => {
     useState<HTMLButtonElement | null>(null);
   const [openImportModal, setOpenImportModal] = useState(false);
 
-  const { data: entity } = usePagodaSWR(
-    ["entity", entityId],
-    () => aironeApiClient.getEntity(entityId),
-    { suspense: true },
+  const { data: entity, isLoading } = usePagodaSWR(["entity", entityId], () =>
+    aironeApiClient.getEntity(entityId),
   );
+
+  if (isLoading || entity == null) return <Loading />;
 
   return (
     <>

@@ -41,10 +41,9 @@ const ListAliasEntryContent: FC = () => {
   const [entries, setEntries] = useState<EntryBase[]>([]);
   const [totalCount, setTotalCount] = useState<number>(0);
 
-  const { data: entity } = usePagodaSWR(
+  const { data: entity, isLoading: entityLoading } = usePagodaSWR(
     ["entity", entityId],
     () => aironeApiClient.getEntity(entityId),
-    { suspense: true },
   );
 
   useEffect(() => {
@@ -113,6 +112,8 @@ const ListAliasEntryContent: FC = () => {
         });
       });
   };
+
+  if (entityLoading || entity == null) return <Loading />;
 
   return (
     <>

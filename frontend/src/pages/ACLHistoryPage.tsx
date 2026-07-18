@@ -35,19 +35,19 @@ const ACLHistoryContent: FC<{ objectId: number }> = ({ objectId }) => {
     null,
   );
 
-  const { data: acl } = usePagodaSWR(
+  const { data: acl, isLoading: aclLoading } = usePagodaSWR(
     ["acl", objectId],
     () => aironeApiClient.getAcl(objectId),
-    { suspense: true },
   );
 
-  const { data: aclHistory } = usePagodaSWR(
+  const { data: aclHistory, isLoading: historyLoading } = usePagodaSWR(
     ["aclHistory", objectId],
     () => aironeApiClient.getAclHistory(objectId),
-    { suspense: true },
   );
 
   const controlMenu = () => {
+    if (acl == null) return null;
+
     switch (acl.objtype) {
       case ACLObjtypeEnum.Entity:
         return (
@@ -76,6 +76,8 @@ const ACLHistoryContent: FC<{ objectId: number }> = ({ objectId }) => {
   };
 
   useEffect(() => {
+    if (acl == null) return;
+
     switch (acl.objtype) {
       case ACLObjtypeEnum.Entity:
         aironeApiClient.getEntity(objectId).then((resp) => {
@@ -93,6 +95,10 @@ const ACLHistoryContent: FC<{ objectId: number }> = ({ objectId }) => {
         break;
     }
   }, [acl, objectId]);
+
+  if (aclLoading || historyLoading || acl == null || aclHistory == null) {
+    return <Loading />;
+  }
 
   return (
     <>

@@ -24,13 +24,17 @@ interface Props {
 const EntryListContent: FC<Props> = ({ entityId, canCreateEntry = true }) => {
   const { page, query, changePage, changeQuery } = usePage();
 
-  const { data: entries, mutate: refreshEntries } = usePagodaSWR(
-    ["entries", entityId, true, page, query],
-    () => aironeApiClient.getEntries(entityId, true, page, query),
-    { suspense: true },
+  const {
+    data: entries,
+    isLoading,
+    mutate: refreshEntries,
+  } = usePagodaSWR(["entries", entityId, true, page, query], () =>
+    aironeApiClient.getEntries(entityId, true, page, query),
   );
 
   const handleChangeQuery = changeQuery;
+
+  if (isLoading || entries == null) return <Loading />;
 
   return (
     <Box>

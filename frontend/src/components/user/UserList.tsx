@@ -52,10 +52,12 @@ const UserListContent: FC = () => {
   const [userAnchorEls, setUserAnchorEls] = useState<{
     [key: number]: HTMLButtonElement | null;
   }>({});
-  const { data: users, mutate: refreshUsers } = usePagodaSWR(
-    ["users", page, query],
-    () => aironeApiClient.getUsers(page, query),
-    { suspense: true },
+  const {
+    data: users,
+    isLoading,
+    mutate: refreshUsers,
+  } = usePagodaSWR(["users", page, query], () =>
+    aironeApiClient.getUsers(page, query),
   );
 
   const serverContext = useMemo(() => ServerContext.getInstance(), []);
@@ -86,6 +88,8 @@ const UserListContent: FC = () => {
   const handleClosePasswordModal = () => {
     setPasswordModalUserId(null);
   };
+
+  if (isLoading || users == null) return <Loading />;
 
   return (
     <Box>

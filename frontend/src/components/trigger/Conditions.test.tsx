@@ -119,7 +119,13 @@ describe("Conditions", () => {
       const { control } = useForm<Schema>({
         defaultValues,
       });
-      return <Conditions control={control} entity={entity} />;
+      return (
+        <table>
+          <tbody>
+            <Conditions control={control} entity={entity} />
+          </tbody>
+        </table>
+      );
     };
 
     render(<Wrapper />, {

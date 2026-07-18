@@ -43,11 +43,11 @@ const StyledIconButton = styled(IconButton)(({ theme }) => ({
 const RoleListContent: FC = () => {
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
-  const { data: roles, mutate: refreshRoles } = usePagodaSWR(
-    ["roles"],
-    () => aironeApiClient.getRoles(),
-    { suspense: true },
-  );
+  const {
+    data: roles,
+    isLoading,
+    mutate: refreshRoles,
+  } = usePagodaSWR(["roles"], () => aironeApiClient.getRoles());
 
   const isReadonly = ServerContext.getInstance()?.user?.isReadonly ?? false;
 
@@ -66,6 +66,8 @@ const RoleListContent: FC = () => {
       });
     }
   };
+
+  if (isLoading || roles == null) return <Loading />;
 
   return (
     <Table data-testid="RoleList">

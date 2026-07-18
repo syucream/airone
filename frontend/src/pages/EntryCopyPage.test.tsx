@@ -17,7 +17,7 @@ import { EntryCopyPage } from "./EntryCopyPage";
 
 import { TestWrapperWithoutRoutes } from "TestWrapper";
 import { aironeApiClient } from "repository/AironeApiClient";
-import { copyEntryPath } from "routes/Routes";
+import { copyEntryPath, entityEntriesPath } from "routes/Routes";
 
 const server = setupServer(
   // getEntity
@@ -62,6 +62,10 @@ test("should match snapshot", async () => {
         path: copyEntryPath(":entityId", ":entryId"),
         element: <EntryCopyPage />,
       },
+      {
+        path: entityEntriesPath(":entityId"),
+        element: <div>entry list</div>,
+      },
     ],
     {
       initialEntries: [copyEntryPath(2, 1)],
@@ -95,6 +99,10 @@ test("should show info variant snackbar on successful copy submission", async ()
       {
         path: copyEntryPath(":entityId", ":entryId"),
         element: <EntryCopyPage />,
+      },
+      {
+        path: entityEntriesPath(":entityId"),
+        element: <div>entry list</div>,
       },
     ],
     {

@@ -23,16 +23,23 @@ const EntityHistoryContent: FC<{
     useState<HTMLButtonElement | null>(null);
   const [openImportModal, setOpenImportModal] = useState(false);
 
-  const { data: entity } = usePagodaSWR(
+  const { data: entity, isLoading: entityLoading } = usePagodaSWR(
     ["entity", entityId],
     () => aironeApiClient.getEntity(entityId),
-    { suspense: true },
   );
-  const { data: histories } = usePagodaSWR(
+  const { data: histories, isLoading: historiesLoading } = usePagodaSWR(
     ["entityHistories", entityId, page],
     () => aironeApiClient.getEntityHistories(entityId, page),
-    { suspense: true },
   );
+
+  if (
+    entityLoading ||
+    historiesLoading ||
+    entity == null ||
+    histories == null
+  ) {
+    return <Loading />;
+  }
 
   return (
     <>

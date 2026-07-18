@@ -11,12 +11,9 @@ import { AdvancedSearchResultsPage } from "pages/AdvancedSearchResultsPage";
 
 const server = setupServer(
   // getEntityAttrs
-  http.get(
-    "http://localhost/entity/api/v2/attrs?entity_ids=1&referral_attr=",
-    () => {
-      return HttpResponse.json([]);
-    },
-  ),
+  http.get("http://localhost/entity/api/v2/attrs", () => {
+    return HttpResponse.json([]);
+  }),
   // advancedSearch
   http.post("http://localhost/entry/api/v2/advanced_search/", () => {
     return HttpResponse.json({
