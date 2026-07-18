@@ -107,7 +107,7 @@ class ViewTest(AironeViewTest):
                 "note",
                 "operation",
             ]:
-                self.assertIsNotNone(job_elem.find(".%s" % _cls))
+                self.assertIsNotNone(job_elem.find(f".{_cls}"))
 
     def test_get_non_target_job(self):
         user = self.guest_login()
@@ -150,7 +150,7 @@ class ViewTest(AironeViewTest):
             self.assertEqual(job.status, JobStatus.PROCESSING)
 
             # check that backend processing never run by calling API
-            resp = self.client.post("/api/v1/job/run/%d" % job.id)
+            resp = self.client.post(f"/api/v1/job/run/{job.id}")
             self.assertEqual(resp.status_code, 400)
             self.assertEqual(resp.content, b'"Target job is under processing"')
 
@@ -170,18 +170,18 @@ class ViewTest(AironeViewTest):
         job = Job.new_create(user, entity, "hoge")
 
         # When user send a download request of Job with invalid Job-id, then HTTP 400 is returned
-        resp = self.client.get("/job/download/%d" % (job.id + 1))
+        resp = self.client.get(f"/job/download/{job.id + 1}")
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(resp.content.decode(), "Invalid Job-ID is specified")
 
         # When user send a download request of non export Job, then HTTP 400 is returned
-        resp = self.client.get("/job/download/%d" % job.id)
+        resp = self.client.get(f"/job/download/{job.id}")
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(resp.content.decode(), "Target Job has no value to return")
 
         # The case user sends a download request for a job which doesn't have a result
         job = Job.new_export(user, text="fuga")
-        resp = self.client.get("/job/download/%d" % job.id)
+        resp = self.client.get(f"/job/download/{job.id}")
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(resp.content.decode(), "This result is no longer available")
 
@@ -189,7 +189,7 @@ class ViewTest(AironeViewTest):
         # then HTTP 400 is returned
         job = Job.new_export(user, text="fuga")
         user = self.admin_login()
-        resp = self.client.get("/job/download/%d" % job.id)
+        resp = self.client.get(f"/job/download/{job.id}")
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(resp.content.decode(), "Target Job is executed by other people")
 
@@ -201,7 +201,7 @@ class ViewTest(AironeViewTest):
         job.set_cache("abcd")
 
         # check job contents could be downloaded
-        resp = self.client.get("/job/download/%d" % job.id)
+        resp = self.client.get(f"/job/download/{job.id}")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp["Content-Disposition"], 'attachment; filename="hoge"')
         self.assertEqual(resp.content.decode("utf8"), "abcd")
@@ -214,7 +214,7 @@ class ViewTest(AironeViewTest):
         job.set_cache("abcd")
 
         # check job contents could be downloaded
-        resp = self.client.get("/job/download/%d" % job.id)
+        resp = self.client.get(f"/job/download/{job.id}")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp["Content-Disposition"], 'attachment; filename="hoge"')
         self.assertEqual(resp.content.decode("utf8"), "abcd")

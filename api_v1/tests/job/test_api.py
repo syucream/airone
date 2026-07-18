@@ -113,7 +113,7 @@ class APITest(AironeViewTest):
         )
 
         # send request to run job
-        resp = self.client.post("/api/v1/job/run/%d" % job.id)
+        resp = self.client.post(f"/api/v1/job/run/{job.id}")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.content, b'"Success to run command"')
 
@@ -125,12 +125,12 @@ class APITest(AironeViewTest):
         self.assertEqual(attrv.value, "hoge")
 
         # send request to run job with finished job-id
-        resp = self.client.post("/api/v1/job/run/%d" % job.id)
+        resp = self.client.post(f"/api/v1/job/run/{job.id}")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.content, b'"Target job has already been done"')
 
         # send request to run job with invalid job-id
-        resp = self.client.post("/api/v1/job/run/%d" % 9999)
+        resp = self.client.post(f"/api/v1/job/run/{9999}")
         self.assertEqual(resp.status_code, 400)
 
         # make and send a job to update entry
@@ -147,7 +147,7 @@ class APITest(AironeViewTest):
                 ]
             },
         )
-        resp = self.client.post("/api/v1/job/run/%d" % job.id)
+        resp = self.client.post(f"/api/v1/job/run/{job.id}")
 
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.content, b'"Success to run command"')
@@ -156,7 +156,7 @@ class APITest(AironeViewTest):
 
         # make and send a job to copy entry
         job = Job.new_do_copy(user, entry, params={"new_name": "new_entry"})
-        resp = self.client.post("/api/v1/job/run/%d" % job.id)
+        resp = self.client.post(f"/api/v1/job/run/{job.id}")
 
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.content, b'"Success to run command"')
@@ -168,7 +168,7 @@ class APITest(AironeViewTest):
 
         # make and send a job to delete entry
         job = Job.new_delete(user, entry)
-        resp = self.client.post("/api/v1/job/run/%d" % job.id)
+        resp = self.client.post(f"/api/v1/job/run/{job.id}")
 
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.content, b'"Success to run command"')
@@ -184,7 +184,7 @@ class APITest(AironeViewTest):
         # delete target entry
         entry.delete()
 
-        resp = self.client.post("/api/v1/job/run/%d" % job.id)
+        resp = self.client.post(f"/api/v1/job/run/{job.id}")
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(resp.content, b'"Job target has already been deleted"')
 

@@ -53,7 +53,7 @@ class ViewTest(AironeViewTest):
     def test_get_user(self):
         login_user = self.guest_login()
 
-        resp = self.client.get("/user/api/v2/%s/" % login_user.id)
+        resp = self.client.get(f"/user/api/v2/{login_user.id}/")
         self.assertEqual(resp.status_code, 200)
 
         body = resp.json()
@@ -65,12 +65,12 @@ class ViewTest(AironeViewTest):
         self.assertEqual(body["token"], None)
 
         other = self._create_user("test1", "test1@example.com")
-        resp = self.client.get("/user/api/v2/%s/" % other.id)
+        resp = self.client.get(f"/user/api/v2/{other.id}/")
         self.assertEqual(resp.status_code, 403)
 
         # parent user can retrieve their co-user
         co_user = self._create_user("co_user", "co@example.com", parent_user=login_user)
-        resp = self.client.get("/user/api/v2/%s/" % co_user.id)
+        resp = self.client.get(f"/user/api/v2/{co_user.id}/")
         self.assertEqual(resp.status_code, 200)
 
     def test_get_me(self):
@@ -228,20 +228,20 @@ class ViewTest(AironeViewTest):
         self.admin_login()
 
         user: User = User.objects.create(username="user")
-        resp = self.client.delete("/user/api/v2/%d/" % user.id)
+        resp = self.client.delete(f"/user/api/v2/{user.id}/")
         self.assertEqual(resp.status_code, 204)
         user.refresh_from_db()
         self.assertFalse(user.is_active)
 
         # already deleted case
-        resp = self.client.delete("/user/api/v2/%d/" % user.id)
+        resp = self.client.delete(f"/user/api/v2/{user.id}/")
         self.assertEqual(resp.status_code, 404)
 
     def test_delete_user_without_permission(self):
         self.guest_login()
 
         user: User = User.objects.create(username="user")
-        resp = self.client.delete("/user/api/v2/%d/" % user.id)
+        resp = self.client.delete(f"/user/api/v2/{user.id}/")
         self.assertEqual(resp.status_code, 403)
         self.assertEqual(
             resp.json(),
@@ -258,7 +258,7 @@ class ViewTest(AironeViewTest):
         co_user = self._create_user("co_user", email="co_user@example.com", parent_user=user_guest)
 
         # delete co-user by parent user
-        resp = self.client.delete("/user/api/v2/%d/" % co_user.id)
+        resp = self.client.delete(f"/user/api/v2/{co_user.id}/")
         self.assertEqual(resp.status_code, 204)
 
         # check co-user was deleted actually.
@@ -458,7 +458,7 @@ class ViewTest(AironeViewTest):
             "chk_passwd": new_passwd,
         }
         resp = self.client.patch(
-            "/user/api/v2/%d/edit_passwd" % user.id, json.dumps(params), "application/json"
+            f"/user/api/v2/{user.id}/edit_passwd", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 200)
 
@@ -476,7 +476,7 @@ class ViewTest(AironeViewTest):
             "chk_passwd": "new-passwd",
         }
         resp = self.client.patch(
-            "/user/api/v2/%d/edit_passwd" % co_user.id, json.dumps(params), "application/json"
+            f"/user/api/v2/{co_user.id}/edit_passwd", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 200)
 
@@ -490,7 +490,7 @@ class ViewTest(AironeViewTest):
             "chk_passwd": "new-passwd",
         }
         resp = self.client.patch(
-            "/user/api/v2/%d/edit_passwd" % other_user.id, json.dumps(params), "application/json"
+            f"/user/api/v2/{other_user.id}/edit_passwd", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
@@ -514,7 +514,7 @@ class ViewTest(AironeViewTest):
             "chk_passwd": new_passwd,
         }
         resp = self.client.patch(
-            "/user/api/v2/%d/edit_passwd" % user.id, json.dumps(params), "application/json"
+            f"/user/api/v2/{user.id}/edit_passwd", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 403)
 
@@ -537,7 +537,7 @@ class ViewTest(AironeViewTest):
             "chk_passwd": new_passwd,
         }
         resp = self.client.patch(
-            "/user/api/v2/%d/edit_passwd" % user.id, json.dumps(params), "application/json"
+            f"/user/api/v2/{user.id}/edit_passwd", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
 
@@ -548,7 +548,7 @@ class ViewTest(AironeViewTest):
             "chk_passwd": "unmatched-passwd",
         }
         resp = self.client.patch(
-            "/user/api/v2/%d/edit_passwd" % user.id, json.dumps(params), "application/json"
+            f"/user/api/v2/{user.id}/edit_passwd", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
 
@@ -559,7 +559,7 @@ class ViewTest(AironeViewTest):
             "chk_passwd": old_passwd,
         }
         resp = self.client.patch(
-            "/user/api/v2/%d/edit_passwd" % user.id, json.dumps(params), "application/json"
+            f"/user/api/v2/{user.id}/edit_passwd", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
 
@@ -572,7 +572,7 @@ class ViewTest(AironeViewTest):
             "chk_passwd": new_passwd,
         }
         resp = self.client.patch(
-            "/user/api/v2/%d/edit_passwd" % other.id, json.dumps(params), "application/json"
+            f"/user/api/v2/{other.id}/edit_passwd", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
 
@@ -587,7 +587,7 @@ class ViewTest(AironeViewTest):
             "chk_passwd": new_passwd,
         }
         resp = self.client.patch(
-            "/user/api/v2/%d/su_edit_passwd" % user.id, json.dumps(params), "application/json"
+            f"/user/api/v2/{user.id}/su_edit_passwd", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 200)
 
@@ -607,7 +607,7 @@ class ViewTest(AironeViewTest):
             "chk_passwd": "invalid-chk-passwd",
         }
         resp = self.client.patch(
-            "/user/api/v2/%d/su_edit_passwd" % user.id, json.dumps(params), "application/json"
+            f"/user/api/v2/{user.id}/su_edit_passwd", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
 
@@ -618,7 +618,7 @@ class ViewTest(AironeViewTest):
             "chk_passwd": "invalid-chk-passwd",
         }
         resp = self.client.patch(
-            "/user/api/v2/%d/su_edit_passwd" % user.id, json.dumps(params), "application/json"
+            f"/user/api/v2/{user.id}/su_edit_passwd", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 403)
 
@@ -627,7 +627,7 @@ class ViewTest(AironeViewTest):
         login_user = self.guest_login()
 
         resp = self.client.patch(
-            "/user/api/v2/%d/auth" % login_user.id,
+            f"/user/api/v2/{login_user.id}/auth",
             json.dumps({"ldap_password": "CORRECT_PASSWORD"}),
             "application/json",
         )
@@ -641,7 +641,7 @@ class ViewTest(AironeViewTest):
         login_user.save(update_fields=["authenticate_type"])
 
         resp = self.client.patch(
-            "/user/api/v2/%d/auth" % login_user.id,
+            f"/user/api/v2/{login_user.id}/auth",
             json.dumps({"ldap_password": "CORRECT_PASSWORD"}),
             "application/json",
         )
@@ -652,7 +652,7 @@ class ViewTest(AironeViewTest):
         login_user = self.guest_login()
 
         resp = self.client.patch(
-            "/user/api/v2/%d/auth" % login_user.id,
+            f"/user/api/v2/{login_user.id}/auth",
             json.dumps({"ldap_password": "INCORRECT_PASSWORD"}),
             "application/json",
         )
@@ -670,7 +670,7 @@ class ViewTest(AironeViewTest):
         ]
         for _param in invalid_parameters:
             resp = self.client.patch(
-                "/user/api/v2/%d/auth" % login_user.id, json.dumps(_param), "application/json"
+                f"/user/api/v2/{login_user.id}/auth", json.dumps(_param), "application/json"
             )
             self.assertEqual(resp.status_code, 400)
 
@@ -678,7 +678,7 @@ class ViewTest(AironeViewTest):
         parent_user = self.guest_login()
         co_user = self._create_user("co_user", parent_user=parent_user)
 
-        resp = self.client.post("/user/api/v2/%d/token/" % co_user.id)
+        resp = self.client.post(f"/user/api/v2/{co_user.id}/token/")
         self.assertEqual(resp.status_code, 200)
 
         token = Token.objects.get(user=co_user)
@@ -688,7 +688,7 @@ class ViewTest(AironeViewTest):
         self.guest_login()
         other_user = self._create_user("other_user")
 
-        resp = self.client.post("/user/api/v2/%d/token/" % other_user.id)
+        resp = self.client.post(f"/user/api/v2/{other_user.id}/token/")
         self.assertEqual(resp.status_code, 403)
 
 
@@ -763,7 +763,7 @@ class RecentActivityAPITest(ViewTest):
                 ],
             }
             resp = self.client.put(
-                "/entry/api/v2/%s/" % item_prefectures["Kyoto"].id,
+                f"/entry/api/v2/{item_prefectures['Kyoto'].id}/",
                 json.dumps(params),
                 "application/json",
             )
@@ -789,7 +789,7 @@ class RecentActivityAPITest(ViewTest):
                 ],
             }
             resp = self.client.post(
-                "/entity/api/v2/%s/entries/" % model_castle.id,
+                f"/entity/api/v2/{model_castle.id}/entries/",
                 json.dumps(params),
                 "application/json",
             )
@@ -806,9 +806,7 @@ class RecentActivityAPITest(ViewTest):
 
             # send API request to delete castle item
             item_castle = Entry.objects.filter(name=castle_name, schema=model_castle).first()
-            resp = self.client.delete(
-                "/entry/api/v2/%s/" % item_castle.id, None, "application/json"
-            )
+            resp = self.client.delete(f"/entry/api/v2/{item_castle.id}/", None, "application/json")
             self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)
 
         # Here is the main processing of this test case
@@ -816,7 +814,7 @@ class RecentActivityAPITest(ViewTest):
         self.client.login(username=TGT_USERNAME, password=TGT_USERNAME)
 
         # call API to get recent activity of target user
-        resp = self.client.get("/user/api/v2/%s/activity" % daimyos[TGT_USERNAME].id)
+        resp = self.client.get(f"/user/api/v2/{daimyos[TGT_USERNAME].id}/activity")
         self.assertEqual(resp.status_code, 200)
 
         # response data expect following data structure for each activity
@@ -936,7 +934,7 @@ class RecentActivityAPITest(ViewTest):
         )
 
         # Create limit+1 entries to exceed the create activity limit
-        entries = [self.add_entry(user, "item-%d" % i, entity) for i in range(limit + 1)]
+        entries = [self.add_entry(user, f"item-{i}", entity) for i in range(limit + 1)]
 
         # Delete limit+1 entries to exceed the delete activity limit
         for entry in entries:
@@ -946,9 +944,9 @@ class RecentActivityAPITest(ViewTest):
         live = self.add_entry(user, "live", entity)
         attr = live.attrs.get(schema__name="val")
         for i in range(limit + 1):
-            attr.add_value(user, "v%d" % i)
+            attr.add_value(user, f"v{i}")
 
-        resp = self.client.get("/user/api/v2/%s/activity" % user.id)
+        resp = self.client.get(f"/user/api/v2/{user.id}/activity")
         self.assertEqual(resp.status_code, 200)
 
         activities = resp.json()
@@ -969,7 +967,7 @@ class RecentActivityAPITest(ViewTest):
         )
 
         # Create limit+1 entries so the count exceeds LIMIT_RECORDS
-        entries = [self.add_entry(user, "item-%d" % i, entity) for i in range(limit + 1)]
+        entries = [self.add_entry(user, f"item-{i}", entity) for i in range(limit + 1)]
 
         # Backdate one entry to be outside the within_minutes window
         old_entry = entries[0]
@@ -977,7 +975,7 @@ class RecentActivityAPITest(ViewTest):
             created_time=timezone.now() - timedelta(minutes=60)
         )
 
-        resp = self.client.get("/user/api/v2/%s/activity?within_minutes=30" % user.id)
+        resp = self.client.get(f"/user/api/v2/{user.id}/activity?within_minutes=30")
         self.assertEqual(resp.status_code, 200)
 
         create_activities = [a for a in resp.json() if a["action_type"] == "create"]
@@ -995,7 +993,7 @@ class RecentActivityAPITest(ViewTest):
         attr = item.attrs.get(schema__name="val")
 
         for i in range(3):
-            changed_attrv = attr.add_value(user, "changed-%d" % i)
+            changed_attrv = attr.add_value(user, f"changed-{i}")
 
             # backdate its created_time for each 20 minutes
             changed_attrv.created_time = timezone.now() - timedelta(minutes=(20 * i))
@@ -1006,7 +1004,7 @@ class RecentActivityAPITest(ViewTest):
         attr.values.filter(value="").delete()
 
         # Without since: all 3 update records are returned
-        resp = self.client.get("/user/api/v2/%s/activity" % user.id)
+        resp = self.client.get(f"/user/api/v2/{user.id}/activity")
         self.assertEqual(resp.status_code, 200)
         update_records = [a for a in resp.json() if a["action_type"] == "update"]
         self.assertEqual(len(update_records), 3)
@@ -1014,7 +1012,7 @@ class RecentActivityAPITest(ViewTest):
         # since=10 min ago: only i=2 (40 min ago, is_latest=True) passes the lte+is_latest filter,
         # giving 1 record
         since_iso = (timezone.now() - timedelta(minutes=10)).isoformat()
-        resp = self.client.get("/user/api/v2/%s/activity?since=%s" % (user.id, since_iso))
+        resp = self.client.get(f"/user/api/v2/{user.id}/activity?since={since_iso}")
         self.assertEqual(resp.status_code, 200)
         update_records = [a for a in resp.json() if a["action_type"] == "update"]
         self.assertEqual(len(update_records), 1)
@@ -1023,19 +1021,19 @@ class RecentActivityAPITest(ViewTest):
     def test_get_activity_since_invalid(self):
         user = self.guest_login()
 
-        resp = self.client.get("/user/api/v2/%s/activity?since=not-a-datetime" % user.id)
+        resp = self.client.get(f"/user/api/v2/{user.id}/activity?since=not-a-datetime")
         self.assertEqual(resp.status_code, 400)
 
     def test_get_activity_within_minutes_invalid(self):
         user = self.guest_login()
 
-        resp = self.client.get("/user/api/v2/%s/activity?within_minutes=abc" % user.id)
+        resp = self.client.get(f"/user/api/v2/{user.id}/activity?within_minutes=abc")
         self.assertEqual(resp.status_code, 400)
 
-        resp = self.client.get("/user/api/v2/%s/activity?within_minutes=0" % user.id)
+        resp = self.client.get(f"/user/api/v2/{user.id}/activity?within_minutes=0")
         self.assertEqual(resp.status_code, 400)
 
-        resp = self.client.get("/user/api/v2/%s/activity?within_minutes=-5" % user.id)
+        resp = self.client.get(f"/user/api/v2/{user.id}/activity?within_minutes=-5")
         self.assertEqual(resp.status_code, 400)
 
     def test_get_activity_filters_by_permission(self):
@@ -1077,7 +1075,7 @@ class RecentActivityAPITest(ViewTest):
 
         # viewing_user requests activity of activity_user
         self.client.login(username="viewing_user", password="viewing_user")
-        resp = self.client.get("/user/api/v2/%s/activity" % activity_user.id)
+        resp = self.client.get(f"/user/api/v2/{activity_user.id}/activity")
         self.assertEqual(resp.status_code, 200)
 
         activities = resp.json()
@@ -1112,7 +1110,7 @@ class RecentActivityAPITest(ViewTest):
 
         # with the attribute still public, viewing_user sees the update activities
         # (add_entry itself also records an AttributeValue, so there are at least two)
-        resp = self.client.get("/user/api/v2/%s/activity" % activity_user.id)
+        resp = self.client.get(f"/user/api/v2/{activity_user.id}/activity")
         self.assertEqual(resp.status_code, 200)
 
         update_activities = [
@@ -1131,7 +1129,7 @@ class RecentActivityAPITest(ViewTest):
             attr.default_permission = ACLType.Nothing.id
             attr.save()
 
-        resp = self.client.get("/user/api/v2/%s/activity" % activity_user.id)
+        resp = self.client.get(f"/user/api/v2/{activity_user.id}/activity")
         self.assertEqual(resp.status_code, 200)
 
         update_activities = [
@@ -1159,7 +1157,7 @@ class RecentActivityAPITest(ViewTest):
                 "attrs": [{"id": target_attr.id, "value": value}],
             }
             resp = self.client.put(
-                "/entry/api/v2/%s/" % item.id,
+                f"/entry/api/v2/{item.id}/",
                 json.dumps(params),
                 "application/json",
             )
@@ -1197,7 +1195,7 @@ class RecentActivityAPITest(ViewTest):
         )
 
         # call API to get recent activity of target user
-        resp = self.client.get("/user/api/v2/%s/activity" % user.id)
+        resp = self.client.get(f"/user/api/v2/{user.id}/activity")
 
         # check that the latest activity has expected data
         self._assert_latest_update_activity(
@@ -1213,7 +1211,7 @@ class RecentActivityAPITest(ViewTest):
         )
 
         # call API to get recent activity of target user
-        resp = self.client.get("/user/api/v2/%s/activity" % user.id)
+        resp = self.client.get(f"/user/api/v2/{user.id}/activity")
 
         # check that the latest activity has expected data
         self._assert_latest_update_activity(
@@ -1232,7 +1230,7 @@ class RecentActivityAPITest(ViewTest):
         )
 
         # call API to get recent activity of target user
-        resp = self.client.get("/user/api/v2/%s/activity" % user.id)
+        resp = self.client.get(f"/user/api/v2/{user.id}/activity")
 
         # check that the latest activity has expected data
         self._assert_latest_update_activity(
@@ -1264,7 +1262,7 @@ class RecentActivityAPITest(ViewTest):
         )
 
         # call API to get recent activity of target user
-        resp = self.client.get("/user/api/v2/%s/activity" % user.id)
+        resp = self.client.get(f"/user/api/v2/{user.id}/activity")
 
         # check that the latest activity has expected data
         self.assertEqual(resp.status_code, 200)
@@ -1291,7 +1289,7 @@ class RecentActivityAPITest(ViewTest):
             user, "num_attr", AttrType.NUMBER, [1.5, 2.5]
         )
 
-        resp = self.client.get("/user/api/v2/%s/activity" % user.id)
+        resp = self.client.get(f"/user/api/v2/{user.id}/activity")
 
         self._assert_latest_update_activity(
             resp, item, model, "num_attr", AttrType.NUMBER, 2.5, 1.5
@@ -1303,7 +1301,7 @@ class RecentActivityAPITest(ViewTest):
             user, "date_attr", AttrType.DATE, ["2024-01-01", "2024-06-15"]
         )
 
-        resp = self.client.get("/user/api/v2/%s/activity" % user.id)
+        resp = self.client.get(f"/user/api/v2/{user.id}/activity")
 
         self._assert_latest_update_activity(
             resp, item, model, "date_attr", AttrType.DATE, "2024-06-15", "2024-01-01"
@@ -1318,7 +1316,7 @@ class RecentActivityAPITest(ViewTest):
             ["2024-01-01T00:00:00+00:00", "2024-06-15T12:30:00+00:00"],
         )
 
-        resp = self.client.get("/user/api/v2/%s/activity" % user.id)
+        resp = self.client.get(f"/user/api/v2/{user.id}/activity")
 
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()[0]["target"]["attr"]["type"], AttrType.DATETIME)
@@ -1335,7 +1333,7 @@ class RecentActivityAPITest(ViewTest):
             user, "group_attr", AttrType.GROUP, [group1.id, group2.id]
         )
 
-        resp = self.client.get("/user/api/v2/%s/activity" % user.id)
+        resp = self.client.get(f"/user/api/v2/{user.id}/activity")
 
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()[0]["target"]["attr"]["type"], AttrType.GROUP)
@@ -1354,7 +1352,7 @@ class RecentActivityAPITest(ViewTest):
             user, "role_attr", AttrType.ROLE, [role1.id, role2.id]
         )
 
-        resp = self.client.get("/user/api/v2/%s/activity" % user.id)
+        resp = self.client.get(f"/user/api/v2/{user.id}/activity")
 
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()[0]["target"]["attr"]["type"], AttrType.ROLE)
@@ -1371,7 +1369,7 @@ class RecentActivityAPITest(ViewTest):
             user, "arr_num_attr", AttrType.ARRAY_NUMBER, [[1.5, 2.5], [3.5, 4.5]]
         )
 
-        resp = self.client.get("/user/api/v2/%s/activity" % user.id)
+        resp = self.client.get(f"/user/api/v2/{user.id}/activity")
 
         self._assert_latest_update_activity(
             resp, item, model, "arr_num_attr", AttrType.ARRAY_NUMBER, [3.5, 4.5], [1.5, 2.5]
@@ -1389,7 +1387,7 @@ class RecentActivityAPITest(ViewTest):
             [[ref_item1.id], [ref_item2.id]],
         )
 
-        resp = self.client.get("/user/api/v2/%s/activity" % user.id)
+        resp = self.client.get(f"/user/api/v2/{user.id}/activity")
 
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()[0]["target"]["attr"]["type"], AttrType.ARRAY_OBJECT)
@@ -1416,7 +1414,7 @@ class RecentActivityAPITest(ViewTest):
             ],
         )
 
-        resp = self.client.get("/user/api/v2/%s/activity" % user.id)
+        resp = self.client.get(f"/user/api/v2/{user.id}/activity")
 
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()[0]["target"]["attr"]["type"], AttrType.ARRAY_NAMED_OBJECT)
@@ -1438,7 +1436,7 @@ class RecentActivityAPITest(ViewTest):
             user, "arr_group_attr", AttrType.ARRAY_GROUP, [[group1.id], [group2.id]]
         )
 
-        resp = self.client.get("/user/api/v2/%s/activity" % user.id)
+        resp = self.client.get(f"/user/api/v2/{user.id}/activity")
 
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()[0]["target"]["attr"]["type"], AttrType.ARRAY_GROUP)
@@ -1458,7 +1456,7 @@ class RecentActivityAPITest(ViewTest):
             user, "arr_role_attr", AttrType.ARRAY_ROLE, [[role1.id], [role2.id]]
         )
 
-        resp = self.client.get("/user/api/v2/%s/activity" % user.id)
+        resp = self.client.get(f"/user/api/v2/{user.id}/activity")
 
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()[0]["target"]["attr"]["type"], AttrType.ARRAY_ROLE)
@@ -1483,7 +1481,7 @@ class RecentActivityAPITest(ViewTest):
         )
 
         # Create limit+1 entries within the range
-        in_range_entries = [self.add_entry(user, "in-%d" % i, entity) for i in range(limit + 1)]
+        in_range_entries = [self.add_entry(user, f"in-{i}", entity) for i in range(limit + 1)]
 
         # Backdate one entry to be outside the range (before 'to')
         out_of_range = in_range_entries[0]
@@ -1497,9 +1495,7 @@ class RecentActivityAPITest(ViewTest):
         since_iso = since_dt.isoformat()
         to_iso = to_dt.isoformat()
 
-        resp = self.client.get(
-            "/user/api/v2/%s/activity?since=%s&to=%s" % (user.id, since_iso, to_iso)
-        )
+        resp = self.client.get(f"/user/api/v2/{user.id}/activity?since={since_iso}&to={to_iso}")
         self.assertEqual(resp.status_code, 200)
 
         create_activities = [a for a in resp.json() if a["action_type"] == "create"]
@@ -1520,7 +1516,7 @@ class RecentActivityAPITest(ViewTest):
         to_dt = timezone.now() - timedelta(days=5)
         to_iso = to_dt.isoformat()
 
-        resp = self.client.get("/user/api/v2/%s/activity?to=%s" % (user.id, to_iso))
+        resp = self.client.get(f"/user/api/v2/{user.id}/activity?to={to_iso}")
         self.assertEqual(resp.status_code, 200)
 
         create_activities = [a for a in resp.json() if a["action_type"] == "create"]
@@ -1533,9 +1529,7 @@ class RecentActivityAPITest(ViewTest):
         since_iso = (timezone.now() - timedelta(days=5)).isoformat()
         to_iso = timezone.now().isoformat()  # to is after since → invalid
 
-        resp = self.client.get(
-            "/user/api/v2/%s/activity?since=%s&to=%s" % (user.id, since_iso, to_iso)
-        )
+        resp = self.client.get(f"/user/api/v2/{user.id}/activity?since={since_iso}&to={to_iso}")
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("to", resp.json())
 
@@ -1547,9 +1541,7 @@ class RecentActivityAPITest(ViewTest):
         since_iso = timezone.now().isoformat()
         to_iso = (timezone.now() - timedelta(days=UserActivityAPI.LIMIT_DAYS + 1)).isoformat()
 
-        resp = self.client.get(
-            "/user/api/v2/%s/activity?since=%s&to=%s" % (user.id, since_iso, to_iso)
-        )
+        resp = self.client.get(f"/user/api/v2/{user.id}/activity?since={since_iso}&to={to_iso}")
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("to", resp.json())
 
@@ -1557,6 +1549,6 @@ class RecentActivityAPITest(ViewTest):
         """'to' must be a valid ISO 8601 datetime string."""
         user = self.guest_login()
 
-        resp = self.client.get("/user/api/v2/%s/activity?to=not-a-datetime" % user.id)
+        resp = self.client.get(f"/user/api/v2/{user.id}/activity?to=not-a-datetime")
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("to", resp.json())

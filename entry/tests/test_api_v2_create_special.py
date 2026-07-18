@@ -98,7 +98,7 @@ class ViewTest(BaseViewTest):
         }
 
         resp = self.client.post(
-            "/entity/api/v2/%s/entries/" % entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{entity.id}/entries/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, status.HTTP_202_ACCEPTED)
 
@@ -166,7 +166,7 @@ class ViewTest(BaseViewTest):
         }
 
         resp = self.client.post(
-            "/entity/api/v2/%s/entries/" % entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{entity.id}/entries/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, status.HTTP_202_ACCEPTED)
 
@@ -224,7 +224,7 @@ class ViewTest(BaseViewTest):
         }
 
         resp = self.client.post(
-            "/entity/api/v2/%s/entries/" % entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{entity.id}/entries/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, status.HTTP_202_ACCEPTED)
 
@@ -291,7 +291,7 @@ class ViewTest(BaseViewTest):
         }
 
         resp = self.client.post(
-            "/entity/api/v2/%s/entries/" % entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{entity.id}/entries/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, status.HTTP_202_ACCEPTED)
 
@@ -557,7 +557,7 @@ class ViewTest(BaseViewTest):
             ],
         }
         resp = self.client.put(
-            "/entry/api/v2/%s/" % item_sg.id, json.dumps(params), "application/json"
+            f"/entry/api/v2/{item_sg.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, status.HTTP_202_ACCEPTED)
 
@@ -569,7 +569,7 @@ class ViewTest(BaseViewTest):
     def test_import_update_items_for_autoname(self):
         (model_lb, model_sg) = self._create_lb_models_for_autoname()
 
-        item_lbs = [self.add_entry(self.user, "LB%04d" % x, model_lb) for x in range(3)]
+        item_lbs = [self.add_entry(self.user, f"LB{x:04}", model_lb) for x in range(3)]
 
         importing_params = [
             {
@@ -766,7 +766,7 @@ class ViewTest(BaseViewTest):
         for index, str_val in enumerate(["foo", "bar", "baz"]):
             self.add_entry(
                 self.user,
-                "item-%s" % index,
+                f"item-{index}",
                 self.entity,
                 values={
                     "val": str_val,
@@ -809,7 +809,7 @@ class ViewTest(BaseViewTest):
         target_items = [self.add_entry(self.user, f"item-{i}", self.entity) for i in range(3)]
         [
             self.add_entry(
-                self.user, "refering-item-%s" % v, self.entity, values={"ref": target_items[i]}
+                self.user, f"refering-item-{v}", self.entity, values={"ref": target_items[i]}
             )
             for (i, v) in enumerate(["foo", "bar", "baz"])
         ]
@@ -858,10 +858,10 @@ class ViewTest(BaseViewTest):
         for index in range(3):
             self.add_entry(
                 self.user,
-                "item-%s" % index,
+                f"item-{index}",
                 self.entity,
                 values={
-                    "val": "v-%s" % index,
+                    "val": f"v-{index}",
                 },
             )
 
@@ -877,7 +877,7 @@ class ViewTest(BaseViewTest):
 
         # Sanity check: existing entries do not yet have an Attribute for new_attr.
         for index in range(3):
-            entry = Entry.objects.get(name="item-%s" % index, schema=self.entity)
+            entry = Entry.objects.get(name=f"item-{index}", schema=self.entity)
             self.assertFalse(entry.attrs.filter(schema=new_attr).exists())
 
         params = {
@@ -898,7 +898,7 @@ class ViewTest(BaseViewTest):
 
         # All entries should now have "updated" for the new attribute.
         for index in range(3):
-            item = Entry.objects.get(name="item-%s" % index, schema=self.entity)
+            item = Entry.objects.get(name=f"item-{index}", schema=self.entity)
             self.assertEqual(item.get_attrv("newattr").value, "updated")
 
     @patch.object(Job, "is_canceled", Mock(return_value=True))
@@ -911,7 +911,7 @@ class ViewTest(BaseViewTest):
         for index, str_val in enumerate(["foo", "bar", "baz"]):
             self.add_entry(
                 self.user,
-                "item-%s" % index,
+                f"item-{index}",
                 self.entity,
                 values={
                     "val": str_val,

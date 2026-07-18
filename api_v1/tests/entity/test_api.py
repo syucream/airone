@@ -34,7 +34,7 @@ class APITest(AironeViewTest):
 
     def test_get_partial_entity_attrs(self):
         entities = Entity.objects.filter(name__contains="test_entity")
-        resp = self.client.get("/api/v1/entity/attrs/%s" % ",".join([str(x.id) for x in entities]))
+        resp = self.client.get(f"/api/v1/entity/attrs/{','.join([str(x.id) for x in entities])}")
 
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["result"], sorted(["bar", "fuga"]))

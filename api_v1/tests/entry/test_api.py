@@ -59,7 +59,7 @@ class APITest(AironeViewTest):
         ref_entry.register_es()
 
         for entity_index in range(0, 2):
-            entity = Entity.objects.create(name="entity-%d" % entity_index, created_user=user)
+            entity = Entity.objects.create(name=f"entity-{entity_index}", created_user=user)
             EntityAttr.objects.create(
                 **{
                     "name": "attr",
@@ -81,12 +81,12 @@ class APITest(AironeViewTest):
 
             for entry_index in range(0, 10):
                 entry = Entry.objects.create(
-                    name="entry-%d" % (entry_index), schema=entity, created_user=user
+                    name=f"entry-{entry_index}", schema=entity, created_user=user
                 )
                 entry.complement_attrs(user)
 
                 # add an AttributeValue
-                entry.attrs.get(schema__name="attr").add_value(user, "data-%d" % entry_index)
+                entry.attrs.get(schema__name="attr").add_value(user, f"data-{entry_index}")
                 entry.attrs.get(schema__name="attr_ref").add_value(user, ref_entry)
 
                 # register entry to the Elasticsearch
@@ -109,7 +109,7 @@ class APITest(AironeViewTest):
         # This tests specifing informations of entity both id and name.
         hint_entities = [
             [x.id for x in Entity.objects.filter(name__regex="^entity-")],
-            ["entity-%d" % i for i in range(0, 2)],
+            [f"entity-{i}" for i in range(0, 2)],
         ]
         for hint_entity in hint_entities:
             params = {
@@ -187,7 +187,7 @@ class APITest(AironeViewTest):
 
         # create referred entries
         refs = [
-            Entry.objects.create(name="r%d" % i, schema=entity_ref, created_user=user)
+            Entry.objects.create(name=f"r{i}", schema=entity_ref, created_user=user)
             for i in range(0, 5)
         ]
 
@@ -219,7 +219,7 @@ class APITest(AironeViewTest):
 
         # check to be able to get referred object no matter whether AttributeType
         for index in range(0, 4):
-            resp = self.client.get("/api/v1/entry/referral?entry=%s" % refs[index].name)
+            resp = self.client.get(f"/api/v1/entry/referral?entry={refs[index].name}")
             self.assertEqual(resp.status_code, 200)
 
             result = resp.json()["result"]
@@ -243,7 +243,7 @@ class APITest(AironeViewTest):
             )
 
         # check the case of no referred object
-        resp = self.client.get("/api/v1/entry/referral?entry=%s" % refs[4].name)
+        resp = self.client.get(f"/api/v1/entry/referral?entry={refs[4].name}")
         self.assertEqual(resp.status_code, 200)
 
         result = resp.json()["result"]
@@ -254,7 +254,7 @@ class APITest(AironeViewTest):
         # check the case of entity param exists
         for index in range(0, 4):
             resp = self.client.get(
-                "/api/v1/entry/referral?entry=%s&entity=%s" % (refs[index].name, entity_ref.name)
+                f"/api/v1/entry/referral?entry={refs[index].name}&entity={entity_ref.name}"
             )
             self.assertEqual(resp.status_code, 200)
 
@@ -281,8 +281,7 @@ class APITest(AironeViewTest):
         # check the case of target entity param exists
         for index in range(0, 4):
             resp = self.client.get(
-                "/api/v1/entry/referral?entry=%s&target_entity=%s"
-                % (refs[index].name, entity2.name)
+                f"/api/v1/entry/referral?entry={refs[index].name}&target_entity={entity2.name}"
             )
             self.assertEqual(resp.status_code, 200)
 
@@ -303,7 +302,7 @@ class APITest(AironeViewTest):
 
         # check the case of quiet param exists
         for index in range(0, 4):
-            resp = self.client.get("/api/v1/entry/referral?entry=%s&quiet=1" % refs[index].name)
+            resp = self.client.get(f"/api/v1/entry/referral?entry={refs[index].name}&quiet=1")
             self.assertEqual(resp.status_code, 200)
 
             result = resp.json()["result"]

@@ -63,7 +63,7 @@ class ViewTest(BaseViewTest):
 
         # create Entries (e1, e2 and e3) for using this test
         entries = [
-            Entry.objects.create(name="e%d" % n, schema=self._entity, created_user=user)
+            Entry.objects.create(name=f"e{n}", schema=self._entity, created_user=user)
             for n in range(1, 4)
         ]
 
@@ -1197,7 +1197,7 @@ class ViewTest(BaseViewTest):
         attrs = []
         for index, permission in enumerate([ACLType.Readable, ACLType.Writable]):
             attr = EntityAttr.objects.create(
-                name="attr%d" % index,
+                name=f"attr{index}",
                 type=AttrType.STRING,
                 created_user=admin,
                 parent_entity=entity,
@@ -1806,7 +1806,7 @@ class ViewTest(BaseViewTest):
             )
 
         for i, value in enumerate(["", "0", 0, "9999", None]):
-            entry_name = "entry-%d" % i
+            entry_name = f"entry-{i}"
             params = {
                 "entry_name": entry_name,
                 "attrs": [
@@ -1924,7 +1924,7 @@ class ViewTest(BaseViewTest):
             ]
         ):
             # create Entity and Entry which test to create
-            entity = Entity.objects.create(name="E%d" % index, created_user=user)
+            entity = Entity.objects.create(name=f"E{index}", created_user=user)
             attr = EntityAttr.objects.create(
                 name="attr",
                 type=attr_type,
@@ -2110,7 +2110,7 @@ class ViewTest(BaseViewTest):
         # to check the view of deleted entries, all entries would be deleted just after creating
         entries = []
         for index in range(3):
-            entry = Entry.objects.create(name="e-%d" % index, schema=entity, created_user=user)
+            entry = Entry.objects.create(name=f"e-{index}", schema=entity, created_user=user)
             entry.delete()
 
             entries.append(entry)
@@ -2132,7 +2132,7 @@ class ViewTest(BaseViewTest):
         self.assertIsNone(resp.context["keyword"])
 
         # If called from the job list, make sure that the search keyword has been entered
-        resp = self.client.get("/entry/restore/%d/?keyword=%s" % (entity.id, entries[0].name))
+        resp = self.client.get(f"/entry/restore/{entity.id}/?keyword={entries[0].name}")
         self.assertEqual(resp.context["keyword"], entries[0].name)
 
         # If the page is invalid
@@ -2279,10 +2279,10 @@ class ViewTest(BaseViewTest):
         # initialize referred objects
         ref_entity = Entity.objects.create(name="RefEntity", created_user=user)
         ref_entries = [
-            Entry.objects.create(name="r%d" % i, created_user=user, schema=ref_entity)
+            Entry.objects.create(name=f"r{i}", created_user=user, schema=ref_entity)
             for i in range(3)
         ]
-        groups = [Group.objects.create(name="g%d" % i) for i in range(2)]
+        groups = [Group.objects.create(name=f"g{i}") for i in range(2)]
 
         # initialize Entity and Entry
         entity = Entity.objects.create(name="Entity", created_user=user)
@@ -2504,7 +2504,7 @@ class ViewTest(BaseViewTest):
         for index, (attrname, initial_value, changed_value, query) in enumerate(testing_params):
             entry = self.add_entry(
                 user,
-                "TestEntry-%d" % index,
+                f"TestEntry-{index}",
                 entity,
                 values={
                     attrname: initial_value,
@@ -2925,7 +2925,7 @@ class ViewTest(BaseViewTest):
         for index, acltype in enumerate([ACLType.Readable, ACLType.Writable]):
             entity = self.create_entity(
                 user,
-                "Test Another Entity %d" % index,
+                f"Test Another Entity {index}",
                 attrs=[{"name": "attr", "type": AttrType.STRING}],
                 is_public=False,
                 default_permission=acltype.id,
@@ -2956,7 +2956,7 @@ class ViewTest(BaseViewTest):
         for index, acltype in enumerate([ACLType.Readable, ACLType.Writable]):
             entity = self.create_entity(
                 user,
-                "Test Another Entity %d" % index,
+                f"Test Another Entity {index}",
                 attrs=[
                     {
                         "name": "attr",
@@ -2991,7 +2991,7 @@ class ViewTest(BaseViewTest):
         for index, acltype in enumerate([ACLType.Readable, ACLType.Writable]):
             entity = self.create_entity(
                 user,
-                "Test Another Entity %d" % index,
+                f"Test Another Entity {index}",
                 attrs=[{"name": "attr", "type": AttrType.STRING, "is_public": True}],
                 is_public=True,
                 default_permission=acltype.id,

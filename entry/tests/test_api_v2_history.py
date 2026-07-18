@@ -142,7 +142,7 @@ class ViewTest(BaseViewTest):
         entry = self.add_entry(
             self.user, "Entry", self.entity, values={x: values[x]["value"] for x in values.keys()}
         )
-        resp = self.client.get("/entry/api/v2/%s/histories/" % entry.id)
+        resp = self.client.get(f"/entry/api/v2/{entry.id}/histories/")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["count"], 22)
         attrv = entry.get_attrv("datetime")
@@ -172,7 +172,7 @@ class ViewTest(BaseViewTest):
         attr = entry.attrs.get(schema__name="vals")
         attr.add_value(self.user, ["hoge", "fuga"])
 
-        resp = self.client.get("/entry/api/v2/%s/histories/" % entry.id)
+        resp = self.client.get(f"/entry/api/v2/{entry.id}/histories/")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["count"], 23)
         self.assertEqual(resp.json()["results"][0]["parent_attr"]["name"], "vals")
@@ -185,7 +185,7 @@ class ViewTest(BaseViewTest):
         entry = self.add_entry(self.user, "Entry", self.entity, {}, False)
 
         # permission nothing entry
-        resp = self.client.get("/entry/api/v2/%s/histories/" % entry.id)
+        resp = self.client.get(f"/entry/api/v2/{entry.id}/histories/")
         self.assertEqual(resp.status_code, 403)
         self.assertEqual(
             resp.json(),
@@ -198,14 +198,14 @@ class ViewTest(BaseViewTest):
         # permission readble entry
         self.role.users.add(self.user)
         entry.readable.roles.add(self.role)
-        resp = self.client.get("/entry/api/v2/%d/histories/" % entry.id)
+        resp = self.client.get(f"/entry/api/v2/{entry.id}/histories/")
         self.assertEqual(resp.status_code, 200)
 
         # permission nothing entity attr
         entity_attr: EntityAttr = self.entity.attrs.get(name="val")
         entity_attr.is_public = False
         entity_attr.save()
-        resp = self.client.get("/entry/api/v2/%d/histories/" % entry.id)
+        resp = self.client.get(f"/entry/api/v2/{entry.id}/histories/")
         self.assertEqual(resp.status_code, 200)
         self.assertFalse(
             any(
@@ -218,7 +218,7 @@ class ViewTest(BaseViewTest):
 
         # permission nothing entity attr
         entity_attr.readable.roles.add(self.role)
-        resp = self.client.get("/entry/api/v2/%d/histories/" % entry.id)
+        resp = self.client.get(f"/entry/api/v2/{entry.id}/histories/")
         self.assertEqual(resp.status_code, 200)
         self.assertTrue(
             any(
@@ -235,7 +235,7 @@ class ViewTest(BaseViewTest):
         entry2: Entry = self.add_entry(self.user, "entry2", self.entity)
 
         resp = self.client.delete(
-            "/entry/api/v2/bulk_delete/?ids=%s&ids=%s" % (entry1.id, entry2.id),
+            f"/entry/api/v2/bulk_delete/?ids={entry1.id}&ids={entry2.id}",
             None,
             "application/json",
         )
@@ -254,7 +254,7 @@ class ViewTest(BaseViewTest):
         self.assertIsNotNone(entry2.deleted_time)
 
         resp = self.client.delete(
-            "/entry/api/v2/bulk_delete/?ids=%s&ids=%s" % (entry1.id, entry2.id),
+            f"/entry/api/v2/bulk_delete/?ids={entry1.id}&ids={entry2.id}",
             None,
             "application/json",
         )
@@ -267,7 +267,7 @@ class ViewTest(BaseViewTest):
         self.entity.is_public = False
         self.entity.save()
         resp = self.client.delete(
-            "/entry/api/v2/bulk_delete/?ids=%s" % entry.id, None, "application/json"
+            f"/entry/api/v2/bulk_delete/?ids={entry.id}", None, "application/json"
         )
         self.assertEqual(resp.status_code, 403)
 
@@ -275,14 +275,14 @@ class ViewTest(BaseViewTest):
         self.role.users.add(self.user)
         self.entity.readable.roles.add(self.role)
         resp = self.client.delete(
-            "/entry/api/v2/bulk_delete/?ids=%s" % entry.id, None, "application/json"
+            f"/entry/api/v2/bulk_delete/?ids={entry.id}", None, "application/json"
         )
         self.assertEqual(resp.status_code, 403)
 
         # permission writable entity
         self.entity.writable.roles.add(self.role)
         resp = self.client.delete(
-            "/entry/api/v2/bulk_delete/?ids=%s" % entry.id, None, "application/json"
+            f"/entry/api/v2/bulk_delete/?ids={entry.id}", None, "application/json"
         )
         self.assertEqual(resp.status_code, 204)
 
@@ -292,32 +292,30 @@ class ViewTest(BaseViewTest):
         entry.is_public = False
         entry.save()
         resp = self.client.delete(
-            "/entry/api/v2/bulk_delete/?ids=%s" % entry.id, None, "application/json"
+            f"/entry/api/v2/bulk_delete/?ids={entry.id}", None, "application/json"
         )
         self.assertEqual(resp.status_code, 403)
 
         # permission readable entry
         entry.readable.roles.add(self.role)
         resp = self.client.delete(
-            "/entry/api/v2/bulk_delete/?ids=%s" % entry.id, None, "application/json"
+            f"/entry/api/v2/bulk_delete/?ids={entry.id}", None, "application/json"
         )
         self.assertEqual(resp.status_code, 403)
 
         # permission writable entry
         entry.writable.roles.add(self.role)
         resp = self.client.delete(
-            "/entry/api/v2/bulk_delete/?ids=%s" % entry.id, None, "application/json"
+            f"/entry/api/v2/bulk_delete/?ids={entry.id}", None, "application/json"
         )
         self.assertEqual(resp.status_code, 204)
 
     def test_destory_entries_with_invalid_param(self):
-        resp = self.client.delete(
-            "/entry/api/v2/bulk_delete/?ids=%s" % "hoge", None, "application/json"
-        )
+        resp = self.client.delete("/entry/api/v2/bulk_delete/?ids=hoge", None, "application/json")
         self.assertEqual(resp.status_code, 400)
 
         resp = self.client.delete(
-            "/entry/api/v2/bulk_delete/?ids=%s" % 9999, None, "application/json"
+            f"/entry/api/v2/bulk_delete/?ids={9999}", None, "application/json"
         )
         self.assertEqual(resp.status_code, 404)
 
@@ -332,7 +330,7 @@ class ViewTest(BaseViewTest):
 
         mock_call_custom.side_effect = side_effect
         resp = self.client.delete(
-            "/entry/api/v2/bulk_delete/?ids=%s" % entry.id, None, "application/json"
+            f"/entry/api/v2/bulk_delete/?ids={entry.id}", None, "application/json"
         )
         self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)
         self.assertTrue(mock_call_custom.called)
@@ -347,7 +345,7 @@ class ViewTest(BaseViewTest):
 
         mock_call_custom.side_effect = side_effect
         resp = self.client.delete(
-            "/entry/api/v2/bulk_delete/?ids=%s" % entry.id, None, "application/json"
+            f"/entry/api/v2/bulk_delete/?ids={entry.id}", None, "application/json"
         )
         self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)
         self.assertTrue(mock_call_custom.called)
@@ -356,18 +354,18 @@ class ViewTest(BaseViewTest):
     @mock.patch("entry.tasks.notify_delete_entry.delay")
     def test_destroy_entries_notify(self, mock_task):
         entry: Entry = self.add_entry(self.user, "entry", self.entity)
-        self.client.delete("/entry/api/v2/bulk_delete/?ids=%s" % entry.id, None, "application/json")
+        self.client.delete(f"/entry/api/v2/bulk_delete/?ids={entry.id}", None, "application/json")
 
         self.assertTrue(mock_task.called)
 
     @patch("entry.tasks.delete_entry_v2.delay", Mock(side_effect=tasks.delete_entry_v2))
     def test_delete_entries_without_all_parameter(self):
         # create test Items that would be deleted in this test
-        items = [self.add_entry(self.user, "item-%d" % i, self.entity) for i in range(5)]
+        items = [self.add_entry(self.user, f"item-{i}", self.entity) for i in range(5)]
 
         # send request to delete only items[0]
         resp = self.client.delete(
-            "/entry/api/v2/bulk_delete/?ids=%s" % items[0].id, None, "application/json"
+            f"/entry/api/v2/bulk_delete/?ids={items[0].id}", None, "application/json"
         )
         self.assertEqual(resp.status_code, 204)
         self.assertEqual(resp.content, b"")
@@ -379,7 +377,7 @@ class ViewTest(BaseViewTest):
 
         # send request to delete all items
         resp = self.client.delete(
-            "/entry/api/v2/bulk_delete/?ids=%s&isAll=false" % items[1].id, None, "application/json"
+            f"/entry/api/v2/bulk_delete/?ids={items[1].id}&isAll=false", None, "application/json"
         )
         self.assertEqual(resp.status_code, 204)
         self.assertEqual(resp.content, b"")
@@ -392,11 +390,11 @@ class ViewTest(BaseViewTest):
     @patch("entry.tasks.delete_entry_v2.delay", Mock(side_effect=tasks.delete_entry_v2))
     def test_delete_entries_with_all_parameter(self):
         # create test Items that would be deleted in this test
-        items = [self.add_entry(self.user, "item-%d" % i, self.entity) for i in range(5)]
+        items = [self.add_entry(self.user, f"item-{i}", self.entity) for i in range(5)]
 
         # send request to delete only items[0]
         resp = self.client.delete(
-            "/entry/api/v2/bulk_delete/?ids=%s" % items[0].id, None, "application/json"
+            f"/entry/api/v2/bulk_delete/?ids={items[0].id}", None, "application/json"
         )
         self.assertEqual(resp.status_code, 204)
         self.assertEqual(resp.content, b"")
@@ -408,7 +406,7 @@ class ViewTest(BaseViewTest):
 
         # send request to delete all items
         resp = self.client.delete(
-            "/entry/api/v2/bulk_delete/?ids=%s&isAll=true" % items[1].id, None, "application/json"
+            f"/entry/api/v2/bulk_delete/?ids={items[1].id}&isAll=true", None, "application/json"
         )
         self.assertEqual(resp.status_code, 204)
         self.assertEqual(resp.content, b"")
@@ -423,7 +421,7 @@ class ViewTest(BaseViewTest):
         items = [
             self.add_entry(
                 self.user,
-                "item-%d" % i,
+                f"item-{i}",
                 self.entity,
                 values={
                     "val": "hoge" if i < 3 else "fuga",
@@ -440,11 +438,7 @@ class ViewTest(BaseViewTest):
             ]
         )
         resp = self.client.delete(
-            "/entry/api/v2/bulk_delete/?ids=%s&isAll=true&attrinfo=%s"
-            % (
-                items[0].id,
-                attrinfo_as_str,
-            ),
+            f"/entry/api/v2/bulk_delete/?ids={items[0].id}&isAll=true&attrinfo={attrinfo_as_str}",
             None,
             "application/json",
         )
@@ -470,7 +464,7 @@ class ViewTest(BaseViewTest):
         entry.save()
 
         # Make API request to list self histories
-        resp = self.client.get("/entry/api/v2/%s/self_histories/" % entry.id)
+        resp = self.client.get(f"/entry/api/v2/{entry.id}/self_histories/")
 
         # Check response status and structure
         self.assertEqual(resp.status_code, 200)
@@ -515,7 +509,7 @@ class ViewTest(BaseViewTest):
         # 1 creation + 30 updates == 31 history records.
         entry = self.add_entry(self.user, "name_v0", self.entity)
         for i in range(1, 31):
-            entry.name = "name_v%d" % i
+            entry.name = f"name_v{i}"
             entry.save()
 
         # Assign deterministic, strictly increasing history_date values so that
@@ -526,7 +520,7 @@ class ViewTest(BaseViewTest):
             hist.save()
 
         # First page (newest 30 records, ordered by -history_date).
-        resp = self.client.get("/entry/api/v2/%s/self_histories/?offset=0&limit=30" % entry.id)
+        resp = self.client.get(f"/entry/api/v2/{entry.id}/self_histories/?offset=0&limit=30")
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         data = resp.json()
 
@@ -544,7 +538,7 @@ class ViewTest(BaseViewTest):
         self.assertEqual(boundary_record["prev_name"], "name_v0")
 
         # Second page holds the creation record; its prev_name is genuinely None.
-        resp2 = self.client.get("/entry/api/v2/%s/self_histories/?offset=30&limit=30" % entry.id)
+        resp2 = self.client.get(f"/entry/api/v2/{entry.id}/self_histories/?offset=30&limit=30")
         self.assertEqual(resp2.status_code, status.HTTP_200_OK)
         data2 = resp2.json()
         self.assertEqual(len(data2["results"]), 1)
@@ -565,7 +559,7 @@ class ViewTest(BaseViewTest):
         entry.name = "new_name"
         entry.save(update_fields=["name"])
 
-        resp = self.client.get("/entry/api/v2/%s/self_histories/" % entry.id)
+        resp = self.client.get(f"/entry/api/v2/{entry.id}/self_histories/")
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         data = resp.json()
 
@@ -600,12 +594,10 @@ class ViewTest(BaseViewTest):
 
         # Rename through the production API path so the serializer fix runs.
         params = {"name": "renamed", "attrs": []}
-        resp = self.client.put(
-            "/entry/api/v2/%s/" % entry.id, json.dumps(params), "application/json"
-        )
+        resp = self.client.put(f"/entry/api/v2/{entry.id}/", json.dumps(params), "application/json")
         self.assertEqual(resp.status_code, status.HTTP_202_ACCEPTED)
 
-        resp = self.client.get("/entry/api/v2/%s/self_histories/" % entry.id)
+        resp = self.client.get(f"/entry/api/v2/{entry.id}/self_histories/")
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         data = resp.json()
 
@@ -622,7 +614,7 @@ class ViewTest(BaseViewTest):
         entry = self.add_entry(self.user, "test_entry", self.entity, {}, False)
 
         # Test without any permission
-        resp = self.client.get("/entry/api/v2/%s/self_histories/" % entry.id)
+        resp = self.client.get(f"/entry/api/v2/{entry.id}/self_histories/")
         self.assertEqual(resp.status_code, 403)
         self.assertEqual(
             resp.json(),
@@ -637,13 +629,13 @@ class ViewTest(BaseViewTest):
         entry.readable.roles.add(self.role)
 
         # Should now work
-        resp = self.client.get("/entry/api/v2/%s/self_histories/" % entry.id)
+        resp = self.client.get(f"/entry/api/v2/{entry.id}/self_histories/")
         self.assertEqual(resp.status_code, 200)
 
     def test_list_self_histories_with_invalid_entry_id(self):
         """Test list self histories endpoint - non-existent entry"""
         non_existent_id = 9999999
-        resp = self.client.get("/entry/api/v2/%s/self_histories/" % non_existent_id)
+        resp = self.client.get(f"/entry/api/v2/{non_existent_id}/self_histories/")
         self.assertEqual(resp.status_code, 404)
 
     def test_restore_self_history(self):
@@ -669,7 +661,7 @@ class ViewTest(BaseViewTest):
         # Restore to original name using API
         payload = {"history_id": original_history.history_id}
         resp = self.client.post(
-            "/entry/api/v2/%s/restore_self_history/" % entry.id,
+            f"/entry/api/v2/{entry.id}/restore_self_history/",
             payload,
             "application/json",
         )
@@ -699,7 +691,7 @@ class ViewTest(BaseViewTest):
         # Try to restore without write permission
         payload = {"history_id": history_record.history_id}
         resp = self.client.post(
-            "/entry/api/v2/%s/restore_self_history/" % entry.id,
+            f"/entry/api/v2/{entry.id}/restore_self_history/",
             payload,
             "application/json",
         )
@@ -720,7 +712,7 @@ class ViewTest(BaseViewTest):
         # Use invalid history ID
         payload = {"history_id": 9999999}
         resp = self.client.post(
-            "/entry/api/v2/%s/restore_self_history/" % entry.id,
+            f"/entry/api/v2/{entry.id}/restore_self_history/",
             payload,
             "application/json",
         )
@@ -756,7 +748,7 @@ class ViewTest(BaseViewTest):
         # Try to restore entry1 to "entry_1" - should fail due to duplicate
         payload = {"history_id": original_history.history_id}
         resp = self.client.post(
-            "/entry/api/v2/%s/restore_self_history/" % entry1.id,
+            f"/entry/api/v2/{entry1.id}/restore_self_history/",
             payload,
             "application/json",
         )
@@ -792,7 +784,7 @@ class ViewTest(BaseViewTest):
         # Try to restore to original name - should fail due to alias conflict
         payload = {"history_id": original_history.history_id}
         resp = self.client.post(
-            "/entry/api/v2/%s/restore_self_history/" % entry.id,
+            f"/entry/api/v2/{entry.id}/restore_self_history/",
             payload,
             "application/json",
         )

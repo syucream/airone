@@ -50,7 +50,7 @@ class APITest(AironeViewTest):
         ref_e = []
         for index in range(0, 10):
             ref_e.append(
-                Entry.objects.create(name="r-%d" % index, schema=ref_entity, created_user=admin)
+                Entry.objects.create(name=f"r-{index}", schema=ref_entity, created_user=admin)
             )
 
         params = self.ALL_TYPED_ATTR_PARAMS_FOR_CREATING_ENTITY.copy()
@@ -279,7 +279,7 @@ class APITest(AironeViewTest):
 
         entry_ref = Entry.objects.create(name="r1", schema=entity_ref, created_user=user)
         entries = [
-            Entry.objects.create(name="e-%d" % i, schema=entity, created_user=user)
+            Entry.objects.create(name=f"e-{i}", schema=entity, created_user=user)
             for i in range(0, 2)
         ]
 
@@ -340,7 +340,7 @@ class APITest(AironeViewTest):
                 json.dumps(params),
                 "application/json",
                 **{
-                    "HTTP_AUTHORIZATION": "Token %s" % str(admin.token),
+                    "HTTP_AUTHORIZATION": f"Token {admin.token!s}",
                 },
             )
 
@@ -377,7 +377,7 @@ class APITest(AironeViewTest):
         ref_e = []
         for index in range(0, 10):
             ref_e.append(
-                Entry.objects.create(name="r-%d" % index, schema=ref_entity, created_user=admin)
+                Entry.objects.create(name=f"r-{index}", schema=ref_entity, created_user=admin)
             )
 
         entity = Entity.objects.create(name="Entity", created_user=admin)
@@ -815,7 +815,7 @@ class APITest(AironeViewTest):
                     attr.referral.add(info["referral"])
 
             for i in range(0, 10):
-                entry = Entry.objects.create(name="entry-%d" % i, schema=entity, created_user=user)
+                entry = Entry.objects.create(name=f"entry-{i}", schema=entity, created_user=user)
                 entry.complement_attrs(user)
 
                 for name, info in attr_info.items():
@@ -1119,7 +1119,7 @@ class APITest(AironeViewTest):
             "/api/v1/entry",
             {"entity": "E1", "entry": "e1"},
             **{
-                "HTTP_AUTHORIZATION": "Token %s" % str(user.token),
+                "HTTP_AUTHORIZATION": f"Token {user.token!s}",
             },
         )
         self.assertEqual(resp.status_code, 200)
@@ -1131,7 +1131,7 @@ class APITest(AironeViewTest):
             "/api/v1/entry",
             {"entity": "E1", "entry": "e1"},
             **{
-                "HTTP_AUTHORIZATION": "Token %s" % str(user.token),
+                "HTTP_AUTHORIZATION": f"Token {user.token!s}",
             },
         )
         self.assertEqual(resp.status_code, 403)
@@ -1144,7 +1144,7 @@ class APITest(AironeViewTest):
             "/api/v1/entry",
             {"entity": "E1", "entry": "e1"},
             **{
-                "HTTP_AUTHORIZATION": "Token %s" % str(user.token),
+                "HTTP_AUTHORIZATION": f"Token {user.token!s}",
             },
         )
         self.assertEqual(resp.status_code, 200)
@@ -1233,7 +1233,7 @@ class APITest(AironeViewTest):
             ),
             "application/json",
             **{
-                "HTTP_AUTHORIZATION": "Token %s" % users["_u1"].token,
+                "HTTP_AUTHORIZATION": f"Token {users['_u1'].token}",
             },
         )
         self.assertEqual(resp.status_code, 200)
@@ -1497,7 +1497,7 @@ class APITest(AironeViewTest):
         ref_e = []
         for index in range(0, 10):
             ref_e.append(
-                Entry.objects.create(name="r-%d" % index, schema=ref_entity, created_user=admin)
+                Entry.objects.create(name=f"r-{index}", schema=ref_entity, created_user=admin)
             )
 
         params = self.ALL_TYPED_ATTR_PARAMS_FOR_CREATING_ENTITY.copy()

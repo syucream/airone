@@ -39,7 +39,7 @@ class APITest(AironeViewTest):
         resp = self.client.get(
             "/api/v1/user/access_token",
             **{
-                "HTTP_AUTHORIZATION": "Token %s" % str(token),
+                "HTTP_AUTHORIZATION": f"Token {token!s}",
             },
         )
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
@@ -49,7 +49,7 @@ class APITest(AironeViewTest):
         resp = self.client.get(
             "/api/v1/user/access_token",
             **{
-                "HTTP_AUTHORIZATION": "Token %s" % "invlaid-token",
+                "HTTP_AUTHORIZATION": "Token invlaid-token",
             },
         )
         self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)

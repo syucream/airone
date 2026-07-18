@@ -15,17 +15,13 @@ class SignalTest(TestCase):
 
     def _check_object_permissions(self, obj):
         self.assertTrue(
-            Permission.objects.filter(
-                name="readable", codename="%s.%d" % (obj.id, ACLType.Readable.id)
-            )
+            Permission.objects.filter(name="readable", codename=f"{obj.id}.{ACLType.Readable.id}")
         )
         self.assertTrue(
-            Permission.objects.filter(
-                name="writable", codename="%s.%d" % (obj.id, ACLType.Writable.id)
-            )
+            Permission.objects.filter(name="writable", codename=f"{obj.id}.{ACLType.Writable.id}")
         )
         self.assertTrue(
-            Permission.objects.filter(name="full", codename="%s.%d" % (obj.id, ACLType.Full.id))
+            Permission.objects.filter(name="full", codename=f"{obj.id}.{ACLType.Full.id}")
         )
 
     def test_aclbase(self):

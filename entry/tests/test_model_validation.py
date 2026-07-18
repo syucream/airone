@@ -87,7 +87,7 @@ class ModelValidationTest(BaseModelTest):
             ],
         )
 
-        item_refs = [self.add_entry(self._user, "ref%d" % x, model_ref) for x in range(2)]
+        item_refs = [self.add_entry(self._user, f"ref{x}", model_ref) for x in range(2)]
         item_test = self.add_entry(
             self._user,
             "test",
@@ -490,7 +490,7 @@ class ModelValidationTest(BaseModelTest):
         )
         self.assertEqual(
             AttributeValue.validate_attr_value(AttrType.ARRAY_OBJECT, self._entry.id, False),
-            (False, "value(%s) is not list" % self._entry.id),
+            (False, f"value({self._entry.id}) is not list"),
         )
 
         self.assertEqual(
@@ -535,7 +535,7 @@ class ModelValidationTest(BaseModelTest):
             AttributeValue.validate_attr_value(
                 AttrType.ARRAY_NAMED_OBJECT, {"name": "hoge", "id": self._entry.id}, False
             ),
-            (False, "value({'name': 'hoge', 'id': %s}) is not list" % self._entry.id),
+            (False, f"value({{'name': 'hoge', 'id': {self._entry.id}}}) is not list"),
         )
 
         self.assertEqual(
@@ -556,7 +556,7 @@ class ModelValidationTest(BaseModelTest):
         )
         self.assertEqual(
             AttributeValue.validate_attr_value(AttrType.ARRAY_GROUP, group.id, False),
-            (False, "value(%s) is not list" % group.id),
+            (False, f"value({group.id}) is not list"),
         )
 
     def test_validate_attr_value_is_mandatory(self):
@@ -701,7 +701,7 @@ class ModelValidationTest(BaseModelTest):
         """
         ref_entity = Entity.objects.create(name="ReferredEntity", created_user=self._user)
         ref_entries = [
-            Entry.objects.create(name="ref-%d" % i, created_user=self._user, schema=ref_entity)
+            Entry.objects.create(name=f"ref-{i}", created_user=self._user, schema=ref_entity)
             for i in range(3)
         ]
 
@@ -751,12 +751,12 @@ class ModelValidationTest(BaseModelTest):
         """
         ref_entity = Entity.objects.create(name="ReferredEntity", created_user=self._user)
         ref_entries = [
-            Entry.objects.create(name="ref-%d" % i, created_user=self._user, schema=ref_entity)
+            Entry.objects.create(name=f"ref-{i}", created_user=self._user, schema=ref_entity)
             for i in range(3)
         ]
         ref_entity_2 = Entity.objects.create(name="ReferredEntity2", created_user=self._user)
         ref_entries_2 = [
-            Entry.objects.create(name="ref2-%d" % i, created_user=self._user, schema=ref_entity_2)
+            Entry.objects.create(name=f"ref2-{i}", created_user=self._user, schema=ref_entity_2)
             for i in range(3)
         ]
 
@@ -876,7 +876,7 @@ class ModelValidationTest(BaseModelTest):
 
         # Initiate Entities and Entries for this test
         ref_entity = self.create_entity(user, "RefEntity")
-        (e0, e1, e2) = [self.add_entry(user, "e%s" % i, ref_entity) for i in range(3)]
+        (e0, e1, e2) = [self.add_entry(user, f"e{i}", ref_entity) for i in range(3)]
 
         entity = self.create_entity(
             user,
@@ -1511,8 +1511,8 @@ class ModelValidationTest(BaseModelTest):
         [x.save_autoname() for x in items]
 
         self.assertEqual(items[0].name, "foo-bar")
-        self.assertRegex(items[1].name, r"^foo-bar -- duplicate of ID:%s -- " % str(items[0].id))
-        self.assertRegex(items[2].name, r"^foo-bar -- duplicate of ID:%s -- " % str(items[0].id))
+        self.assertRegex(items[1].name, rf"^foo-bar -- duplicate of ID:{items[0].id!s} -- ")
+        self.assertRegex(items[2].name, rf"^foo-bar -- duplicate of ID:{items[0].id!s} -- ")
 
     def test_may_change_referred_item_names(self):
         """

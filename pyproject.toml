@@ -119,8 +119,6 @@ disable_error_code = [
 [tool.ruff]
 # Pyflakes (F), pycodestyle (E, W), isort (I), pyupgrade (UP), type-checking (TC)
 lint.select = ["E", "F", "I", "W", "UP", "TC"]
-# UP031: printf-style formatting is not type-related; cleaned up in a follow-up PR
-lint.ignore = ["UP031"]
 line-length = 100
 extend-exclude = ["./*/migrations", "manage.py", "./node_modules"]
 

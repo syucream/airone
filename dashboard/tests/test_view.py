@@ -71,14 +71,14 @@ class ViewTest(AironeViewTest):
 
         resp = self.client.get(reverse("dashboard:search"), {"query": query})
         self.assertEqual(resp.status_code, 302)
-        self.assertEqual(resp.url, "/entry/show/%s/" % entry.id)
+        self.assertEqual(resp.url, f"/entry/show/{entry.id}/")
 
     def test_search_entry_from_value(self):
         entry = Entry.objects.get(name="srv001", is_active=True)
 
         resp = self.client.get(reverse("dashboard:search"), {"query": "hoge"})
         self.assertEqual(resp.status_code, 302)
-        self.assertEqual(resp.url, "/entry/show/%s/" % entry.id)
+        self.assertEqual(resp.url, f"/entry/show/{entry.id}/")
 
     def test_search_invalid_objects(self):
         resp = self.client.get(reverse("dashboard:search"), {"query": "hogefuga"})
@@ -91,7 +91,7 @@ class ViewTest(AironeViewTest):
 
         resp = self.client.get(reverse("dashboard:search"), {"query": "  hoge  "})
         self.assertEqual(resp.status_code, 302)
-        self.assertEqual(resp.url, "/entry/show/%s/" % entry.id)
+        self.assertEqual(resp.url, f"/entry/show/{entry.id}/")
 
     def test_show_dashboard_with_airone_user(self):
         # prepare the data of the imported file
@@ -166,7 +166,7 @@ class ViewTest(AironeViewTest):
     )
     def test_show_advanced_search_results(self):
         for entity_index in range(0, 2):
-            entity = Entity.objects.create(name="entity-%d" % entity_index, created_user=self.admin)
+            entity = Entity.objects.create(name=f"entity-{entity_index}", created_user=self.admin)
             EntityAttr.objects.create(
                 **{
                     "name": "attr",
@@ -178,14 +178,14 @@ class ViewTest(AironeViewTest):
 
             for entry_index in range(0, 10):
                 entry = Entry.objects.create(
-                    name="entry-%d" % (entry_index),
+                    name=f"entry-{entry_index}",
                     schema=entity,
                     created_user=self.admin,
                 )
                 entry.complement_attrs(self.admin)
 
                 # add an AttributeValue
-                entry.attrs.first().add_value(self.admin, "data-%d" % entry_index)
+                entry.attrs.first().add_value(self.admin, f"data-{entry_index}")
 
                 # register entry to the Elasticsearch
                 entry.register_es()
@@ -432,7 +432,7 @@ class ViewTest(AironeViewTest):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(
             resp.context["entities"].split(","),
-            [str(Entity.objects.get(name="entity-%d" % i).id) for i in range(2)],
+            [str(Entity.objects.get(name=f"entity-{i}").id) for i in range(2)],
         )
         self.assertEqual(resp.context["results"]["ret_count"], 20)
         self.assertEqual(resp.context["is_all_entities"], True)
@@ -979,12 +979,12 @@ class ViewTest(AironeViewTest):
 
         # checks all attribute are exported in order of specified sequence
         self.assertEqual(
-            csv_contents[0], "Name,Entity,%s" % ",".join([x["name"] for x in exporting_attrs])
+            csv_contents[0], f"Name,Entity,{','.join([x['name'] for x in exporting_attrs])}"
         )
 
         # checks all data value are exported
         self.assertEqual(
-            csv_contents[1], "entry,Entity,%s" % ",".join([x["value"] for x in exporting_attrs])
+            csv_contents[1], f"entry,Entity,{','.join([x['value'] for x in exporting_attrs])}"
         )
 
     @patch(
@@ -1193,10 +1193,10 @@ class ViewTest(AironeViewTest):
 
             content = Job.objects.last().get_cache()
             header = content.splitlines()[0]
-            self.assertEqual(header, 'Name,Entity,"%s,""ATTR"""' % type_name)
+            self.assertEqual(header, f'Name,Entity,"{type_name},""ATTR"""')
 
             data = content.replace(header, "", 1).strip()
-            self.assertEqual(data, '"%s,""ENTRY""",%s,%s' % (type_name, test_entity.name, expected))
+            self.assertEqual(data, f'"{type_name},""ENTRY""",{test_entity.name},{expected}')
 
     @patch("entry.tasks.import_entries.delay", Mock(side_effect=entry_tasks.import_entries))
     @patch(
@@ -1263,7 +1263,7 @@ class ViewTest(AironeViewTest):
         }
         entities = []
         for index in range(2):
-            entity = Entity.objects.create(name="Entity-%d" % index, created_user=user)
+            entity = Entity.objects.create(name=f"Entity-{index}", created_user=user)
             for attr_name, info in attr_info.items():
                 attr = EntityAttr.objects.create(
                     name=attr_name,
@@ -1277,9 +1277,7 @@ class ViewTest(AironeViewTest):
 
             # create an entry of Entity
             for e_index in range(2):
-                entry = Entry.objects.create(
-                    name="e-%d" % e_index, schema=entity, created_user=user
-                )
+                entry = Entry.objects.create(name=f"e-{e_index}", schema=entity, created_user=user)
                 entry.complement_attrs(user)
 
                 for attr_name, info in attr_info.items():
@@ -1305,7 +1303,7 @@ class ViewTest(AironeViewTest):
 
         resp_data = yaml.load(Job.objects.last().get_cache(), Loader=yaml.FullLoader)
         for index in range(2):
-            entity = Entity.objects.get(name="Entity-%d" % index)
+            entity = Entity.objects.get(name=f"Entity-{index}")
             e_data = resp_data[entity.name]
 
             self.assertEqual(
@@ -1595,11 +1593,9 @@ class ViewTest(AironeViewTest):
 
         # verifying result
         csv_contents = [x for x in Job.objects.last().get_cache().splitlines() if x]
+        self.assertEqual(csv_contents[0], f"Name,Entity,{','.join([x['column'] for x in results])}")
         self.assertEqual(
-            csv_contents[0], "Name,Entity,%s" % ",".join([x["column"] for x in results])
-        )
-        self.assertEqual(
-            csv_contents[1], "test-entry,test-entity,%s" % ",".join([x["csv"] for x in results])
+            csv_contents[1], f"test-entry,test-entity,{','.join([x['csv'] for x in results])}"
         )
 
         # send request to export data

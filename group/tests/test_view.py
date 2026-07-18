@@ -243,8 +243,8 @@ class ViewTest(AironeViewTest):
 
         # create 3 group and 3 user
         for i in range(3):
-            groups.append(self._create_group("group%d" % (i + 1)))
-            users.append(self._create_user("user%d" % (i + 1)))
+            groups.append(self._create_group(f"group{i + 1}"))
+            users.append(self._create_user(f"user{i + 1}"))
 
         # delete 1 group
         groups[-1].delete()

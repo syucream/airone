@@ -14,7 +14,7 @@ class ViewTest(AironeViewTest):
         super().setUp()
 
         self.custom_view_basedir = custom_view.BASE_DIR
-        custom_view.BASE_DIR = "%s/custom_view" % BASE_DIR
+        custom_view.BASE_DIR = f"{BASE_DIR}/custom_view"
 
     def tearDown(self):
         super().tearDown()
@@ -32,6 +32,6 @@ class ViewTest(AironeViewTest):
         self.assertEqual(resp.context["test_key"], "test_value")
 
         # checks custum list_entry without context is called correctly
-        resp = self.client.get("%s?return_resp=1" % reverse("entry:index", args=[entity.id]))
+        resp = self.client.get(f"{reverse('entry:index', args=[entity.id])}?return_resp=1")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.content.decode("utf-8"), "return no data")

@@ -187,7 +187,7 @@ class ModelOperationsTest(BaseModelTest):
         entry.complement_attrs(self._user)
 
         for i in range(10):
-            entry.attrs.first().add_value(self._user, "value-%d" % i)
+            entry.attrs.first().add_value(self._user, f"value-{i}")
 
         # check to get value history from the rear
         history = entry.get_value_history(self._user, count=2)
@@ -245,7 +245,7 @@ class ModelOperationsTest(BaseModelTest):
         # by setting 'is_delete_in_chain' flag
         ref_entity = Entity.objects.create(name="ReferredEntity", created_user=self._user)
         ref_entries = [
-            Entry.objects.create(name="ref-%d" % i, created_user=self._user, schema=ref_entity)
+            Entry.objects.create(name=f"ref-{i}", created_user=self._user, schema=ref_entity)
             for i in range(3)
         ]
 
@@ -271,7 +271,7 @@ class ModelOperationsTest(BaseModelTest):
         entries = []
         for index in range(2):
             entry = Entry.objects.create(
-                name="entry-%d" % index, schema=self._entity, created_user=self._user
+                name=f"entry-{index}", schema=self._entity, created_user=self._user
             )
             entry.complement_attrs(self._user)
             entries.append(entry)
@@ -434,9 +434,9 @@ class ModelOperationsTest(BaseModelTest):
             self._user,
             [
                 {
-                    "name": "key_%d" % i,
+                    "name": f"key_{i}",
                     "id": Entry.objects.create(
-                        name="r_%d" % i, created_user=self._user, schema=ref_entity
+                        name=f"r_{i}", created_user=self._user, schema=ref_entity
                     ),
                 }
                 for i in range(3, 0, -1)

@@ -83,9 +83,7 @@ class ModelTest(AironeTestCase):
             ],
         )
 
-        self.entry_refs = [
-            self.add_entry(self.user, "ref-%s" % i, self.entity_ref) for i in range(3)
-        ]
+        self.entry_refs = [self.add_entry(self.user, f"ref-{i}", self.entity_ref) for i in range(3)]
         self.FULL_CONDITION_CONFIGURATION_PARAMETERS = [
             {
                 "attr_id": self.entity.attrs.get(name="str_trigger").id,
@@ -218,7 +216,7 @@ class ModelTest(AironeTestCase):
         ]
 
     def test_input_airone_trigger_action(self):
-        entries = [self.add_entry(self.user, "test_entry_%s" % i, self.entity) for i in range(3)]
+        entries = [self.add_entry(self.user, f"test_entry_{i}", self.entity) for i in range(3)]
 
         # set condition for string typed Attribute
         input_trigger_condition = InputTriggerCondition(
@@ -265,7 +263,7 @@ class ModelTest(AironeTestCase):
         self.assertEqual(input_trigger_condition.bool_cond, True)
 
     def test_create_trigger_action_initialization(self):
-        entries = [self.add_entry(self.user, "test_entry_%s" % i, self.entity) for i in range(3)]
+        entries = [self.add_entry(self.user, f"test_entry_{i}", self.entity) for i in range(3)]
 
         settingTriggerConditions = [
             {"attr_id": self.entity.attrs.get(name="str_trigger").id, "cond": "test"},
@@ -708,7 +706,7 @@ class ModelTest(AironeTestCase):
             )
             self.assertEqual(len(actions), 1)
 
-            target_entry = self.add_entry(self.user, "e-%s" % index, self.entity)
+            target_entry = self.add_entry(self.user, f"e-{index}", self.entity)
             actions[0].run(self.user, target_entry)
 
             # This confirms action value is changed by test case value

@@ -50,7 +50,7 @@ class ViewTest(AironeViewTest):
 
     def _send_request_item_creation(self, model, params, expected_http_response_code):
         resp = self.client.post(
-            "/entity/api/v2/%s/entries/" % model.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{model.id}/entries/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, expected_http_response_code)
 
@@ -59,7 +59,7 @@ class ViewTest(AironeViewTest):
     def test_retrieve_entity(self):
         self.entity.attrs.all().delete()
         self.entity.webhooks.all().delete()
-        resp = self.client.get("/entity/api/v2/%d/" % self.entity.id)
+        resp = self.client.get(f"/entity/api/v2/{self.entity.id}/")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(
             resp.json(),
@@ -85,12 +85,12 @@ class ViewTest(AironeViewTest):
         self.entity.status = Entity.STATUS_TOP_LEVEL
         self.entity.save()
 
-        resp = self.client.get("/entity/api/v2/%d/" % self.entity.id)
+        resp = self.client.get(f"/entity/api/v2/{self.entity.id}/")
         self.assertEqual(resp.json()["note"], "hoge")
         self.assertEqual(resp.json()["is_toplevel"], True)
 
     def test_retrieve_entity_with_attr(self):
-        resp = self.client.get("/entity/api/v2/%d/" % self.entity.id)
+        resp = self.client.get(f"/entity/api/v2/{self.entity.id}/")
         self.assertEqual(resp.status_code, 200)
         self.maxDiff = None
         self.assertEqual(
@@ -362,7 +362,7 @@ class ViewTest(AironeViewTest):
         entity_attr.referral.add(self.ref_entity)
         entity_attr.save()
 
-        resp = self.client.get("/entity/api/v2/%d/" % self.entity.id)
+        resp = self.client.get(f"/entity/api/v2/{self.entity.id}/")
         self.assertEqual(
             resp.json()["attrs"][-1],
             {
@@ -391,7 +391,7 @@ class ViewTest(AironeViewTest):
     def test_retrieve_entity_with_webhook(self):
         webhook: Webhook = self.entity.webhooks.first()
 
-        resp = self.client.get("/entity/api/v2/%d/" % self.entity.id)
+        resp = self.client.get(f"/entity/api/v2/{self.entity.id}/")
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertEqual(
             resp.json()["webhooks"],
@@ -417,7 +417,7 @@ class ViewTest(AironeViewTest):
         ]
         webhook.save()
 
-        resp = self.client.get("/entity/api/v2/%d/" % self.entity.id)
+        resp = self.client.get(f"/entity/api/v2/{self.entity.id}/")
         self.assertEqual(
             resp.json()["webhooks"],
             [
@@ -437,17 +437,17 @@ class ViewTest(AironeViewTest):
         )
 
     def test_retrieve_entity_with_invalid_param(self):
-        resp = self.client.get("/entity/api/v2/%d/" % 9999)
+        resp = self.client.get(f"/entity/api/v2/{9999}/")
         self.assertEqual(resp.status_code, 404)
         self.assertEqual(
             resp.json(), {"code": "AE-230000", "message": "No Entity matches the given query."}
         )
 
-        resp = self.client.get("/entity/api/v2/%s/" % "hoge")
+        resp = self.client.get("/entity/api/v2/hoge/")
         self.assertEqual(resp.status_code, 404)
 
         self.entity.delete()
-        resp = self.client.get("/entity/api/v2/%d/" % self.entity.id)
+        resp = self.client.get(f"/entity/api/v2/{self.entity.id}/")
         self.assertEqual(resp.status_code, 404)
         self.assertEqual(
             resp.json(), {"code": "AE-230000", "message": "No Entity matches the given query."}
@@ -457,7 +457,7 @@ class ViewTest(AironeViewTest):
         # permission nothing entity
         self.entity.is_public = False
         self.entity.save()
-        resp = self.client.get("/entity/api/v2/%d/" % self.entity.id)
+        resp = self.client.get(f"/entity/api/v2/{self.entity.id}/")
         self.assertEqual(resp.status_code, 403)
         self.assertEqual(
             resp.json(),
@@ -470,7 +470,7 @@ class ViewTest(AironeViewTest):
         # permission readble entity
         self.role.users.add(self.user)
         self.entity.readable.roles.add(self.role)
-        resp = self.client.get("/entity/api/v2/%d/" % self.entity.id)
+        resp = self.client.get(f"/entity/api/v2/{self.entity.id}/")
         self.assertEqual(resp.status_code, 200)
 
         # permission nothing EntityAttr
@@ -479,19 +479,19 @@ class ViewTest(AironeViewTest):
         entity_attr.is_public = False
         entity_attr.save()
 
-        resp = self.client.get("/entity/api/v2/%d/" % self.entity.id)
+        resp = self.client.get(f"/entity/api/v2/{self.entity.id}/")
         self.assertEqual(resp.status_code, 200)
         self.assertFalse(resp.json()["attrs"][0]["is_writable"])
 
         # permission readble EntityAttr update
         entity_attr.readable.roles.add(self.role)
-        resp = self.client.get("/entity/api/v2/%d/" % self.entity.id)
+        resp = self.client.get(f"/entity/api/v2/{self.entity.id}/")
         self.assertEqual(resp.status_code, 200)
         self.assertFalse(resp.json()["attrs"][0]["is_writable"])
 
         # permission writable EntityAttr
         entity_attr.writable.roles.add(self.role)
-        resp = self.client.get("/entity/api/v2/%d/" % self.entity.id)
+        resp = self.client.get(f"/entity/api/v2/{self.entity.id}/")
         self.assertEqual(resp.status_code, 200)
         self.assertTrue(resp.json()["attrs"][0]["is_writable"])
 
@@ -521,7 +521,7 @@ class ViewTest(AironeViewTest):
 
         mock_call_custom.side_effect = side_effect
 
-        resp = self.client.get("/entity/api/v2/%s/" % self.entity.id)
+        resp = self.client.get(f"/entity/api/v2/{self.entity.id}/")
         self.assertEqual(resp.status_code, 200)
 
         self.assertEqual(
@@ -593,7 +593,7 @@ class ViewTest(AironeViewTest):
 
     def test_list_entity_with_search(self):
         for search in ["ref", "REF"]:
-            resp = self.client.get("/entity/api/v2/?search=%s" % search)
+            resp = self.client.get(f"/entity/api/v2/?search={search}")
             self.assertEqual(resp.status_code, 200)
             self.assertEqual(resp.json()["count"], 1)
             self.assertEqual(resp.json()["results"][0]["id"], self.ref_entity.id)
@@ -1579,7 +1579,7 @@ class ViewTest(AironeViewTest):
         }
 
         resp = self.client.put(
-            "/entity/api/v2/%d/" % entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, status.HTTP_202_ACCEPTED)
 
@@ -1622,19 +1622,17 @@ class ViewTest(AironeViewTest):
             "id": entity.id,
             "is_toplevel": False,
         }
-        self.client.put("/entity/api/v2/%d/" % entity.id, json.dumps(params), "application/json")
+        self.client.put(f"/entity/api/v2/{entity.id}/", json.dumps(params), "application/json")
         entity.refresh_from_db()
         self.assertEqual(entity.status, 0)
 
     def test_update_entity_with_invalid_url(self):
         params = {}
-        resp = self.client.put(
-            "/entity/api/v2/%s/" % "hoge", json.dumps(params), "application/json"
-        )
+        resp = self.client.put("/entity/api/v2/hoge/", json.dumps(params), "application/json")
         self.assertEqual(resp.status_code, 404)
 
         params = {}
-        resp = self.client.put("/entity/api/v2/%d/" % 9999, json.dumps(params), "application/json")
+        resp = self.client.put(f"/entity/api/v2/{9999}/", json.dumps(params), "application/json")
         self.assertEqual(resp.status_code, 404)
         self.assertEqual(
             resp.json(), {"code": "AE-230000", "message": "No Entity matches the given query."}
@@ -1643,7 +1641,7 @@ class ViewTest(AironeViewTest):
         self.entity.delete()
         params = {}
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 404)
         self.assertEqual(
@@ -1654,7 +1652,7 @@ class ViewTest(AironeViewTest):
         # name param
         params = {"name": ["hoge"]}
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
@@ -1663,7 +1661,7 @@ class ViewTest(AironeViewTest):
 
         params = {"name": "a" * (Entity._meta.get_field("name").max_length + 1)}
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
@@ -1680,7 +1678,7 @@ class ViewTest(AironeViewTest):
 
         params = {"name": "test-entity"}
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.ref_entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.ref_entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
@@ -1701,7 +1699,7 @@ class ViewTest(AironeViewTest):
             "note": ["hoge"],
         }
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
@@ -1713,7 +1711,7 @@ class ViewTest(AironeViewTest):
             "note": "a" * (Entity._meta.get_field("note").max_length + 1),
         }
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
@@ -1734,7 +1732,7 @@ class ViewTest(AironeViewTest):
             "is_toplevel": "hoge",
         }
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
@@ -1748,7 +1746,7 @@ class ViewTest(AironeViewTest):
             "attrs": "hoge",
         }
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
@@ -1767,7 +1765,7 @@ class ViewTest(AironeViewTest):
             "attrs": ["hoge"],
         }
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
@@ -1790,7 +1788,7 @@ class ViewTest(AironeViewTest):
             "attrs": [{}],
         }
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
@@ -1814,7 +1812,7 @@ class ViewTest(AironeViewTest):
             "attrs": [{"id": "hoge"}],
         }
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
@@ -1830,7 +1828,7 @@ class ViewTest(AironeViewTest):
             "attrs": [{"id": 9999}],
         }
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
@@ -1841,7 +1839,7 @@ class ViewTest(AironeViewTest):
                         "id": [
                             {
                                 "code": "AE-230000",
-                                "message": "Invalid id(%s) object does not exist" % 9999,
+                                "message": f"Invalid id({9999}) object does not exist",
                             }
                         ]
                     }
@@ -1855,7 +1853,7 @@ class ViewTest(AironeViewTest):
             "attrs": [{"id": entity_attr.id}],
         }
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
@@ -1866,7 +1864,7 @@ class ViewTest(AironeViewTest):
                         "id": [
                             {
                                 "code": "AE-230000",
-                                "message": "Invalid id(%s) object does not exist" % entity_attr.id,
+                                "message": f"Invalid id({entity_attr.id}) object does not exist",
                             }
                         ]
                     }
@@ -1880,7 +1878,7 @@ class ViewTest(AironeViewTest):
             "attrs": [{"name": ["hoge"], "type": AttrType.STRING}],
         }
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
@@ -1897,7 +1895,7 @@ class ViewTest(AironeViewTest):
             ],
         }
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
@@ -1929,7 +1927,7 @@ class ViewTest(AironeViewTest):
             ],
         }
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
@@ -1950,7 +1948,7 @@ class ViewTest(AironeViewTest):
             ],
         }
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
@@ -1972,7 +1970,7 @@ class ViewTest(AironeViewTest):
             ],
         }
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
@@ -1995,7 +1993,7 @@ class ViewTest(AironeViewTest):
             ],
         }
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
@@ -2015,7 +2013,7 @@ class ViewTest(AironeViewTest):
             "attrs": [{"id": entity_attr.id, "type": AttrType.ARRAY_STRING}],
         }
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
@@ -2036,7 +2034,7 @@ class ViewTest(AironeViewTest):
             "attrs": [{"name": "hoge", "type": AttrType.OBJECT, "index": "hoge"}],
         }
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
@@ -2060,7 +2058,7 @@ class ViewTest(AironeViewTest):
             ],
         }
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
@@ -2091,7 +2089,7 @@ class ViewTest(AironeViewTest):
                 ],
             }
             resp = self.client.put(
-                "/entity/api/v2/%d/" % self.entity.id, json.dumps(params), "application/json"
+                f"/entity/api/v2/{self.entity.id}/", json.dumps(params), "application/json"
             )
             self.assertEqual(resp.status_code, 400)
             self.assertEqual(
@@ -2114,7 +2112,7 @@ class ViewTest(AironeViewTest):
             ],
         }
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
@@ -2143,7 +2141,7 @@ class ViewTest(AironeViewTest):
             ],
         }
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
@@ -2172,7 +2170,7 @@ class ViewTest(AironeViewTest):
             ],
         }
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
@@ -2201,7 +2199,7 @@ class ViewTest(AironeViewTest):
             ],
         }
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
         attrs = {}
@@ -2231,7 +2229,7 @@ class ViewTest(AironeViewTest):
             ],
         }
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
         attrs = {}
@@ -2262,7 +2260,7 @@ class ViewTest(AironeViewTest):
             ],
         }
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, status.HTTP_202_ACCEPTED)
         self.assertTrue(
@@ -2279,7 +2277,7 @@ class ViewTest(AironeViewTest):
             ],
         }
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
@@ -2307,7 +2305,7 @@ class ViewTest(AironeViewTest):
             ],
         }
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, status.HTTP_202_ACCEPTED)
 
@@ -2316,7 +2314,7 @@ class ViewTest(AironeViewTest):
             "webhooks": "hoge",
         }
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
@@ -2337,7 +2335,7 @@ class ViewTest(AironeViewTest):
             "webhooks": ["hoge"],
         }
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
@@ -2360,7 +2358,7 @@ class ViewTest(AironeViewTest):
             "webhooks": [{}],
         }
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
@@ -2381,7 +2379,7 @@ class ViewTest(AironeViewTest):
             "webhooks": [{"id": "hoge"}],
         }
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
@@ -2397,7 +2395,7 @@ class ViewTest(AironeViewTest):
             "webhooks": [{"id": 9999}],
         }
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
@@ -2408,7 +2406,7 @@ class ViewTest(AironeViewTest):
                         "id": [
                             {
                                 "code": "AE-230000",
-                                "message": "Invalid id(%s) object does not exist" % 9999,
+                                "message": f"Invalid id({9999}) object does not exist",
                             }
                         ]
                     }
@@ -2421,7 +2419,7 @@ class ViewTest(AironeViewTest):
             "webhooks": [{"url": "hoge"}],
         }
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
@@ -2439,7 +2437,7 @@ class ViewTest(AironeViewTest):
             ],
         }
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
@@ -2463,7 +2461,7 @@ class ViewTest(AironeViewTest):
             "webhooks": [{"url": "http://airone.com/", "label": ["hoge"]}],
         }
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
@@ -2476,7 +2474,7 @@ class ViewTest(AironeViewTest):
             "webhooks": [{"url": "http://airone.com/", "is_enabled": "hoge"}],
         }
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
@@ -2493,7 +2491,7 @@ class ViewTest(AironeViewTest):
             "webhooks": [{"url": "http://airone.com/", "headers": "hoge"}],
         }
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
@@ -2516,7 +2514,7 @@ class ViewTest(AironeViewTest):
             "webhooks": [{"url": "http://airone.com/", "headers": ["hoge"]}],
         }
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
@@ -2544,7 +2542,7 @@ class ViewTest(AironeViewTest):
             "webhooks": [{"url": "http://airone.com/", "headers": [{}]}],
         }
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
@@ -2582,7 +2580,7 @@ class ViewTest(AironeViewTest):
             ],
         }
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
@@ -2621,7 +2619,7 @@ class ViewTest(AironeViewTest):
         }
 
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, status.HTTP_202_ACCEPTED)
 
@@ -2649,7 +2647,7 @@ class ViewTest(AironeViewTest):
             "webhooks": [{"url": "http://example.net/"}, {"url": "http://hoge.hoge/"}],
         }
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, status.HTTP_202_ACCEPTED)
 
@@ -2666,7 +2664,7 @@ class ViewTest(AironeViewTest):
 
         mock_call_custom.side_effect = side_effect
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertTrue(mock_call_custom.called)
@@ -2695,7 +2693,7 @@ class ViewTest(AironeViewTest):
 
         mock_call_custom.side_effect = side_effect
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, status.HTTP_202_ACCEPTED)
         self.assertTrue(mock_call_custom.called)
@@ -2715,7 +2713,7 @@ class ViewTest(AironeViewTest):
             "webhooks": [],
         }
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, status.HTTP_202_ACCEPTED)
 
@@ -2737,7 +2735,7 @@ class ViewTest(AironeViewTest):
         self.entity.save()
         paramas = {}
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(paramas), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(paramas), "application/json"
         )
         self.assertEqual(resp.status_code, 403)
         self.assertEqual(
@@ -2751,7 +2749,7 @@ class ViewTest(AironeViewTest):
         # permission readble Entity
         self.entity.readable.roles.add(self.role)
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(paramas), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(paramas), "application/json"
         )
         self.assertEqual(resp.status_code, 403)
         self.assertEqual(
@@ -2765,7 +2763,7 @@ class ViewTest(AironeViewTest):
         # permission writable Entity
         self.entity.writable.roles.add(self.role)
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(paramas), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(paramas), "application/json"
         )
         self.assertEqual(resp.status_code, status.HTTP_202_ACCEPTED)
 
@@ -2777,7 +2775,7 @@ class ViewTest(AironeViewTest):
         entity_attr.save()
         params = {"attrs": [{"id": entity_attr.id}]}
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 403)
         self.assertEqual(
@@ -2788,7 +2786,7 @@ class ViewTest(AironeViewTest):
         # permission readble EntityAttr update
         entity_attr.readable.roles.add(self.role)
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 403)
         self.assertEqual(
@@ -2799,14 +2797,14 @@ class ViewTest(AironeViewTest):
         # permission writable EntityAttr update
         entity_attr.writable.roles.add(self.role)
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, status.HTTP_202_ACCEPTED)
 
         # permission writable EntityAttr delete
         params = {"attrs": [{"id": entity_attr.id, "is_deleted": True}]}
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 403)
         self.assertEqual(
@@ -2817,7 +2815,7 @@ class ViewTest(AironeViewTest):
         # permission full EntityAttr delete
         entity_attr.full.roles.add(self.role)
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, status.HTTP_202_ACCEPTED)
 
@@ -2832,7 +2830,7 @@ class ViewTest(AironeViewTest):
         }
 
         resp = self.client.put(
-            "/entity/api/v2/%d/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, status.HTTP_202_ACCEPTED)
 
@@ -2866,7 +2864,7 @@ class ViewTest(AironeViewTest):
         try:
             settings.AIRONE_FLAGS = {"WEBHOOK": False}
             resp = self.client.put(
-                "/entity/api/v2/%d/" % entity.id, json.dumps(params), "application/json"
+                f"/entity/api/v2/{entity.id}/", json.dumps(params), "application/json"
             )
             self.assertEqual(resp.status_code, 400)
             self.assertEqual(
@@ -2879,7 +2877,7 @@ class ViewTest(AironeViewTest):
         "entity.tasks.delete_entity_v2.delay", mock.Mock(side_effect=tasks.delete_entity_v2)
     )
     def test_delete_entity(self):
-        resp = self.client.delete("/entity/api/v2/%d/" % self.entity.id)
+        resp = self.client.delete(f"/entity/api/v2/{self.entity.id}/")
         self.assertEqual(resp.status_code, status.HTTP_202_ACCEPTED)
 
         self.entity.refresh_from_db()
@@ -2901,7 +2899,7 @@ class ViewTest(AironeViewTest):
             raise ValidationError("delete error")
 
         mock_call_custom.side_effect = side_effect
-        resp = self.client.delete("/entity/api/v2/%d/" % self.entity.id)
+        resp = self.client.delete(f"/entity/api/v2/{self.entity.id}/")
         self.assertEqual(resp.status_code, status.HTTP_202_ACCEPTED)
         self.assertTrue(mock_call_custom.called)
 
@@ -2913,22 +2911,22 @@ class ViewTest(AironeViewTest):
             self.assertEqual(entity, self.entity)
 
         mock_call_custom.side_effect = side_effect
-        resp = self.client.delete("/entity/api/v2/%d/" % self.entity.id)
+        resp = self.client.delete(f"/entity/api/v2/{self.entity.id}/")
         self.assertEqual(resp.status_code, status.HTTP_202_ACCEPTED)
         self.assertTrue(mock_call_custom.called)
 
     def test_delete_entity_with_invalid_param(self):
-        resp = self.client.delete("/entity/api/v2/%s/" % "hoge", None, "application/json")
+        resp = self.client.delete("/entity/api/v2/hoge/", None, "application/json")
         self.assertEqual(resp.status_code, 404)
 
-        resp = self.client.delete("/entity/api/v2/%d/" % 9999, None, "application/json")
+        resp = self.client.delete(f"/entity/api/v2/{9999}/", None, "application/json")
         self.assertEqual(resp.status_code, 404)
         self.assertEqual(
             resp.json(), {"code": "AE-230000", "message": "No Entity matches the given query."}
         )
 
         self.entity.delete()
-        resp = self.client.delete("/entity/api/v2/%d/" % self.entity.id, None, "application/json")
+        resp = self.client.delete(f"/entity/api/v2/{self.entity.id}/", None, "application/json")
         self.assertEqual(resp.status_code, 404)
         self.assertEqual(
             resp.json(), {"code": "AE-230000", "message": "No Entity matches the given query."}
@@ -2936,7 +2934,7 @@ class ViewTest(AironeViewTest):
 
     def test_delete_entity_with_exist_entry(self):
         self.add_entry(self.user, "entry", self.entity)
-        resp = self.client.delete("/entity/api/v2/%s/" % self.entity.id, None, "application/json")
+        resp = self.client.delete(f"/entity/api/v2/{self.entity.id}/", None, "application/json")
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
             resp.json(),
@@ -2951,9 +2949,9 @@ class ViewTest(AironeViewTest):
     def test_list_entry(self):
         entries = []
         for index in range(2):
-            entries.append(self.add_entry(self.user, "e-%d" % index, self.entity))
+            entries.append(self.add_entry(self.user, f"e-{index}", self.entity))
 
-        resp = self.client.get("/entity/api/v2/%d/entries/" % self.entity.id)
+        resp = self.client.get(f"/entity/api/v2/{self.entity.id}/entries/")
         self.assertEqual(resp.status_code, 200)
 
         resp_results = resp.json()["results"]
@@ -2982,30 +2980,30 @@ class ViewTest(AironeViewTest):
             )
 
         # check result with ordering parameter
-        resp = self.client.get("/entity/api/v2/%d/entries/?ordering=-updated_time" % self.entity.id)
+        resp = self.client.get(f"/entity/api/v2/{self.entity.id}/entries/?ordering=-updated_time")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual([x["name"] for x in resp.json()["results"]], ["e-1", "e-0"])
 
     def test_list_entry_with_param_is_active(self):
         entries = []
         for index in range(2):
-            entries.append(self.add_entry(self.user, "e-%d" % index, self.entity))
+            entries.append(self.add_entry(self.user, f"e-{index}", self.entity))
 
         entries[0].delete()
 
-        resp = self.client.get("/entity/api/v2/%d/entries/?is_active=true" % self.entity.id)
+        resp = self.client.get(f"/entity/api/v2/{self.entity.id}/entries/?is_active=true")
         self.assertEqual(resp.json()["count"], 1)
         self.assertEqual(resp.json()["results"][0]["name"], "e-1")
 
-        resp = self.client.get("/entity/api/v2/%d/entries/?is_active=false" % self.entity.id)
+        resp = self.client.get(f"/entity/api/v2/{self.entity.id}/entries/?is_active=false")
         self.assertEqual(resp.json()["count"], 1)
         self.assertRegex(resp.json()["results"][0]["name"], "e-0")
 
     def test_list_entry_with_param_serach(self):
         for index in range(2):
-            self.add_entry(self.user, "e-%d" % index, self.entity)
+            self.add_entry(self.user, f"e-{index}", self.entity)
 
-        resp = self.client.get("/entity/api/v2/%d/entries/?search=-0" % self.entity.id)
+        resp = self.client.get(f"/entity/api/v2/{self.entity.id}/entries/?search=-0")
         self.assertEqual(resp.json()["count"], 1)
         self.assertEqual(resp.json()["results"][0]["name"], "e-0")
 
@@ -3014,20 +3012,20 @@ class ViewTest(AironeViewTest):
         self.add_entry(self.user, "e-3", self.entity)
         self.add_entry(self.user, "e-1", self.entity)
 
-        resp = self.client.get("/entity/api/v2/%d/entries/?" % self.entity.id)
+        resp = self.client.get(f"/entity/api/v2/{self.entity.id}/entries/?")
         self.assertEqual([x["name"] for x in resp.json()["results"]], ["e-2", "e-3", "e-1"])
 
-        resp = self.client.get("/entity/api/v2/%d/entries/?ordering=name" % self.entity.id)
+        resp = self.client.get(f"/entity/api/v2/{self.entity.id}/entries/?ordering=name")
         self.assertEqual([x["name"] for x in resp.json()["results"]], ["e-1", "e-2", "e-3"])
 
-        resp = self.client.get("/entity/api/v2/%d/entries/?ordering=-name" % self.entity.id)
+        resp = self.client.get(f"/entity/api/v2/{self.entity.id}/entries/?ordering=-name")
         self.assertEqual([x["name"] for x in resp.json()["results"]], ["e-3", "e-2", "e-1"])
 
     def test_list_entry_without_permission(self):
         self.entity.is_public = False
         self.entity.save()
 
-        resp = self.client.get("/entity/api/v2/%d/entries/" % self.entity.id)
+        resp = self.client.get(f"/entity/api/v2/{self.entity.id}/entries/")
         self.assertEqual(resp.status_code, 403)
         self.assertEqual(
             resp.json(),
@@ -3040,26 +3038,26 @@ class ViewTest(AironeViewTest):
         self.entity.readable.roles.add(self.role)
         self.role.users.add(self.user)
 
-        resp = self.client.get("/entity/api/v2/%d/entries/" % self.entity.id)
+        resp = self.client.get(f"/entity/api/v2/{self.entity.id}/entries/")
         self.assertEqual(resp.status_code, 200)
 
     def test_list_entry_with_invalid_param(self):
-        resp = self.client.get("/entity/api/v2/%s/entries/" % "hoge")
+        resp = self.client.get("/entity/api/v2/hoge/entries/")
         self.assertEqual(resp.status_code, 404)
 
-        resp = self.client.get("/entity/api/v2/%s/entries/" % 9999)
+        resp = self.client.get(f"/entity/api/v2/{9999}/entries/")
         self.assertEqual(resp.status_code, 404)
         self.assertEqual(resp.json(), {"code": "AE-230000", "message": "Not found."})
 
     def test_list_entry_when_alias_is_related(self):
         # create items and set alias at one of them
         ALIAS_NAME = "test alias"
-        items = [self.add_entry(self.user, "e-%i" % i, self.entity) for i in range(3)]
+        items = [self.add_entry(self.user, f"e-{i}", self.entity) for i in range(3)]
         items[0].add_alias(ALIAS_NAME)
 
         # search item by alias name
         resp = self.client.get(
-            "/entity/api/v2/%d/entries/?search=%s&with_alias=1" % (self.entity.id, ALIAS_NAME)
+            f"/entity/api/v2/{self.entity.id}/entries/?search={ALIAS_NAME}&with_alias=1"
         )
         self.assertEqual(resp.status_code, 200)
 
@@ -3096,7 +3094,7 @@ class ViewTest(AironeViewTest):
             ],
         }
         resp = self.client.post(
-            "/entity/api/v2/%s/entries/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/entries/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, status.HTTP_202_ACCEPTED)
 
@@ -3137,7 +3135,7 @@ class ViewTest(AironeViewTest):
         entry.add_alias("Chomolungma")
 
         resp = self.client.post(
-            "/entity/api/v2/%s/entries/" % self.entity.id,
+            f"/entity/api/v2/{self.entity.id}/entries/",
             json.dumps({"name": "Chomolungma"}),
             "application/json",
         )
@@ -3163,7 +3161,7 @@ class ViewTest(AironeViewTest):
         self.entity.is_public = False
         self.entity.save()
         resp = self.client.post(
-            "/entity/api/v2/%s/entries/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/entries/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 403)
         self.assertEqual(
@@ -3178,7 +3176,7 @@ class ViewTest(AironeViewTest):
         self.entity.readable.roles.add(self.role)
         self.role.users.add(self.user)
         resp = self.client.post(
-            "/entity/api/v2/%s/entries/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/entries/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 403)
         self.assertEqual(
@@ -3192,7 +3190,7 @@ class ViewTest(AironeViewTest):
         # permission writable
         self.entity.writable.roles.add(self.role)
         resp = self.client.post(
-            "/entity/api/v2/%s/entries/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/entries/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, status.HTTP_202_ACCEPTED)
 
@@ -3212,7 +3210,7 @@ class ViewTest(AironeViewTest):
         attr["vals"].is_public = False
         attr["vals"].save()
         resp = self.client.post(
-            "/entity/api/v2/%s/entries/" % self.entity.id,
+            f"/entity/api/v2/{self.entity.id}/entries/",
             json.dumps({**params, "name": "entry1"}),
             "application/json",
         )
@@ -3225,7 +3223,7 @@ class ViewTest(AironeViewTest):
         attr["vals"].is_mandatory = True
         attr["vals"].save()
         resp = self.client.post(
-            "/entity/api/v2/%s/entries/" % self.entity.id,
+            f"/entity/api/v2/{self.entity.id}/entries/",
             json.dumps({**params, "name": "entry2"}),
             "application/json",
         )
@@ -3234,20 +3232,20 @@ class ViewTest(AironeViewTest):
             resp.json(),
             {
                 "code": "AE-210000",
-                "message": "mandatory attrs id(%s) is permission denied" % attr["vals"].id,
+                "message": f"mandatory attrs id({attr['vals'].id}) is permission denied",
             },
         )
 
     def test_create_entry_with_invalid_param_entity_id(self):
         resp = self.client.post(
-            "/entity/api/v2/%s/entries/" % "hoge",
+            "/entity/api/v2/hoge/entries/",
             json.dumps({"name": "entry1"}),
             "application/json",
         )
         self.assertEqual(resp.status_code, 404)
 
         resp = self.client.post(
-            "/entity/api/v2/%s/entries/" % 9999, json.dumps({"name": "entry1"}), "application/json"
+            f"/entity/api/v2/{9999}/entries/", json.dumps({"name": "entry1"}), "application/json"
         )
         self.assertEqual(
             resp.json(),
@@ -3263,7 +3261,7 @@ class ViewTest(AironeViewTest):
 
     def test_create_entry_with_invalid_param_name(self):
         resp = self.client.post(
-            "/entity/api/v2/%s/entries/" % self.entity.id,
+            f"/entity/api/v2/{self.entity.id}/entries/",
             json.dumps({"name": "a" * (Entry._meta.get_field("name").max_length + 1)}),
             "application/json",
         )
@@ -3281,7 +3279,7 @@ class ViewTest(AironeViewTest):
         )
 
         resp = self.client.post(
-            "/entity/api/v2/%s/entries/" % self.entity.id,
+            f"/entity/api/v2/{self.entity.id}/entries/",
             json.dumps({"name": "a" * (Entry._meta.get_field("name").max_length)}),
             "application/json",
         )
@@ -3289,7 +3287,7 @@ class ViewTest(AironeViewTest):
 
         entry = self.add_entry(self.user, "hoge", self.entity)
         resp = self.client.post(
-            "/entity/api/v2/%s/entries/" % self.entity.id,
+            f"/entity/api/v2/{self.entity.id}/entries/",
             json.dumps({"name": "hoge"}),
             "application/json",
         )
@@ -3301,7 +3299,7 @@ class ViewTest(AironeViewTest):
 
         entry.delete()
         resp = self.client.post(
-            "/entity/api/v2/%s/entries/" % self.entity.id,
+            f"/entity/api/v2/{self.entity.id}/entries/",
             json.dumps({"name": "hoge"}),
             "application/json",
         )
@@ -3389,7 +3387,7 @@ class ViewTest(AironeViewTest):
                     "non_field_errors": [
                         {
                             "code": "AE-121000",
-                            "message": "attrs id(%s) - value(hoge) is not int" % attr["ref"].id,
+                            "message": f"attrs id({attr['ref'].id}) - value(hoge) is not int",
                         }
                     ]
                 },
@@ -3399,7 +3397,7 @@ class ViewTest(AironeViewTest):
         for test_value in test_values:
             params = {"name": "entry1", "attrs": test_value["input"]}
             resp = self.client.post(
-                "/entity/api/v2/%s/entries/" % self.entity.id,
+                f"/entity/api/v2/{self.entity.id}/entries/",
                 json.dumps(params),
                 "application/json",
             )
@@ -3412,7 +3410,7 @@ class ViewTest(AironeViewTest):
         attr["val"].save()
 
         resp = self.client.post(
-            "/entity/api/v2/%s/entries/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/entries/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
@@ -3421,7 +3419,7 @@ class ViewTest(AironeViewTest):
                 "non_field_errors": [
                     {
                         "code": "AE-113000",
-                        "message": "mandatory attrs id(%s) is not specified" % attr["val"].id,
+                        "message": f"mandatory attrs id({attr['val'].id}) is not specified",
                     }
                 ]
             },
@@ -3431,20 +3429,20 @@ class ViewTest(AironeViewTest):
         attr["val"].save()
 
         resp = self.client.post(
-            "/entity/api/v2/%s/entries/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/entries/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 403)
         self.assertEqual(
             resp.json(),
             {
                 "code": "AE-210000",
-                "message": "mandatory attrs id(%s) is permission denied" % attr["val"].id,
+                "message": f"mandatory attrs id({attr['val'].id}) is permission denied",
             },
         )
 
         attr["val"].delete()
         resp = self.client.post(
-            "/entity/api/v2/%s/entries/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/entries/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, status.HTTP_202_ACCEPTED)
 
@@ -3452,7 +3450,7 @@ class ViewTest(AironeViewTest):
     @mock.patch("entry.tasks.notify_create_entry.delay")
     def test_create_entry_notify(self, mock_task):
         self.client.post(
-            "/entity/api/v2/%s/entries/" % self.entity.id,
+            f"/entity/api/v2/{self.entity.id}/entries/",
             json.dumps({"name": "hoge"}),
             "application/json",
         )
@@ -3478,7 +3476,7 @@ class ViewTest(AironeViewTest):
 
         mock_call_custom.side_effect = side_effect
         resp = self.client.post(
-            "/entity/api/v2/%s/entries/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/entries/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertTrue(mock_call_custom.called)
@@ -3506,7 +3504,7 @@ class ViewTest(AironeViewTest):
 
         mock_call_custom.side_effect = side_effect
         resp = self.client.post(
-            "/entity/api/v2/%s/entries/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/entries/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, status.HTTP_202_ACCEPTED)
         self.assertTrue(mock_call_custom.called)
@@ -3573,7 +3571,7 @@ class ViewTest(AironeViewTest):
         self.assertEqual(resp.status_code, 200)
         entity = Entity.objects.filter(name="hoge", is_active=True).first()
 
-        resp = self.client.get("/entity/api/v2/history/%s" % entity.id)
+        resp = self.client.get(f"/entity/api/v2/history/{entity.id}")
         self.assertEqual(resp.status_code, 200)
 
         histories = resp.json()
@@ -3758,7 +3756,7 @@ class ViewTest(AironeViewTest):
             return x["id"]
 
         resp = self.client.get(
-            "/entity/api/v2/attrs?entity_ids=%s" % ",".join([str(x.id) for x in entities[:2]])
+            f"/entity/api/v2/attrs?entity_ids={','.join([str(x.id) for x in entities[:2]])}"
         )
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(
@@ -3775,9 +3773,7 @@ class ViewTest(AironeViewTest):
             ),
         )
 
-        resp = self.client.get(
-            "/entity/api/v2/attrs?entity_ids=%s&referral_attr=%s" % (entity3.id, "puyo")
-        )
+        resp = self.client.get(f"/entity/api/v2/attrs?entity_ids={entity3.id}&referral_attr=puyo")
         self.assertEqual(resp.status_code, 200)
         # order in the list is non-deterministic and it's not necessary
         self.assertEqual(
@@ -3841,7 +3837,7 @@ class ViewTest(AironeViewTest):
             "attrs": [{"id": attr["val"].id, "value": "hoge"}],
         }
         resp = self.client.post(
-            "/entity/api/v2/%s/entries/" % self.entity.id, json.dumps(params), "application/json"
+            f"/entity/api/v2/{self.entity.id}/entries/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, status.HTTP_202_ACCEPTED)
 
@@ -3878,7 +3874,7 @@ class ViewTest(AironeViewTest):
             resp = _send_request(item_name, status.HTTP_400_BAD_REQUEST)
             self.assertEqual(
                 resp.json()["name"][0]["message"],
-                'Specified name doesn\'t match configured pattern "%s"' % model.item_name_pattern,
+                f'Specified name doesn\'t match configured pattern "{model.item_name_pattern}"',
             )
 
     @mock.patch(

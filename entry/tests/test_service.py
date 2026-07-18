@@ -99,7 +99,7 @@ class AdvancedSearchServiceTest(AironeTestCase):
             entity.attrs.add(attr)
 
         for index in range(0, 11):
-            entry = Entry.objects.create(name="e-%d" % index, schema=entity, created_user=user)
+            entry = Entry.objects.create(name=f"e-{index}", schema=entity, created_user=user)
             entry.complement_attrs(user)
 
             for attr_name, info in attr_info.items():
@@ -217,7 +217,7 @@ class AdvancedSearchServiceTest(AironeTestCase):
                     self.assertEqual(attrinfo["value"], attrv.datetime.isoformat())
 
                 else:
-                    raise "Invalid result was happend (attrname: %s)" % attrname
+                    raise f"Invalid result was happend (attrname: {attrname})"
 
         # search entries with maximum entries to get
         ret = AdvancedSearchService.search_entries(user, [entity.id], [AttrHint(name="str")], 5)
@@ -378,20 +378,20 @@ class AdvancedSearchServiceTest(AironeTestCase):
         entity = self.create_entity_with_all_type_attributes(self._user)
 
         # create Entries that have duplicated value at "str" attribute
-        [self.add_entry(self._user, "dup-%s" % i, entity, values={"str": "hoge"}) for i in range(2)]
+        [self.add_entry(self._user, f"dup-{i}", entity, values={"str": "hoge"}) for i in range(2)]
         [
-            self.add_entry(self._user, "dup-%s" % i, entity, values={"str": "fuga"})
+            self.add_entry(self._user, f"dup-{i}", entity, values={"str": "fuga"})
             for i in range(2, 4)
         ]
 
         # create Entries that don't have duplicated value at "str" attribute
         [
-            self.add_entry(self._user, "non-dup-%d" % i, entity, values={"str": "fuga-%d" % i})
+            self.add_entry(self._user, f"non-dup-{i}", entity, values={"str": f"fuga-{i}"})
             for i in range(2)
         ]
 
         # create Entries that have empty value
-        [self.add_entry(self._user, "empty-%d" % i, entity, values={"str": ""}) for i in range(2)]
+        [self.add_entry(self._user, f"empty-{i}", entity, values={"str": ""}) for i in range(2)]
 
         result = AdvancedSearchService.search_entries(
             self._user,
@@ -405,7 +405,7 @@ class AdvancedSearchServiceTest(AironeTestCase):
         )
         self.assertEqual(result.ret_count, 4)
         self.assertEqual(
-            [x.entry["name"] for x in result.ret_values], ["dup-%s" % i for i in range(4)]
+            [x.entry["name"] for x in result.ret_values], [f"dup-{i}" for i in range(4)]
         )
 
     def test_search_entries_with_duplicated_filter_key_without_duplicated_item(self):
@@ -431,14 +431,8 @@ class AdvancedSearchServiceTest(AironeTestCase):
         entity = self.create_entity_with_all_type_attributes(self._user)
 
         # some entries have "hoge" or "fuga" attribute value
-        [
-            self.add_entry(self._user, "hoge-%s" % i, entity, values={"str": "hoge"})
-            for i in range(3)
-        ]
-        [
-            self.add_entry(self._user, "fuga-%s" % i, entity, values={"str": "fuga"})
-            for i in range(2)
-        ]
+        [self.add_entry(self._user, f"hoge-{i}", entity, values={"str": "hoge"}) for i in range(3)]
+        [self.add_entry(self._user, f"fuga-{i}", entity, values={"str": "fuga"}) for i in range(2)]
 
         # filter entries have "hoge"
         result = AdvancedSearchService.search_entries(
@@ -456,7 +450,7 @@ class AdvancedSearchServiceTest(AironeTestCase):
         # check the result contains only entries don't have "hoge"
         self.assertEqual(result.ret_count, 2)
         self.assertEqual(
-            [x.entry["name"] for x in result.ret_values], ["fuga-%s" % i for i in range(2)]
+            [x.entry["name"] for x in result.ret_values], [f"fuga-{i}" for i in range(2)]
         )
 
     def test_search_entries_with_hint_referral_entity(self):
@@ -505,11 +499,11 @@ class AdvancedSearchServiceTest(AironeTestCase):
 
         # Initialize entries as below
         ref_entries = [
-            Entry.objects.create(name="ref%d" % i, schema=ref_entity, created_user=user)
+            Entry.objects.create(name=f"ref{i}", schema=ref_entity, created_user=user)
             for i in range(3)
         ]
         for index in range(10):
-            entry = Entry.objects.create(name="e-%d" % index, schema=entity, created_user=user)
+            entry = Entry.objects.create(name=f"e-{index}", schema=entity, created_user=user)
             entry.complement_attrs(user)
 
             # set referral entry (ref0, ref1) alternately
@@ -583,7 +577,7 @@ class AdvancedSearchServiceTest(AironeTestCase):
 
             for i in [x for x in range(0, 5)]:
                 entry = Entry.objects.create(
-                    name="%s-%d" % (entity.name, i), schema=entity, created_user=user
+                    name=f"{entity.name}-{i}", schema=entity, created_user=user
                 )
                 entry.complement_attrs(user)
 
@@ -602,7 +596,7 @@ class AdvancedSearchServiceTest(AironeTestCase):
         self.assertEqual(ret.ret_count, 10)
         self.assertEqual(
             sorted([x.entry["name"] for x in ret.ret_values]),
-            sorted(["E1-%d" % i for i in range(5)] + ["E2-%d" % i for i in range(5)]),
+            sorted([f"E1-{i}" for i in range(5)] + [f"E2-{i}" for i in range(5)]),
         )
 
         # search entries by only attribute name and keyword without entity
@@ -646,7 +640,7 @@ class AdvancedSearchServiceTest(AironeTestCase):
         # * Entity - has an attribute that refers ReferredEntity
         ref_entity = Entity.objects.create(name="ReferredEntity", created_user=self._user)
         ref_entries = [
-            Entry.objects.create(name="ref-%d" % i, schema=ref_entity, created_user=self._user)
+            Entry.objects.create(name=f"ref-{i}", schema=ref_entity, created_user=self._user)
             for i in range(4)
         ]
 
@@ -915,17 +909,17 @@ class AdvancedSearchServiceTest(AironeTestCase):
     def test_search_entries_for_simple_with_limit_offset(self):
         for i in range(0, 10):
             entry = Entry.objects.create(
-                name="e-%s" % i, schema=self._entity, created_user=self._user
+                name=f"e-{i}", schema=self._entity, created_user=self._user
             )
             entry.register_es()
 
         ret = AdvancedSearchService.search_entries_for_simple("e-", limit=5)
         self.assertEqual(ret["ret_count"], 10)
-        self.assertEqual([x["name"] for x in ret["ret_values"]], ["e-%s" % x for x in range(0, 5)])
+        self.assertEqual([x["name"] for x in ret["ret_values"]], [f"e-{x}" for x in range(0, 5)])
 
         ret = AdvancedSearchService.search_entries_for_simple("e-", offset=5)
         self.assertEqual(ret["ret_count"], 10)
-        self.assertEqual([x["name"] for x in ret["ret_values"]], ["e-%s" % x for x in range(5, 10)])
+        self.assertEqual([x["name"] for x in ret["ret_values"]], [f"e-{x}" for x in range(5, 10)])
 
         # param larger than max_result_window
         ret = AdvancedSearchService.search_entries_for_simple("e-", limit=500001)
@@ -974,7 +968,7 @@ class AdvancedSearchServiceTest(AironeTestCase):
 
         self.assertTrue(
             warning_log.output[0],
-            "WARNING:airone:Update elasticsearch document (entry_id: %s)" % all_attr_entry.id,
+            f"WARNING:airone:Update elasticsearch document (entry_id: {all_attr_entry.id})",
         )
 
         res = AdvancedSearchService.search_entries(
@@ -1001,7 +995,7 @@ class AdvancedSearchServiceTest(AironeTestCase):
 
         self.assertTrue(
             warning_log.output[0],
-            "WARNING:airone:Update elasticsearch document (entry_id: %s)" % entry2.id,
+            f"WARNING:airone:Update elasticsearch document (entry_id: {entry2.id})",
         )
 
         res = AdvancedSearchService.search_entries(self._user, [self._entity.id])
@@ -1016,7 +1010,7 @@ class AdvancedSearchServiceTest(AironeTestCase):
 
         self.assertTrue(
             warning_log.output[0],
-            "WARNING:airone:Delete elasticsearch document (entry_id: %s)" % entry2.id,
+            f"WARNING:airone:Delete elasticsearch document (entry_id: {entry2.id})",
         )
 
         res = AdvancedSearchService.search_entries(self._user, [self._entity.id])
@@ -1117,9 +1111,9 @@ class AdvancedSearchServiceTest(AironeTestCase):
 
         entries = []
         for i in range(10):
-            entry = Entry.objects.create(name="e-%d" % i, schema=entity, created_user=user)
+            entry = Entry.objects.create(name=f"e-{i}", schema=entity, created_user=user)
             entry.complement_attrs(user)
-            entry.attrs.get(name="val").add_value(user, "v-%d" % i)
+            entry.attrs.get(name="val").add_value(user, f"v-{i}")
             entry.register_es()
             entries.append(entry)
 
@@ -1143,7 +1137,7 @@ class AdvancedSearchServiceTest(AironeTestCase):
 
         entries = []
         for i in range(6):
-            entry = Entry.objects.create(name="e-%d" % i, schema=entity, created_user=user)
+            entry = Entry.objects.create(name=f"e-{i}", schema=entity, created_user=user)
             entry.complement_attrs(user)
             # Even indexes have "apple" value, odd indexes have "banana"
             entry.attrs.get(name="val").add_value(user, "apple" if i % 2 == 0 else "banana")

@@ -20,8 +20,7 @@ class ViewTest(AironeViewTest):
         # initialize Model and Categories for testing API processing
         model: Entity = self.create_entity(self.user, "Model")
         categories: list[Category] = [
-            self.create_category(self.user, "Category-%d" % n, "Note-%d" % n, [model])
-            for n in range(3)
+            self.create_category(self.user, f"Category-{n}", f"Note-{n}", [model]) for n in range(3)
         ]
 
         # get all Categories
@@ -56,8 +55,7 @@ class ViewTest(AironeViewTest):
         # initialize Model and Categories for testing API processing
         model: Entity = self.create_entity(self.user, "Model")
         categories: list[Category] = [
-            self.create_category(self.user, "Category-%d" % n, "Note-%d" % n, [model])
-            for n in range(3)
+            self.create_category(self.user, f"Category-{n}", f"Note-{n}", [model]) for n in range(3)
         ]
 
         # set categories[0] unreadable
@@ -78,11 +76,11 @@ class ViewTest(AironeViewTest):
 
     def test_get(self):
         # initialize Models and Categories for testing API processing
-        models: list[Entity] = [self.create_entity(self.user, "Model-%d" % n) for n in range(3)]
+        models: list[Entity] = [self.create_entity(self.user, f"Model-{n}") for n in range(3)]
         category: Category = self.create_category(self.user, "Category", "note", models)
 
         # get specified Category
-        resp = self.client.get("/category/api/v2/%d/" % category.id)
+        resp = self.client.get(f"/category/api/v2/{category.id}/")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(
             resp.json(),
@@ -109,7 +107,7 @@ class ViewTest(AironeViewTest):
 
     def test_create(self):
         # initialize Models for testing API processing
-        models: list[Entity] = [self.create_entity(self.user, "Model-%d" % n) for n in range(3)]
+        models: list[Entity] = [self.create_entity(self.user, f"Model-{n}") for n in range(3)]
 
         # send request to create a Category
         params = {
@@ -135,7 +133,7 @@ class ViewTest(AironeViewTest):
         category: Category = self.create_category(self.user, "Category", "note")
 
         # send request to delete target Category
-        resp = self.client.delete("/category/api/v2/%d/" % category.id)
+        resp = self.client.delete(f"/category/api/v2/{category.id}/")
         self.assertEqual(resp.status_code, 204)
 
         # check target category instance is existed but inactivated
@@ -152,7 +150,7 @@ class ViewTest(AironeViewTest):
         self.assertFalse(self.user.has_permission(category, ACLType.Full))
 
         # send request to delete target Category, then failed to do it.
-        resp = self.client.delete("/category/api/v2/%d/" % category.id)
+        resp = self.client.delete(f"/category/api/v2/{category.id}/")
         self.assertEqual(resp.status_code, 404)
 
         # check Category item, which was specified in deleting reqeust
@@ -163,7 +161,7 @@ class ViewTest(AironeViewTest):
         Initially, there are 3 models (M0, M1, M2) and Category has M0 and M1
         Then, this test sends a request to change its beloning category to M1 and M2.
         """
-        models: list[Entity] = [self.create_entity(self.user, "M%d" % n) for n in range(3)]
+        models: list[Entity] = [self.create_entity(self.user, f"M{n}") for n in range(3)]
         category: Category = self.create_category(
             self.user, "Category", "note", [models[0], models[1]]
         )
@@ -176,7 +174,7 @@ class ViewTest(AironeViewTest):
             "priority": 100,
         }
         resp = self.client.put(
-            "/category/api/v2/%s/" % category.id, json.dumps(params), "application/json"
+            f"/category/api/v2/{category.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 200)
 
@@ -200,7 +198,7 @@ class ViewTest(AironeViewTest):
             "priority": 100,
         }
         resp = self.client.put(
-            "/category/api/v2/%s/" % category.id, json.dumps(params), "application/json"
+            f"/category/api/v2/{category.id}/", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 404)
 

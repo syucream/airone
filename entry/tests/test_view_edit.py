@@ -371,7 +371,7 @@ class ViewEditTest(BaseViewTest):
         )
 
         parent_values_count = AttributeValue.objects.extra(
-            **{"where": ["status & %s = 1" % AttributeValue.STATUS_DATA_ARRAY_PARENT]}
+            **{"where": [f"status & {AttributeValue.STATUS_DATA_ARRAY_PARENT} = 1"]}
         ).count()
 
         params = {
@@ -429,7 +429,7 @@ class ViewEditTest(BaseViewTest):
         # Then, this test send a request to edit the "entry" to change referral Entries
         # at the "attr" to e1 and e2.
         ref_entity = self.create_entity(user, "RefEntity")
-        ref_entries = [self.add_entry(user, "e%s" % i, ref_entity) for i in range(4)]
+        ref_entries = [self.add_entry(user, f"e{i}", ref_entity) for i in range(4)]
 
         entity = self.create_entity(
             user,
@@ -459,7 +459,7 @@ class ViewEditTest(BaseViewTest):
         )
 
         parent_values_count = AttributeValue.objects.extra(
-            **{"where": ["status & %s = 1" % AttributeValue.STATUS_DATA_ARRAY_PARENT]}
+            **{"where": [f"status & {AttributeValue.STATUS_DATA_ARRAY_PARENT} = 1"]}
         ).count()
 
         params = {
@@ -910,7 +910,7 @@ class ViewEditTest(BaseViewTest):
         admin = self.admin_login()
 
         for index in range(0, 10):
-            group = Group.objects.create(name="group-%d" % (index))
+            group = Group.objects.create(name=f"group-{index}")
             admin.groups.add(group)
 
         entity = Entity.objects.create(name="entity", created_user=admin)
@@ -1088,10 +1088,8 @@ class ViewEditTest(BaseViewTest):
             user,
             [
                 {
-                    "name": "key_%d" % i,
-                    "id": Entry.objects.create(
-                        name="r_%d" % i, created_user=user, schema=ref_entity
-                    ),
+                    "name": f"key_{i}",
+                    "id": Entry.objects.create(name=f"r_{i}", created_user=user, schema=ref_entity),
                 }
                 for i in range(3)
             ],
@@ -1108,7 +1106,7 @@ class ViewEditTest(BaseViewTest):
                     "id": str(entry.attrs.get(name="arr_named_ref").id),
                     "type": str(AttrType.ARRAY_NAMED_OBJECT),
                     "value": [{"data": str(r), "index": i} for i, r in enumerate(r_entries)],
-                    "referral_key": [{"data": "key_%d" % i, "index": i} for i in range(0, 3)],
+                    "referral_key": [{"data": f"key_{i}", "index": i} for i in range(0, 3)],
                 }
             ],
         }
@@ -1138,7 +1136,7 @@ class ViewEditTest(BaseViewTest):
                         {"data": r_entries[1], "index": 1},
                         {"data": r_entries[2], "index": 2},
                     ],
-                    "referral_key": [{"data": "hoge_%d" % i, "index": i} for i in range(0, 2)],
+                    "referral_key": [{"data": f"hoge_{i}", "index": i} for i in range(0, 2)],
                 }
             ],
         }

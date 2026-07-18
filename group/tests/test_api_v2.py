@@ -37,7 +37,7 @@ class ViewTest(AironeViewTest):
         group = self._create_group("hoge")
         user.groups.add(group)
 
-        resp = self.client.get("/group/api/v2/groups/%s" % group.id)
+        resp = self.client.get(f"/group/api/v2/groups/{group.id}")
         self.assertEqual(resp.status_code, 200)
         body = resp.json()
         self.assertEqual(body["id"], group.id)
@@ -56,7 +56,7 @@ class ViewTest(AironeViewTest):
             "members": [str(users[1].id), int(users[2].id)],
         }
         resp = self.client.put(
-            "/group/api/v2/groups/%s" % group.id, json.dumps(update_params), "application/json"
+            f"/group/api/v2/groups/{group.id}", json.dumps(update_params), "application/json"
         )
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
 

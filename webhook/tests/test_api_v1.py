@@ -22,7 +22,7 @@ class APITest(AironeViewTest):
         mock_requests.post.return_value = mock_resp
 
         resp = self.client.post(
-            "/webhook/api/v1/set/%s" % entity.id,
+            f"/webhook/api/v1/set/{entity.id}",
             json.dumps(
                 {
                     "webhook_url": "https://example.com",
@@ -59,7 +59,7 @@ class APITest(AironeViewTest):
         mock_requests.post.return_value = mock_resp
 
         resp = self.client.post(
-            "/webhook/api/v1/set/%s" % entity.id,
+            f"/webhook/api/v1/set/{entity.id}",
             json.dumps(
                 {
                     "webhook_url": "https://example.com",
@@ -96,7 +96,7 @@ class APITest(AironeViewTest):
         mock_requests.post.return_value = mock_resp
 
         resp = self.client.post(
-            "/webhook/api/v1/set/%s" % entity.id,
+            f"/webhook/api/v1/set/{entity.id}",
             json.dumps(
                 {
                     "id": 999999,  # invlaid webhook id
@@ -121,7 +121,7 @@ class APITest(AironeViewTest):
         mock_requests.post.side_effect = ConnectionError()
 
         resp = self.client.post(
-            "/webhook/api/v1/set/%s" % entity.id,
+            f"/webhook/api/v1/set/{entity.id}",
             json.dumps(
                 {
                     "webhook_url": "https://example.com",
@@ -157,7 +157,7 @@ class APITest(AironeViewTest):
         mock_requests.post.return_value = mock_resp
 
         resp = self.client.post(
-            "/webhook/api/v1/set/%s" % entity.id,
+            f"/webhook/api/v1/set/{entity.id}",
             json.dumps(
                 {
                     "id": webhook.id,
@@ -189,7 +189,7 @@ class APITest(AironeViewTest):
         webhook = Webhook.objects.create(**{"url": "https://example.com"})
         entity.webhooks.add(webhook)
 
-        resp = self.client.delete("/webhook/api/v1/del/%s" % webhook.id)
+        resp = self.client.delete(f"/webhook/api/v1/del/{webhook.id}")
         self.assertEqual(resp.status_code, 200)
 
         self.assertEqual(Webhook.objects.filter(id=webhook.id).first(), None)
