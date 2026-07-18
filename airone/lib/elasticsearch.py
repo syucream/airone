@@ -83,6 +83,8 @@ class AttributeDocument(TypedDict):
     # ES mapping is `integer`; the default sentinel for "no referral" is the
     # empty string, so the runtime type is the union.
     referral_id: int | str
+    # Holds the boolean flag for NAMED_OBJECT_BOOLEAN / ARRAY_NAMED_OBJECT_BOOLEAN.
+    boolean: bool
     is_readable: bool
 
 
@@ -238,6 +240,10 @@ class ESS(Elasticsearch):
                             "referral_id": {
                                 "type": "integer",
                                 "index": "false",
+                            },
+                            "boolean": {
+                                "type": "boolean",
+                                "index": "true",
                             },
                             "is_readable": {
                                 "type": "boolean",
@@ -1235,6 +1241,26 @@ def make_search_results(
                         }
                     }
 
+                case AttrType.NAMED_OBJECT_BOOLEAN:
+                    ret_attrinfo["value"] = {
+                        attrinfo["key"]: {
+                            "id": attrinfo["referral_id"],
+                            "name": attrinfo["value"],
+                            "boolean": attrinfo["boolean"],
+                        }
+                    }
+
+                case AttrType.SELECT:
+                    # Empty SELECT values store key="" / value="" in ES; emit None
+                    # so the FE renders a blank cell instead of an empty Chip.
+                    if attrinfo["key"] == "" and attrinfo["value"] == "":
+                        ret_attrinfo["value"] = None
+                    else:
+                        ret_attrinfo["value"] = {
+                            "value": attrinfo["key"],
+                            "label": attrinfo["value"],
+                        }
+
                 case (
                     AttrType.ARRAY_OBJECT
                     | AttrType.ARRAY_STRING
@@ -1243,6 +1269,7 @@ def make_search_results(
                     | AttrType.ARRAY_NAMED_OBJECT_BOOLEAN
                     | AttrType.ARRAY_GROUP
                     | AttrType.ARRAY_ROLE
+                    | AttrType.MULTI_SELECT
                 ):
                     if "value" not in ret_attrinfo:
                         ret_attrinfo["value"] = []
@@ -1262,6 +1289,17 @@ def make_search_results(
                                 }
                             )
 
+                        case AttrType.ARRAY_NAMED_OBJECT_BOOLEAN:
+                            ret_attrinfo["value"].append(
+                                {
+                                    attrinfo["key"]: {
+                                        "id": attrinfo["referral_id"],
+                                        "name": attrinfo["value"],
+                                        "boolean": attrinfo["boolean"],
+                                    }
+                                }
+                            )
+
                         case AttrType.ARRAY_STRING:
                             ret_attrinfo["value"].append(attrinfo["value"])
 
@@ -1272,6 +1310,14 @@ def make_search_results(
                         case AttrType.ARRAY_OBJECT | AttrType.ARRAY_GROUP | AttrType.ARRAY_ROLE:
                             ret_attrinfo["value"].append(
                                 {"id": attrinfo["referral_id"], "name": attrinfo["value"]}
+                            )
+
+                        case AttrType.MULTI_SELECT:
+                            ret_attrinfo["value"].append(
+                                {
+                                    "value": attrinfo["key"],
+                                    "label": attrinfo["value"],
+                                }
                             )
 
         results.ret_values.append(record)

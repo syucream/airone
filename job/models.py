@@ -7,7 +7,7 @@ from collections.abc import Callable
 from datetime import date, datetime, timedelta
 from importlib import import_module
 from types import ModuleType
-from typing import Any, Self, cast
+from typing import Any, Self
 from zoneinfo import ZoneInfo
 
 from django.conf import settings
@@ -726,7 +726,8 @@ class Job(models.Model):
     @classmethod
     def _get_job_timeout(kls) -> int:
         if "JOB_TIMEOUT" in settings.AIRONE and settings.AIRONE["JOB_TIMEOUT"]:
-            return cast("int", settings.AIRONE["JOB_TIMEOUT"])
+            timeout: int = settings.AIRONE["JOB_TIMEOUT"]
+            return timeout
         else:
             return kls.DEFAULT_JOB_TIMEOUT
 

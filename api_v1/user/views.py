@@ -1,28 +1,26 @@
-from typing import TYPE_CHECKING, cast
+from typing import cast
 
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_protect
 from rest_framework.authtoken.models import Token
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-if TYPE_CHECKING:
-    from rest_framework.request import Request
-
-    from user.models import User
+from user.models import User
 
 
 class AccessTokenAPI(APIView):
     def get(self, request: Request, format: str | None = None) -> Response:
         user = cast("User", request.user)
-        token_obj = Token.objects.filter(user=user).first()
-        return Response({"results": str(token_obj)})
+        return Response({"results": str(user.token)})
 
     @method_decorator(csrf_protect)
     def put(self, request: Request, format: str | None = None) -> Response:
         """
         This refresh access_token to another one
         """
+
         user = cast("User", request.user)
         token, created = Token.objects.get_or_create(user=user)
 

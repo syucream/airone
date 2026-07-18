@@ -76,7 +76,7 @@ class PluginIntegration:
             from job.models import Job
             from user.models import User
 
-            # Inject real models — concrete types satisfy the Protocol interfaces at runtime
+            # Inject real models
             sdk_models.Entity = Entity  # type: ignore[assignment]
             sdk_models.Entry = Entry  # type: ignore[assignment]
             sdk_models.User = User  # type: ignore[assignment]

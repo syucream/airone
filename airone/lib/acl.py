@@ -56,9 +56,9 @@ class ACLType(enum.IntEnum):
         return [cls.Readable, cls.Writable, cls.Full]
 
 
-def get_permitted_objects(
-    user: User, model: type[ACLBase], permission_level: ACLType
-) -> list[ACLBase]:
+def get_permitted_objects[ACLBaseT: "ACLBase"](
+    user: User, model: type[ACLBaseT], permission_level: ACLType
+) -> list[ACLBaseT]:
     # This method assumes that model is a subclass of ACLBase
     return [
         x for x in model.objects.all() if user.has_permission(x, permission_level) and x.is_active

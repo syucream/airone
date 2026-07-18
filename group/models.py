@@ -1,7 +1,7 @@
 import importlib
 import sys
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 from django.conf import settings
 from django.contrib.auth.models import Group as DjangoGroup
@@ -103,11 +103,9 @@ class Group(DjangoGroup):
             entry_model = importlib.import_module("entry.models")
 
         # get Entries that has AttributeValues, which specify this Group instance.
-        return cast(
-            "QuerySet[Any]",
-            entry_model.Entry.objects.filter(
-                pk__in=entry_model.AttributeValue.objects.filter(query).values_list(
-                    "parent_attr__parent_entry", flat=True
-                )
-            ),
+        qs: QuerySet[Any] = entry_model.Entry.objects.filter(
+            pk__in=entry_model.AttributeValue.objects.filter(query).values_list(
+                "parent_attr__parent_entry", flat=True
+            )
         )
+        return qs

@@ -21,7 +21,7 @@ Example:
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from functools import wraps
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from rest_framework import status
 from rest_framework.request import Request
@@ -102,7 +102,7 @@ def override_operation[F: Callable[..., Any]](operation: str) -> Callable[[F], F
             return method(*args, **kwargs)
 
         setattr(wrapper, OVERRIDE_META_ATTR, meta)
-        return wrapper
+        return cast("F", wrapper)
 
     return decorator
 

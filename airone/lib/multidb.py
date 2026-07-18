@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 from multidb.middleware import PinningRouterMiddleware
 from multidb.pinning import unpin_this_thread
@@ -35,7 +35,7 @@ def _view_opts_in_to_replica(view_func: Callable[..., Any]) -> bool:
     return bool(getattr(view_func, "_db_readonly", False))
 
 
-class AironePinningRouterMiddleware(PinningRouterMiddleware):
+class AironePinningRouterMiddleware(PinningRouterMiddleware):  # type: ignore[misc]
     """Pagoda-flavored PinningRouterMiddleware.
 
     Honors the ``@db_readonly`` marker on a resolved view by undoing the
@@ -60,4 +60,5 @@ class AironePinningRouterMiddleware(PinningRouterMiddleware):
             response, "_db_write", False
         ):
             return response
-        return cast("HttpResponse", super().process_response(request, response))
+        result: HttpResponse = super().process_response(request, response)
+        return result

@@ -16,7 +16,7 @@ Operation ID Allocation Ranges:
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from importlib import import_module
-from typing import Any, cast
+from typing import Any
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
@@ -29,7 +29,7 @@ logger = Logger
 type TaskHandler = Callable[[Any, Any], Any]
 
 
-@dataclass
+@dataclass(slots=True)
 class PluginTaskConfig:
     """Data class for managing plugin task configuration
 
@@ -277,10 +277,10 @@ class PluginTaskRegistry:
         module = import_module(config.module_path)
 
         offset, func_name = config.tasks[op_name]
-        handler = getattr(module, func_name, None)
+        handler: TaskHandler | None = getattr(module, func_name, None)
         if handler is None:
             raise AttributeError(f"Task function not found: {config.module_path}.{func_name}")
-        return cast("TaskHandler", handler)
+        return handler
 
     @classmethod
     def get_all_tasks(cls) -> dict[int, tuple[str, str]]:
