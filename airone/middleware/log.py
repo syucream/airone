@@ -1,12 +1,15 @@
 import traceback
-from collections.abc import Callable
 from time import time
+from typing import TYPE_CHECKING
 
 from django.conf import settings
 from django.core.mail import mail_admins
 from django.http import HttpRequest, HttpResponse, HttpResponseServerError
 
 from airone.lib.log import Logger
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 class LoggingRequestMiddleware:
@@ -35,9 +38,7 @@ class LoggingRequestMiddleware:
 
         return response
 
-    def process_exception(
-        self, request: HttpRequest, exception: Exception
-    ) -> HttpResponse | None:
+    def process_exception(self, request: HttpRequest, exception: Exception) -> HttpResponse | None:
         traceback_msg = traceback.format_exc()
         subject = "ERROR Django Request " + request.path
         message = f"""

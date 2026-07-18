@@ -1,5 +1,7 @@
-from collections.abc import ValuesView
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from collections.abc import ValuesView
 
 
 class Settings:

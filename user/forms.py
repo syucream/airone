@@ -5,19 +5,21 @@
 # with supporting username based email resolution.
 #
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from django import forms
 from django.contrib.auth.forms import UserModel, UsernameField
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.mail import EmailMultiAlternatives
-from django.http import HttpRequest
 from django.template import loader
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 
-from user.models import User
+if TYPE_CHECKING:
+    from django.http import HttpRequest
+
+    from user.models import User
 
 
 class UsernameBasedPasswordResetForm(forms.Form):

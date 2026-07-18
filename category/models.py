@@ -1,10 +1,12 @@
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from django.db import models
-from django.db.models import QuerySet
 
 from acl.models import ACLBase
 from airone.lib.acl import ACLObjType
+
+if TYPE_CHECKING:
+    from django.db.models import QuerySet
 
 
 class Category(ACLBase):
@@ -12,7 +14,7 @@ class Category(ACLBase):
     priority = models.IntegerField(default=0)
 
     @classmethod
-    def all(kls) -> QuerySet["Category"]:
+    def all(kls) -> QuerySet[Category]:
         return Category.objects.order_by("-priority")
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:

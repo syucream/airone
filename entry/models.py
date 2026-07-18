@@ -3,7 +3,7 @@ import re
 import uuid
 from collections.abc import Iterable
 from datetime import date, datetime
-from typing import Any, Optional, Union, cast
+from typing import Any, cast
 
 from django.conf import settings
 from django.db import models
@@ -96,7 +96,7 @@ class AttributeValue(models.Model):
     )
 
     @classmethod
-    def get_default_value(kls, attr: "Attribute") -> Any:
+    def get_default_value(kls, attr: Attribute) -> Any:
         """
         Returns the default value for each attribute type.
         Used when there is no attribute value.
@@ -114,7 +114,7 @@ class AttributeValue(models.Model):
     def get_status(self, val: int) -> int:
         return self.status & val
 
-    def clone(self, user: User, **extra_params: Any) -> "AttributeValue":
+    def clone(self, user: User, **extra_params: Any) -> AttributeValue:
         cloned_value = AttributeValue.objects.get(id=self.id)
 
         # By removing the primary key, we can clone a django model instance
@@ -144,7 +144,7 @@ class AttributeValue(models.Model):
         This returns registered value according to the type of Attribute
         """
 
-        def _get_named_value(attrv: "AttributeValue", is_active: bool = True) -> dict[str, Any]:
+        def _get_named_value(attrv: AttributeValue, is_active: bool = True) -> dict[str, Any]:
             if attrv.referral and (attrv.referral.is_active or not is_active):
                 if with_metainfo:
                     return {
@@ -168,7 +168,7 @@ class AttributeValue(models.Model):
             else:
                 return {attrv.value: None}
 
-        def _get_object_value(attrv: "AttributeValue", is_active: bool = True) -> Any:
+        def _get_object_value(attrv: AttributeValue, is_active: bool = True) -> Any:
             if attrv.referral and (attrv.referral.is_active or not is_active):
                 if with_metainfo:
                     return {"id": attrv.referral.id, "name": attrv.referral.name}
@@ -184,7 +184,7 @@ class AttributeValue(models.Model):
                     return attrv.referral.name
             return None
 
-        def _get_model_value(attrv: "AttributeValue") -> Any:
+        def _get_model_value(attrv: AttributeValue) -> Any:
             instance: Group | Role
             match attrv.data_type:
                 case AttrType.GROUP | AttrType.ARRAY_GROUP if attrv.group and attrv.group.is_active:
@@ -323,13 +323,13 @@ class AttributeValue(models.Model):
             case _:
                 return self.value
 
-    def get_next_value(self) -> Optional["AttributeValue"]:
+    def get_next_value(self) -> AttributeValue | None:
         attrv = AttributeValue.objects.filter(
             parent_attr=self.parent_attr, parent_attrv__isnull=True
         )
         return attrv.filter(created_time__gt=self.created_time).order_by("created_time").first()
 
-    def get_preview_value(self) -> Optional["AttributeValue"]:
+    def get_preview_value(self) -> AttributeValue | None:
         attrv = AttributeValue.objects.filter(
             parent_attr=self.parent_attr, parent_attrv__isnull=True
         )
@@ -353,7 +353,7 @@ class AttributeValue(models.Model):
         return results
 
     @classmethod
-    def create(kls, user: User, attr: "Attribute", **params: Any) -> "AttributeValue":
+    def create(kls, user: User, attr: Attribute, **params: Any) -> AttributeValue:
         return kls.objects.create(
             created_user=user, parent_attr=attr, data_type=attr.schema.type, **params
         )
@@ -390,7 +390,7 @@ class AttributeValue(models.Model):
         type: int,
         input_value: Any,
         is_mandatory: bool,
-        entity_attr: "EntityAttr | None" = None,
+        entity_attr: EntityAttr | None = None,
     ) -> tuple[bool, str | None]:
         """
         Validate if to add_value is a possible value.
@@ -570,7 +570,7 @@ class AttributeValue(models.Model):
         return self.parent_attr.is_array()
 
     @property
-    def ref_item(self) -> "Entry | None":
+    def ref_item(self) -> Entry | None:
         if self.referral is not None and self.referral.is_active:
             return self.referral.entry
         return None
@@ -949,7 +949,7 @@ class Attribute(ACLBase):
         return attrv
 
     # NOTE: Type-Write
-    def clone(self, user: User, **extra_params: Any) -> Optional["Attribute"]:
+    def clone(self, user: User, **extra_params: Any) -> Attribute | None:
         if not user.has_permission(self, ACLType.Readable) or not user.has_permission(
             self.schema, ACLType.Readable
         ):
@@ -1655,7 +1655,7 @@ class Attribute(ACLBase):
         self.may_remove_referral()
 
     # implementation for Attribute
-    def check_duplication_entry_at_restoring(self, entry_chain: list["Entry"]) -> bool:
+    def check_duplication_entry_at_restoring(self, entry_chain: list[Entry]) -> bool:
         def _check(referral: ACLBase | None) -> bool:
             if referral and not referral.is_active:
                 entry = Entry.objects.filter(id=referral.id, is_active=False).first()
@@ -1799,7 +1799,7 @@ class Entry(ACLBase):
             if referred_item.schema.item_name_type == ItemNameType.ATTR:
                 referred_item.save_autoname(past_path + [self.id])
 
-    def add_alias(self, name: str) -> "AliasEntry":
+    def add_alias(self, name: str) -> AliasEntry:
         # validate name that is not duplicated with other Item names and Aliases in this model
         if not self.schema.is_available(name):
             raise ValueError("Specified name has already been used by other Item or Alias")
@@ -1834,7 +1834,7 @@ class Entry(ACLBase):
             attr.restore()
         return attr
 
-    def get_prev_refers_objects(self) -> QuerySet["Entry"]:
+    def get_prev_refers_objects(self) -> QuerySet[Entry]:
         """
         This returns objects to which this Entry referred just one before.
         """
@@ -1866,7 +1866,7 @@ class Entry(ACLBase):
 
         return Entry.objects.filter(id__in=entry_ids)
 
-    def get_refers_objects(self) -> QuerySet["Entry"]:
+    def get_refers_objects(self) -> QuerySet[Entry]:
         """
         This returns all objects that this Entry refers to just by about twice SQL call.
         """
@@ -1882,7 +1882,7 @@ class Entry(ACLBase):
 
     def get_referred_objects(
         self, filter_entities: list[str] = [], exclude_entities: list[str] = []
-    ) -> QuerySet["Entry"]:
+    ) -> QuerySet[Entry]:
         return Entry.get_referred_entries([self.id], filter_entities, exclude_entities)
 
     def complement_attrs(self, user: User) -> None:
@@ -2168,7 +2168,7 @@ class Entry(ACLBase):
             self.unregister_es()
 
     # implementation for Entry
-    def check_duplication_entry_at_restoring(self, entry_chain: list["Entry"] = []) -> bool:
+    def check_duplication_entry_at_restoring(self, entry_chain: list[Entry] = []) -> bool:
         """This method returns true when this Entry has referral that is
            same name with other entry at restoring Entry.
         - case True: there is an Entry(at least) that is same name with same Entity.
@@ -2197,7 +2197,7 @@ class Entry(ACLBase):
         # update entry information to Elasticsearch
         self.register_es()
 
-    def clone(self, user: User, **extra_params: Any) -> Optional["Entry"]:
+    def clone(self, user: User, **extra_params: Any) -> Entry | None:
         if not user.has_permission(self, ACLType.Readable) or not user.has_permission(
             self.schema, ACLType.Readable
         ):
@@ -2448,7 +2448,7 @@ class Entry(ACLBase):
 
         return document
 
-    def register_es(self, es: ESS | None = None, recursive_call_stack: list["Entry"] = []) -> None:
+    def register_es(self, es: ESS | None = None, recursive_call_stack: list[Entry] = []) -> None:
         """
         Arguments
           * recursive_call_stack:
@@ -2602,7 +2602,7 @@ class Entry(ACLBase):
     @classmethod
     def get_referred_entries(
         kls, id_list: list[int], filter_entities: list[str] = [], exclude_entities: list[str] = []
-    ) -> QuerySet["Entry"]:
+    ) -> QuerySet[Entry]:
         """
         This returns objects that refer Entries, which is specifeied in the kd_list,
         in the AttributeValue.
@@ -2635,7 +2635,7 @@ class Entry(ACLBase):
             parent_attr__parent_entry=self,
         ).last()
 
-    def get_attrv_item(self, attr_name: str) -> Union["Entry", list["Entry"], None]:
+    def get_attrv_item(self, attr_name: str) -> Entry | list[Entry] | None:
         """
         This helper method returns Item that is referred by specified attribute value
         """
@@ -2710,7 +2710,7 @@ class AdvancedSearchAttributeIndex(models.Model):
     @classmethod
     def create_instance(
         cls, entry: Entry, entity_attr: EntityAttr, attrv: AttributeValue | None
-    ) -> "AdvancedSearchAttributeIndex":
+    ) -> AdvancedSearchAttributeIndex:
         key: str | None = None
         value: dict[str, Any] | list[Any] | float | None = None
 
@@ -2852,7 +2852,7 @@ class PrefetchedItemWrapper:
 
     def __getitem__(
         self, attrname: int | str
-    ) -> "PrefetchedItemWrapper | list[PrefetchedItemWrapper]":
+    ) -> PrefetchedItemWrapper | list[PrefetchedItemWrapper]:
         """
         This returns neighbor PrefetchedItemWrapper instance that wraps prefetched Entry instance
         """
@@ -2930,7 +2930,7 @@ class ItemWalker:
         attrnames: Iterable[str],
         nested_prefetch: list[Any] = [],
         is_intermediate: bool = True,
-    ) -> "Prefetch[Any, Any, Any]":
+    ) -> Prefetch[Any, Any, Any]:
         """
         This returns the Prefetch object for the specified attribute name
         to determine referral items that specified attribute name indicates.
@@ -2969,7 +2969,7 @@ class ItemWalker:
     @classmethod
     def create_prefetch(
         kls, step_map: dict[str, Any] = {}, is_last: bool = False
-    ) -> "Prefetch[Any, Any, Any]":
+    ) -> Prefetch[Any, Any, Any]:
         # check attr_routes has nested attribute steps
         related_prefetches = []
         for step_attrname, co_steps in step_map.items():
@@ -2989,5 +2989,5 @@ class ItemWalker:
         self.base_items = Entry.objects.prefetch_related(prefetch).filter(id__in=base_item_ids)
 
     @property
-    def list(self) -> list["PrefetchedItemWrapper"]:
+    def list(self) -> list[PrefetchedItemWrapper]:
         return [PrefetchedItemWrapper(x) for x in self.base_items]

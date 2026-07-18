@@ -1,6 +1,6 @@
 import re
 from datetime import date, datetime
-from typing import Any, Literal
+from typing import Any, Literal, TypedDict
 
 from django.db.models import Prefetch, QuerySet
 from drf_spectacular.types import OpenApiTypes
@@ -9,7 +9,6 @@ from pydantic import BaseModel, RootModel, field_validator
 from pydantic import ValidationError as PydanticValidationError
 from rest_framework import serializers
 from rest_framework.exceptions import PermissionDenied, ValidationError
-from typing_extensions import TypedDict
 
 from acl.models import ACLBase
 from airone.lib import custom_view, drf

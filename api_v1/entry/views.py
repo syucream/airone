@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 from zoneinfo import ZoneInfo
 
 from django.conf import settings
@@ -188,7 +188,7 @@ class EntryReferredResponse(BaseModel):
     class ReferralEntry(BaseModel):
         id: int
         name: str
-        entity: Optional["EntryReferredResponse.Entity"] = None
+        entity: "EntryReferredResponse.Entity | None" = None
 
     class EntryReferred(BaseModel):
         id: int

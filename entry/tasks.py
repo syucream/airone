@@ -1,16 +1,13 @@
 import csv
 import io
 import json
-from collections.abc import Callable
 from datetime import date, datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import yaml
-from celery import Task
 from django.conf import settings
 from rest_framework.exceptions import ValidationError
 
-from acl.models import ACLBase
 from airone.celery import app
 from airone.lib import custom_view
 from airone.lib.acl import ACLType
@@ -57,6 +54,13 @@ from job.models import Job, JobOperation, JobStatus, JobTarget
 from role.models import Role
 from trigger.models import TriggerCondition
 from user.models import User
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from celery import Task
+
+    from acl.models import ACLBase
 
 # A single pre-serialization attribute value handed to the YAML exporter: an
 # object/named-object dict, a scalar, or None. Array values are unwrapped one

@@ -7,15 +7,17 @@ integration with the host application's plugin system.
 """
 
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from rest_framework import status, viewsets
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.request import Request
 from rest_framework.response import Response
 
 from ..exceptions import PluginError
 from ..mixins import PluginAPIViewMixin
+
+if TYPE_CHECKING:
+    from rest_framework.request import Request
 
 logger = logging.getLogger(__name__)
 

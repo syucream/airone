@@ -102,7 +102,7 @@ class CustomEntryAPI(EntryAPI):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-        resp = super(CustomEntryAPI, self).post(request)
+        resp = super().post(request)
 
         if resp.status_code == status.HTTP_200_OK:
             if EQUIPPED_RACKNAME in request.data["attrs"]:
@@ -173,7 +173,9 @@ class CustomEntryAPI(EntryAPI):
         return request.user, entry
 
     def _clear_link_and_related_link_of_opposite_port(self, request):
-        if "link" in request.data.get("attrs", []) or "related_link" in request.data.get("attrs", []):
+        if "link" in request.data.get("attrs", []) or "related_link" in request.data.get(
+            "attrs", []
+        ):
             entity = Entity.objects.filter(name=request.data["entity"]).first()
             entry = Entry.objects.filter(name=request.data["name"], schema=entity).first()
 
@@ -198,7 +200,9 @@ class CustomEntryAPI(EntryAPI):
                 # When changing the attribute value of link,
                 # cancel the mutual link of the link of the opposite port
                 if is_clear_configured_link(link_currently_set, updated_link):
-                    entry_facing_port = Entry.objects.filter(id=link_currently_set.id, is_active=True).first()
+                    entry_facing_port = Entry.objects.filter(
+                        id=link_currently_set.id, is_active=True
+                    ).first()
                     if entry_facing_port:
                         entry_facing_port.complement_attrs(request.user)
                         may_unset_link_at_facing_port(request.user, entry_facing_port)

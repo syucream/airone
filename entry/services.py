@@ -23,12 +23,12 @@ from airone.lib.log import Logger
 from airone.lib.types import AttrType
 from entity.models import Entity, EntityAttr
 from entry.models import Attribute, AttributeValue, Entry
-from user.models import User
 
 from .settings import CONFIG
 
 if TYPE_CHECKING:
     from entry.api_v2.serializers import AdvancedSearchJoinAttrInfo
+    from user.models import User
 
 
 class AdvancedSearchService:
@@ -351,7 +351,7 @@ class AdvancedSearchService:
         kls,
         user: User,
         resp: AdvancedSearchResults,
-        join_attrs: list["AdvancedSearchJoinAttrInfo"],
+        join_attrs: list[AdvancedSearchJoinAttrInfo],
     ) -> AdvancedSearchResults:
         """Join referred Entry attributes based on join_attrs and filter/expand the results.
 

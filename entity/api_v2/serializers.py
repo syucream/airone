@@ -351,9 +351,7 @@ class EntityAttrUpdateSerializer(serializers.ModelSerializer):
 
         # Normal case when used as nested serializer
         entity: Entity = self.parent.parent.instance
-        nested_entity_attr: EntityAttr | None = entity.attrs.filter(
-            id=id, is_active=True
-        ).first()
+        nested_entity_attr: EntityAttr | None = entity.attrs.filter(id=id, is_active=True).first()
         if not nested_entity_attr:
             raise ObjectNotExistsError("Invalid id(%s) object does not exist" % id)
 
@@ -1300,9 +1298,7 @@ class EntityHistorySerializer(serializers.ModelSerializer):
 
         return []
 
-    def _find_closest_historical(
-        self, historicals: list[Any], target_time: datetime
-    ) -> Any | None:
+    def _find_closest_historical(self, historicals: list[Any], target_time: datetime) -> Any | None:
         """Find the historical record closest to the target time."""
         if not historicals:
             return None

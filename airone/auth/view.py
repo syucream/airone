@@ -1,14 +1,17 @@
 import json
+from typing import TYPE_CHECKING
 
 from django.conf import settings
 from django.contrib.auth import logout as django_logout
 from django.contrib.auth import views as django_auth_views
-from django.contrib.auth.forms import AuthenticationForm
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_protect
 
 from airone.lib.http import render
 from airone.lib.log import Logger
+
+if TYPE_CHECKING:
+    from django.contrib.auth.forms import AuthenticationForm
 
 
 @csrf_protect

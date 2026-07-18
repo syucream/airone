@@ -6,15 +6,16 @@ Entry API operations to plugin override handlers when configured.
 """
 
 import logging
-from typing import TYPE_CHECKING, Any, Optional, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from pagoda_plugin_sdk.override import OverrideContext
-from rest_framework.request import Request
-from rest_framework.response import Response
 
 from airone.plugins.override_manager import OperationType, OverrideRegistration, override_registry
 
 if TYPE_CHECKING:
+    from rest_framework.request import Request
+    from rest_framework.response import Response
+
     from entity.models import Entity
     from entry.models import Entry
     from user.models import User
@@ -66,9 +67,9 @@ class PluginOverrideMixin:
         self,
         request: Request,
         registration: OverrideRegistration,
-        entity: "Entity",
+        entity: Entity,
         operation: str,
-        entry: Optional["Entry"] = None,
+        entry: Entry | None = None,
     ) -> OverrideContext:
         """Build the context object for a plugin handler."""
         data = None
@@ -91,8 +92,8 @@ class PluginOverrideMixin:
         request: Request,
         operation: str,
         entity_id: int,
-        entity: "Entity",
-        entry: Optional["Entry"] = None,
+        entity: Entity,
+        entry: Entry | None = None,
     ) -> Response | None:
         """Attempt to dispatch to a plugin override handler.
 

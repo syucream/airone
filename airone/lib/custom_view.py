@@ -1,12 +1,14 @@
 import importlib.util
-from collections.abc import Callable
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from django.conf import settings
 from django.http import HttpResponse
 
 from airone.plugins.hook_manager import hook_manager
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 # to cache custom view
 CUSTOM_VIEW: dict[str, dict[str, Callable[..., Any]]] = {}

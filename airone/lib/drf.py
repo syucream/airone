@@ -1,6 +1,5 @@
 from collections import OrderedDict
-from collections.abc import Mapping
-from typing import IO, Any, cast
+from typing import IO, TYPE_CHECKING, Any, cast
 
 import yaml
 from django.conf import settings
@@ -8,13 +7,18 @@ from rest_framework import serializers
 from rest_framework.exceptions import APIException, ParseError, ValidationError
 from rest_framework.parsers import BaseParser
 from rest_framework.renderers import BaseRenderer
-from rest_framework.response import Response
 from rest_framework.utils.serializer_helpers import ReturnDict, ReturnList
 from rest_framework.views import exception_handler
 from yaml import SafeDumper
 
 from airone.lib.log import Logger
-from user.models import User
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
+
+    from rest_framework.response import Response
+
+    from user.models import User
 
 SafeDumper.add_representer(OrderedDict, yaml.representer.SafeRepresenter.represent_dict)
 SafeDumper.add_representer(ReturnDict, yaml.representer.SafeRepresenter.represent_dict)

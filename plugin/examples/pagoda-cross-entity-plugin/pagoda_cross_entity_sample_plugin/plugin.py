@@ -8,8 +8,7 @@ Configure via BACKEND_PLUGIN_ENTITY_OVERRIDES environment variable:
     BACKEND_PLUGIN_ENTITY_OVERRIDES='{"42":{"plugin":"cross-entity-sample","operations":["create","retrieve","update","delete"],"params":{"configuration_entity_id":99}}}'
 """
 
-from collections.abc import Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pagoda_plugin_sdk import Plugin
 
@@ -18,6 +17,9 @@ from pagoda_cross_entity_sample_plugin.relationships import (
     EntityRelationship,
     get_plugin_relationships,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 class CrossEntityPlugin(Plugin):

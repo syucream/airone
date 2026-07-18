@@ -1,10 +1,13 @@
+from typing import TYPE_CHECKING
 
 import ldap
 from django.conf import settings
-from django.http import HttpRequest
 
 from airone.lib.log import Logger
 from user.models import User
+
+if TYPE_CHECKING:
+    from django.http import HttpRequest
 
 
 class LDAPBackend:

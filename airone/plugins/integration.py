@@ -1,11 +1,14 @@
 import logging
+from typing import TYPE_CHECKING
 
 from django.conf import settings
-from django.urls import URLResolver
 
 from .discovery import discover_plugins
 from .override_manager import override_registry
 from .registry import plugin_registry
+
+if TYPE_CHECKING:
+    from django.urls import URLResolver
 
 logger = logging.getLogger(__name__)
 

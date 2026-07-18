@@ -36,7 +36,7 @@ The following tools are required. Check each tool's version and guide installati
 
 | Tool | Required Version | Check Command |
 |------|-----------------|---------------|
-| Python | 3.12.9 | `python3 --version` |
+| Python | 3.14 | `python3 --version` |
 | Node.js | 22.13.1 | `node --version` |
 | uv | latest | `uv --version` |
 | Docker + Compose | latest | `docker --version && docker compose version` |
@@ -45,8 +45,8 @@ The following tools are required. Check each tool's version and guide installati
 ```bash
 # macOS (pyenv recommended)
 brew install pyenv
-pyenv install 3.12.9
-pyenv local 3.12.9
+pyenv install 3.14
+pyenv local 3.14
 
 # Or use mise/asdf
 ```

@@ -28,7 +28,7 @@ class Role(models.Model):
     admin_groups = models.ManyToManyField("group.Group", related_name="admin_role", blank=True)
 
     @classmethod
-    def editable(kls, user: "User", admin_users: list["User"], admin_groups: list[Group]) -> bool:
+    def editable(kls, user: User, admin_users: list[User], admin_groups: list[Group]) -> bool:
         # This checks whether spcified user is belonged to the specified
         # admin_users and admin_groups.
         if user.is_superuser:
@@ -42,7 +42,7 @@ class Role(models.Model):
 
         return False
 
-    def is_belonged_to(self, user: "User", as_member: bool = False) -> bool:
+    def is_belonged_to(self, user: User, as_member: bool = False) -> bool:
         """This checks wether specified User is belonged to this Role.
         When "as_member" parameter is True, then this method only doesn't check
         admin users and groups.
@@ -72,7 +72,7 @@ class Role(models.Model):
 
         return False
 
-    def is_editable(self, user: "User") -> bool:
+    def is_editable(self, user: User) -> bool:
         """check wether specified User has permission to edit this Role"""
         return Role.editable(
             user,
@@ -80,7 +80,7 @@ class Role(models.Model):
             list(self.admin_groups.all()),
         )
 
-    def is_permitted(self, target_obj: "ACLBase", permission_level: ACLType) -> bool:
+    def is_permitted(self, target_obj: ACLBase, permission_level: ACLType) -> bool:
         """This method has regulation
         * You don't call this method to check object permission directly because,
           this method don't care about hieralchical data structure
@@ -128,7 +128,7 @@ class Role(models.Model):
 
         job_register_referrals.run()
 
-    def get_current_permission(self, aclbase: "ACLBase") -> int:
+    def get_current_permission(self, aclbase: ACLBase) -> int:
         permissions = [
             x
             for x in self.permissions.all()
@@ -139,7 +139,7 @@ class Role(models.Model):
         else:
             return ACLType.Nothing.id
 
-    def get_referred_entries(self, entity_name: str | None = None) -> "QuerySet[Any]":
+    def get_referred_entries(self, entity_name: str | None = None) -> QuerySet[Any]:
         # make query to identify AttributeValue that specify this Role instance
         query = Q(
             Q(

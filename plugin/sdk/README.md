@@ -212,7 +212,7 @@ dependencies = [
     "Django>=3.2",
     "djangorestframework>=3.12",
 ]
-requires-python = ">=3.8"
+requires-python = ">=3.14"
 
 [project.entry-points."pagoda.plugins"]
 my-plugin = "my_plugin.plugin:MyPlugin"
@@ -272,7 +272,7 @@ See the AirOne implementation for a complete example.
 
 ## Requirements
 
-- Python >= 3.8
+- Python >= 3.14
 - Django >= 3.2
 - djangorestframework >= 3.12
 

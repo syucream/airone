@@ -2,13 +2,10 @@ import codecs
 import importlib
 import json
 import urllib.parse
-from collections.abc import Callable
-from io import StringIO
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from urllib.parse import quote
 
 from django.conf import settings
-from django.db import models
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import render as django_render
 from django.utils.encoding import smart_str
@@ -20,6 +17,12 @@ from entity import models as entity_models
 from entry import models as entry_models
 from job.models import JobOperation, JobStatus
 from user.models import History, User
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from io import StringIO
+
+    from django.db import models
 
 
 class HttpResponseSeeOther(HttpResponseRedirect):

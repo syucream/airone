@@ -1,12 +1,15 @@
 import functools
 import traceback
-from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from django.core.mail import mail_admins
 
 from acl.models import ACLBase
 from airone.lib.log import Logger
 from job.models import Job, JobOperation, JobOperationCustom, JobStatus, TaskHandler
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 def _handle_task(

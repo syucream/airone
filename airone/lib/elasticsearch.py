@@ -1,25 +1,26 @@
 import enum
 import re
 from datetime import datetime
-from typing import Any, NotRequired
+from typing import TYPE_CHECKING, Any, NotRequired, TypedDict
 
 from django.conf import settings
 from elasticsearch import Elasticsearch
 from pydantic import BaseModel
-from typing_extensions import TypedDict
 
 from airone.lib.acl import ACLType
 from airone.lib.log import Logger
 from airone.lib.types import AttrType, BaseIntEnum, coerce_number
-from entity.models import Entity
 from entry.settings import CONFIG
-from user.models import User
+
+if TYPE_CHECKING:
+    from entity.models import Entity
+    from user.models import User
 
 
 class AdvancedSearchResultRecordIdNamePair(TypedDict):
     id: int
     name: str
-    schema: NotRequired["AdvancedSearchResultRecordIdNamePair"]
+    schema: NotRequired[AdvancedSearchResultRecordIdNamePair]
 
 
 class AdvancedSearchResultRecordAttr(TypedDict, total=False):

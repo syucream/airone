@@ -11,7 +11,7 @@ import logging
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Optional, Protocol
+from typing import TYPE_CHECKING, Any, Protocol
 
 from pydantic import BaseModel
 
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 class PluginRegistryProtocol(Protocol):
     """Protocol for plugin registry lookup."""
 
-    def get(self, plugin_id: str) -> Optional["Plugin"]: ...
+    def get(self, plugin_id: str) -> Plugin | None: ...
 
 
 logger = logging.getLogger(__name__)
@@ -38,7 +38,7 @@ class OperationType(Enum):
     LIST = "list"
 
     @classmethod
-    def from_string(cls, value: str) -> "OperationType":
+    def from_string(cls, value: str) -> OperationType:
         """Convert string to OperationType."""
         try:
             return cls(value.lower())

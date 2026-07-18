@@ -10,7 +10,7 @@ Updated to use the new ID-based override system with OverrideContext.
 
 import logging
 from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pagoda_plugin_sdk.override import (
     OverrideContext,
@@ -21,9 +21,11 @@ from pagoda_plugin_sdk.override import (
     permission_denied_response,
     success_response,
 )
-from rest_framework.response import Response
 
-from pagoda_cross_entity_sample_plugin.relationships import EntityRelationship
+if TYPE_CHECKING:
+    from rest_framework.response import Response
+
+    from pagoda_cross_entity_sample_plugin.relationships import EntityRelationship
 
 logger = logging.getLogger(__name__)
 

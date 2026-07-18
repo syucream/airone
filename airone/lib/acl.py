@@ -50,24 +50,24 @@ class ACLType(BaseIntEnum):
         return labels[self]
 
     @classmethod
-    def all(cls) -> list["ACLType"]:
+    def all(cls) -> list[ACLType]:
         return [cls.Nothing, cls.Readable, cls.Writable, cls.Full]
 
     @classmethod
-    def availables(cls) -> list["ACLType"]:
+    def availables(cls) -> list[ACLType]:
         return [cls.Readable, cls.Writable, cls.Full]
 
 
 def get_permitted_objects(
-    user: "User", model: type["ACLBase"], permission_level: "ACLType"
-) -> list["ACLBase"]:
+    user: User, model: type[ACLBase], permission_level: ACLType
+) -> list[ACLBase]:
     # This method assumes that model is a subclass of ACLBase
     return [
         x for x in model.objects.all() if user.has_permission(x, permission_level) and x.is_active
     ]
 
 
-def get_permission_level(user: "User", obj: "ACLBase") -> int:
+def get_permission_level(user: User, obj: ACLBase) -> int:
     """Returns the highest permission level the user has on the object.
 
     Args:

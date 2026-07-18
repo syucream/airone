@@ -21,7 +21,7 @@ Example:
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Optional, TypeVar
+from typing import TYPE_CHECKING, Any
 
 from rest_framework import status
 from rest_framework.request import Request
@@ -31,9 +31,6 @@ if TYPE_CHECKING:
     from entity.models import Entity
     from entry.models import Entry
     from user.models import User
-
-# Type variable for decorated methods
-F = TypeVar("F", bound=Callable[..., Any])
 
 # Attribute name for storing override metadata on decorated methods
 OVERRIDE_META_ATTR = "_override_meta"
@@ -54,7 +51,7 @@ class OverrideMeta:
         }
 
 
-def override_operation(operation: str) -> Callable[[F], F]:
+def override_operation[F: Callable[..., Any]](operation: str) -> Callable[[F], F]:
     """Decorator to mark a plugin method as an entry operation override.
 
     This decorator attaches metadata to the method that will be used
@@ -282,7 +279,7 @@ class OverrideContext:
     entity: "Entity"
     plugin_id: str
     operation: str
-    entry: Optional["Entry"] = None
+    entry: "Entry | None" = None
     data: dict[str, Any] | None = None
     params: dict[str, Any] = field(default_factory=dict)
 

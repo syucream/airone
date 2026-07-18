@@ -2009,9 +2009,7 @@ class ViewTest(BaseViewTest):
         for test_suite in test_suites:
             resp = self.client.get(reverse(test_suite, args=[entry.id]))
             self.assertEqual(resp.status_code, 302)
-            self.assertEqual(
-                resp.url, f"/entry/restore/{entity.id}/?keyword={entry.name}"
-            )
+            self.assertEqual(resp.url, f"/entry/restore/{entity.id}/?keyword={entry.name}")
 
     def test_not_to_show_under_processing_entry(self):
         user = self.guest_login()

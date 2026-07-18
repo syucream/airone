@@ -1,5 +1,4 @@
-from collections.abc import Sequence
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from django.contrib import admin
 from import_export import fields, widgets
@@ -13,6 +12,9 @@ from entity.models import Entity, EntityAttr
 from user.models import User
 
 from .models import Attribute, AttributeValue, Entry
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 admin.site.register(Entry)
 admin.site.register(Attribute)

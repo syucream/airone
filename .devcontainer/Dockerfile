@@ -1,4 +1,4 @@
-FROM python:3.13-bookworm
+FROM python:3.14-bookworm
 
 ENV TZ Asia/Tokyo
 ENV DEBIAN_FRONTEND=noninteractive

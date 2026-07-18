@@ -1,14 +1,19 @@
 import importlib
-from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
 import tablib
 from import_export.exceptions import ImportError as ImportExportError
 from import_export.resources import ModelResource
-from import_export.results import Result
 
 from acl.models import ACLBase
 from airone.lib.acl import ACLType
-from user.models import User
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from import_export.results import Result
+
+    from user.models import User
 
 
 class AironeModelResource(ModelResource):

@@ -1,5 +1,5 @@
 import math
-from typing import Any, Union
+from typing import Any
 
 from django.conf import settings
 from django.db import models
@@ -83,9 +83,7 @@ class EntityAttr(ACLBase):
         finally:
             del self.skip_history_when_saving
 
-    def add_referral(
-        self, referral: Union["Entity", str, int, list[Union["Entity", str, int]]]
-    ) -> None:
+    def add_referral(self, referral: Entity | str | int | list[Entity | str | int]) -> None:
         adding_referral = None
         if isinstance(referral, list):
             for x in referral:

@@ -1,8 +1,11 @@
 import re
-from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from django.conf import settings
 from django.http import Http404, HttpRequest, HttpResponse
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 class URLGateKeeper:

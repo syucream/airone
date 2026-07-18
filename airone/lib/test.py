@@ -1,11 +1,9 @@
 import functools
 import inspect
-import io
 import logging
 import os
 import sys
-from collections.abc import Callable
-from typing import cast
+from typing import TYPE_CHECKING, cast
 from zoneinfo import ZoneInfo
 
 from django.conf import settings
@@ -20,6 +18,10 @@ from user.models import User
 from webhook.models import Webhook
 
 from .elasticsearch import ESS
+
+if TYPE_CHECKING:
+    import io
+    from collections.abc import Callable
 
 
 class AironeTestCase(TestCase):
@@ -304,7 +306,7 @@ class AironeViewTest(AironeTestCase):
 
 
 class DisableStderr:
-    def __enter__(self) -> "DisableStderr":
+    def __enter__(self) -> DisableStderr:
         self.tmp_stderr = sys.stderr
         self.f = open(os.devnull, "w")
         sys.stderr = self.f

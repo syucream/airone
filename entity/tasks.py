@@ -1,6 +1,5 @@
-from typing import Self
+from typing import TYPE_CHECKING, Self
 
-from celery import Task
 from pydantic import BaseModel, Field, ValidationError, field_validator, model_validator
 
 from airone.celery import app
@@ -12,6 +11,9 @@ from entity.api_v2.serializers import EntityCreateSerializer, EntityUpdateSerial
 from entity.models import Entity, EntityAttr
 from job.models import Job, JobOperation, JobStatus
 from user.models import History, User
+
+if TYPE_CHECKING:
+    from celery import Task
 
 # ============================================================================
 # Pydantic Models for Job Parameters

@@ -7,11 +7,13 @@ and flexibility.
 """
 
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from rest_framework.permissions import BasePermission
-from rest_framework.request import Request
-from rest_framework.views import APIView
+
+if TYPE_CHECKING:
+    from rest_framework.request import Request
+    from rest_framework.views import APIView
 
 logger = logging.getLogger(__name__)
 
