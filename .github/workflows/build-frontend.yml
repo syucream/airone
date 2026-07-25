@@ -51,6 +51,8 @@ jobs:
           NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
       - name: build
         run: npm run build:development
+      - name: enforce production bundle budget
+        run: npm run quality:bundle
       - name: build(library)
         run: npm run build:lib
   test:

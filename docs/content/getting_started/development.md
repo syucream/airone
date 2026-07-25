@@ -394,6 +394,20 @@ user@hostname:~/pagoda$ ruff check --fix .
 user@hostname:~/pagoda$ npm run fix
 ```
 
+## Quality gates
+
+Codex and Claude Code run the minimum quality gate automatically after an agent
+changes the worktree. A failed gate is returned to the agent so it can fix the
+problem before completing the task. Codex users must review and trust the
+project hook once through `/hooks`.
+
+Human contributors do not need to install a Git pre-commit hook. Run the same
+fast checks manually with `npm run quality:fast`. Before requesting review, run
+the complete cross-stack gate with `npm run quality:full`. See the [Development
+Experience and Internal Quality Report]({{< relref "/advanced/development_quality" >}})
+for the enforced agent, architecture, OpenAPI, bundle-size, and security
+policies.
+
 ## Test for Django processing
 You can run tests for processing that is run by Django and Celery, which means backend processing, as below.
 ```

@@ -1,0 +1,71 @@
+[importlinter]
+root_packages =
+    acl
+    airone
+    api_v1
+    category
+    dashboard
+    entity
+    entry
+    group
+    isolation
+    job
+    pagoda_plugin_sdk
+    role
+    trigger
+    user
+    webhook
+exclude_type_checking_imports = True
+
+[importlinter:contract:plugin-sdk-boundary]
+name = Plugin SDK must not depend on Pagoda core
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    pagoda_plugin_sdk
+forbidden_modules =
+    acl
+    airone
+    api_v1
+    category
+    dashboard
+    entity
+    entry
+    group
+    isolation
+    job
+    role
+    trigger
+    user
+    webhook
+ignore_imports =
+    pagoda_plugin_sdk.tasks -> airone.celery
+    pagoda_plugin_sdk.tasks -> airone.lib.plugin_task
+    pagoda_plugin_sdk.tasks -> job.models
+
+[importlinter:contract:api-version-boundary]
+name = API v2 must not add dependencies on API v1
+type = forbidden
+source_modules =
+    acl.api_v2
+    category.api_v2
+    entity.api_v2
+    entry.api_v2
+    group.api_v2
+    job.api_v2
+    role.api_v2
+    trigger.api_v2
+    user.api_v2
+forbidden_modules =
+    api_v1
+    acl.api_v1
+    category.api_v1
+    entity.api_v1
+    entry.api_v1
+    group.api_v1
+    job.api_v1
+    role.api_v1
+    trigger.api_v1
+    user.api_v1
+ignore_imports =
+    entry.api_v2.views -> api_v1.entry.serializer

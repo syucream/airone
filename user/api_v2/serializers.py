@@ -15,6 +15,13 @@ from airone.auth.ldap import LDAPBackend
 from user.models import User
 
 
+class UserActivitySerializer(serializers.Serializer[Any]):
+    action_type = serializers.ChoiceField(choices=["create", "update", "delete"])
+    target_type = serializers.CharField()
+    target = serializers.JSONField()
+    timestamp = serializers.DateTimeField()
+
+
 class UserRetrieveTokenSerializer(serializers.Serializer[Any]):
     value = serializers.CharField()
     lifetime = serializers.IntegerField()

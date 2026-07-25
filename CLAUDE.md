@@ -39,6 +39,15 @@ Pagoda (formerly AirOne) is an entity/metadata management platform with flexible
 - **Generate client:** `npm run generate:client`
 - **Generate custom client:** `npm run generate:custom_client`
 
+### AI Agent Quality Gate
+- Codex and Claude Code record a worktree baseline when a session starts.
+- After an agent changes the worktree, its `Stop` hook runs `tools/quality_fast.sh`.
+- A failing gate sends the errors back to the agent and prevents a successful
+  completion until the agent changes the worktree and the gate passes.
+- Do not bypass, disable, or weaken the agent hook to finish a task.
+- Run `npm run quality:full` before requesting review for a substantial change.
+- Human contributors do not need to install a Git pre-commit hook.
+
 ### API Client Release Workflow (auto-publish on merge to master)
 
 The TypeScript client at `apiclient/typescript-fetch/` is published to GitHub

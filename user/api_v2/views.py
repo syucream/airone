@@ -29,6 +29,7 @@ from group.models import Group
 from user.api_v2.serializers import (
     PasswordResetConfirmSerializer,
     PasswordResetSerializer,
+    UserActivitySerializer,
     UserAuthSerializer,
     UserCreateSerializer,
     UserExportSerializer,
@@ -152,7 +153,7 @@ class SuperuserPermission(BasePermission):
 
 class UserActivityAPI(viewsets.GenericViewSet[User]):
     queryset = User.objects.none()
-    serializer_class = Serializer  # type: ignore[assignment]
+    serializer_class = UserActivitySerializer
     LIMIT_RECORDS = 10
     LIMIT_DAYS = 60
 
@@ -314,6 +315,7 @@ class UserActivityAPI(viewsets.GenericViewSet[User]):
             if requesting_user.has_permission(entry.schema, ACLType.Readable)
         ]
 
+    @extend_schema(responses=UserActivitySerializer(many=True))
     def retrieve(self, request: Request, pk: int) -> Response:
         user = get_object_or_404(User, pk=pk, is_active=True)
 

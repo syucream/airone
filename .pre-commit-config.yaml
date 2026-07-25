@@ -1,0 +1,39 @@
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: Ruff lint
+        entry: .venv/bin/ruff check --force-exclude
+        language: system
+        stages: [pre-commit]
+        types: [python]
+
+      - id: ruff-format
+        name: Ruff format
+        entry: .venv/bin/ruff format --check --force-exclude
+        language: system
+        stages: [pre-commit]
+        types: [python]
+
+      - id: biome-format
+        name: Biome format
+        entry: npx biome format
+        language: system
+        stages: [pre-commit]
+        types_or: [javascript, jsx, ts, tsx]
+
+      - id: uv-lock
+        name: uv lock is current
+        entry: bash -c 'UV_CACHE_DIR="${TMPDIR:-/tmp}/pagoda-agent-uv-cache" uv lock --check --offline'
+        language: system
+        stages: [pre-commit]
+        files: ^(pyproject\.toml|uv\.lock)$
+        pass_filenames: false
+
+      - id: architecture-contracts
+        name: Python architecture contracts
+        entry: .venv/bin/lint-imports
+        language: system
+        stages: [pre-commit]
+        files: ^(\.importlinter|.*\.py)$
+        pass_filenames: false
