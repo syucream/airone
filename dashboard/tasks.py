@@ -80,9 +80,9 @@ def _csv_export(
                 case AttrType.OBJECT | AttrType.GROUP | AttrType.ROLE:
                     line_data.append(str(vval["name"]))
 
-                case AttrType.NAMED_OBJECT:
+                case AttrType.NAMED_OBJECT | AttrType.NAMED_OBJECT_BOOLEAN:
                     [(k, v)] = vval.items()
-                    line_data.append(f"{k}: {v['name']}")
+                    line_data.append(f"{k}: {v['name']}" if isinstance(v, dict) else f"{k}: ")
 
                 case AttrType.ARRAY_STRING:
                     line_data.append("\n".join(natsorted(vval)))
@@ -95,13 +95,18 @@ def _csv_export(
                 case AttrType.ARRAY_OBJECT | AttrType.ARRAY_GROUP | AttrType.ARRAY_ROLE:
                     line_data.append("\n".join(natsorted([x["name"] for x in vval])))
 
-                case AttrType.ARRAY_NAMED_OBJECT:
+                case AttrType.ARRAY_NAMED_OBJECT | AttrType.ARRAY_NAMED_OBJECT_BOOLEAN:
                     items = []
                     for vset in vval:
                         [(k, v)] = vset.items()
-                        items.append(f"{k}: {v['name']}")
+                        items.append(f"{k}: {v['name']}" if isinstance(v, dict) else f"{k}: ")
 
                     line_data.append("\n".join(natsorted(items)))
+
+                case _:
+                    # Types without a dedicated formatter (e.g. SELECT / MULTI_SELECT)
+                    # still need a cell, otherwise the following columns get shifted.
+                    line_data.append("")
 
         if has_referral is not False:
             line_data.append(
