@@ -19,6 +19,7 @@
     "doc": "docs"
   },
   "scripts": {
+    "prepare": "lefthook install",
     "postinstall": "node -e \"try{require.resolve('@dmm-com/airone-apiclient-typescript-fetch')}catch{console.warn('\\n⚠ @dmm-com/airone-apiclient-typescript-fetch is not installed.\\n  Run: npm run generate:client && npm run link:client\\n')}\"",
     "build": "npm run build:development",
     "build:development": "webpack build --entry ./frontend/src/App.tsx --mode development",
@@ -94,6 +95,7 @@
     "jest": "^29.5.0",
     "jest-environment-jsdom": "^30.2.0",
     "knip": "^5.53.0",
+    "lefthook": "^2.1.10",
     "msw": "^2.7.3",
     "@playwright/test": "^1.57.0",
     "react": "^19.2.3",

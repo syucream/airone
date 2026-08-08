@@ -1,0 +1,51 @@
+# Local quality gates.
+#
+# These run the same checks the `lint` jobs of .github/workflows/build-core.yml
+# and .github/workflows/build-frontend.yml run, so that a push that would turn
+# CI red fails locally first.
+#
+# Installed automatically by the `prepare` script in package.json (npm run
+# prepare / npm install). Set `LEFTHOOK=0` to skip a single invocation, e.g.
+# `LEFTHOOK=0 git push`.
+#
+# Note for git worktree users: `lefthook install` writes into the shared
+# .git/hooks directory, so installing from one worktree enables the hooks for
+# every checkout of the repository.
+#
+# `uv run --no-sync` is used on purpose: without it, uv re-resolves and
+# rebuilds the project on every hook invocation, which both slows the hook down
+# and mutates .venv behind the developer's back.
+
+pre-commit:
+  parallel: true
+  jobs:
+    # Formatting is applied rather than reported: a formatting-only diff should
+    # never reach a reviewer.
+    #
+    # --force-exclude is required because ruff ignores `extend-exclude` for
+    # paths passed explicitly on the command line, which would otherwise let
+    # the hook reformat manage.py and the migration trees.
+    - name: ruff-format
+      glob: "*.py"
+      run: uv run --no-sync ruff format --force-exclude {staged_files}
+      stage_fixed: true
+
+    - name: biome-format
+      glob: "*.{ts,tsx}"
+      run: node_modules/.bin/biome format --write {staged_files}
+      stage_fixed: true
+
+pre-push:
+  parallel: true
+  jobs:
+    - name: ruff-check
+      run: uv run --no-sync ruff check .
+
+    - name: ruff-format-check
+      run: uv run --no-sync ruff format --check .
+
+    - name: mypy
+      run: uv run --no-sync mypy ./
+
+    - name: frontend-lint
+      run: npm run lint

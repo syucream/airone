@@ -35,6 +35,26 @@ Pagoda (formerly AirOne) is an entity/metadata management platform with flexible
 - **Run specific test:** `npm run test -- -t "test name pattern"`
 - **Watch mode:** `npm run watch`
 
+### Local Quality Gates (lefthook)
+
+`lefthook.yml` defines the checks that run before a commit and before a push.
+The hooks are installed by the `prepare` script (`npm install` / `npm run
+prepare`), so no manual setup is needed.
+
+- **pre-commit:** formats staged files (`ruff format`, `biome format --write`)
+  and re-stages them. Formatting-only diffs should never reach a reviewer.
+- **pre-push:** runs the same checks as the CI `lint` jobs — `ruff check`,
+  `ruff format --check`, `mypy ./` and `npm run lint`.
+- **Skip once:** `LEFTHOOK=0 git push` (use sparingly; CI runs the same checks).
+- **Worktrees:** `lefthook install` writes to the shared `.git/hooks`, so
+  installing from any worktree enables the hooks for every checkout.
+
+When Claude Code edits a `.py`/`.ts`/`.tsx` file, `.claude/settings.json`
+registers a `PostToolUse` hook that runs `tools/format_edited_file.sh` on it,
+applying the same formatters immediately. The script always exits 0, so a
+missing venv or `node_modules` never blocks an edit; lefthook and CI stay the
+enforcing gates.
+
 ### API Client Generation
 - **Generate client:** `npm run generate:client`
 - **Generate custom client:** `npm run generate:custom_client`

@@ -8,6 +8,11 @@
     // used internally by eslint-plugin-import-x
     "eslint-import-resolver-typescript"
   ],
+  // knip's lefthook plugin inspects .git/hooks directly, which crashes with
+  // ENOTDIR in a git worktree (there .git is a file, not a directory). The
+  // plugin only contributes hook-script analysis; the dependency itself is
+  // still detected through the `prepare` script in package.json.
+  "lefthook": false,
   "ignoreBinaries": [
     // to use `export` command
     "export"
