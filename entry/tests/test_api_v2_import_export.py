@@ -651,7 +651,7 @@ class ViewTest(BaseViewTest):
 
         def _import(query, value_single, value_array):
             resp = self.client.post(
-                "/entry/api/v2/import/%s" % query,
+                f"/entry/api/v2/import/{query}",
                 yaml.dump(
                     [
                         {
