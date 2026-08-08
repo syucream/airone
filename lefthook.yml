@@ -9,12 +9,10 @@
 # `LEFTHOOK=0 git push`.
 #
 # Note for git worktree users: `lefthook install` writes into the shared
-# .git/hooks directory, so installing from one worktree enables the hooks for
-# every checkout of the repository.
-#
-# `uv run --no-sync` is used on purpose: without it, uv re-resolves and
-# rebuilds the project on every hook invocation, which both slows the hook down
-# and mutates .venv behind the developer's back.
+# .git/hooks directory, and the generated scripts embed the absolute
+# node_modules path of the checkout that ran the install. Installing from a
+# throwaway worktree therefore points every checkout's hooks at that directory;
+# re-run `npm run prepare` from a permanent checkout if it is removed.
 
 pre-commit:
   parallel: true
@@ -27,25 +25,35 @@ pre-commit:
     # the hook reformat manage.py and the migration trees.
     - name: ruff-format
       glob: "*.py"
-      run: uv run --no-sync ruff format --force-exclude {staged_files}
+      run: uv run ruff format --force-exclude {staged_files}
       stage_fixed: true
 
+    # --no-errors-on-unmatched: biome exits 1 when every path handed to it sits
+    # outside the `files.includes` globs of biome.json, which would abort an
+    # otherwise valid commit.
     - name: biome-format
-      glob: "*.{ts,tsx}"
-      run: node_modules/.bin/biome format --write {staged_files}
+      glob: "*.{ts,tsx,mjs,js}"
+      run: >-
+        node_modules/.bin/biome format --write --no-errors-on-unmatched
+        {staged_files}
       stage_fixed: true
 
 pre-push:
   parallel: true
   jobs:
     - name: ruff-check
-      run: uv run --no-sync ruff check .
+      run: uv run ruff check .
 
     - name: ruff-format-check
-      run: uv run --no-sync ruff format --check .
+      run: uv run ruff format --check .
 
     - name: mypy
-      run: uv run --no-sync mypy ./
+      run: uv run mypy ./
 
+    # Scoped to frontend changes on purpose. `npm run lint` needs
+    # @dmm-com/airone-apiclient-typescript-fetch, which is published to GitHub
+    # Packages and is not always installable locally; running it for every push
+    # would block backend-only work on an unrelated dependency.
     - name: frontend-lint
+      glob: "{frontend/**,e2e/**,package.json,tsconfig*.json,biome.json,knip.jsonc,eslint.config.mjs}"
       run: npm run lint

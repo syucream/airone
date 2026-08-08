@@ -38,15 +38,21 @@ esac
 
 case "${file_path}" in
     *.py)
+        # --force-exclude: ruff ignores `extend-exclude` for paths passed
+        # explicitly on the command line, so without it this reformats
+        # manage.py and the migration trees.
         if [ -x "${BASE_DIR}/.venv/bin/ruff" ]; then
-            "${BASE_DIR}/.venv/bin/ruff" format --quiet "${file_path}"
+            "${BASE_DIR}/.venv/bin/ruff" format --quiet --force-exclude "${file_path}"
         elif command -v ruff >/dev/null 2>&1; then
-            ruff format --quiet "${file_path}"
+            ruff format --quiet --force-exclude "${file_path}"
         fi
         ;;
     *.ts | *.tsx)
+        # --no-errors-on-unmatched: biome exits 1 when the path is outside the
+        # `files.includes` globs in biome.json.
         if [ -x "${BASE_DIR}/node_modules/.bin/biome" ]; then
-            "${BASE_DIR}/node_modules/.bin/biome" format --write "${file_path}" >/dev/null 2>&1
+            "${BASE_DIR}/node_modules/.bin/biome" format --write \
+                --no-errors-on-unmatched "${file_path}" >/dev/null 2>&1
         fi
         ;;
 esac
