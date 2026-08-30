@@ -41,6 +41,7 @@ jobs:
         run: |
           mv custom_view_sample custom_view
           uv run python tools/mypy_ratchet.py --base-ref "${MYPY_BASE_REF}"
+          uv run python tools/check_job_params.py
           uv run ruff check --output-format=github .
           uv run ruff format --check .
       - name: Check OpenAPI schema generation
