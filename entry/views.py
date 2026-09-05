@@ -5,6 +5,7 @@ from urllib.parse import urlencode
 
 import yaml
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
+from django.db import transaction
 from django.db.models import Q
 from django.http import HttpRequest, HttpResponse
 from django.http.response import JsonResponse
@@ -253,20 +254,30 @@ def do_create(request: HttpRequest, entity_id: int, recv_data: dict[str, Any]) -
         if resp:
             return resp
 
-    # Create a new Entry object
-    entry = Entry.objects.create(
-        name=recv_data["entry_name"],
-        created_user=request.user,
-        schema=entity,
-        status=Entry.STATUS_CREATING,
-    )
+    # Create the Entry and its processing jobs in a single transaction, then
+    # dispatch the jobs after it commits. If any step fails, nothing is left
+    # behind: no Entry stuck in STATUS_CREATING (which would also block
+    # re-creating an entry with the same name) and no orphaned Job rows.
+    with transaction.atomic():
+        entry = Entry.objects.create(
+            name=recv_data["entry_name"],
+            created_user=request.user,
+            schema=entity,
+            status=Entry.STATUS_CREATING,
+        )
 
-    # Create a new job to create entry and run it
-    job_create_entry = Job.new_create(request.user, entry, params=recv_data)
+        # Create a new job to create entry and run it
+        job_create_entry = Job.new_create(request.user, entry, params=recv_data)
+
+        # Create job for TriggerAction
+        job_invoke_trigger = Job.new_invoke_trigger(
+            request.user, entry, recv_data.get("attrs", []), job_create_entry
+        )
+
+    # Dispatch only after the transaction above has committed so that the
+    # worker always reads committed state.
     job_create_entry.run()
-
-    # Create job for TriggerAction
-    Job.new_invoke_trigger(request.user, entry, recv_data.get("attrs", []), job_create_entry).run()
+    job_invoke_trigger.run()
 
     return JsonResponse(
         {
@@ -360,24 +371,37 @@ def do_edit(request: HttpRequest, entry_id: int, recv_data: dict[str, Any]) -> H
         if resp:
             return resp
 
-    # update name of Entry object. If name would be updated, the elasticsearch data of entries that
-    # refers this entry also be updated by creating REGISTERED_REFERRALS task.
-    job_register_referrals = None
-    if entry.name != recv_data["entry_name"]:
-        job_register_referrals = Job.new_register_referrals(request.user, entry)
+    # Update the Entry name, its processing status and the related jobs in a
+    # single transaction, then dispatch the jobs after it commits. If any
+    # step fails, the name change and the STATUS_EDITING flag are rolled back
+    # together with the Job rows instead of being left half-applied.
+    with transaction.atomic():
+        # update name of Entry object. If name would be updated, the
+        # elasticsearch data of entries that refers this entry also be
+        # updated by creating REGISTERED_REFERRALS task.
+        job_register_referrals = None
+        if entry.name != recv_data["entry_name"]:
+            job_register_referrals = Job.new_register_referrals(request.user, entry)
 
-    entry.name = recv_data["entry_name"]
-    entry.save(update_fields=["name"])
+        entry.name = recv_data["entry_name"]
+        entry.save(update_fields=["name"])
 
-    # set flags that indicates target entry is under processing
-    entry.set_status(Entry.STATUS_EDITING)
+        # set flags that indicates target entry is under processing
+        entry.set_status(Entry.STATUS_EDITING)
 
-    # Create new jobs to edit entry and notify it to registered webhook endpoint if it's necessary
-    job_edit_entry = Job.new_edit(request.user, entry, params=recv_data)
+        # Create new jobs to edit entry and notify it to registered webhook
+        # endpoint if it's necessary
+        job_edit_entry = Job.new_edit(request.user, entry, params=recv_data)
+
+        # Create job for TriggerAction
+        job_invoke_trigger = Job.new_invoke_trigger(
+            request.user, entry, recv_data.get("attrs", []), job_edit_entry
+        )
+
+    # Dispatch only after the transaction above has committed so that the
+    # worker always reads committed state.
     job_edit_entry.run()
-
-    # Create job for TriggerAction
-    Job.new_invoke_trigger(request.user, entry, recv_data.get("attrs", []), job_edit_entry).run()
+    job_invoke_trigger.run()
 
     # running job of re-register referrals because of chaning entry's name
     if job_register_referrals:

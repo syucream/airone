@@ -6,6 +6,7 @@ from copy import deepcopy
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
+from django.db import transaction
 from django.db.models import OuterRef, Prefetch, Q, QuerySet, Subquery
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
@@ -152,8 +153,14 @@ class EntryAPI(PluginOverrideMixin, viewsets.ModelViewSet):
         # Mark the entry as being edited before dispatching the async job.
         # This keeps the ongoing-changes indicator visible while the worker
         # is unavailable or the job is waiting in the queue.
-        entry.set_status(Entry.STATUS_EDITING)
-        job = Job.new_edit_entry_v2(user, entry, params=request.data)
+        # The status flag and the Job row are created in a single transaction
+        # and the job is dispatched after it commits, so a failure rolls the
+        # flag back instead of leaving the entry permanently flagged as being
+        # edited.
+        with transaction.atomic():
+            entry.set_status(Entry.STATUS_EDITING)
+            job = Job.new_edit_entry_v2(user, entry, params=request.data)
+
         job.run()
 
         return Response(status=status.HTTP_202_ACCEPTED)

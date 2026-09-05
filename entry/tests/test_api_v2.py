@@ -8,7 +8,7 @@ from rest_framework.exceptions import ValidationError
 
 from acl.models import ACLType
 from airone.lib.elasticsearch import AttrHint
-from airone.lib.test import AironeViewTest
+from airone.lib.test import AironeViewTest, DisableStderr
 from airone.lib.types import (
     AttrDefaultValue,
     AttrType,
@@ -18,6 +18,7 @@ from entry import tasks
 from entry.models import AttributeValue, Entry
 from entry.services import AdvancedSearchService
 from group.models import Group
+from job.models import Job
 from role.models import Role
 from trigger import tasks as trigger_tasks
 from trigger.models import TriggerCondition
@@ -786,6 +787,26 @@ class ViewTest(BaseViewTest):
                 },
             },
         )
+
+    def test_update_entry_rolls_back_when_job_creation_fails(self):
+        entry: Entry = self.add_entry(self.user, "entry", self.entity)
+
+        params = {"name": "entry-change", "attrs": []}
+
+        # The editing flag and the Job row are created in a single
+        # transaction: a failure must roll back the flag, otherwise the Entry
+        # would stay flagged as being edited without any processing job.
+        with patch("entry.api_v2.views.Job") as MockJob:
+            MockJob.new_edit_entry_v2.side_effect = RuntimeError("failed to create job")
+            with DisableStderr():
+                resp = self.client.put(
+                    "/entry/api/v2/%s/" % entry.id, json.dumps(params), "application/json"
+                )
+
+        self.assertEqual(resp.status_code, 500)
+        entry.refresh_from_db()
+        self.assertFalse(entry.get_status(Entry.STATUS_EDITING))
+        self.assertEqual(Job.objects.count(), 0)
 
     @patch("entry.tasks.edit_entry_v2.delay", Mock(side_effect=tasks.edit_entry_v2))
     def test_update_entry(self):

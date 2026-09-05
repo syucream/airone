@@ -383,6 +383,48 @@ class ViewTest(BaseViewTest):
         self.assertEqual([x["last_value"] for x in attr_info if x["name"] == "test"], [""])
         self.assertEqual([x["last_value"] for x in attr_info if x["name"] == "new_attr"], ["foo"])
 
+    def test_post_create_entry_rolls_back_when_job_creation_fails(self):
+        self.admin_login()
+
+        params = {
+            "entry_name": "hoge",
+            "attrs": [
+                {
+                    "id": str(self._entity_attr.id),
+                    "type": str(AttrType.ARRAY_STRING),
+                    "value": [{"data": "hoge", "index": "0"}],
+                    "referral_key": [],
+                },
+            ],
+        }
+
+        # The Entry row, the processing jobs and their dispatch form a single
+        # unit of work: a failure must roll back everything, otherwise an
+        # Entry stuck in STATUS_CREATING would remain and block re-creating
+        # an entry with the same name.
+        with patch("entry.views.Job") as MockJob:
+            MockJob.new_create.side_effect = RuntimeError("failed to create job")
+            with DisableStderr():
+                resp = self.client.post(
+                    reverse("entry:do_create", args=[self._entity.id]),
+                    json.dumps(params),
+                    "application/json",
+                )
+
+        self.assertEqual(resp.status_code, 500)
+        self.assertEqual(Entry.objects.count(), 0)
+        self.assertEqual(Job.objects.count(), 0)
+
+        # the rolled back entry name is available again
+        resp = self.client.post(
+            reverse("entry:do_create", args=[self._entity.id]),
+            json.dumps(params),
+            "application/json",
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(Entry.objects.count(), 1)
+        self.assertEqual(Entry.objects.last().name, "hoge")
+
     @patch(
         "entry.tasks.create_entry_attrs.delay",
         Mock(side_effect=tasks.create_entry_attrs),

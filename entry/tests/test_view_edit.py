@@ -5,6 +5,7 @@ from unittest.mock import Mock, patch
 from django.urls import reverse
 
 from airone.lib.elasticsearch import AttrHint
+from airone.lib.test import DisableStderr
 from airone.lib.types import (
     AttrType,
 )
@@ -128,6 +129,32 @@ class ViewEditTest(BaseViewTest):
 
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(Entry.objects.get(id=entry.id).name, "entry")
+
+    def test_post_edit_rolls_back_when_job_creation_fails(self):
+        user = self.admin_login()
+
+        entry = Entry.objects.create(name="fuga", schema=self._entity, created_user=user)
+
+        params = {"entry_name": "hoge", "attrs": []}
+
+        # The name change, the editing flag and the processing jobs form a
+        # single unit of work: a failure must roll back everything, otherwise
+        # the Entry would stay flagged as being edited with a changed name
+        # but without any processing job.
+        with patch("entry.views.Job") as MockJob:
+            MockJob.new_edit.side_effect = RuntimeError("failed to create job")
+            with DisableStderr():
+                resp = self.client.post(
+                    reverse("entry:do_edit", args=[entry.id]),
+                    json.dumps(params),
+                    "application/json",
+                )
+
+        self.assertEqual(resp.status_code, 500)
+        entry.refresh_from_db()
+        self.assertEqual(entry.name, "fuga")
+        self.assertFalse(entry.get_status(Entry.STATUS_EDITING))
+        self.assertEqual(Job.objects.count(), 0)
 
     def test_get_show_and_edit_creating_entry(self):
         user = self.admin_login()
