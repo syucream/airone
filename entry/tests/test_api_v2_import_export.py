@@ -21,6 +21,7 @@ from entry.services import AdvancedSearchService
 from entry.tests.test_api_v2 import BaseViewTest
 from group.models import Group
 from job.models import Job, JobOperation, JobStatus
+from job.params import ImportEntryParams
 from role.models import Role
 from trigger.models import TriggerCondition
 from user.models import User
@@ -836,6 +837,60 @@ class ViewTest(BaseViewTest):
         self.assertEqual(
             [(x["entity"], Job.objects.get(id=x["job_id"]).target.id) for x in result["jobs"]],
             [("test-entity", self.entity.id), ("other-entity", other.id)],
+        )
+
+    def test_import_pairs_each_model_with_its_own_approved_preview(self):
+        other = self.create_entity(
+            self.user,
+            "other-entity",
+            attrs=[{"name": "val", "type": AttrType.STRING}],
+        )
+        self.add_entry(self.user, "same-name", self.entity, values={"val": "before-first"})
+        self.add_entry(self.user, "same-name", other, values={"val": "before-second"})
+        payload = yaml.dump(
+            [
+                {
+                    "entity": self.entity.name,
+                    "entries": [
+                        {"name": "same-name", "attrs": [{"name": "val", "value": "first"}]}
+                    ],
+                },
+                {
+                    "entity": other.name,
+                    "entries": [
+                        {"name": "same-name", "attrs": [{"name": "val", "value": "second"}]}
+                    ],
+                },
+            ]
+        )
+
+        with patch(
+            "entry.tasks.import_entries_preview_v2.delay",
+            Mock(side_effect=tasks.import_entries_preview_v2),
+        ):
+            preview_resp = self.client.post(
+                "/entry/api/v2/import/preview/", payload, "application/yaml"
+            )
+        preview_jobs = preview_resp.json()["result"]["jobs"]
+
+        with patch("entry.tasks.import_entries_v2.delay", Mock()):
+            resp = self.client.post(
+                "/entry/api/v2/import/?force=true",
+                payload,
+                "application/yaml",
+                HTTP_X_PAGODA_PREVIEW_JOB_IDS=",".join(
+                    str(item["job_id"]) for item in reversed(preview_jobs)
+                ),
+            )
+
+        self.assertEqual(resp.status_code, 200)
+        import_jobs = Job.objects.filter(operation=JobOperation.IMPORT_ENTRY_V2)
+        self.assertEqual(
+            {
+                job.target_id: job.get_typed_params(ImportEntryParams).preview_job_id
+                for job in import_jobs
+            },
+            {Job.objects.get(id=item["job_id"]).target_id: item["job_id"] for item in preview_jobs},
         )
 
     def test_import_preview_reports_models_it_cannot_preview(self):

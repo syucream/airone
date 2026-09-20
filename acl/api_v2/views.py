@@ -28,7 +28,10 @@ class ACLPermission(BasePermission):
         }
         if not isinstance(obj, ACLBase):
             return False
-        if not user.has_permission(obj, permisson.get(view.action)):
+        # ACLAPI queries the multi-table base model. Permission checks must use
+        # the concrete object so Entry/Attribute parent ACLs remain effective.
+        target = obj.get_subclass_object()
+        if not user.has_permission(target, permisson.get(view.action)):
             return False
         return True
 

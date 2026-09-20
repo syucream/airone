@@ -12,6 +12,7 @@ from airone.lib.types import (
 from entity.models import Entity, EntityAttr
 from entry import tasks
 from entry.models import Attribute, Entry
+from entry.services import AdvancedSearchService
 from entry.settings import CONFIG
 from entry.tests.test_api_v2 import BaseViewTest
 from group.models import Group
@@ -156,6 +157,55 @@ class ViewTest(BaseViewTest):
         self.assertEqual(len(resp_data), 1)
         self.assertEqual(resp_data[0]["id"], entry.id)
         self.assertEqual(resp_data[0]["name"], entry.name)
+
+    def test_search_entry_excludes_entries_without_read_permission(self):
+        entry = self.add_entry(
+            self.user,
+            "private-search-entry",
+            self.entity,
+            values={"val": "private-search-value"},
+        )
+        self.entity.is_public = False
+        self.entity.default_permission = ACLType.Nothing
+        self.entity.save(update_fields=["is_public", "default_permission"])
+
+        denied_user = self.guest_login("denied")
+        self.assertFalse(denied_user.has_permission(entry, ACLType.Readable))
+
+        resp = self.client.get("/entry/api/v2/search/?query=private-search-value")
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json(), [])
+
+    def test_search_entry_continues_after_a_page_of_restricted_matches(self):
+        restricted = [
+            self.add_entry(self.user, f"restricted-{index}", self.entity)
+            for index in range(CONFIG.MAX_SEARCH_ENTRIES)
+        ]
+        visible = self.add_entry(self.user, "visible-match", self.ref_entity)
+        self.entity.is_public = False
+        self.entity.default_permission = ACLType.Nothing
+        self.entity.save(update_fields=["is_public", "default_permission"])
+        self.guest_login("denied")
+
+        result_pages = [
+            {
+                "ret_values": [
+                    {"id": str(entry.id), "name": entry.name, "attr": ""} for entry in restricted
+                ]
+            },
+            {"ret_values": [{"id": str(visible.id), "name": visible.name, "attr": ""}]},
+        ]
+        with patch.object(
+            AdvancedSearchService,
+            "search_entries_for_simple",
+            side_effect=result_pages,
+        ) as search:
+            resp = self.client.get("/entry/api/v2/search/?query=match")
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual([item["id"] for item in resp.json()], [visible.id])
+        self.assertEqual(search.call_args_list[1].kwargs["offset"], CONFIG.MAX_SEARCH_ENTRIES)
 
     def test_serach_entry_order_by(self):
         self.add_entry(self.user, "z_hoge", self.entity)

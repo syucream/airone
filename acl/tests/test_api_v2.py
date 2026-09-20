@@ -212,6 +212,29 @@ class ViewTest(AironeViewTest):
         )
         self.assertEqual(resp.status_code, 403)
 
+    def test_entry_acl_update_respects_parent_entity_permission(self):
+        owner = self.admin_login()
+        entity = self.create_entity(owner, "private-entity")
+        entity.is_public = False
+        entity.default_permission = ACLType.Nothing
+        entity.save(update_fields=["is_public", "default_permission"])
+        entry = self.add_entry(owner, "public-entry", entity)
+
+        editor = self.guest_login("editor")
+        role = Role.objects.create(name="editor-role")
+        role.users.add(editor)
+        entity.writable.roles.add(role)
+        self.assertTrue(editor.has_permission(entry, ACLType.Writable))
+        self.assertFalse(editor.has_permission(entry, ACLType.Full))
+
+        resp = self.client.put(
+            "/acl/api/v2/acls/%s" % entry.id,
+            json.dumps({}),
+            "application/json;charset=utf-8",
+        )
+
+        self.assertEqual(resp.status_code, 403)
+
     def test_update_acl_to_nobody_control(self):
         user = self.guest_login()
         role = Role.objects.create(name="role")

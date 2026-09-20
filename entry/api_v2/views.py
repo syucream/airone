@@ -6,6 +6,7 @@ from copy import deepcopy
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any, cast
 
+from django.conf import settings
 from django.db.models import OuterRef, Prefetch, Q, QuerySet, Subquery
 from drf_spectacular.helpers import forced_singular_serializer
 from drf_spectacular.types import OpenApiTypes
@@ -386,10 +387,30 @@ class searchAPI(viewsets.ReadOnlyModelViewSet):
         if not query:
             return queryset
 
-        results = AdvancedSearchService.search_entries_for_simple(
-            query, limit=ENTRY_CONFIG.MAX_SEARCH_ENTRIES
-        )
-        return list(results["ret_values"])
+        user = cast("User", self.request.user)
+        visible: list[Any] = []
+        offset = 0
+        page_size = ENTRY_CONFIG.MAX_SEARCH_ENTRIES
+        maximum = settings.ES_CONFIG["MAXIMUM_RESULTS_NUM"]
+
+        while len(visible) < page_size and offset < maximum:
+            batch_size = min(page_size, maximum - offset)
+            results = AdvancedSearchService.search_entries_for_simple(
+                query, limit=batch_size, offset=offset
+            )
+            matched = list(results["ret_values"])
+            entries = Entry.objects.in_bulk([int(item["id"]) for item in matched])
+            visible.extend(
+                item
+                for item in matched
+                if (entry := entries.get(int(item["id"])))
+                and user.has_permission(entry, ACLType.Readable)
+            )
+            if len(matched) < batch_size:
+                break
+            offset += batch_size
+
+        return visible[:page_size]
 
 
 @db_readonly
@@ -959,6 +980,15 @@ class EntryImportAPI(generics.GenericAPIView):
                     "someone else since then are left alone and reported."
                 ),
             ),
+            OpenApiParameter(
+                "X-Pagoda-Preview-Job-Ids",
+                OpenApiTypes.STR,
+                OpenApiParameter.HEADER,
+                description=(
+                    "Comma-separated approved preview job IDs. Each import job is linked "
+                    "to the preview for its own model."
+                ),
+            ),
         ],
         responses={
             200: None,
@@ -971,10 +1001,20 @@ class EntryImportAPI(generics.GenericAPIView):
         import_datas = request.data
         preview_job_id = _preview_job_id_param(request)
         user: User = request.user
+        preview_job_ids_by_target = _preview_job_ids_by_target(request, user)
         serializer = EntryImportSerializer(data=import_datas)
         serializer.is_valid(raise_exception=True)
         import_datas = serializer.validated_data
         entities = self.get_queryset()
+
+        if preview_job_ids_by_target is not None:
+            importable_entity_ids = {
+                entity.id for entity in entities if user.has_permission(entity, ACLType.Writable)
+            }
+            if set(preview_job_ids_by_target) != importable_entity_ids:
+                raise InvalidValueError(
+                    "Preview job IDs must cover exactly the models in the import."
+                )
 
         # limit import job to deny accidental frequent import for same entity
         if request.query_params.get("force", "") not in ["true", "True"]:
@@ -1011,8 +1051,15 @@ class EntryImportAPI(generics.GenericAPIView):
                 entity,
                 text="Preparing to import data",
                 params=(
-                    {**import_data, "preview_job_id": preview_job_id}
-                    if preview_job_id is not None
+                    {
+                        **import_data,
+                        "preview_job_id": (
+                            preview_job_ids_by_target[entity.id]
+                            if preview_job_ids_by_target is not None
+                            else preview_job_id
+                        ),
+                    }
+                    if preview_job_ids_by_target is not None or preview_job_id is not None
                     else import_data
                 ),
             )
@@ -1037,6 +1084,40 @@ def _preview_job_id_param(request: Request) -> int | None:
         return int(raw)
     except ValueError:
         raise InvalidValueError("'preview_job_id' must be an integer")
+
+
+def _preview_job_ids_by_target(request: Request, user: "User") -> dict[int, int] | None:
+    """Resolve an approved multi-model preview to one preview job per model."""
+    raw = request.headers.get("X-Pagoda-Preview-Job-Ids")
+    if raw is None:
+        return None
+
+    try:
+        job_ids = [int(value) for value in raw.split(",") if value]
+    except ValueError:
+        raise InvalidValueError("'X-Pagoda-Preview-Job-Ids' must contain integers")
+    if not job_ids or len(job_ids) != len(set(job_ids)):
+        raise InvalidValueError("Preview job IDs must be non-empty and unique.")
+
+    jobs = list(
+        Job.objects.filter(
+            id__in=job_ids,
+            user=user,
+            operation=JobOperation.IMPORT_ENTRY_PREVIEW,
+            status=JobStatus.DONE,
+        )
+    )
+    if len(jobs) != len(job_ids):
+        raise InvalidValueError("Every preview job must be completed and owned by the user.")
+
+    result: dict[int, int] = {}
+    for job in jobs:
+        if job.target_id is None:
+            raise InvalidValueError("Every preview job must target a model.")
+        result[job.target_id] = job.id
+    if len(result) != len(jobs):
+        raise InvalidValueError("Only one preview job may be supplied for each model.")
+    return result
 
 
 class EntryImportPreviewAPI(generics.GenericAPIView):

@@ -1241,6 +1241,7 @@ class AironeApiClient {
   async importEntries(
     data: string | ArrayBuffer,
     force: boolean,
+    previewJobIds?: number[],
   ): Promise<void> {
     return await this.entry.entryApiV2ImportCreate(
       {
@@ -1251,10 +1252,33 @@ class AironeApiClient {
         headers: {
           "Content-Type": "application/yaml",
           "X-CSRFToken": getCsrfToken(),
+          ...(!previewJobIds?.length
+            ? {}
+            : { "X-Pagoda-Preview-Job-Ids": previewJobIds.join(",") }),
         },
         body: new Blob([data]),
       },
     );
+  }
+
+  async startImportEntriesPreview(
+    data: string | ArrayBuffer,
+  ): Promise<{ jobIds: number[]; errors: string[] }> {
+    const { result } = await this.entry.entryApiV2ImportPreviewCreate(
+      { entryImportEntity: [] },
+      {
+        headers: {
+          "Content-Type": "application/yaml",
+          "X-CSRFToken": getCsrfToken(),
+        },
+        body: new Blob([data]),
+      },
+    );
+
+    return {
+      jobIds: result.jobs.map((job) => job.jobId),
+      errors: result.error,
+    };
   }
 
   async resetPassword(username: string): Promise<void> {
