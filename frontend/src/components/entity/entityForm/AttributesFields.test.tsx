@@ -18,6 +18,7 @@ import { AttributesFields } from "./AttributesFields";
 import { Schema } from "./EntityFormSchema";
 
 import { TestWrapper } from "TestWrapper";
+import i18n from "i18n/config";
 
 describe("AttributesFields", () => {
   const defaultValues: Schema = {
@@ -90,5 +91,36 @@ describe("AttributesFields", () => {
     });
 
     expect(screen.queryAllByPlaceholderText("属性名")).toHaveLength(1);
+  });
+
+  test("should render in English", async () => {
+    await act(async () => {
+      await i18n.changeLanguage("en");
+    });
+
+    const {
+      result: {
+        current: { control, setValue },
+      },
+    } = renderHook(() =>
+      useForm<Schema>({
+        resolver: zodResolver(schema),
+        mode: "onBlur",
+        defaultValues,
+      }),
+    );
+
+    render(
+      <AttributesFields
+        control={control}
+        setValue={setValue}
+        referralEntities={[]}
+      />,
+      { wrapper: TestWrapper },
+    );
+
+    expect(screen.getByText("Attribute information")).toBeInTheDocument();
+    expect(screen.getByText("Attribute name")).toBeInTheDocument();
+    expect(screen.getByText("Default value")).toBeInTheDocument();
   });
 });

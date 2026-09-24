@@ -13,6 +13,7 @@ import { http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
 
 import { TestWrapper } from "TestWrapper";
+import i18n from "i18n/config";
 import { EntityListPage } from "pages/EntityListPage";
 import { ACLType } from "services/ACLUtil";
 
@@ -170,6 +171,24 @@ describe("EntityListPage", () => {
 
       const entityLink = screen.getByText("Entity A").closest("a");
       expect(entityLink).toHaveAttribute("href");
+    });
+  });
+
+  describe("english rendering", () => {
+    test("should render page header and buttons in English", async () => {
+      await act(async () => {
+        await i18n.changeLanguage("en");
+      });
+
+      await renderPage();
+
+      expect(screen.getAllByText("Entities").length).toBeGreaterThan(0);
+      expect(
+        screen.getByRole("button", { name: /Export/i }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /Import/i }),
+      ).toBeInTheDocument();
     });
   });
 });

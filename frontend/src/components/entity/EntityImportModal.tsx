@@ -4,6 +4,7 @@ import { aironeApiClient } from "../../repository/AironeApiClient";
 import { AironeModal } from "../common/AironeModal";
 
 import { ImportForm } from "components/common/ImportForm";
+import { useTranslation } from "hooks/useTranslation";
 
 interface Props {
   openImportModal: boolean;
@@ -14,15 +15,17 @@ export const EntityImportModal: FC<Props> = ({
   openImportModal,
   closeImportModal,
 }) => {
+  const { t } = useTranslation();
+
   const handleImport = useCallback(async (data: string | ArrayBuffer) => {
     await aironeApiClient.importEntities(data);
   }, []);
 
   return (
     <AironeModal
-      title={"モデルのインポート"}
-      description={"インポートするファイルを選択してください。"}
-      caption={"※CSV形式のファイルは選択できません。"}
+      title={t("entity.import.title")}
+      description={t("entity.import.description")}
+      caption={t("entity.import.caption")}
       open={openImportModal}
       onClose={closeImportModal}
     >

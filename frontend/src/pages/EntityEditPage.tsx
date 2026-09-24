@@ -15,6 +15,7 @@ import { useFormNotification } from "hooks/useFormNotification";
 import { usePageTitle } from "hooks/usePageTitle";
 import { usePagodaSWR } from "hooks/usePagodaSWR";
 import { usePrompt } from "hooks/usePrompt";
+import { useTranslation } from "hooks/useTranslation";
 import { useTypedParams } from "hooks/useTypedParams";
 import { aironeApiClient } from "repository/AironeApiClient";
 import { entitiesPath, entityEntriesPath } from "routes/Routes";
@@ -32,8 +33,12 @@ export const EntityEditPage: FC = () => {
 
   const willCreate = entityId === undefined;
 
+  const { t } = useTranslation();
   const navigate = useNavigate();
-  const { enqueueSubmitResult } = useFormNotification("モデル", willCreate);
+  const { enqueueSubmitResult } = useFormNotification(
+    t("common.target.entity"),
+    willCreate,
+  );
 
   const {
     formState: { isValid, isDirty, isSubmitting, isSubmitSuccessful },
@@ -47,10 +52,7 @@ export const EntityEditPage: FC = () => {
     mode: "onBlur",
   });
 
-  usePrompt(
-    isDirty && !isSubmitSuccessful,
-    "編集した内容は失われてしまいますが、このページを離れてもよろしいですか？",
-  );
+  usePrompt(isDirty && !isSubmitSuccessful, t("entity.edit.leaveConfirm"));
 
   const { data: entity, isLoading: entityLoading } = usePagodaSWR(
     entityId !== undefined ? ["entity", entityId] : null,
@@ -218,7 +220,11 @@ export const EntityEditPage: FC = () => {
       if (e instanceof Error && isResponseError(e)) {
         await extractAPIException<Schema>(
           e,
-          (message) => enqueueSubmitResult(false, `詳細: "${message}"`),
+          (message) =>
+            enqueueSubmitResult(
+              false,
+              t("entity.edit.errorDetail", { message }),
+            ),
           (name, message) => {
             setError(name, { type: "custom", message: message });
             enqueueSubmitResult(false);
@@ -230,9 +236,14 @@ export const EntityEditPage: FC = () => {
     }
   };
 
-  usePageTitle(entityLoading ? "読み込み中..." : TITLE_TEMPLATES.entityEdit, {
-    prefix: entity?.name ?? (entityId == null ? "新規作成" : undefined),
-  });
+  usePageTitle(
+    entityLoading ? t("entity.edit.loading") : TITLE_TEMPLATES.entityEdit,
+    {
+      prefix:
+        entity?.name ??
+        (entityId == null ? t("entity.edit.newTitlePrefix") : undefined),
+    },
+  );
 
   useEffect(() => {
     if (!entityLoading && entity != null) {
@@ -318,19 +329,19 @@ export const EntityEditPage: FC = () => {
   return (
     <Box>
       {entityId ? (
-        <EntityBreadcrumbs entity={entity} title="編集" />
+        <EntityBreadcrumbs entity={entity} title={t("common.edit")} />
       ) : (
-        <EntityBreadcrumbs title="作成" />
+        <EntityBreadcrumbs title={t("common.create")} />
       )}
 
       <PageHeader
-        title={entity != null ? entity.name : "新規モデルの作成"}
-        description={entity && "エンティテイティ詳細 / 編集"}
+        title={entity != null ? entity.name : t("entity.edit.newEntityTitle")}
+        description={entity && t("entity.edit.description")}
         targetId={entity?.id}
         hasOngoingProcess={entity?.hasOngoingChanges}
       >
         <SubmitButton
-          name="保存"
+          name={t("common.save")}
           disabled={!isDirty || !isValid || isSubmitting || isSubmitSuccessful}
           isSubmitting={isSubmitting}
           handleSubmit={handleSubmit(handleSubmitOnValid)}

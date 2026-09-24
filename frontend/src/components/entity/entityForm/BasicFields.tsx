@@ -22,6 +22,7 @@ import {
   HeaderTableRow,
   StyledTableRow,
 } from "components/common/Table";
+import { useTranslation } from "hooks/useTranslation";
 
 interface Props {
   control: Control<Schema>;
@@ -34,6 +35,7 @@ export const BasicFields: FC<Props> = ({
   referralEntities,
   setValue,
 }) => {
+  const { t } = useTranslation();
   const currItemNameType = useWatch({ control, name: "itemNameType" });
   const attrs = useWatch({ control, name: "attrs" });
 
@@ -49,19 +51,23 @@ export const BasicFields: FC<Props> = ({
   return (
     <Box>
       <Typography variant="h4" align="center" my="16px">
-        基本情報
+        {t("entity.form.basicInfoTitle")}
       </Typography>
 
       <Table className="table table-bordered">
         <TableHead>
           <HeaderTableRow>
-            <HeaderTableCell width="400px">項目</HeaderTableCell>
-            <HeaderTableCell width="800px">内容</HeaderTableCell>
+            <HeaderTableCell width="400px">
+              {t("entity.form.itemHeader")}
+            </HeaderTableCell>
+            <HeaderTableCell width="800px">
+              {t("entity.form.valueHeader")}
+            </HeaderTableCell>
           </HeaderTableRow>
         </TableHead>
         <TableBody>
           <StyledTableRow>
-            <TableCell>モデル名</TableCell>
+            <TableCell>{t("entity.form.nameLabel")}</TableCell>
             <TableCell>
               <Controller
                 name="name"
@@ -72,7 +78,7 @@ export const BasicFields: FC<Props> = ({
                     {...field}
                     id="entity-name"
                     required
-                    placeholder="モデル名"
+                    placeholder={t("entity.form.nameLabel")}
                     error={error != null}
                     helperText={error?.message}
                     size="small"
@@ -84,7 +90,7 @@ export const BasicFields: FC<Props> = ({
             </TableCell>
           </StyledTableRow>
           <StyledTableRow>
-            <TableCell>備考</TableCell>
+            <TableCell>{t("entity.form.noteLabel")}</TableCell>
             <TableCell>
               <Controller
                 name="note"
@@ -94,7 +100,7 @@ export const BasicFields: FC<Props> = ({
                   <TextField
                     {...field}
                     required
-                    placeholder="備考"
+                    placeholder={t("entity.form.noteLabel")}
                     error={error != null}
                     helperText={error?.message}
                     size="small"
@@ -105,7 +111,7 @@ export const BasicFields: FC<Props> = ({
             </TableCell>
           </StyledTableRow>
           <StyledTableRow>
-            <TableCell>アイテム名の登録方法</TableCell>
+            <TableCell>{t("entity.form.itemNameTypeLabel")}</TableCell>
             <TableCell>
               <Controller
                 name="itemNameType"
@@ -118,9 +124,15 @@ export const BasicFields: FC<Props> = ({
                     size="small"
                     sx={{ minWidth: "300px" }}
                   >
-                    <MenuItem value={"US"}>利用者が手動で設定</MenuItem>
-                    <MenuItem value={"ID"}>UUIDに自動で設定</MenuItem>
-                    <MenuItem value={"AT"}>属性値に応じて自動で設定</MenuItem>
+                    <MenuItem value={"US"}>
+                      {t("entity.form.itemNameTypeUser")}
+                    </MenuItem>
+                    <MenuItem value={"ID"}>
+                      {t("entity.form.itemNameTypeUuid")}
+                    </MenuItem>
+                    <MenuItem value={"AT"}>
+                      {t("entity.form.itemNameTypeAttr")}
+                    </MenuItem>
                   </Select>
                 )}
               />
@@ -132,8 +144,7 @@ export const BasicFields: FC<Props> = ({
                     color: autoNamePreview ? "text.primary" : "text.disabled",
                   }}
                 >
-                  {autoNamePreview ||
-                    "（自動命名が設定された属性がありません）"}
+                  {autoNamePreview || t("entity.form.autoNameEmptyPreview")}
                 </Typography>
               )}
             </TableCell>
@@ -145,7 +156,7 @@ export const BasicFields: FC<Props> = ({
                   currItemNameType !== "US" ? "text.disabled" : "text.primary",
               }}
             >
-              アイテム名の許可パターン
+              {t("entity.form.itemNamePatternLabel")}
             </TableCell>
             <TableCell>
               <Controller
@@ -158,7 +169,7 @@ export const BasicFields: FC<Props> = ({
                       {...field}
                       disabled={currItemNameType !== "US"}
                       required
-                      placeholder="アイテム名の許可パターン"
+                      placeholder={t("entity.form.itemNamePatternLabel")}
                       error={error != null}
                       helperText={error?.message}
                       size="small"
@@ -170,7 +181,7 @@ export const BasicFields: FC<Props> = ({
             </TableCell>
           </StyledTableRow>
           <StyledTableRow>
-            <TableCell>トップページに表示</TableCell>
+            <TableCell>{t("entity.form.showOnTopPage")}</TableCell>
             <TableCell>
               <Controller
                 name="isToplevel"
@@ -187,7 +198,7 @@ export const BasicFields: FC<Props> = ({
             </TableCell>
           </StyledTableRow>
           <StyledTableRow>
-            <TableCell>関連削除の判定から除外するモデル</TableCell>
+            <TableCell>{t("entity.form.deleteChainExcludeLabel")}</TableCell>
             <TableCell>
               <Controller
                 name="deleteChainExcludeEntities"
@@ -209,7 +220,7 @@ export const BasicFields: FC<Props> = ({
                       <TextField
                         {...params}
                         variant="outlined"
-                        placeholder="モデルを選択"
+                        placeholder={t("entity.form.selectEntityPlaceholder")}
                       />
                     )}
                     onChange={(

@@ -15,6 +15,7 @@ import { UseFormSetValue } from "react-hook-form/dist/types/form";
 import { AttributeField } from "./AttributeField";
 import { Schema } from "./EntityFormSchema";
 
+import { useTranslation } from "hooks/useTranslation";
 import { AttributeTypes } from "services/Constants";
 
 const HeaderTableRow = styled(TableRow)(({}) => ({
@@ -58,6 +59,7 @@ export const AttributesFields: FC<Props> = ({
   setValue,
   referralEntities,
 }) => {
+  const { t } = useTranslation();
   const { fields, insert, remove, swap } = useFieldArray({
     control,
     name: "attrs",
@@ -98,19 +100,33 @@ export const AttributesFields: FC<Props> = ({
   return (
     <>
       <Typography variant="h4" align="center" my="16px">
-        属性情報
+        {t("entity.form.attributesTitle")}
       </Typography>
 
       <Table id="table_attribute_list">
         <TableHead>
           <HeaderTableRow>
-            <HeaderTableCell width="300px">属性名</HeaderTableCell>
-            <HeaderTableCell width="300px">型</HeaderTableCell>
-            <HeaderTableCell width="200px">デフォルト値</HeaderTableCell>
-            <HeaderTableCell width="100px">並び替え</HeaderTableCell>
-            <HeaderTableCell width="100px">削除</HeaderTableCell>
-            <HeaderTableCell width="100px">追加</HeaderTableCell>
-            <HeaderTableCell width="100px">詳細</HeaderTableCell>
+            <HeaderTableCell width="300px">
+              {t("entity.form.attrNameHeader")}
+            </HeaderTableCell>
+            <HeaderTableCell width="300px">
+              {t("entity.form.attrTypeHeader")}
+            </HeaderTableCell>
+            <HeaderTableCell width="200px">
+              {t("entity.form.defaultValueHeader")}
+            </HeaderTableCell>
+            <HeaderTableCell width="100px">
+              {t("entity.form.reorderHeader")}
+            </HeaderTableCell>
+            <HeaderTableCell width="100px">
+              {t("common.delete")}
+            </HeaderTableCell>
+            <HeaderTableCell width="100px">
+              {t("entity.form.addHeader")}
+            </HeaderTableCell>
+            <HeaderTableCell width="100px">
+              {t("common.details")}
+            </HeaderTableCell>
           </HeaderTableRow>
         </TableHead>
         <StyledTableBody>

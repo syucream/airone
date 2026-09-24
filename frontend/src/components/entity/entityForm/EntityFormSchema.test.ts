@@ -432,4 +432,61 @@ describe("schema", () => {
       }
     });
   });
+
+  describe("english validation messages", () => {
+    test("name required message is in English", () => {
+      jest.isolateModules(() => {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const i18n = require("../../../i18n/config").default;
+        i18n.changeLanguage("en");
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { schema: englishSchema } = require("./EntityFormSchema");
+
+        const result = englishSchema.safeParse({
+          ...baseValue,
+          name: "",
+        });
+
+        expect(result.success).toBe(false);
+        if (!result.success) {
+          expect(
+            result.error.issues.some(
+              (issue: z.ZodIssue) =>
+                issue.message === "Entity name is required",
+            ),
+          ).toBe(true);
+        }
+        i18n.changeLanguage("ja");
+      });
+    });
+
+    test("duplicate attribute name message is in English", () => {
+      jest.isolateModules(() => {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const i18n = require("../../../i18n/config").default;
+        i18n.changeLanguage("en");
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { schema: englishSchema } = require("./EntityFormSchema");
+
+        const result = englishSchema.safeParse({
+          ...baseValue,
+          attrs: [
+            { ...baseValue.attrs[0], name: "attr1" },
+            { ...baseValue.attrs[0], name: "attr1" },
+          ],
+        });
+
+        expect(result.success).toBe(false);
+        if (!result.success) {
+          expect(
+            result.error.issues.some(
+              (issue: z.ZodIssue) =>
+                issue.message === "Attribute name is duplicated",
+            ),
+          ).toBe(true);
+        }
+        i18n.changeLanguage("ja");
+      });
+    });
+  });
 });

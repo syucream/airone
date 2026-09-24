@@ -35,6 +35,7 @@ import { AttributeAutoNameConfigModal } from "./AttributeAutoNameConfigModal";
 import { AttributeNoteModal } from "./AttributeNoteModal";
 import { Schema } from "./EntityFormSchema";
 
+import { useTranslation } from "hooks/useTranslation";
 import { aclPath } from "routes/Routes";
 import { AttributeTypes } from "services/Constants";
 
@@ -95,6 +96,7 @@ export const AttributeField: FC<Props> = ({
   attrId,
   index,
 }) => {
+  const { t } = useTranslation();
   const attrType = useWatch({
     control,
     name: `attrs.${index ?? -1}.type`,
@@ -140,7 +142,7 @@ export const AttributeField: FC<Props> = ({
               id="attr-name"
               required
               disabled={!isWritable}
-              placeholder="属性名"
+              placeholder={t("entity.form.attrNameHeader")}
               error={error != null}
               helperText={error?.message}
               size="small"
@@ -189,7 +191,7 @@ export const AttributeField: FC<Props> = ({
                     <TextField
                       {...params}
                       variant="outlined"
-                      placeholder="モデルを選択"
+                      placeholder={t("entity.form.selectEntityPlaceholder")}
                       disabled={!isWritable}
                     />
                   )}
@@ -239,7 +241,7 @@ export const AttributeField: FC<Props> = ({
                   {...field}
                   type="number"
                   value={field.value ?? ""}
-                  placeholder="デフォルト値"
+                  placeholder={t("entity.form.defaultValueHeader")}
                   size="small"
                   fullWidth
                   disabled={!isWritable}
@@ -254,8 +256,8 @@ export const AttributeField: FC<Props> = ({
                 value={field.value ?? ""}
                 placeholder={
                   isDefaultValueSupported
-                    ? "デフォルト値"
-                    : "この型では未サポート"
+                    ? t("entity.form.defaultValueHeader")
+                    : t("entity.form.defaultValueUnsupported")
                 }
                 size="small"
                 fullWidth
@@ -304,7 +306,7 @@ export const AttributeField: FC<Props> = ({
 
       {/* Icon other settings */}
       <TableCell>
-        <Tooltip title="詳細">
+        <Tooltip title={t("common.details")}>
           <IconButton
             onClick={(e) => {
               setAttrMenuElem(e.currentTarget);
@@ -326,7 +328,10 @@ export const AttributeField: FC<Props> = ({
               <ListItemIcon>
                 <EditNoteIcon />
               </ListItemIcon>
-              <ListItemText primary="属性説明" secondary="属性の説明文を設定" />
+              <ListItemText
+                primary={t("entity.form.attrDescriptionMenuTitle")}
+                secondary={t("entity.form.attrDescriptionMenuSubtitle")}
+              />
             </ListItemButton>
 
             {/* Open modal for setting Attribute auto-naming configuration */}
@@ -338,8 +343,8 @@ export const AttributeField: FC<Props> = ({
                 <BadgeIcon />
               </ListItemIcon>
               <ListItemText
-                primary="自動命名"
-                secondary="属性値からアイテム名を自動設定"
+                primary={t("entity.form.autoNameMenuTitle")}
+                secondary={t("entity.form.autoNameMenuSubtitle")}
               />
             </ListItemButton>
 
@@ -352,7 +357,10 @@ export const AttributeField: FC<Props> = ({
               <ListItemIcon>
                 <GroupIcon />
               </ListItemIcon>
-              <ListItemText primary="ACL設定" secondary="属性の権限を設定" />
+              <ListItemText
+                primary={t("entity.form.aclMenuTitle")}
+                secondary={t("entity.form.aclMenuSubtitle")}
+              />
             </ListItemButton>
 
             <Divider />
@@ -375,8 +383,8 @@ export const AttributeField: FC<Props> = ({
                 />
               </ListItemIcon>
               <ListItemText
-                primary="必須設定"
-                secondary="属性値の設定を必須化"
+                primary={t("entity.form.mandatoryMenuTitle")}
+                secondary={t("entity.form.mandatoryMenuSubtitle")}
               />
             </ListItem>
 
@@ -398,8 +406,8 @@ export const AttributeField: FC<Props> = ({
                 />
               </ListItemIcon>
               <ListItemText
-                primary="関連削除"
-                secondary="参照アイテムの削除に連動"
+                primary={t("entity.form.deleteInChainMenuTitle")}
+                secondary={t("entity.form.deleteInChainMenuSubtitle")}
               />
             </ListItem>
           </List>

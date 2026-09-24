@@ -23,6 +23,7 @@ import { Control, Controller, useFieldArray, useWatch } from "react-hook-form";
 import { Schema } from "./EntityFormSchema";
 
 import { ReferralsAutocomplete } from "components/entry/entryForm/ReferralsAutocomplete";
+import { useTranslation } from "hooks/useTranslation";
 import { BaseAttributeTypes } from "services/Constants";
 
 // Attribute types supported in isolation conditions (same as trigger conditions)
@@ -74,6 +75,7 @@ const IsolationConditionValue: FC<ConditionValueProps> = ({
   attrId,
   control,
 }) => {
+  const { t } = useTranslation();
   const isObject = (attrType & BaseAttributeTypes.object) !== 0;
   const isNamed = isObject && (attrType & BaseAttributeTypes.named) !== 0;
   const isBool = (attrType & BaseAttributeTypes.bool) !== 0;
@@ -104,7 +106,7 @@ const IsolationConditionValue: FC<ConditionValueProps> = ({
               {...field}
               value={field.value ?? ""}
               variant="standard"
-              placeholder="名前"
+              placeholder={t("entity.form.isolationNamePlaceholder")}
               size="small"
             />
           )}
@@ -230,6 +232,7 @@ const IsolationConditionRow: FC<ConditionRowProps> = ({
   onRemove,
   onAddAfter,
 }) => {
+  const { t } = useTranslation();
   const attrId = useWatch({
     control,
     name: `isolationRules.${ruleIndex}.conditions.${condIndex}.attr.id`,
@@ -258,7 +261,7 @@ const IsolationConditionRow: FC<ConditionRowProps> = ({
             sx={{ minWidth: 200 }}
           >
             <MenuItem value={0} disabled>
-              属性を選択
+              {t("entity.form.isolationSelectAttrPlaceholder")}
             </MenuItem>
             {savedAttrs
               .filter((a) => ISOLATION_SUPPORTED_TYPES.includes(a.type))
@@ -299,7 +302,7 @@ const IsolationConditionRow: FC<ConditionRowProps> = ({
             fullWidth
             size="small"
             disabled
-            placeholder="値"
+            placeholder={t("entity.form.isolationValuePlaceholder")}
           />
         )}
       </Box>
@@ -331,6 +334,7 @@ const IsolationRuleRow: FC<RuleRowProps> = ({
   onRemove,
   onAddAfter,
 }) => {
+  const { t } = useTranslation();
   const isPreventAll = useWatch({
     control,
     name: `isolationRules.${ruleIndex}.action.isPreventAll`,
@@ -355,7 +359,7 @@ const IsolationRuleRow: FC<RuleRowProps> = ({
               renderInput={(params) => (
                 <TextField
                   {...params}
-                  placeholder="モデルを選択"
+                  placeholder={t("entity.form.selectEntityPlaceholder")}
                   size="small"
                 />
               )}
@@ -414,6 +418,7 @@ export const IsolationRulesFields: FC<Props> = ({
   control,
   referralEntities,
 }) => {
+  const { t } = useTranslation();
   const { fields, insert, remove } = useFieldArray({
     control,
     name: "isolationRules",
@@ -426,21 +431,27 @@ export const IsolationRulesFields: FC<Props> = ({
   return (
     <>
       <Typography variant="h4" align="center" my="16px">
-        他アイテムから参照されなくなる設定
+        {t("entity.form.isolationTitle")}
       </Typography>
 
       <Table id="table_isolation_rules_list">
         <TableHead>
           <HeaderTableRow>
-            <HeaderTableCell width="200px">対象モデル</HeaderTableCell>
-            <HeaderTableCell width="100px">全モデル</HeaderTableCell>
-            <HeaderTableCell sx={{ display: "flex", gap: "8px" }}>
-              <Box width="200px">属性</Box>
-              <Box>NOT</Box>
-              <Box>除外するアイテムの属性値</Box>
+            <HeaderTableCell width="200px">
+              {t("entity.form.isolationTargetEntityHeader")}
             </HeaderTableCell>
-            <HeaderTableCell width="60px">削除</HeaderTableCell>
-            <HeaderTableCell width="60px">追加</HeaderTableCell>
+            <HeaderTableCell width="100px">
+              {t("entity.form.isolationAllEntitiesHeader")}
+            </HeaderTableCell>
+            <HeaderTableCell sx={{ display: "flex", gap: "8px" }}>
+              <Box width="200px">{t("entity.form.isolationAttrHeader")}</Box>
+              <Box>NOT</Box>
+              <Box>{t("entity.form.isolationExcludeValueHeader")}</Box>
+            </HeaderTableCell>
+            <HeaderTableCell width="60px">{t("common.delete")}</HeaderTableCell>
+            <HeaderTableCell width="60px">
+              {t("entity.form.addHeader")}
+            </HeaderTableCell>
           </HeaderTableRow>
         </TableHead>
         <TableBody>

@@ -3,11 +3,12 @@
  */
 
 import { EntityDetail } from "@dmm-com/airone-apiclient-typescript-fetch";
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 
 import { EntityBreadcrumbs } from "./EntityBreadcrumbs";
 
 import { TestWrapper } from "TestWrapper";
+import i18n from "i18n/config";
 import { ACLType } from "services/ACLUtil";
 
 // Mock the routes functions
@@ -103,5 +104,16 @@ describe("EntityBreadcrumbs", () => {
     expect(topLink).toHaveAttribute("href", "/");
     expect(entitiesLink).toHaveAttribute("href", "/entities");
     expect(entityLink).toHaveAttribute("href", "/entity/1/entries");
+  });
+
+  test("renders in English", async () => {
+    await act(async () => {
+      await i18n.changeLanguage("en");
+    });
+
+    render(<EntityBreadcrumbs entity={mockEntity} />, { wrapper: TestWrapper });
+
+    expect(screen.getByText("Top")).toBeInTheDocument();
+    expect(screen.getByText("Entities")).toBeInTheDocument();
   });
 });
