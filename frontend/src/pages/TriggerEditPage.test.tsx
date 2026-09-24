@@ -12,6 +12,7 @@ import { editTriggerPath } from "../routes/Routes";
 import { TriggerEditPage } from "./TriggerEditPage";
 
 import { TestWrapperWithoutRoutes } from "TestWrapper";
+import i18n from "i18n/config";
 
 const server = setupServer(
   // getTrigger
@@ -114,5 +115,35 @@ describe("EditTriggerPage", () => {
     });
 
     expect(result).toMatchSnapshot();
+  });
+
+  test("renders in English", async () => {
+    await act(async () => {
+      await i18n.changeLanguage("en");
+    });
+
+    const router = createMemoryRouter(
+      [
+        {
+          path: editTriggerPath(":triggerId"),
+          element: <TriggerEditPage />,
+        },
+      ],
+      {
+        initialEntries: ["/ui/triggers/1"],
+      },
+    );
+    await act(async () => {
+      render(<RouterProvider router={router} />, {
+        wrapper: TestWrapperWithoutRoutes,
+      });
+    });
+    await waitFor(() => {
+      expect(screen.queryByTestId("loading")).not.toBeInTheDocument();
+    });
+
+    expect(screen.getByText("Target model")).toBeInTheDocument();
+    expect(screen.getByText("Conditions")).toBeInTheDocument();
+    expect(screen.getByText("Actions")).toBeInTheDocument();
   });
 });

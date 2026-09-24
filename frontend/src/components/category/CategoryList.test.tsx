@@ -7,6 +7,7 @@ import { act, render, screen } from "@testing-library/react";
 import { CategoryList } from "./CategoryList";
 
 import { TestWrapper } from "TestWrapper";
+import i18n from "i18n/config";
 import { aironeApiClient } from "repository/AironeApiClient";
 import { ACLType } from "services/ACLUtil";
 import { ServerContext } from "services/ServerContext";
@@ -141,5 +142,27 @@ describe("CategoryList", () => {
 
     // Verify pagination shows zero items
     expect(screen.getByText("0 - 0 / 0 件")).toBeInTheDocument();
+  });
+
+  test("renders in English", async () => {
+    await act(async () => {
+      await i18n.changeLanguage("en");
+    });
+
+    jest.spyOn(aironeApiClient, "getCategories").mockResolvedValue({
+      count: 0,
+      results: [],
+    });
+
+    await act(async () => {
+      render(<CategoryList />, {
+        wrapper: TestWrapper,
+      });
+    });
+
+    expect(screen.getByText("Create new category")).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText("Filter categories"),
+    ).toBeInTheDocument();
   });
 });

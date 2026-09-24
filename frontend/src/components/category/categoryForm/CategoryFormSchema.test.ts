@@ -100,4 +100,32 @@ describe("schema", () => {
 
     expect(schema.parse(partialValue)).toEqual(expectedValue);
   });
+
+  test("validation fails with Japanese message by default", () => {
+    jest.isolateModules(() => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const i18n = require("i18n/config").default;
+      i18n.changeLanguage("ja");
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { schema } = require("./CategoryFormSchema");
+      const result = schema.safeParse({ ...baseValue, name: "" });
+      expect(result.success).toBe(false);
+      expect(result.error?.issues[0]?.message).toEqual("カテゴリ名は必須です");
+    });
+  });
+
+  test("validation fails with English message when language is English", () => {
+    jest.isolateModules(() => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const i18n = require("i18n/config").default;
+      i18n.changeLanguage("en");
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { schema } = require("./CategoryFormSchema");
+      const result = schema.safeParse({ ...baseValue, name: "" });
+      expect(result.success).toBe(false);
+      expect(result.error?.issues[0]?.message).toEqual(
+        "Category name is required",
+      );
+    });
+  });
 });

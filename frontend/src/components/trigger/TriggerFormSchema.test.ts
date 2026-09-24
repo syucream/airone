@@ -104,4 +104,46 @@ describe("schema", () => {
 
     expect(() => schema.parse(value)).toThrow();
   });
+
+  test("validation fails with Japanese messages by default", () => {
+    jest.isolateModules(() => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const i18n = require("i18n/config").default;
+      i18n.changeLanguage("ja");
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { schema } = require("./TriggerFormSchema");
+      const result = schema.safeParse({
+        ...baseValue,
+        entity: { ...baseValue.entity, id: 0 },
+        conditions: [],
+      });
+      expect(result.success).toBe(false);
+      const messages = result.error?.issues.map(
+        (issue: { message: string }) => issue.message,
+      );
+      expect(messages).toContain("モデルは必須です");
+      expect(messages).toContain("最低でもひとつの条件を設定してください");
+    });
+  });
+
+  test("validation fails with English messages when language is English", () => {
+    jest.isolateModules(() => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const i18n = require("i18n/config").default;
+      i18n.changeLanguage("en");
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { schema } = require("./TriggerFormSchema");
+      const result = schema.safeParse({
+        ...baseValue,
+        entity: { ...baseValue.entity, id: 0 },
+        conditions: [],
+      });
+      expect(result.success).toBe(false);
+      const messages = result.error?.issues.map(
+        (issue: { message: string }) => issue.message,
+      );
+      expect(messages).toContain("Model is required");
+      expect(messages).toContain("Set at least one condition");
+    });
+  });
 });

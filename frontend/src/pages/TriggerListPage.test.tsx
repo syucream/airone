@@ -3,6 +3,7 @@
  */
 
 import {
+  act,
   render,
   screen,
   waitForElementToBeRemoved,
@@ -13,6 +14,7 @@ import { setupServer } from "msw/node";
 import { TriggerListPage } from "./TriggerListPage";
 
 import { TestWrapper } from "TestWrapper";
+import i18n from "i18n/config";
 
 const server = setupServer(
   // getTriggers
@@ -72,5 +74,21 @@ describe("TriggerPage", () => {
     await waitForElementToBeRemoved(screen.getByTestId("loading"));
 
     expect(result).toMatchSnapshot();
+  });
+
+  test("renders in English", async () => {
+    await act(async () => {
+      await i18n.changeLanguage("en");
+    });
+
+    render(<TriggerListPage />, {
+      wrapper: TestWrapper,
+    });
+    await waitForElementToBeRemoved(screen.getByTestId("loading"));
+
+    expect(
+      screen.getByRole("heading", { name: "Trigger management" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Create new trigger")).toBeInTheDocument();
   });
 });

@@ -19,7 +19,9 @@ import { EntityControlMenu } from "components/entity/EntityControlMenu";
 import { EntryBreadcrumbs } from "components/entry/EntryBreadcrumbs";
 import { EntryControlMenu } from "components/entry/EntryControlMenu";
 import { EntryImportModal } from "components/entry/EntryImportModal";
+import { useTranslation } from "hooks/useTranslation";
 import { useTypedParams } from "hooks/useTypedParams";
+import { translate } from "i18n/config";
 import { aironeApiClient } from "repository/AironeApiClient";
 
 const MenuBox = styled(Box)(({}) => ({
@@ -27,6 +29,7 @@ const MenuBox = styled(Box)(({}) => ({
 }));
 
 const ACLHistoryContent: FC<{ objectId: number }> = ({ objectId }) => {
+  const { t } = useTranslation();
   const [breadcrumbs, setBreadcrumbs] = useState<JSX.Element>(<Box />);
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
   const [openImportModal, setOpenImportModal] = useState(false);
@@ -81,14 +84,22 @@ const ACLHistoryContent: FC<{ objectId: number }> = ({ objectId }) => {
         aironeApiClient.getEntity(objectId).then((resp) => {
           setEntityDetail(resp);
           setBreadcrumbs(
-            <EntityBreadcrumbs entity={resp} title="ACL変更履歴" />,
+            <EntityBreadcrumbs
+              entity={resp}
+              title={translate("acl.history.pageTitle")}
+            />,
           );
         });
         break;
       case ACLObjtypeEnum.Entry:
         aironeApiClient.getEntry(objectId).then((resp) => {
           setEntryRetrieve(resp);
-          setBreadcrumbs(<EntryBreadcrumbs entry={resp} title="ACL変更履歴" />);
+          setBreadcrumbs(
+            <EntryBreadcrumbs
+              entry={resp}
+              title={translate("acl.history.pageTitle")}
+            />,
+          );
         });
         break;
     }
@@ -98,7 +109,7 @@ const ACLHistoryContent: FC<{ objectId: number }> = ({ objectId }) => {
     <>
       {breadcrumbs}
 
-      <PageHeader title={acl.name} description="ACL変更履歴">
+      <PageHeader title={acl.name} description={t("acl.history.pageTitle")}>
         <MenuBox>
           <IconButton
             id="controlMenu"
