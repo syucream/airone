@@ -24,7 +24,6 @@ const mockEntry: EntryRetrieve = {
   isPublic: true,
   attrs: [],
   deletedUser: null,
-  hasOngoingChanges: false,
   permission: ACLType.Full,
 };
 
