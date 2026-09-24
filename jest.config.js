@@ -14,6 +14,7 @@ module.exports = {
   ],
   setupFilesAfterEnv: [
     "@testing-library/jest-dom/extend-expect",
+    "./jest.setup.i18n.ts",
   ],
   moduleDirectories: [
     "frontend/src",
