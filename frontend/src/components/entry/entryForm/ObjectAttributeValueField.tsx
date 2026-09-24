@@ -18,6 +18,7 @@ import { UseFormSetValue } from "react-hook-form/dist/types/form";
 import { Schema } from "./EntryFormSchema";
 import { ReferralsAutocomplete } from "./ReferralsAutocomplete";
 
+import { useTranslation } from "hooks/useTranslation";
 import { getStagedErrorStyle } from "utils/styleUtils";
 
 const StyledList = styled(List)(({}) => ({
@@ -67,6 +68,8 @@ export const ObjectAttributeValueField: FC<
     multiple?: boolean;
   }
 > = ({ multiple, attrId, control, setValue, isDisabled = false }) => {
+  const { t } = useTranslation();
+
   const handleChange = (
     value: GetEntryAttrReferral | GetEntryAttrReferral[] | null,
   ) => {
@@ -103,7 +106,9 @@ export const ObjectAttributeValueField: FC<
 
   return (
     <Box>
-      <StyledTypography variant="caption">アイテムを選択</StyledTypography>
+      <StyledTypography variant="caption">
+        {t("entryForm.objectField.selectItem")}
+      </StyledTypography>
       <StyledBox>
         <Controller
           name={
@@ -144,6 +149,8 @@ export const NamedObjectAttributeValueField: FC<
   handleClickDeleteListItem,
   withBoolean,
 }) => {
+  const { t } = useTranslation();
+
   const handleChange = (
     value: GetEntryAttrReferral | GetEntryAttrReferral[] | null,
   ) => {
@@ -203,7 +210,9 @@ export const NamedObjectAttributeValueField: FC<
       </FlexBox>
       {withBoolean === true && (
         <BooleanBox>
-          <StyledTypography variant="caption">使用不可</StyledTypography>
+          <StyledTypography variant="caption">
+            {t("entryForm.objectField.disabled")}
+          </StyledTypography>
           <Controller
             name={`attrs.${attrId}.value.asArrayNamedObject.${index}._boolean`}
             control={control}
@@ -217,7 +226,9 @@ export const NamedObjectAttributeValueField: FC<
         </BooleanBox>
       )}
       <Box flexGrow={1}>
-        <StyledTypography variant="caption">アイテムを選択</StyledTypography>
+        <StyledTypography variant="caption">
+          {t("entryForm.objectField.selectItem")}
+        </StyledTypography>
         <Controller
           name={
             index != null

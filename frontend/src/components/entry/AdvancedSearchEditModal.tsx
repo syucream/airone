@@ -9,6 +9,7 @@ import { AironeModal } from "components/common/AironeModal";
 import { AttributeValueField } from "components/entry/entryForm/AttributeValueField";
 import { EditableEntryAttrs } from "components/entry/entryForm/EditableEntry";
 import { Schema, schema } from "components/entry/entryForm/EntryFormSchema";
+import { useTranslation } from "hooks/useTranslation";
 import { aironeApiClient } from "repository/AironeApiClient";
 import {
   AttrsFilter,
@@ -36,6 +37,7 @@ export const AdvancedSearchEditModal: FC<Props> = ({
   targetAttrtype,
 }) => {
   const { enqueueSnackbar } = useSnackbar();
+  const { t } = useTranslation();
 
   const { referralName, hintEntry } = useMemo(() => {
     const params = new URLSearchParams(location.search);
@@ -75,7 +77,9 @@ export const AdvancedSearchEditModal: FC<Props> = ({
         )
         .then(() => {
           enqueueSnackbar(
-            `属性「${targetAttrname}」の一括更新のジョブを実行しました（順次結果が反映されます）。`,
+            t("advancedSearch.editModal.bulkUpdateSucceeded", {
+              attrName: targetAttrname,
+            }),
             {
               variant: "success",
             },
@@ -117,7 +121,7 @@ export const AdvancedSearchEditModal: FC<Props> = ({
 
   return (
     <AironeModal
-      title={"一括更新する（変更後の）値に更新"}
+      title={t("advancedSearch.editModal.bulkUpdateTitle")}
       open={openModal}
       onClose={handleClose}
     >
@@ -136,7 +140,7 @@ export const AdvancedSearchEditModal: FC<Props> = ({
           sx={{ mx: "4px" }}
           onClick={handleUpdateAttributeValue}
         >
-          更新
+          {t("common.update")}
         </Button>
         <Button
           variant="outlined"
@@ -144,7 +148,7 @@ export const AdvancedSearchEditModal: FC<Props> = ({
           sx={{ mx: "4px" }}
           onClick={handleClose}
         >
-          キャンセル
+          {t("common.cancel")}
         </Button>
       </Box>
     </AironeModal>

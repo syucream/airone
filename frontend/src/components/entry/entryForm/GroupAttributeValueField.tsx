@@ -14,6 +14,7 @@ import { aironeApiClient } from "../../../repository/AironeApiClient";
 
 import { Schema } from "./EntryFormSchema";
 
+import { useTranslation } from "hooks/useTranslation";
 import { getStagedErrorStyle } from "utils/styleUtils";
 
 const StyledTypography = styled(Typography)(() => ({
@@ -42,6 +43,7 @@ export const GroupAttributeValueField: FC<Props> = ({
   multiple = false,
   isDisabled = false,
 }) => {
+  const { t } = useTranslation();
   const [options, setOptions] = useState<GroupOption[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [loading, setLoading] = useState(false);
@@ -86,7 +88,9 @@ export const GroupAttributeValueField: FC<Props> = ({
 
   return (
     <Box>
-      <StyledTypography variant="caption">グループを選択</StyledTypography>
+      <StyledTypography variant="caption">
+        {t("entryForm.groupField.selectGroup")}
+      </StyledTypography>
       <StyledBox>
         <Controller
           name={

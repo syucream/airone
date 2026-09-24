@@ -914,4 +914,102 @@ describe("schema", () => {
       }
     });
   });
+
+  describe("english validation messages", () => {
+    test("name required / too large messages are in english", () => {
+      jest.isolateModules(() => {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const i18n = require("i18n/config").default;
+        i18n.changeLanguage("en");
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { schema: enSchema } = require("./EntryFormSchema");
+
+        const emptyNameResult = enSchema.safeParse({
+          ...baseValue,
+          name: "",
+        });
+        expect(emptyNameResult.success).toBe(false);
+        if (!emptyNameResult.success) {
+          expect(
+            emptyNameResult.error.issues.some(
+              (issue: { message: string }) =>
+                issue.message === "The entry name is required",
+            ),
+          ).toBe(true);
+        }
+
+        const tooLargeNameResult = enSchema.safeParse({
+          ...baseValue,
+          name: "x".repeat(201),
+        });
+        expect(tooLargeNameResult.success).toBe(false);
+        if (!tooLargeNameResult.success) {
+          expect(
+            tooLargeNameResult.error.issues.some(
+              (issue: { message: string }) =>
+                issue.message === "The entry name is too large",
+            ),
+          ).toBe(true);
+        }
+      });
+    });
+
+    test("required field message is in english", () => {
+      jest.isolateModules(() => {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const i18n = require("i18n/config").default;
+        i18n.changeLanguage("en");
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { schema: enSchema } = require("./EntryFormSchema");
+
+        const value = {
+          ...baseValue,
+          attrs: {
+            string: {
+              ...baseValue.attrs.string,
+              isMandatory: true,
+              value: {
+                asString: "",
+              },
+            },
+          },
+        };
+
+        const result = enSchema.safeParse(value);
+        expect(result.success).toBe(false);
+        if (!result.success) {
+          const error = result.error.issues.find(
+            (issue: { path: (string | number)[]; message: string }) =>
+              issue.path.join(".") === "attrs.string.value.asString" &&
+              issue.message === "This field is required",
+          );
+          expect(error).toBeDefined();
+        }
+      });
+    });
+
+    test("invalid characters message is in english", () => {
+      jest.isolateModules(() => {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const i18n = require("i18n/config").default;
+        i18n.changeLanguage("en");
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { schema: enSchema } = require("./EntryFormSchema");
+
+        const result = enSchema.safeParse({
+          ...baseValue,
+          name: "テスト😊",
+        });
+        expect(result.success).toBe(false);
+        if (!result.success) {
+          expect(
+            result.error.issues.some(
+              (issue: { message: string }) =>
+                issue.message === "Contains characters that cannot be used",
+            ),
+          ).toBe(true);
+        }
+      });
+    });
+  });
 });

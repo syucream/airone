@@ -6,11 +6,12 @@ import {
   AdvancedSearchResultAttrInfoFilterKeyEnum,
   AdvancedSearchJoinAttrInfo,
 } from "@dmm-com/airone-apiclient-typescript-fetch";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { act, render, screen, fireEvent } from "@testing-library/react";
 
 import { AdvancedSearchModal } from "./AdvancedSearchModal";
 
 import { TestWrapper } from "TestWrapper";
+import i18n from "i18n/config";
 
 jest.mock("react-router", () => ({
   ...jest.requireActual("react-router"),
@@ -73,6 +74,27 @@ describe("AdvancedSearchModal", () => {
     );
     fireEvent.click(screen.getByText("キャンセル"));
     expect(setOpenModal).toHaveBeenCalledWith(false);
+  });
+
+  test("renders in English", async () => {
+    await act(async () => {
+      await i18n.changeLanguage("en");
+    });
+    render(
+      <AdvancedSearchModal
+        openModal={true}
+        setOpenModal={jest.fn()}
+        attrNames={attrNames}
+        initialAttrNames={initialAttrNames}
+        attrInfos={attrInfos}
+        joinAttrs={joinAttrs}
+      />,
+      { wrapper: TestWrapper },
+    );
+    expect(screen.getByText("Reset search attributes")).toBeInTheDocument();
+    expect(screen.getByText("Save")).toBeInTheDocument();
+    expect(screen.getByText("Cancel")).toBeInTheDocument();
+    expect(screen.getByText("Include referral entries")).toBeInTheDocument();
   });
 
   test("should not render modal when openModal is false", () => {

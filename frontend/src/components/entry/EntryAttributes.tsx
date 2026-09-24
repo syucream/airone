@@ -18,6 +18,7 @@ import { styled } from "@mui/material/styles";
 import { FC, useMemo } from "react";
 
 import { AttributeValue } from "components/entry/AttributeValue";
+import { useTranslation } from "hooks/useTranslation";
 import { triggersPath } from "routes/Routes";
 
 interface Props {
@@ -59,6 +60,7 @@ const AttrValueTableCell = styled(TableCell)(() => ({
 }));
 
 export const EntryAttributes: FC<Props> = ({ attributes, triggers }) => {
+  const { t } = useTranslation();
   const triggeredAttrIds = useMemo(
     () =>
       new Set(triggers?.flatMap((t) => t.actions.map((a) => a.attr.id)) ?? []),
@@ -70,8 +72,8 @@ export const EntryAttributes: FC<Props> = ({ attributes, triggers }) => {
       <Table>
         <TableHead sx={{ backgroundColor: "primary.dark" }}>
           <TableRow>
-            <HeaderTableCell>項目</HeaderTableCell>
-            <HeaderTableCell>内容</HeaderTableCell>
+            <HeaderTableCell>{t("entry.common.itemHeader")}</HeaderTableCell>
+            <HeaderTableCell>{t("entry.common.valueHeader")}</HeaderTableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -83,7 +85,7 @@ export const EntryAttributes: FC<Props> = ({ attributes, triggers }) => {
               <AttrNameTableCell>
                 {triggeredAttrIds.has(attr.schema.id) ? (
                   <Tooltip
-                    title="この属性には Trigger が設定されています"
+                    title={t("entry.attributes.triggerTooltip")}
                     placement="top"
                   >
                     <Link href={triggersPath()}>{attr.schema.name}</Link>

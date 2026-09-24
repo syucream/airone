@@ -14,6 +14,7 @@ import { aironeApiClient } from "../../../repository/AironeApiClient";
 
 import { Schema } from "./EntryFormSchema";
 
+import { useTranslation } from "hooks/useTranslation";
 import { getStagedErrorStyle } from "utils/styleUtils";
 
 const StyledTypography = styled(Typography)(() => ({
@@ -42,6 +43,7 @@ export const RoleAttributeValueField: FC<Props> = ({
   setValue,
   isDisabled = false,
 }) => {
+  const { t } = useTranslation();
   const [options, setOptions] = useState<RoleOption[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [loading, setLoading] = useState(false);
@@ -79,7 +81,9 @@ export const RoleAttributeValueField: FC<Props> = ({
 
   return (
     <Box>
-      <StyledTypography variant="caption">ロールを選択</StyledTypography>
+      <StyledTypography variant="caption">
+        {t("entryForm.roleField.selectRole")}
+      </StyledTypography>
       <StyledBox>
         <Controller
           name={

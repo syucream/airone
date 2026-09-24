@@ -10,6 +10,7 @@ import { act, render, screen, within } from "@testing-library/react";
 
 import { TestWrapper } from "TestWrapper";
 import { EntryAttributes } from "components/entry/EntryAttributes";
+import i18n from "i18n/config";
 
 describe("EntryAttributes", () => {
   const attributes: Array<EntryAttributeType> = [
@@ -56,5 +57,20 @@ describe("EntryAttributes", () => {
     expect(within(bodyRowGroup).queryAllByRole("row")).toHaveLength(2);
     expect(within(bodyRowGroup).queryByText("value1")).toBeInTheDocument();
     expect(within(bodyRowGroup).queryByText("value2")).not.toBeInTheDocument();
+  });
+
+  test("renders in English", async () => {
+    await act(async () => {
+      await i18n.changeLanguage("en");
+    });
+
+    await act(async () => {
+      render(<EntryAttributes attributes={attributes} />, {
+        wrapper: TestWrapper,
+      });
+    });
+
+    expect(screen.getByText("Item")).toBeInTheDocument();
+    expect(screen.getByText("Value")).toBeInTheDocument();
   });
 });

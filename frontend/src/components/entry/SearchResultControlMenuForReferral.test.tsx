@@ -2,11 +2,12 @@
  * @jest-environment jsdom
  */
 
-import { render } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 
 import { SearchResultControlMenuForReferral } from "./SearchResultControlMenuForReferral";
 
 import { TestWrapper } from "TestWrapper";
+import i18n from "i18n/config";
 
 describe("SearchResultControlMenuForReferral", () => {
   const defaultProps = {
@@ -49,5 +50,21 @@ describe("SearchResultControlMenuForReferral", () => {
     );
 
     expect(container).toBeInTheDocument();
+  });
+
+  test("renders in English", async () => {
+    await act(async () => {
+      await i18n.changeLanguage("en");
+    });
+    const anchorElem = document.createElement("button");
+    render(
+      <SearchResultControlMenuForReferral
+        {...defaultProps}
+        anchorElem={anchorElem}
+      />,
+      { wrapper: TestWrapper },
+    );
+
+    expect(screen.getByText("Clear")).toBeInTheDocument();
   });
 });

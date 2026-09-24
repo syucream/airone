@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { EditableEntry } from "./EditableEntry";
 
+import { translate } from "i18n/config";
 import { schemaForType } from "services/ZodSchemaUtil";
 
 // Function to detect 4-byte characters (characters outside the BMP - Basic Multilingual Plane)
@@ -31,10 +32,10 @@ export const schema = schemaForType<EditableEntry>()(
     name: z
       .string()
       .trim()
-      .min(1, "アイテム名は必須です")
-      .max(200, "アイテム名が大きすぎます")
+      .min(1, translate("entryForm.schema.nameRequired"))
+      .max(200, translate("entryForm.schema.nameTooLarge"))
       .refine((value) => !hasFourByteChars(value), {
-        message: "使用できない文字が含まれています",
+        message: translate("entryForm.schema.invalidChars"),
       })
       .default(""),
     schema: z.object({
@@ -58,9 +59,9 @@ export const schema = schemaForType<EditableEntry>()(
               asBoolean: z.boolean().optional(),
               asString: z
                 .string()
-                .max(1 << 16, "属性の値が大きすぎます")
+                .max(1 << 16, translate("entryForm.schema.valueTooLarge"))
                 .refine((value) => !hasFourByteChars(value), {
-                  message: "使用できない文字が含まれています",
+                  message: translate("entryForm.schema.invalidChars"),
                 })
                 .optional(),
               asArrayString: z
@@ -68,9 +69,9 @@ export const schema = schemaForType<EditableEntry>()(
                   z.object({
                     value: z
                       .string()
-                      .max(1 << 16, "属性の値が大きすぎます")
+                      .max(1 << 16, translate("entryForm.schema.valueTooLarge"))
                       .refine((value) => !hasFourByteChars(value), {
-                        message: "使用できない文字が含まれています",
+                        message: translate("entryForm.schema.invalidChars"),
                       }),
                   }),
                 )
@@ -79,7 +80,7 @@ export const schema = schemaForType<EditableEntry>()(
                 .object({
                   id: z.number(),
                   name: z.string().refine((value) => !hasFourByteChars(value), {
-                    message: "使用できない文字が含まれています",
+                    message: translate("entryForm.schema.invalidChars"),
                   }),
                 })
                 .nullable()
@@ -91,7 +92,7 @@ export const schema = schemaForType<EditableEntry>()(
                     name: z
                       .string()
                       .refine((value) => !hasFourByteChars(value), {
-                        message: "使用できない文字が含まれています",
+                        message: translate("entryForm.schema.invalidChars"),
                       }),
                   }),
                 )
@@ -99,7 +100,7 @@ export const schema = schemaForType<EditableEntry>()(
               asNamedObject: z
                 .object({
                   name: z.string().refine((value) => !hasFourByteChars(value), {
-                    message: "使用できない文字が含まれています",
+                    message: translate("entryForm.schema.invalidChars"),
                   }),
                   object: z
                     .object({
@@ -107,7 +108,7 @@ export const schema = schemaForType<EditableEntry>()(
                       name: z
                         .string()
                         .refine((value) => !hasFourByteChars(value), {
-                          message: "使用できない文字が含まれています",
+                          message: translate("entryForm.schema.invalidChars"),
                         }),
                     })
                     .nullable()
@@ -120,7 +121,7 @@ export const schema = schemaForType<EditableEntry>()(
                     name: z
                       .string()
                       .refine((value) => !hasFourByteChars(value), {
-                        message: "使用できない文字が含まれています",
+                        message: translate("entryForm.schema.invalidChars"),
                       }),
                     object: z
                       .object({
@@ -128,7 +129,7 @@ export const schema = schemaForType<EditableEntry>()(
                         name: z
                           .string()
                           .refine((value) => !hasFourByteChars(value), {
-                            message: "使用できない文字が含まれています",
+                            message: translate("entryForm.schema.invalidChars"),
                           }),
                       })
                       .nullable()
@@ -141,7 +142,7 @@ export const schema = schemaForType<EditableEntry>()(
                 .object({
                   id: z.number(),
                   name: z.string().refine((value) => !hasFourByteChars(value), {
-                    message: "使用できない文字が含まれています",
+                    message: translate("entryForm.schema.invalidChars"),
                   }),
                 })
                 .nullable()
@@ -153,7 +154,7 @@ export const schema = schemaForType<EditableEntry>()(
                     name: z
                       .string()
                       .refine((value) => !hasFourByteChars(value), {
-                        message: "使用できない文字が含まれています",
+                        message: translate("entryForm.schema.invalidChars"),
                       }),
                   }),
                 )
@@ -162,7 +163,7 @@ export const schema = schemaForType<EditableEntry>()(
                 .object({
                   id: z.number(),
                   name: z.string().refine((value) => !hasFourByteChars(value), {
-                    message: "使用できない文字が含まれています",
+                    message: translate("entryForm.schema.invalidChars"),
                   }),
                 })
                 .nullable()
@@ -174,7 +175,7 @@ export const schema = schemaForType<EditableEntry>()(
                     name: z
                       .string()
                       .refine((value) => !hasFourByteChars(value), {
-                        message: "使用できない文字が含まれています",
+                        message: translate("entryForm.schema.invalidChars"),
                       }),
                   }),
                 )
@@ -202,7 +203,7 @@ export const schema = schemaForType<EditableEntry>()(
                 if (value.value.asString === "") {
                   ctx.addIssue({
                     code: z.ZodIssueCode.custom,
-                    message: "必須項目です",
+                    message: translate("entryForm.schema.required"),
                     path: ["value", "asString"],
                   });
                 }
@@ -217,14 +218,14 @@ export const schema = schemaForType<EditableEntry>()(
                   value.value.asArrayString?.forEach((_, index) => {
                     ctx.addIssue({
                       code: z.ZodIssueCode.custom,
-                      message: "必須項目です",
+                      message: translate("entryForm.schema.required"),
                       path: ["value", "asArrayString", index, "value"],
                     });
                   });
                   if (!value.value.asArrayString?.length) {
                     ctx.addIssue({
                       code: z.ZodIssueCode.custom,
-                      message: "必須項目です",
+                      message: translate("entryForm.schema.required"),
                       path: ["value", "asArrayString", 0, "value"],
                     });
                   }
@@ -234,7 +235,7 @@ export const schema = schemaForType<EditableEntry>()(
                 if (value.value.asObject == null) {
                   ctx.addIssue({
                     code: z.ZodIssueCode.custom,
-                    message: "必須項目です",
+                    message: translate("entryForm.schema.required"),
                     path: ["value", "asObject"],
                   });
                 }
@@ -245,7 +246,7 @@ export const schema = schemaForType<EditableEntry>()(
                 ) {
                   ctx.addIssue({
                     code: z.ZodIssueCode.custom,
-                    message: "必須項目です",
+                    message: translate("entryForm.schema.required"),
                     path: ["value", "asArrayObject"],
                   });
                 }
@@ -259,12 +260,12 @@ export const schema = schemaForType<EditableEntry>()(
                 ) {
                   ctx.addIssue({
                     code: z.ZodIssueCode.custom,
-                    message: "必須項目です",
+                    message: translate("entryForm.schema.required"),
                     path: ["value", "asNamedObject", "name"],
                   });
                   ctx.addIssue({
                     code: z.ZodIssueCode.custom,
-                    message: "必須項目です",
+                    message: translate("entryForm.schema.required"),
                     path: ["value", "asNamedObject", "object"],
                   });
                 }
@@ -280,24 +281,24 @@ export const schema = schemaForType<EditableEntry>()(
                   value.value.asArrayNamedObject?.forEach((_, index) => {
                     ctx.addIssue({
                       code: z.ZodIssueCode.custom,
-                      message: "必須項目です",
+                      message: translate("entryForm.schema.required"),
                       path: ["value", "asArrayNamedObject", index, "name"],
                     });
                     ctx.addIssue({
                       code: z.ZodIssueCode.custom,
-                      message: "必須項目です",
+                      message: translate("entryForm.schema.required"),
                       path: ["value", "asArrayNamedObject", index, "object"],
                     });
                   });
                   if (!value.value.asArrayNamedObject?.length) {
                     ctx.addIssue({
                       code: z.ZodIssueCode.custom,
-                      message: "必須項目です",
+                      message: translate("entryForm.schema.required"),
                       path: ["value", "asArrayNamedObject", 0, "name"],
                     });
                     ctx.addIssue({
                       code: z.ZodIssueCode.custom,
-                      message: "必須項目です",
+                      message: translate("entryForm.schema.required"),
                       path: ["value", "asArrayNamedObject", 0, "object"],
                     });
                   }
@@ -307,7 +308,7 @@ export const schema = schemaForType<EditableEntry>()(
                 if (value.value.asGroup == null) {
                   ctx.addIssue({
                     code: z.ZodIssueCode.custom,
-                    message: "必須項目です",
+                    message: translate("entryForm.schema.required"),
                     path: ["value", "asGroup"],
                   });
                 }
@@ -318,7 +319,7 @@ export const schema = schemaForType<EditableEntry>()(
                 ) {
                   ctx.addIssue({
                     code: z.ZodIssueCode.custom,
-                    message: "必須項目です",
+                    message: translate("entryForm.schema.required"),
                     path: ["value", "asArrayGroup"],
                   });
                 }
@@ -327,7 +328,7 @@ export const schema = schemaForType<EditableEntry>()(
                 if (value.value.asRole == null) {
                   ctx.addIssue({
                     code: z.ZodIssueCode.custom,
-                    message: "必須項目です",
+                    message: translate("entryForm.schema.required"),
                     path: ["value", "asRole"],
                   });
                 }
@@ -338,7 +339,7 @@ export const schema = schemaForType<EditableEntry>()(
                 ) {
                   ctx.addIssue({
                     code: z.ZodIssueCode.custom,
-                    message: "必須項目です",
+                    message: translate("entryForm.schema.required"),
                     path: ["value", "asArrayRole"],
                   });
                 }
@@ -347,7 +348,7 @@ export const schema = schemaForType<EditableEntry>()(
                 if (value.value.asNumber == null) {
                   ctx.addIssue({
                     code: z.ZodIssueCode.custom,
-                    message: "必須項目です",
+                    message: translate("entryForm.schema.required"),
                     path: ["value", "asNumber"],
                   });
                 }
@@ -362,14 +363,14 @@ export const schema = schemaForType<EditableEntry>()(
                   value.value.asArrayNumber?.forEach((_, index) => {
                     ctx.addIssue({
                       code: z.ZodIssueCode.custom,
-                      message: "必須項目です",
+                      message: translate("entryForm.schema.required"),
                       path: ["value", "asArrayNumber", index, "value"],
                     });
                   });
                   if (!value.value.asArrayNumber?.length) {
                     ctx.addIssue({
                       code: z.ZodIssueCode.custom,
-                      message: "必須項目です",
+                      message: translate("entryForm.schema.required"),
                       path: ["value", "asArrayNumber", 0, "value"],
                     });
                   }
@@ -388,7 +389,7 @@ export const schema = schemaForType<EditableEntry>()(
                 );
             }
             return true;
-          }, "値が不正です"),
+          }, translate("entryForm.schema.invalidValue")),
       )
       .default({}),
   }),
