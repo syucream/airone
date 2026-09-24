@@ -41,3 +41,42 @@ describe("schema", () => {
     expect(() => schema.parse(value)).toThrow();
   });
 });
+
+describe("schema messages", () => {
+  const baseValue: Schema = {
+    username: "user1",
+    email: "test@example.com",
+    isSuperuser: false,
+    password: "password",
+  };
+
+  test("japanese validation messages", () => {
+    jest.isolateModules(() => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const i18n = require("i18n/config").default;
+      i18n.changeLanguage("ja");
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { schema } = require("./UserFormSchema");
+      const result = schema.safeParse({ ...baseValue, username: "" });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.issues[0].message).toBe("ユーザ名は必須です");
+      }
+    });
+  });
+
+  test("english validation messages", () => {
+    jest.isolateModules(() => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const i18n = require("i18n/config").default;
+      i18n.changeLanguage("en");
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { schema } = require("./UserFormSchema");
+      const result = schema.safeParse({ ...baseValue, username: "" });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.issues[0].message).toBe("Username is required");
+      }
+    });
+  });
+});

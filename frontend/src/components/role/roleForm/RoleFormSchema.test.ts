@@ -169,3 +169,46 @@ describe("schema", () => {
     expect(() => schema.parse(value)).toThrow();
   });
 });
+
+describe("schema messages", () => {
+  const baseValue: Schema = {
+    id: 1,
+    isActive: true,
+    name: "role1",
+    description: "test description",
+    users: [],
+    groups: [],
+    adminUsers: [{ id: 3, username: "user3" }],
+    adminGroups: [],
+  };
+
+  test("japanese validation messages", () => {
+    jest.isolateModules(() => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const i18n = require("i18n/config").default;
+      i18n.changeLanguage("ja");
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { schema } = require("./RoleFormSchema");
+      const result = schema.safeParse({ ...baseValue, name: "" });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.issues[0].message).toBe("ロール名は必須です");
+      }
+    });
+  });
+
+  test("english validation messages", () => {
+    jest.isolateModules(() => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const i18n = require("i18n/config").default;
+      i18n.changeLanguage("en");
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { schema } = require("./RoleFormSchema");
+      const result = schema.safeParse({ ...baseValue, name: "" });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.issues[0].message).toBe("Role name is required");
+      }
+    });
+  });
+});

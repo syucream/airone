@@ -13,6 +13,7 @@ import { FC } from "react";
 import { useNavigate } from "react-router";
 
 import { Confirmable } from "components/common/Confirmable";
+import { useTranslation } from "hooks/useTranslation";
 import { aironeApiClient } from "repository/AironeApiClient";
 import { topPath } from "routes/Routes";
 import { usersPath } from "routes/Routes";
@@ -38,18 +39,22 @@ export const UserControlMenu: FC<UserControlProps> = ({
 }) => {
   const { enqueueSnackbar } = useSnackbar();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const handleDelete = async (user: UserList) => {
     try {
       await aironeApiClient.destroyUser(user.id);
-      enqueueSnackbar(`ユーザ(${user.username})の削除が完了しました`, {
-        variant: "success",
-      });
+      enqueueSnackbar(
+        t("user.controlMenu.deleteSuccess", { username: user.username }),
+        {
+          variant: "success",
+        },
+      );
       navigate(topPath(), { replace: true });
       navigate(usersPath(), { replace: true });
       setToggle && setToggle();
     } catch (e) {
-      enqueueSnackbar("ユーザの削除が失敗しました", {
+      enqueueSnackbar(t("user.controlMenu.deleteFailure"), {
         variant: "error",
       });
     }
@@ -77,19 +82,21 @@ export const UserControlMenu: FC<UserControlProps> = ({
             onClickEditPassword(user.id);
           }}
         >
-          <Typography>パスワード編集</Typography>
+          <Typography>{t("user.controlMenu.editPassword")}</Typography>
         </MenuItem>
         {(!isSelf || isCoUser) && (
           <Confirmable
             componentGenerator={(handleOpen) => (
               <MenuItem onClick={handleOpen} sx={{ justifyContent: "end" }}>
-                <ListItemText>削除</ListItemText>
+                <ListItemText>{t("common.delete")}</ListItemText>
                 <ListItemIcon>
                   <DeleteOutlineIcon />
                 </ListItemIcon>
               </MenuItem>
             )}
-            dialogTitle={`本当に削除しますか？(${user.username})`}
+            dialogTitle={t("user.controlMenu.deleteConfirm", {
+              username: user.username,
+            })}
             onClickYes={() => handleDelete(user)}
           />
         )}

@@ -19,6 +19,8 @@ import { schema } from "../entry/entryForm/EntryFormSchema";
 import { GroupForm } from "./GroupForm";
 import { Schema } from "./groupForm/GroupFormSchema";
 
+import i18n from "i18n/config";
+
 describe("GroupForm", () => {
   const groups = [
     {
@@ -86,5 +88,41 @@ describe("GroupForm", () => {
     });
 
     expect(screen.getByPlaceholderText("グループ名")).toHaveValue("group name");
+  });
+
+  test("renders in English", async () => {
+    await act(async () => {
+      await i18n.changeLanguage("en");
+    });
+
+    const {
+      result: {
+        current: { control, setValue },
+      },
+    } = renderHook(() =>
+      useForm<Schema>({
+        resolver: zodResolver(schema),
+        mode: "onBlur",
+        defaultValues,
+      }),
+    );
+
+    /* eslint-disable */
+    jest
+      .spyOn(require("repository/AironeApiClient").aironeApiClient, "getUsers")
+      .mockResolvedValue(Promise.resolve([]));
+    jest
+      .spyOn(
+        require("repository/AironeApiClient").aironeApiClient,
+        "getGroupTrees",
+      )
+      .mockResolvedValue(Promise.resolve(groups));
+    /* eslint-enable */
+
+    render(<GroupForm control={control} setValue={setValue} groupId={1} />, {
+      wrapper: TestWrapper,
+    });
+
+    expect(screen.getByPlaceholderText("Group name")).toBeInTheDocument();
   });
 });

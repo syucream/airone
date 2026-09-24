@@ -17,6 +17,7 @@ import { useFormNotification } from "hooks/useFormNotification";
 import { usePageTitle } from "hooks/usePageTitle";
 import { usePagodaSWR } from "hooks/usePagodaSWR";
 import { usePrompt } from "hooks/usePrompt";
+import { useTranslation } from "hooks/useTranslation";
 import { useTypedParams } from "hooks/useTypedParams";
 import { aironeApiClient } from "repository/AironeApiClient";
 import { topPath, usersPath, loginPath } from "routes/Routes";
@@ -33,7 +34,11 @@ export const UserEditPage: FC = () => {
 
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
-  const { enqueueSubmitResult } = useFormNotification("ユーザ", willCreate);
+  const { t } = useTranslation();
+  const { enqueueSubmitResult } = useFormNotification(
+    t("common.target.user"),
+    willCreate,
+  );
   const {
     formState: { isValid, isDirty, isSubmitting, isSubmitSuccessful },
     handleSubmit,
@@ -45,10 +50,7 @@ export const UserEditPage: FC = () => {
     mode: "onBlur",
   });
 
-  usePrompt(
-    isDirty && !isSubmitSuccessful,
-    "編集した内容は失われてしまいますが、このページを離れてもよろしいですか？",
-  );
+  usePrompt(isDirty && !isSubmitSuccessful, t("user.edit.confirmLeave"));
 
   const {
     data: user,
@@ -73,9 +75,14 @@ export const UserEditPage: FC = () => {
     isSubmitSuccessful && navigate(usersPath());
   }, [isSubmitSuccessful, navigate]);
 
-  usePageTitle(userLoading ? "読み込み中..." : TITLE_TEMPLATES.userEdit, {
-    prefix: user?.username ?? (willCreate ? "新規作成" : undefined),
-  });
+  usePageTitle(
+    userLoading ? t("user.edit.loading") : TITLE_TEMPLATES.userEdit,
+    {
+      prefix:
+        user?.username ??
+        (willCreate ? t("user.edit.newUserPrefix") : undefined),
+    },
+  );
 
   // These state variables and handlers are used for password reset feature
   const [openModal, setOpenModal] = useState(false);
@@ -127,7 +134,11 @@ export const UserEditPage: FC = () => {
       if (e instanceof Error && isResponseError(e)) {
         await extractAPIException<Schema>(
           e,
-          (message) => enqueueSubmitResult(false, `詳細: "${message}"`),
+          (message) =>
+            enqueueSubmitResult(
+              false,
+              t("user.edit.submitFailureDetail", { message }),
+            ),
           (name, message) => {
             setError(name, { type: "custom", message: message });
             enqueueSubmitResult(false);
@@ -155,11 +166,14 @@ export const UserEditPage: FC = () => {
       if (e instanceof Response) {
         const json = await e.json();
         const reason = json["code"];
-        enqueueSnackbar(`Token の更新に失敗しました。詳細: ${reason}`, {
-          variant: "error",
-        });
+        enqueueSnackbar(
+          t("user.edit.tokenUpdateFailureWithReason", { reason }),
+          {
+            variant: "error",
+          },
+        );
       } else {
-        enqueueSnackbar(`Token の更新に失敗しました。`, {
+        enqueueSnackbar(t("user.edit.tokenUpdateFailure"), {
           variant: "error",
         });
       }
@@ -173,13 +187,13 @@ export const UserEditPage: FC = () => {
           Top
         </Typography>
         <Typography component={AironeLink} to={usersPath()}>
-          ユーザ管理
+          {t("user.list.pageTitle")}
         </Typography>
-        <Typography color="textPrimary">ユーザ情報の設定</Typography>
+        <Typography color="textPrimary">{t("user.edit.pageTitle")}</Typography>
       </AironeBreadcrumbs>
       <PageHeader
-        title={user != null ? user.username : "新規ユーザの作成"}
-        description={user != null ? "ユーザ編集" : undefined}
+        title={user != null ? user.username : t("user.edit.newUserTitle")}
+        description={user != null ? t("user.edit.description") : undefined}
       >
         <Box display="flex" justifyContent="center">
           <Box mx="4px">
@@ -189,14 +203,14 @@ export const UserEditPage: FC = () => {
               disabled={isCreateMode || !(isMyself || isSuperuser || isCoUser)}
               onClick={handleOpenModal}
             >
-              パスワードの再設定
+              {t("user.edit.resetPassword")}
             </Button>
             <UserPasswordFormModal
               userId={user?.id ?? 0}
               openModal={openModal}
               onClose={handleCloseModal}
               onSubmitSuccess={() => {
-                enqueueSnackbar("パスワードを変更しました", {
+                enqueueSnackbar(t("user.edit.passwordChanged"), {
                   variant: "success",
                 });
 
@@ -217,10 +231,10 @@ export const UserEditPage: FC = () => {
                   disabled={isCreateMode || !(isMyself || isCoUser)}
                   onClick={handleOpen}
                 >
-                  Access Token をリフレッシュ
+                  {t("user.edit.refreshToken")}
                 </Button>
               )}
-              dialogTitle="AccessTokenを更新してもよろしいですか？ ※現在入力中の項目はリセットされます"
+              dialogTitle={t("user.edit.refreshTokenConfirm")}
               onClickYes={() => handleRefreshToken()}
             />
           </Box>

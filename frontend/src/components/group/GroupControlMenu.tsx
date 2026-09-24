@@ -12,6 +12,7 @@ import { FC, useCallback } from "react";
 import { Link, useNavigate } from "react-router";
 
 import { Confirmable } from "components/common/Confirmable";
+import { useTranslation } from "hooks/useTranslation";
 import { aironeApiClient } from "repository/AironeApiClient";
 import { groupPath, groupsPath, topPath } from "routes/Routes";
 
@@ -30,22 +31,23 @@ export const GroupControlMenu: FC<Props> = ({
 }) => {
   const { enqueueSnackbar } = useSnackbar();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const handleDelete = useCallback(async () => {
     try {
       await aironeApiClient.deleteGroup(groupId);
-      enqueueSnackbar(`グループの削除が完了しました`, {
+      enqueueSnackbar(t("group.controlMenu.deleteSuccess"), {
         variant: "success",
       });
       navigate(topPath(), { replace: true });
       navigate(groupsPath(), { replace: true });
       setToggle && setToggle();
     } catch (e) {
-      enqueueSnackbar("グループの削除が失敗しました", {
+      enqueueSnackbar(t("group.controlMenu.deleteFailure"), {
         variant: "error",
       });
     }
-  }, [navigate, enqueueSnackbar, groupId, setToggle]);
+  }, [navigate, enqueueSnackbar, groupId, setToggle, t]);
 
   return (
     <Menu
@@ -63,18 +65,18 @@ export const GroupControlMenu: FC<Props> = ({
     >
       <Box sx={{ width: 150 }}>
         <MenuItem component={Link} to={groupPath(groupId)}>
-          <Typography>グループ編集</Typography>
+          <Typography>{t("group.controlMenu.editGroup")}</Typography>
         </MenuItem>
         <Confirmable
           componentGenerator={(handleOpen) => (
             <MenuItem onClick={handleOpen} sx={{ justifyContent: "end" }}>
-              <ListItemText>削除</ListItemText>
+              <ListItemText>{t("common.delete")}</ListItemText>
               <ListItemIcon>
                 <DeleteOutlineIcon />
               </ListItemIcon>
             </MenuItem>
           )}
-          dialogTitle={`本当に削除しますか？`}
+          dialogTitle={t("group.controlMenu.deleteConfirm")}
           onClickYes={handleDelete}
         />
       </Box>

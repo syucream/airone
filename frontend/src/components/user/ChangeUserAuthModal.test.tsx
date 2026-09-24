@@ -6,11 +6,13 @@ import {
   UserRetrieve,
   UserRetrieveAuthenticateTypeEnum,
 } from "@dmm-com/airone-apiclient-typescript-fetch";
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 
 import { TestWrapper } from "../../TestWrapper";
 
 import { ChangeUserAuthModal } from "./ChangeUserAuthModal";
+
+import i18n from "i18n/config";
 
 describe("ChangeUserAuthModal", () => {
   const user: UserRetrieve = {
@@ -115,5 +117,28 @@ describe("ChangeUserAuthModal", () => {
         screen.queryByText("認証方法の変更に失敗しました"),
       ).not.toBeInTheDocument();
     });
+  });
+
+  test("renders in English", async () => {
+    await act(async () => {
+      await i18n.changeLanguage("en");
+    });
+
+    render(
+      <ChangeUserAuthModal
+        user={user}
+        openModal={true}
+        closeModal={jest.fn()}
+      />,
+      {
+        wrapper: TestWrapper,
+      },
+    );
+
+    expect(
+      screen.getByText("Change authentication method to LDAP"),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Submit" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Cancel" })).toBeInTheDocument();
   });
 });

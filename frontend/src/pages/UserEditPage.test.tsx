@@ -8,6 +8,7 @@ import { setupServer } from "msw/node";
 import { createMemoryRouter, RouterProvider } from "react-router";
 
 import { TestWrapperWithoutRoutes } from "TestWrapper";
+import i18n from "i18n/config";
 import { UserEditPage } from "pages/UserEditPage";
 
 const server = setupServer(
@@ -55,5 +56,28 @@ describe("EditUserPage", () => {
     });
 
     expect(result).toMatchSnapshot();
+  });
+
+  test("renders in English", async () => {
+    await act(async () => {
+      await i18n.changeLanguage("en");
+    });
+
+    const router = createMemoryRouter([
+      {
+        path: "/",
+        element: <UserEditPage />,
+      },
+    ]);
+    await act(async () => {
+      render(<RouterProvider router={router} />, {
+        wrapper: TestWrapperWithoutRoutes,
+      });
+    });
+    await waitFor(() => {
+      expect(screen.queryByTestId("loading")).not.toBeInTheDocument();
+    });
+
+    expect(screen.getByText("User settings")).toBeInTheDocument();
   });
 });

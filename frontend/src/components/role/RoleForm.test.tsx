@@ -18,6 +18,8 @@ import { schema } from "../entry/entryForm/EntryFormSchema";
 import { RoleForm } from "./RoleForm";
 import { Schema } from "./roleForm/RoleFormSchema";
 
+import i18n from "i18n/config";
+
 afterEach(() => {
   jest.clearAllMocks();
 });
@@ -73,5 +75,41 @@ describe("RoleForm", () => {
 
     expect(screen.getByPlaceholderText("ロール名")).toHaveValue("new role");
     expect(screen.getByPlaceholderText("備考")).toHaveValue("new description");
+  });
+
+  test("renders in English", async () => {
+    await act(async () => {
+      await i18n.changeLanguage("en");
+    });
+
+    const {
+      result: {
+        current: { control, setValue },
+      },
+    } = renderHook(() =>
+      useForm<Schema>({
+        resolver: zodResolver(schema),
+        mode: "onBlur",
+        defaultValues,
+      }),
+    );
+
+    /* eslint-disable */
+    jest
+      .spyOn(require("repository/AironeApiClient").aironeApiClient, "getUsers")
+      .mockResolvedValue(Promise.resolve([]));
+    jest
+      .spyOn(require("repository/AironeApiClient").aironeApiClient, "getGroups")
+      .mockResolvedValue(Promise.resolve([]));
+    /* eslint-enable */
+
+    await act(async () => {
+      render(<RoleForm control={control} setValue={setValue} />, {
+        wrapper: TestWrapper,
+      });
+    });
+
+    expect(screen.getByPlaceholderText("Role name")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Notes")).toBeInTheDocument();
   });
 });
