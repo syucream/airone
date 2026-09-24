@@ -2,11 +2,13 @@
  * @jest-environment jsdom
  */
 
-import { renderHook, act } from "@testing-library/react";
+import { renderHook, act, screen } from "@testing-library/react";
 import { SnackbarProvider } from "notistack";
 import { FC, ReactNode } from "react";
 
 import { useFormNotification } from "./useFormNotification";
+
+import i18n from "i18n/config";
 
 const wrapper: FC<{ children: ReactNode }> = ({ children }) => (
   <SnackbarProvider maxSnack={5}>{children}</SnackbarProvider>
@@ -135,6 +137,30 @@ describe("useFormNotification", () => {
       });
 
       expect(key1).not.toBe(key2);
+    });
+  });
+
+  describe("English messages", () => {
+    afterEach(async () => {
+      await i18n.changeLanguage("ja");
+    });
+
+    test("should show English success message for create operation", async () => {
+      await act(async () => {
+        await i18n.changeLanguage("en");
+      });
+
+      const { result } = renderHook(() => useFormNotification("Entity", true), {
+        wrapper,
+      });
+
+      act(() => {
+        result.current.enqueueSubmitResult(true);
+      });
+
+      expect(
+        await screen.findByText("Create Entity completed."),
+      ).toBeInTheDocument();
     });
   });
 });

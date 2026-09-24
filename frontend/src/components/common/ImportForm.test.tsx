@@ -3,12 +3,14 @@
  */
 
 import { ThemeProvider, createTheme } from "@mui/material/styles";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { SnackbarProvider } from "notistack";
 import { FC, ReactNode } from "react";
 import { MemoryRouter } from "react-router";
 
 import { ImportForm } from "./ImportForm";
+
+import i18n from "i18n/config";
 
 // Ensure File is available in the global scope before tests run
 if (typeof global.File === "undefined") {
@@ -115,5 +117,30 @@ describe("ImportForm", () => {
     fireEvent.click(importButton);
 
     expect(handleImport).not.toHaveBeenCalled();
+  });
+
+  describe("English", () => {
+    afterEach(async () => {
+      await i18n.changeLanguage("ja");
+    });
+
+    test("should render buttons in English", async () => {
+      await act(async () => {
+        await i18n.changeLanguage("en");
+      });
+
+      const handleImport = jest.fn();
+
+      render(<ImportForm handleImport={handleImport} />, {
+        wrapper: TestWrapper,
+      });
+
+      expect(
+        screen.getByRole("button", { name: "Import" }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "Cancel" }),
+      ).toBeInTheDocument();
+    });
   });
 });

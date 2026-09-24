@@ -4,6 +4,7 @@ import { Button, IconButton } from "@mui/material";
 import { SnackbarKey, useSnackbar } from "notistack";
 import { useEffect, useRef } from "react";
 
+import { translate } from "../i18n/config";
 import {
   LocalStorageKey,
   localStorageUtil,
@@ -96,7 +97,7 @@ export const useJobCompletionNotification = (
                   href={`/job/api/v2/${job.id}/download?encode=utf-8`}
                   onClick={() => closeSnackbar(snackbarId)}
                 >
-                  ダウンロード
+                  {translate("common.download")}
                 </Button>
                 {closeAction(snackbarId)}
               </>
@@ -114,7 +115,7 @@ export const useJobCompletionNotification = (
                   href={jobsPath()}
                   onClick={() => closeSnackbar(snackbarId)}
                 >
-                  詳細
+                  {translate("common.details")}
                 </Button>
                 {closeAction(snackbarId)}
               </>
@@ -133,7 +134,7 @@ export const useJobCompletionNotification = (
                 href={jobsPath()}
                 onClick={() => closeSnackbar(snackbarId)}
               >
-                詳細
+                {translate("common.details")}
               </Button>
               {closeAction(snackbarId)}
             </>
@@ -151,7 +152,7 @@ export const useJobCompletionNotification = (
                 href={jobsPath()}
                 onClick={() => closeSnackbar(snackbarId)}
               >
-                詳細
+                {translate("common.details")}
               </Button>
               {closeAction(snackbarId)}
             </>

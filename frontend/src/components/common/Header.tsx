@@ -283,7 +283,7 @@ export const Header: FC = () => {
                 keepMounted
               >
                 <MenuItem>
-                  {serverContext?.user?.username ?? "不明なユーザ"}{" "}
+                  {serverContext?.user?.username ?? t("header.unknownUser")}{" "}
                   {t("currentUser")}
                 </MenuItem>
                 <Divider light />

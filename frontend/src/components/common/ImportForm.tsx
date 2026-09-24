@@ -4,6 +4,7 @@ import { useSnackbar } from "notistack";
 import { ChangeEvent, FC, useState } from "react";
 import { useNavigate } from "react-router";
 
+import { useTranslation } from "../../hooks/useTranslation";
 import {
   isResponseError,
   toReportableNonFieldErrors,
@@ -15,6 +16,7 @@ interface Props {
 }
 
 export const ImportForm: FC<Props> = ({ handleImport, handleCancel }) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [file, setFile] = useState<File>();
   const [errorMessage, setErrorMessage] = useState<string>("");
@@ -47,25 +49,29 @@ export const ImportForm: FC<Props> = ({ handleImport, handleCancel }) => {
         } catch (e) {
           if (e instanceof Error && isResponseError(e)) {
             if (e.response.status === 403) {
-              setErrorMessage("この操作を行う権限がありません。");
-              enqueueSnackbar("この操作を行う権限がありません。", {
+              setErrorMessage(t("importForm.permissionDenied"));
+              enqueueSnackbar(t("importForm.permissionDenied"), {
                 variant: "error",
               });
             } else {
               const reportableError = await toReportableNonFieldErrors(e);
               setErrorMessage(
-                `ファイルのアップロードに失敗しました: ${reportableError ?? ""}`,
+                t("notification.uploadFailedWithDetail", {
+                  detail: reportableError ?? "",
+                }),
               );
               enqueueSnackbar(
-                `ファイルのアップロードに失敗しました: ${reportableError ?? ""}`,
+                t("notification.uploadFailedWithDetail", {
+                  detail: reportableError ?? "",
+                }),
                 {
                   variant: "error",
                 },
               );
             }
           } else {
-            setErrorMessage("ファイルのアップロードに失敗しました。");
-            enqueueSnackbar("ファイルのアップロードに失敗しました", {
+            setErrorMessage(t("importForm.uploadFailed"));
+            enqueueSnackbar(t("notification.uploadFailed"), {
               variant: "error",
             });
           }
@@ -89,7 +95,7 @@ export const ImportForm: FC<Props> = ({ handleImport, handleCancel }) => {
           onClick={onClick}
           sx={{ m: "4px" }}
         >
-          インポート
+          {t("common.import")}
         </Button>
         <Button
           variant="contained"
@@ -97,7 +103,7 @@ export const ImportForm: FC<Props> = ({ handleImport, handleCancel }) => {
           onClick={handleCancel}
           sx={{ m: "4px" }}
         >
-          キャンセル
+          {t("common.cancel")}
         </Button>
       </Box>
     </Box>
