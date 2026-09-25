@@ -596,13 +596,13 @@ def get_job_params_contract(operation: int) -> ParamsContract:
         raise ValueError(f"No job parameter contract for operation {operation_id}") from None
 
 
-def validate_job_params(operation: int, params: Any) -> Any:
+def validate_job_params(operation: int, params: Any) -> BaseModel:
     """Validate Python input and return a Pydantic model (or union member)."""
 
     return TypeAdapter(get_job_params_contract(operation)).validate_python(params)
 
 
-def parse_job_params(operation: int, params_json: str | bytes | bytearray) -> Any:
+def parse_job_params(operation: int, params_json: str | bytes | bytearray) -> BaseModel:
     """Validate JSON persisted in ``Job.params``."""
 
     # Some historical MAY_INVOKE_TRIGGER jobs stored the old default ``{}``.

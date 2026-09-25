@@ -1234,21 +1234,18 @@ def bulk_update_entries(
     self: Any, job: Job
 ) -> JobStatus | tuple[JobStatus, str, ACLBase | None] | None:
     params = job.get_typed_params(BulkEditParams)
-    job_params = params.model_dump(mode="json", by_alias=True, exclude_unset=True)
 
-    # get target items from ES by job_params.attr_info parameter
+    # get target items from ES by params.attrinfo parameter
     resp = AdvancedSearchService.search_entries(
         user=job.user,
-        hint_entity_ids=[job_params["modelid"]],
-        hint_attrs=[AttrHint(**x) for x in job_params.get("attrinfo", [])],
-        hint_entry=EntryHint(**job_params.get("hint_entry"))
-        if job_params.get("hint_entry")
-        else None,
-        hint_referral=job_params.get("referral_name"),
+        hint_entity_ids=[str(params.modelid)],
+        hint_attrs=[AttrHint(**x.model_dump(exclude_unset=True)) for x in params.attrinfo],
+        hint_entry=EntryHint(**params.hint_entry) if params.hint_entry else None,
+        hint_referral=params.referral_name,
         retrieve_all=True,
     )
 
-    # update each items in accordance with job_params.value parameter
+    # update each items in accordance with params.value parameter
     context = {"request": DRFRequest(job.user)}
     total_count = resp.ret_count
     for index, record in enumerate(resp.ret_values):
@@ -1262,14 +1259,9 @@ def bulk_update_entries(
             return None
 
         entry = Entry.objects.get(id=record.entry["id"])
-        updating_data: dict[str, list[Any]] = {"attrs": []}
-        if job_params.get("value"):
-            updating_data["attrs"].append(
-                {
-                    "id": job_params.get("value")["id"],
-                    "value": job_params.get("value")["value"],
-                }
-            )
+        updating_data: dict[str, list[Any]] = {
+            "attrs": [{"id": params.value.id, "value": params.value.value}]
+        }
 
         serializer = EntryUpdateSerializer(instance=entry, data=updating_data, context=context)
         if serializer.is_valid():

@@ -9,6 +9,7 @@ from datetime import datetime
 from typing import Any, ClassVar, Iterator, Protocol, TypeVar, overload, runtime_checkable
 
 T = TypeVar("T", covariant=True)
+ParamsT = TypeVar("ParamsT")
 
 
 class QuerySetProtocol(Protocol[T]):
@@ -263,7 +264,10 @@ class JobProtocol(Protocol):
     ) -> None: ...
     def to_json(self) -> dict[str, Any]: ...
     def run(self, will_delay: bool = True) -> None: ...
-    def get_typed_params(self, expected_type: type[Any] | None = None) -> Any: ...
+    @overload
+    def get_typed_params(self, expected_type: type[ParamsT]) -> ParamsT: ...
+    @overload
+    def get_typed_params(self, expected_type: None = None) -> Any: ...
 
     @classmethod
     def new_custom_job(

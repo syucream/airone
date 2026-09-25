@@ -6,12 +6,13 @@ import time
 from datetime import date, datetime, timedelta
 from importlib import import_module
 from types import ModuleType
-from typing import Any, Callable, TypeAlias
+from typing import Any, Callable, TypeAlias, TypeVar, overload
 from zoneinfo import ZoneInfo
 
 from django.conf import settings
 from django.core.files.storage import default_storage
 from django.db import models
+from pydantic import BaseModel
 
 from acl.models import ACLBase
 from airone.lib import auto_complement
@@ -33,6 +34,8 @@ from user.models import User
 TaskReturnType: TypeAlias = "JobStatus | tuple[JobStatus, str, ACLBase | None] | None"
 
 TaskHandler: TypeAlias = Callable[[Any, "Job"], TaskReturnType]
+
+JobParamsT = TypeVar("JobParamsT", bound=BaseModel)
 
 # Free-form parameter payload carried by a Job (JSON-serialized for storage).
 JobParams: TypeAlias = dict[str, Any]
@@ -227,8 +230,19 @@ class Job(models.Model):
     # When this has another job, this job have to wait until it would be finished.
     dependent_job = models.ForeignKey("Job", null=True, on_delete=models.SET_NULL)
 
-    def get_typed_params(self, expected_type: type[Any] | None = None) -> Any:
-        """Return validated job parameters, parsing persisted JSON only once."""
+    @overload
+    def get_typed_params(self, expected_type: type[JobParamsT]) -> JobParamsT: ...
+
+    @overload
+    def get_typed_params(self, expected_type: None = None) -> Any: ...
+
+    def get_typed_params(self, expected_type: type[BaseModel] | None = None) -> Any:
+        """Return validated job parameters, parsing persisted JSON only once.
+
+        Passing ``expected_type`` both asserts the operation's registered contract
+        and narrows the static return type to that contract. Without it, the result
+        is the parsed contract instance, or raw JSON for operations with no contract.
+        """
 
         try:
             contract = get_job_params_contract(self.operation)
