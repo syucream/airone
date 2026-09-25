@@ -40,6 +40,7 @@ export const EntityEditPage: FC = () => {
   const { data: entity, isLoading: entityLoading } = usePagodaSWR(
     entityId !== undefined ? ["entity", entityId] : null,
     () => aironeApiClient.getEntity(entityId!),
+    { refreshInterval: 15_000 },
   );
 
   const { data: referralEntities, isLoading: referralEntitiesLoading } =
@@ -265,6 +266,7 @@ export const EntityEditPage: FC = () => {
         description={entity && "エンティテイティ詳細 / 編集"}
         targetId={entity?.id}
         hasOngoingProcess={entity?.hasOngoingChanges}
+        targetKind="model"
       >
         <SubmitButton
           name="保存"

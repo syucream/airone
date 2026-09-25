@@ -3,7 +3,7 @@
   // them runs at a time; knip matches specs by name, so it needs telling.
   "entry": ["frontend/src/App.tsx", "e2e/live/*.live-spec.ts"],
   "project": ["**/*.{js,ts,jsx,tsx}"],
-  "ignore": ["docs/**/*.js", "static/**/*.js", "templates/**/*.js", "frontend/plugins/**/*"],
+  "ignore": ["docs/**/*.js", "static/**/*.js", "templates/**/*.js", "frontend/plugins/**/*", "e2e/**/test-results/**/*"],
   "ignoreDependencies": [
     // CLI
     "webpack-bundle-analyzer",

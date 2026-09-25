@@ -11,6 +11,7 @@ export default tseslint.config(
       "frontend/dist/",
       "frontend/plugins/*/dist/",
       "**/node_modules/",
+      "**/test-results/",
       "**/*.min.js",
       "static/js/",
     ],

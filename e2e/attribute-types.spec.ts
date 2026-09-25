@@ -44,14 +44,16 @@ test("@attribute-types @entity renders all 18 types in the entity editor", async
   page,
 }, testInfo) => {
   await page.goto("/ui/entities/1");
-  const names = page.getByPlaceholder("属性名");
+  const names = page.locator('input[placeholder="属性名"]:visible');
   await expect(names).toHaveCount(attributeNames.length);
   expect(
     await names.evaluateAll((elements) =>
       elements.map((element) => (element as HTMLInputElement).value),
     ),
   ).toEqual([...attributeNames]);
-  await expect(page.locator("#attr_type")).toHaveCount(attributeNames.length);
+  await expect(page.locator("#attr_type:visible")).toHaveCount(
+    attributeNames.length,
+  );
   for (const objectAttribute of [
     "primary_switch",
     "backup_switches",

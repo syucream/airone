@@ -125,6 +125,8 @@ const state = {
       email: "admin@example.test",
       is_superuser: true,
       is_active: true,
+      groups: [],
+      roles: [],
     },
   ],
   groups: [{ id: 1, name: "Engineering", members: [], parent_groups: [] }],
@@ -531,6 +533,31 @@ const handleApi = async (req, res, parsed) => {
     res.end();
     return true;
   }
+  const attrReferralsMatch = pathname.match(
+    /^\/entry\/api\/v2\/(\d+)\/attr_referrals$/,
+  );
+  if (attrReferralsMatch && req.method === "GET") {
+    const attr = attrs.find(({ id }) => id === Number(attrReferralsMatch[1]));
+    const keyword = String(parsed.query.keyword ?? "").toLowerCase();
+    let candidates = [];
+    if (attr?.type & 1) {
+      const referralIds = new Set(attr.referral.map(({ id }) => id));
+      candidates = state.entries.filter(
+        (entry) => entry.is_active && referralIds.has(entry.schema.id),
+      );
+    } else if (attr?.type & 16) {
+      candidates = state.groups;
+    } else if (attr?.type & 64) {
+      candidates = state.roles;
+    }
+    json(res, 200, {
+      has_restricted_items: false,
+      results: candidates
+        .filter(({ name }) => name.toLowerCase().includes(keyword))
+        .map(({ id, name }) => ({ id, name })),
+    });
+    return true;
+  }
   if (req.method === "GET" && pathname === "/entry/api/v2/1/referral") {
     json(res, 200, paginated([]));
     return true;
@@ -613,6 +640,7 @@ const handleApi = async (req, res, parsed) => {
       const created = {
         ...input,
         id: Math.max(...records.map(({ id }) => id), 0) + 1,
+        ...(collection.key === "users" ? { groups: [], roles: [] } : {}),
         ...(collection.key === "roles" ? { is_editable: true } : {}),
       };
       records.push(created);
