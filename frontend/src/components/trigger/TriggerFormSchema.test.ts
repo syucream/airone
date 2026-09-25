@@ -1,6 +1,6 @@
 import { EntryAttributeTypeTypeEnum } from "@dmm-com/airone-apiclient-typescript-fetch";
 
-import { Schema, schema } from "./TriggerFormSchema";
+import { Schema, schema, toRefCond } from "./TriggerFormSchema";
 
 import { ACLType } from "services/ACLUtil";
 
@@ -103,5 +103,20 @@ describe("schema", () => {
     };
 
     expect(() => schema.parse(value)).toThrow();
+  });
+});
+
+describe("toRefCond", () => {
+  test("should convert a selected referral", () => {
+    expect(toRefCond({ id: 1, name: "entry1", displayLabel: null })).toEqual({
+      id: 1,
+      name: "entry1",
+      schema: { id: 0, name: "" },
+    });
+  });
+
+  test("should map a cleared selection to null", () => {
+    expect(toRefCond(null)).toBeNull();
+    expect(toRefCond([])).toBeNull();
   });
 });

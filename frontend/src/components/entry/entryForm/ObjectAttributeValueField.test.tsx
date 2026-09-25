@@ -159,7 +159,6 @@ describe("ObjectAttributeValueField", () => {
       id: 2,
       name: "entry2",
       displayLabel: null,
-      _boolean: false,
     });
   });
 
@@ -217,13 +216,11 @@ describe("ObjectAttributeValueField", () => {
       {
         id: 1,
         name: "entry1",
-        _boolean: false,
       },
       {
         id: 2,
         name: "entry2",
         displayLabel: null,
-        _boolean: false,
       },
     ]);
   });
@@ -333,7 +330,7 @@ describe("ObjectAttributeValueField", () => {
     expect(screen.getByRole("combobox")).toHaveValue("entry2");
     expect(getValues("attrs.2.value.asNamedObject")).toEqual({
       name: "new name",
-      object: { id: 2, name: "entry2", displayLabel: null, _boolean: false },
+      object: { id: 2, name: "entry2", displayLabel: null },
     });
   });
 
@@ -389,7 +386,7 @@ describe("ObjectAttributeValueField", () => {
     expect(getValues("attrs.3.value.asArrayNamedObject")).toEqual([
       {
         name: "new name",
-        object: { id: 1, name: "entry1", displayLabel: null, _boolean: false },
+        object: { id: 1, name: "entry1", displayLabel: null },
         _boolean: false,
       },
     ]);
@@ -408,7 +405,7 @@ describe("ObjectAttributeValueField", () => {
     expect(getValues("attrs.3.value.asArrayNamedObject")).toEqual([
       {
         name: "new name",
-        object: { id: 1, name: "entry1", displayLabel: null, _boolean: false },
+        object: { id: 1, name: "entry1", displayLabel: null },
         _boolean: false,
       },
       {

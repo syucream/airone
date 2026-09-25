@@ -1,7 +1,6 @@
 import {
   EntityDetail,
   EntryAttributeTypeTypeEnum,
-  GetEntryAttrReferral,
 } from "@dmm-com/airone-apiclient-typescript-fetch";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
@@ -19,7 +18,7 @@ import { styled } from "@mui/material/styles";
 import { FC } from "react";
 import { Control, Controller, useWatch } from "react-hook-form";
 
-import { Schema } from "./TriggerFormSchema";
+import { Schema, toRefCond } from "./TriggerFormSchema";
 
 import { ReferralsAutocomplete } from "components/entry/entryForm/ReferralsAutocomplete";
 import { isSupportedType } from "services/trigger/Edit";
@@ -106,16 +105,7 @@ const ConditionValueAsObject: FC<PropsConditionObjectValueComponent> = ({
         <ReferralsAutocomplete
           attrId={attrId}
           value={field.value}
-          handleChange={(v) => {
-            field.onChange({
-              id: (v as GetEntryAttrReferral).id,
-              name: (v as GetEntryAttrReferral).name,
-              schema: {
-                id: 0,
-                name: "",
-              },
-            });
-          }}
+          handleChange={(v) => field.onChange(toRefCond(v))}
           multiple={false}
         />
       )}
@@ -150,16 +140,7 @@ const ConditionValueAsName: FC<PropsConditionObjectValueComponent> = ({
             <ReferralsAutocomplete
               attrId={attrId}
               value={field.value}
-              handleChange={(v) => {
-                field.onChange({
-                  id: (v as GetEntryAttrReferral).id,
-                  name: (v as GetEntryAttrReferral).name,
-                  schema: {
-                    id: 0,
-                    name: "",
-                  },
-                });
-              }}
+              handleChange={(v) => field.onChange(toRefCond(v))}
               multiple={false}
             />
           )}

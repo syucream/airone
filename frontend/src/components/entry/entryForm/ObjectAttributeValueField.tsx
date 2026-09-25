@@ -71,35 +71,21 @@ export const ObjectAttributeValueField: FC<
   const handleChange = (
     value: GetEntryAttrReferral | GetEntryAttrReferral[] | null,
   ) => {
-    const newValue = (() => {
-      if (value == null) {
-        return null;
-      }
-      if (multiple === true) {
-        const _value = value as GetEntryAttrReferral[];
-        return _value.map((v) => ({
-          ...v,
-          _boolean: false,
-        }));
-      } else {
-        const _value = value as GetEntryAttrReferral;
-        return {
-          ..._value,
-          _boolean: false,
-        };
-      }
-    })();
+    const options = { shouldDirty: true, shouldValidate: true };
 
-    setValue(
-      multiple
-        ? `attrs.${attrId}.value.asArrayObject`
-        : `attrs.${attrId}.value.asObject`,
-      newValue as never,
-      {
-        shouldDirty: true,
-        shouldValidate: true,
-      },
-    );
+    if (multiple === true) {
+      setValue(
+        `attrs.${attrId}.value.asArrayObject`,
+        Array.isArray(value) ? value : [],
+        options,
+      );
+    } else {
+      setValue(
+        `attrs.${attrId}.value.asObject`,
+        value != null && !Array.isArray(value) ? value : null,
+        options,
+      );
+    }
   };
 
   return (
@@ -155,32 +141,20 @@ export const NamedObjectAttributeValueField: FC<
   const handleChange = (
     value: GetEntryAttrReferral | GetEntryAttrReferral[] | null,
   ) => {
-    const newValue = (() => {
-      if (Array.isArray(value)) {
-        throw new Error("Array typed value is not supported for named object.");
-      }
+    if (Array.isArray(value)) {
+      throw new Error("Array typed value is not supported for named object.");
+    }
+    const options = { shouldDirty: true, shouldValidate: true };
 
-      if (value == null) {
-        return null;
-      } else {
-        const _value = value as GetEntryAttrReferral;
-        return {
-          ..._value,
-          _boolean: false,
-        };
-      }
-    })();
-
-    setValue(
-      index != null
-        ? `attrs.${attrId}.value.asArrayNamedObject.${index}.object`
-        : `attrs.${attrId}.value.asNamedObject.object`,
-      newValue as never,
-      {
-        shouldDirty: true,
-        shouldValidate: true,
-      },
-    );
+    if (index != null) {
+      setValue(
+        `attrs.${attrId}.value.asArrayNamedObject.${index}.object`,
+        value,
+        options,
+      );
+    } else {
+      setValue(`attrs.${attrId}.value.asNamedObject.object`, value, options);
+    }
   };
 
   return (

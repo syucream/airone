@@ -74,7 +74,7 @@ export const GroupAttributeValueField: FC<Props> = ({
     if (multiple) {
       setValue(
         `attrs.${attrId}.value.asArrayGroup`,
-        (value as GroupOption[]) ?? [],
+        Array.isArray(value) ? value : [],
         {
           shouldDirty: true,
           shouldValidate: true,
@@ -83,7 +83,7 @@ export const GroupAttributeValueField: FC<Props> = ({
     } else {
       setValue(
         `attrs.${attrId}.value.asGroup`,
-        (value as GroupOption) ?? null,
+        value != null && !Array.isArray(value) ? value : null,
         {
           shouldDirty: true,
           shouldValidate: true,

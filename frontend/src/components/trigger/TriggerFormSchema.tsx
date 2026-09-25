@@ -1,4 +1,7 @@
-import { TriggerParent } from "@dmm-com/airone-apiclient-typescript-fetch";
+import {
+  GetEntryAttrReferral,
+  TriggerParent,
+} from "@dmm-com/airone-apiclient-typescript-fetch";
 import { z } from "zod";
 
 import { schemaForType } from "services/ZodSchemaUtil";
@@ -70,3 +73,14 @@ export const schema = schemaForType<TriggerParent>()(
 );
 
 export type Schema = z.infer<typeof schema>;
+
+type RefCond = Schema["conditions"][number]["refCond"];
+
+// Convert a ReferralsAutocomplete (single mode) selection into a refCond.
+// A cleared selection is reported as null and maps to a null refCond.
+export const toRefCond = (
+  value: GetEntryAttrReferral | GetEntryAttrReferral[] | null,
+): RefCond =>
+  value == null || Array.isArray(value)
+    ? null
+    : { id: value.id, name: value.name, schema: { id: 0, name: "" } };

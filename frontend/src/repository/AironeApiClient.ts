@@ -653,25 +653,27 @@ class AironeApiClient {
   }
 
   async getGroupTrees(): Promise<GroupTree[]> {
-    interface APIGroupTreeData {
-      id: number;
-      name: string;
-      children: APIGroupTreeData[];
-    }
-
     const groupTrees = await this.group.groupApiV2GroupsTreeList();
 
-    const toTyped = (groupTree: Partial<APIGroupTreeData>): GroupTree => ({
-      id: groupTree.id as number,
-      name: groupTree.name as string,
-      children: (groupTree.children || []).map(
-        (child: Partial<APIGroupTreeData>) => toTyped(child),
-      ),
-    });
+    // Nested children are untyped in the generated client, so validate them
+    // while converting.
+    const toTyped = (node: unknown): GroupTree => {
+      if (
+        typeof node !== "object" ||
+        node == null ||
+        !("id" in node) ||
+        typeof node.id !== "number" ||
+        !("name" in node) ||
+        typeof node.name !== "string"
+      ) {
+        throw new Error("Invalid group tree node");
+      }
+      const children =
+        "children" in node && Array.isArray(node.children) ? node.children : [];
+      return { id: node.id, name: node.name, children: children.map(toTyped) };
+    };
 
-    return groupTrees.map((groupTree) =>
-      toTyped(groupTree as unknown as Partial<APIGroupTreeData>),
-    );
+    return groupTrees.map(toTyped);
   }
 
   async importGroups(data: string | ArrayBuffer): Promise<void> {

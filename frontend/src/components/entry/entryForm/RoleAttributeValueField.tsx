@@ -72,17 +72,21 @@ export const RoleAttributeValueField: FC<Props> = ({
     if (multiple) {
       setValue(
         `attrs.${attrId}.value.asArrayRole`,
-        (value as RoleOption[]) ?? [],
+        Array.isArray(value) ? value : [],
         {
           shouldDirty: true,
           shouldValidate: true,
         },
       );
     } else {
-      setValue(`attrs.${attrId}.value.asRole`, (value as RoleOption) ?? null, {
-        shouldDirty: true,
-        shouldValidate: true,
-      });
+      setValue(
+        `attrs.${attrId}.value.asRole`,
+        value != null && !Array.isArray(value) ? value : null,
+        {
+          shouldDirty: true,
+          shouldValidate: true,
+        },
+      );
     }
   };
 
