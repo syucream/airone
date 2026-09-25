@@ -4,7 +4,9 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 from airone.exceptions import ElasticsearchException
+from airone.lib.acl import ACLType
 from airone.lib.elasticsearch import (
+    AdvancedSearchResultRecord,
     AdvancedSearchResultRecordIdNamePair,
     AttrHint,
     EntryFilterKey,
@@ -66,6 +68,40 @@ class EntrySearchChainSerializer(serializers.Serializer[dict[str, Any]]):
 
     def validate_is_any(self, value: bool) -> bool:
         return value
+
+    @staticmethod
+    def _filter_readable_entries(
+        user: Any, search_results: list[AdvancedSearchResultRecord]
+    ) -> list[AdvancedSearchResultRecordIdNamePair]:
+        entries_by_id = {
+            entry.id: entry
+            for entry in Entry.objects.filter(
+                id__in=[result.entry["id"] for result in search_results]
+            ).select_related("schema")
+        }
+        readable_schema: dict[int, bool] = {}
+        readable_entry_ids: set[int] = set()
+        for entry in entries_by_id.values():
+            if entry.schema_id not in readable_schema:
+                readable_schema[entry.schema_id] = user.has_permission(
+                    entry.schema, ACLType.Readable
+                )
+            if not readable_schema[entry.schema_id]:
+                continue
+
+            # Public/default-readable Entries need no role lookup after their
+            # parent Entity has been checked. Restricted Entries still use the
+            # canonical permission method for their object-level ACL.
+            if (
+                entry.is_public
+                or entry.default_permission >= ACLType.Readable.value
+                or user.has_permission(entry, ACLType.Readable)
+            ):
+                readable_entry_ids.add(entry.id)
+
+        return [
+            result.entry for result in search_results if result.entry["id"] in readable_entry_ids
+        ]
 
     def validate_entities(self, entities: list[int | str]) -> list[int]:
         ret_data = []
@@ -256,7 +292,7 @@ class EntrySearchChainSerializer(serializers.Serializer[dict[str, Any]]):
                 Logger.warning("Search Chain API error: SEARCH_CHAIN_ACCEPTABLE_RESULT_COUNT")
                 raise ElasticsearchException()
 
-            return [x.entry for x in search_result.ret_values]
+            return self._filter_readable_entries(user, search_result.ret_values)
 
         # This expects only AttrSerialized sub-query
         for sub_query in queries:
@@ -356,7 +392,7 @@ class EntrySearchChainSerializer(serializers.Serializer[dict[str, Any]]):
                 Logger.warning("Search Chain API error: SEARCH_CHAIN_ACCEPTABLE_RESULT_COUNT")
                 raise ElasticsearchException()
 
-            return [x.entry for x in search_result.ret_values]
+            return self._filter_readable_entries(user, search_result.ret_values)
 
         def _do_forward_search(
             sub_query: dict[str, Any], sub_query_result: list[dict[str, Any]]

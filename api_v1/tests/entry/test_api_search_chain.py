@@ -2,6 +2,7 @@ import copy
 import json
 from unittest import mock, skip
 
+from airone.lib.acl import ACLType
 from airone.lib.test import AironeViewTest
 from airone.lib.types import AttrType
 from api_v1.entry import serializer
@@ -243,6 +244,87 @@ class APITest(AironeViewTest):
             sorted([x["entry"] for x in resp.json()["ret_values"]], key=lambda x: x["id"]),
             sorted([{"id": x.id, "name": x.name} for x in [self.entry_vm1]], key=lambda x: x["id"]),
         )
+
+    def test_final_results_do_not_reintroduce_unreadable_same_name_entry(self):
+        visible_entity = self.create_entity(
+            self.user,
+            "Visible Servers",
+            attrs=[{"name": "marker", "type": AttrType.STRING}],
+        )
+        restricted_entity = self.create_entity(
+            self.user,
+            "Restricted Servers",
+            attrs=[{"name": "marker", "type": AttrType.STRING}],
+        )
+        visible_entry = self.add_entry(
+            self.user,
+            "shared-server-name",
+            visible_entity,
+            values={"marker": "matched"},
+        )
+        restricted_entry = self.add_entry(
+            self.user,
+            "shared-server-name",
+            restricted_entity,
+            values={"marker": "matched"},
+        )
+        restricted_entry.is_public = False
+        restricted_entry.default_permission = ACLType.Nothing
+        restricted_entry.save(update_fields=["is_public", "default_permission"])
+
+        viewer = self.guest_login("same-name-viewer")
+        self.assertTrue(viewer.has_permission(visible_entry, ACLType.Readable))
+        self.assertFalse(viewer.has_permission(restricted_entry, ACLType.Readable))
+
+        params = {
+            "entities": [visible_entity.name, restricted_entity.name],
+            "attrs": [{"name": "marker", "value": "matched"}],
+        }
+        resp = self.client.post(
+            "/api/v1/entry/search_chain", json.dumps(params), "application/json"
+        )
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()["ret_count"], 1)
+        self.assertEqual(
+            [value["entry"]["id"] for value in resp.json()["ret_values"]],
+            [visible_entry.id],
+        )
+
+    def test_refers_chain_excludes_unreadable_target_entry(self):
+        restricted_ipv4 = self.add_entry(
+            self.user,
+            "private-address",
+            self.entity_ipv4,
+        )
+        self.add_entry(
+            self.user,
+            "private-address-referrer",
+            self.entity_nic,
+            values={"IP address": [restricted_ipv4]},
+        )
+        restricted_ipv4.is_public = False
+        restricted_ipv4.default_permission = ACLType.Nothing
+        restricted_ipv4.save(update_fields=["is_public", "default_permission"])
+
+        viewer = self.guest_login("refers-chain-viewer")
+        self.assertFalse(viewer.has_permission(restricted_ipv4, ACLType.Readable))
+
+        params = {
+            "entities": [self.entity_ipv4.name],
+            "refers": [
+                {
+                    "entity": self.entity_nic.name,
+                    "entry": "private-address-referrer",
+                }
+            ],
+        }
+        resp = self.client.post(
+            "/api/v1/entry/search_chain", json.dumps(params), "application/json"
+        )
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json(), {"ret_count": 0, "ret_values": []})
 
     def test_search_chain_with_wrong_keyword_value(self):
         # create query to search chained query that has wrong value

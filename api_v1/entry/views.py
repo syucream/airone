@@ -88,7 +88,7 @@ class EntrySearchChainAPI(APIView):
                 entry_info = AdvancedSearchService.search_entries(
                     cast(User, request.user),
                     serializer.validated_data["entities"],
-                    entry_name="|".join(["^%s$" % x["name"] for x in ret_data[i : i + 100]]),
+                    entry_ids=[x["id"] for x in ret_data[i : i + 100]],
                     is_output_all=True,
                 )
                 ret_values.extend(entry_info.ret_values)

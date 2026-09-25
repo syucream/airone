@@ -235,6 +235,61 @@ class ViewTest(AironeViewTest):
 
         self.assertEqual(resp.status_code, 403)
 
+    def test_entity_attr_acl_update_respects_parent_entity_permission(self):
+        owner = self.admin_login()
+        entity = self.create_entity(
+            owner,
+            "private-entity",
+            attrs=[{"name": "field", "type": AttrType.STRING}],
+        )
+        entity.is_public = False
+        entity.default_permission = ACLType.Nothing
+        entity.save(update_fields=["is_public", "default_permission"])
+        entity_attr = entity.attrs.get(name="field")
+
+        editor = self.guest_login("editor")
+        role = Role.objects.create(name="editor-role")
+        role.users.add(editor)
+        entity.writable.roles.add(role)
+        self.assertTrue(editor.has_permission(entity_attr, ACLType.Writable))
+        self.assertFalse(editor.has_permission(entity_attr, ACLType.Full))
+
+        resp = self.client.put(
+            "/acl/api/v2/acls/%s" % entity_attr.id,
+            json.dumps({}),
+            "application/json;charset=utf-8",
+        )
+
+        self.assertEqual(resp.status_code, 403)
+
+    def test_attribute_acl_update_respects_parent_entity_permission(self):
+        owner = self.admin_login()
+        entity = self.create_entity(
+            owner,
+            "private-entity",
+            attrs=[{"name": "field", "type": AttrType.STRING}],
+        )
+        entity.is_public = False
+        entity.default_permission = ACLType.Nothing
+        entity.save(update_fields=["is_public", "default_permission"])
+        entry = self.add_entry(owner, "entry", entity, values={"field": "value"})
+        attribute = entry.attrs.get(schema__name="field")
+
+        editor = self.guest_login("editor")
+        role = Role.objects.create(name="editor-role")
+        role.users.add(editor)
+        entity.writable.roles.add(role)
+        self.assertTrue(editor.has_permission(attribute, ACLType.Writable))
+        self.assertFalse(editor.has_permission(attribute, ACLType.Full))
+
+        resp = self.client.put(
+            "/acl/api/v2/acls/%s" % attribute.id,
+            json.dumps({}),
+            "application/json;charset=utf-8",
+        )
+
+        self.assertEqual(resp.status_code, 403)
+
     def test_update_acl_to_nobody_control(self):
         user = self.guest_login()
         role = Role.objects.create(name="role")

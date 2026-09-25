@@ -1059,6 +1059,19 @@ class ViewTest(BaseViewTest):
                 "ref": ref_entry.id,
             },
         )
+        hidden_entry = self.add_entry(
+            self.user,
+            "HiddenEntry",
+            self.entity,
+            values={"ref": ref_entry.id},
+        )
+        hidden_entry.is_public = False
+        hidden_entry.default_permission = ACLType.Nothing
+        hidden_entry.save(update_fields=["is_public", "default_permission"])
+
+        viewer = self.guest_login("chain-viewer")
+        self.assertTrue(viewer.has_permission(entry, ACLType.Readable))
+        self.assertFalse(viewer.has_permission(hidden_entry, ACLType.Readable))
 
         params = {
             "entities": [self.entity.id],
