@@ -23,10 +23,15 @@ export default defineConfig({
     timeout: 15_000,
   },
   fullyParallel: false,
+  forbidOnly: true,
   workers: 1,
   reporter: [
     ["list"],
     ["json", { outputFile: path.join(testResultsDir, "results.json") }],
+    [
+      "html",
+      { outputFolder: path.join(testResultsDir, "html"), open: "never" },
+    ],
   ],
   outputDir: path.join(testResultsDir, "artifacts"),
   use: {

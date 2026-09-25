@@ -1,11 +1,6 @@
 import { expect, Page, test } from "@playwright/test";
 
-import {
-  captureEvidence,
-  recordTestResult,
-  resetE2eReport,
-  writeE2eReport,
-} from "../reportEvidence";
+import { captureEvidence } from "./liveEvidence";
 
 import { apiGet, login, postYaml, username } from "./liveApi";
 
@@ -34,32 +29,12 @@ const findModelId = async (page: Page, name: string): Promise<number> => {
   );
   const model = found.results.find((entity) => entity.name === name);
   expect(model, `model ${name} should exist`).toBeDefined();
+  if (model == null) throw new Error(`model ${name} is missing`);
   return model.id;
 };
 
 const getModelNote = async (page: Page, id: number): Promise<string> =>
   (await apiGet<{ note: string }>(page, `/entity/api/v2/${id}/`)).note;
-
-test.beforeAll(() => {
-  resetE2eReport();
-});
-
-test.afterAll(() => {
-  writeE2eReport({
-    title: "Pagoda live E2E report: model import preview",
-    summary: [
-      "The real frontend bundle ran against a real Django server and database.",
-      "A model import file was previewed before being applied, over a generated dataset of ~60 models and ~1800 items.",
-      "The preview ran as a background job: the request only started it, and the dialog polled until it finished.",
-      "The preview reported a creation, a field-level update and a row the importer would otherwise drop silently.",
-      "The database was verified to be untouched while the preview was on screen, and to match the preview after importing.",
-    ],
-  });
-});
-
-test.afterEach(async ({}, testInfo) => {
-  recordTestResult(testInfo);
-});
 
 test("previews what a model import would change, and changes nothing until asked", async ({
   page,
@@ -184,7 +159,10 @@ test("previews what a model import would change, and changes nothing until asked
 
   // Importing after the preview applies exactly what was previewed. The form
   // reloads the page on success, so settle on a fresh one before querying.
-  await page.getByRole("button", { name: "インポート" }).last().click();
+  await Promise.all([
+    page.waitForNavigation({ waitUntil: "domcontentloaded" }),
+    page.getByRole("button", { name: "インポート" }).last().click(),
+  ]);
   await page.goto(`/ui/entities?search=${encodeURIComponent("e2e-preview")}`);
 
   await expect
