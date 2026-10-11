@@ -74,6 +74,22 @@ search-semantics changes).
 - **Run specific test:** `npm run test -- -t "test name pattern"`
 - **Watch mode:** `npm run watch`
 
+### Browser / E2E verification (Playwright)
+The `e2e/` suite runs the real frontend bundle against a mock API and produces a
+screenshot-backed report. **Any change that touches the UI (`frontend/**`) must
+run it and attach the report before the work is considered done.**
+- **One-time setup:** `npm ci && npm run test:e2e:install`
+- **Full run (regenerates + links the API client, builds, runs):** `npm run test:e2e`
+- **Fast re-run (`npm run build` first if `frontend/` changed):**
+  `npx playwright test --config=e2e/playwright.config.ts`
+- **Report to attach:** `e2e/test-results/report/report.md` (pass/fail table +
+  embedded screenshots); `e2e/test-results/html/index.html` on failure.
+- **Live stack (on demand):** the suite under `e2e/live/` drives a real Django /
+  MySQL / Elasticsearch stack; see `e2e/live/README.md`.
+- See the `pagoda-e2e-verify` skill for the full workflow and the manual
+  fallback. CI runs the mock suite in `.github/workflows/e2e.yml`; it is
+  non-blocking for now, so a green local run is the bar.
+
 ### API Client Generation
 - **Generate client:** `npm run generate:client`
 - **Generate custom client:** `npm run generate:custom_client`

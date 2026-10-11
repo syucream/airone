@@ -1,0 +1,68 @@
+name: E2E (Playwright)
+
+# The browser suite in e2e/ runs the real frontend bundle against a deterministic
+# mock API (e2e/server.mjs). It needs no database, so it is cheap enough to run
+# on every frontend change.
+#
+# NOTE: the job is intentionally non-blocking for now -- it reports failures
+# without failing the workflow. Do not add it to the required status checks
+# until the suite has been green long enough to trust; remove
+# `continue-on-error` at that point.
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    paths:
+      - 'frontend/**/*.ts'
+      - 'frontend/**/*.tsx'
+      - 'e2e/**'
+      - '.github/workflows/e2e.yml'
+      - 'package.json'
+      - 'package-lock.json'
+      # The bundle is produced by webpack/tsc, so a config change can break it
+      # even when no source file moved.
+      - 'tsconfig.json'
+      - 'tsconfig.lib.json'
+      - '*.config.{js,mjs,ts}'
+
+jobs:
+  playwright:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    # Non-blocking on purpose: see the note above.
+    continue-on-error: true
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          registry-url: https://npm.pkg.github.com/
+          scope: '@dmm-com'
+          cache: 'npm'
+      - name: install dependencies
+        run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
+      # The suite asserts Japanese labels, so the runner needs a CJK font or the
+      # screenshots in the report render as tofu boxes.
+      - name: install Japanese fonts
+        run: sudo apt-get update && sudo apt-get install -y fonts-noto-cjk
+      - name: install Playwright browsers
+        run: npx playwright install --with-deps chromium
+      - name: build frontend
+        run: npm run build:development
+      - name: run Playwright suite
+        run: npx playwright test --config=e2e/playwright.config.ts
+      - name: upload report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: playwright-report
+          path: |
+            e2e/test-results/report
+            e2e/test-results/html
+          retention-days: 14

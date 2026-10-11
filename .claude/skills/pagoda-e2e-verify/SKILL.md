@@ -1,14 +1,76 @@
 ---
 name: pagoda-e2e-verify
 description: |
-  Browser-driven integration testing of Pagoda/AirOne (FE+BE combined). Use when asked to "verify in the browser", "test the UI", "check if it works", "do a smoke test", "manual test", "e2e test", "integration test", "run through the UI", or when finishing a feature and wanting to confirm it works end-to-end. Also trigger on Japanese phrases like "動作確認", "ブラウザで確認", "画面で試して", or any variation of manual/visual verification. Determines what to test from the current git diff context and drives browser automation to navigate pages, fill forms, click buttons, and verify results.
+  Browser-driven integration testing of Pagoda/AirOne (FE+BE combined). Use when asked to "verify in the browser", "test the UI", "check if it works", "do a smoke test", "manual test", "e2e test", "integration test", "run through the UI", or when finishing a feature and wanting to confirm it works end-to-end. Also trigger on Japanese phrases like "動作確認", "ブラウザで確認", "画面で試して", or any variation of manual/visual verification. Runs the Playwright suite in e2e/ by default and requires a screenshot-backed report for any change that touches the UI.
 ---
 
 # Pagoda E2E Verification
 
-Browser-driven manual testing of Pagoda/AirOne. Analyzes current changes, selects relevant test scenarios, and drives the UI via browser automation to verify everything works.
+The `e2e/` Playwright suite is the default way to verify a change. It runs the
+real frontend bundle against a deterministic mock API (`e2e/server.mjs`),
+exercises the UI, and emits a screenshot-backed report. Drive that suite first;
+fall back to ad-hoc browser automation only to explore flows the suite does not
+cover yet.
 
-## Phase 1: Pre-checks
+## Required: Playwright suite + screenshot report
+
+**Any change that touches the UI (`frontend/**`) must be verified with the
+Playwright suite before you report the work as done, and the resulting report
+must be attached to your summary.** This is the evidence the reviewer looks at.
+
+### Run it
+
+```bash
+# Once per checkout.
+npm ci
+npm run test:e2e:install          # downloads Chromium
+
+# Full one-command run: regenerate + link the API client, build, run the suite.
+npm run test:e2e
+
+# Faster re-run once the client is linked and Chromium is present.
+# Rebuild first only if you changed frontend/ (webpack bundle).
+npm run build && npx playwright test --config=e2e/playwright.config.ts
+```
+
+The locale is pinned to `ja-JP` in the Playwright config because the scenarios
+assert Japanese labels; do not remove it.
+
+`e2e/live/**` drives a real Django + MySQL + Elasticsearch stack and is
+on-demand only (see `e2e/live/README.md`). Use it when the change depends on
+backend behaviour the mock server cannot model: permissions, validation,
+background jobs, Elasticsearch.
+
+### Submit the report
+
+A run writes:
+
+- `e2e/test-results/report/report.md` — pass/fail table for every scenario plus
+  embedded full-page screenshots. **Attach this.**
+- `e2e/test-results/report/screenshots/*.png` — the screenshots on their own.
+- `e2e/test-results/html/index.html` — interactive report with traces and videos
+  for failures.
+
+In your final summary, state the report path and the result (e.g.
+"`e2e/test-results/report/report.md` — 20 passed"). If a flow you expected to
+cover is absent from the table, say so explicitly rather than implying it was
+verified.
+
+### Keep the suite green
+
+If a scenario fails, fix the product or the scenario before reporting done. Do
+not weaken an assertion just to make it pass; if the UI behaviour changed on
+purpose, update the scenario and call that out. When you add a new user-visible
+flow, add a scenario for it and capture evidence so it lands in the report.
+
+### When the suite is not enough
+
+Use the manual browser flow below (Phases 1–4) to explore a flow that has no
+scenario yet, to reproduce a failure interactively, or to inspect live-stack
+behaviour. If the manual pass finds a durable bug, add a Playwright scenario so
+the next change is covered automatically.
+
+## Phase 1: Pre-checks (manual fallback)
 
 Run all checks before testing. Stop and guide the user if any fail.
 

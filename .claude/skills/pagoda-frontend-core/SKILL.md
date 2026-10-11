@@ -153,14 +153,33 @@ Frontend development also involves ensuring consistency with backend APIs.
 - UI display controls correspond to backend permission checks (ACL)
 - Celery job integration (polling, etc.) works correctly
 
-### 5. Quality Checklist
+### 5. Verify in the Browser (Playwright)
+
+A green unit suite does not prove the screen still works. For **any
+user-visible change**, run the Playwright suite and attach its report:
+
+```bash
+npm run test:e2e          # first time, or after an API-client change
+# once set up and the bundle is current:
+npx playwright test --config=e2e/playwright.config.ts
+```
+
+- Report to attach: `e2e/test-results/report/report.md` — pass/fail table with
+  embedded full-page screenshots.
+- The locale is pinned to `ja-JP` because the scenarios assert Japanese labels.
+- See the `pagoda-e2e-verify` skill for the full workflow, the live-stack suite,
+  and how to add a scenario for a new screen.
+
+### 6. Quality Checklist
 
 Before completing changes:
 1. `npm run lint` — ESLint + Biome + Knip all pass
 2. `npm run test` — all tests pass
 3. `npm run build` — build succeeds
-4. Comments are written in English
-5. No `any` types used
+4. For UI changes: `npx playwright test --config=e2e/playwright.config.ts` passes
+   and `e2e/test-results/report/report.md` is attached
+5. Comments are written in English
+6. No `any` types used
 
 ## Important Notes
 
