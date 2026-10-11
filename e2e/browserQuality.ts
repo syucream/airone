@@ -31,6 +31,9 @@ export const collectBrowserFailures = (page: Page) => {
     // do not report a request that already received a successful HTTP response.
     if (successfulResponses.has(request)) return;
     const failure = request.failure();
+    // The browser cancels in-flight requests when the SPA navigates; that is a
+    // navigation side effect, not an application failure, so do not fail on it.
+    if (failure?.errorText === "net::ERR_ABORTED") return;
     failures.push(
       `request failed: ${request.method()} ${request.url()} ${failure?.errorText ?? ""}`,
     );

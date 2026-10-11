@@ -33,7 +33,7 @@ test("@advanced-search creates, reads, updates, and clears search criteria", asy
   await page.getByRole("option", { name: "すべて選択" }).click();
   await page.getByText("参照アイテムも含める").getByRole("checkbox").check();
 
-  const search = page.getByRole("link", { name: "検索" });
+  const search = page.getByRole("link", { name: "検索", exact: true });
   await expect(search).toBeEnabled();
   await search.click();
   await expect(page).toHaveURL(/\/ui\/advanced_search_result\?/);
@@ -49,10 +49,9 @@ test("@advanced-search creates, reads, updates, and clears search criteria", asy
     .getByRole("button", { name: "Switch" })
     .getByTestId("CancelIcon")
     .click();
-  await expect(page.getByRole("link", { name: "検索" })).toHaveAttribute(
-    "aria-disabled",
-    "true",
-  );
+  await expect(
+    page.getByRole("link", { name: "検索", exact: true }),
+  ).toHaveAttribute("aria-disabled", "true");
 
   await captureEvidence(page, testInfo, {
     name: "advanced-search-lifecycle",

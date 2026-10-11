@@ -19,6 +19,7 @@ type TestResult = {
 
 const reportDir = path.join(__dirname, "test-results", "report");
 const screenshotDir = path.join(reportDir, "screenshots");
+const evidenceDir = path.join(reportDir, "evidence");
 const evidence: Evidence[] = [];
 const testResults: TestResult[] = [];
 
@@ -37,6 +38,14 @@ export const recordTestResult = (testInfo: TestInfo) => {
   });
 };
 
+/**
+ * Capture a full-page screenshot for the run report.
+ *
+ * The mock-server suite aggregates every screenshot and result through
+ * `reportReporter.ts`, which reads the JSON descriptor written here. The live
+ * suite, which has no reporter, still collects into the in-memory arrays and
+ * writes `report.md` with `writeE2eReport`.
+ */
 export const captureEvidence = async (
   page: Page,
   testInfo: TestInfo,
@@ -51,6 +60,7 @@ export const captureEvidence = async (
   },
 ) => {
   fs.mkdirSync(screenshotDir, { recursive: true });
+  fs.mkdirSync(evidenceDir, { recursive: true });
   const screenshotPath = path.join(screenshotDir, `${name}.png`);
   await page.screenshot({ path: screenshotPath, fullPage: true });
   await testInfo.attach(title, {
@@ -63,6 +73,16 @@ export const captureEvidence = async (
     note,
     screenshotPath: path.relative(reportDir, screenshotPath),
   });
+  fs.writeFileSync(
+    path.join(evidenceDir, `${name}.json`),
+    JSON.stringify({
+      name,
+      title,
+      note,
+      testTitle: testInfo.title,
+      screenshot: path.relative(reportDir, screenshotPath),
+    }),
+  );
 };
 
 const defaultSummary = [
@@ -95,8 +115,8 @@ export const writeE2eReport = ({
     "| --- | --- | ---: |",
     ...testResults.map((result) => {
       const status = result.status === result.expectedStatus ? "PASS" : "FAIL";
-      const title = result.title.replaceAll("|", "\\|");
-      return `| ${status} | ${title} | ${result.duration} ms |`;
+      const testTitle = result.title.replaceAll("|", "\\|");
+      return `| ${status} | ${testTitle} | ${result.duration} ms |`;
     }),
     "",
     "## Evidence",

@@ -44,7 +44,7 @@ test("@attribute-types @entity renders all 18 types in the entity editor", async
   page,
 }, testInfo) => {
   await page.goto("/ui/entities/1");
-  const names = page.getByPlaceholder("属性名");
+  const names = page.getByPlaceholder("属性名", { exact: true });
   await expect(names).toHaveCount(attributeNames.length);
   expect(
     await names.evaluateAll((elements) =>

@@ -542,6 +542,26 @@ const handleApi = async (req, res, parsed) => {
     json(res, 200, paginated([]));
     return true;
   }
+  const attrReferralMatch = pathname.match(
+    /^\/entry\/api\/v2\/(\d+)\/attr_referrals$/,
+  );
+  if (attrReferralMatch && req.method === "GET") {
+    const attrId = Number(attrReferralMatch[1]);
+    const referralSchemaIds = new Set(
+      (attrs.find(({ id }) => id === attrId)?.referral ?? []).map(
+        ({ id }) => id,
+      ),
+    );
+    const keyword = String(parsed.query.keyword ?? "").toLowerCase();
+    const results = state.entries
+      .filter((entry) => referralSchemaIds.has(entry.schema?.id))
+      .filter(
+        ({ name }) => keyword === "" || name.toLowerCase().includes(keyword),
+      )
+      .map(({ id, name }) => ({ id, name, display_label: null }));
+    json(res, 200, { has_restricted_items: false, results });
+    return true;
+  }
   if (req.method === "GET" && pathname === "/entity/api/v2/attrs") {
     json(
       res,
@@ -594,21 +614,32 @@ const handleApi = async (req, res, parsed) => {
     }
     return result;
   };
+  const withUserDefaults = (user) => ({
+    // UserRetrieveFromJSON maps these without a null guard, so a record that
+    // omits them crashes the user edit page. The real endpoint always returns
+    // them, so fill in the empty shape here too.
+    date_joined: "2026-01-01T00:00:00Z",
+    authenticate_type: "base",
+    token: null,
+    groups: [],
+    roles: [],
+    co_users: [],
+    ...user,
+  });
   for (const collection of collections) {
     if (pathname === collection.base && req.method === "GET") {
-      json(
-        res,
-        200,
-        collection.paginated
-          ? paginated(state[collection.key])
-          : state[collection.key],
-      );
+      const records =
+        collection.key === "users"
+          ? state[collection.key].map(withUserDefaults)
+          : state[collection.key];
+      json(res, 200, collection.paginated ? paginated(records) : records);
       return true;
     }
     if (pathname === collection.base && req.method === "POST") {
       const body = await readJson(req);
       let input = body[collection.wrapper] ?? body;
       if (collection.key === "roles") input = hydrateRoleRelations(input);
+      if (collection.key === "users") input = withUserDefaults(input);
       const records = state[collection.key];
       const created = {
         ...input,
@@ -624,7 +655,11 @@ const handleApi = async (req, res, parsed) => {
       const record = state[collection.key].find(
         ({ id }) => id === Number(match[1]),
       );
-      json(res, record ? 200 : 404, record ?? { detail: "Not found" });
+      const body =
+        record && collection.key === "users"
+          ? withUserDefaults(record)
+          : record;
+      json(res, record ? 200 : 404, body ?? { detail: "Not found" });
       return true;
     }
     if (match && req.method === "PUT") {

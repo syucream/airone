@@ -47,7 +47,9 @@ test("@crud @user performs browser UI CRUD", async ({
   await username.fill("browser-user-updated");
   await username.press("Tab");
   await page.getByRole("button", { name: "保存" }).click();
-  await page.reload();
+  // Unlike create, saving an existing user keeps the editor open, so go back to
+  // the list to exercise the delete action there.
+  await page.goto("/ui/users");
   const updated = page.getByText("browser-user-updated", { exact: true });
   await expect(updated).toBeVisible();
   const card = updated.locator(
