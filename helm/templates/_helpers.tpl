@@ -91,6 +91,14 @@ Shared environment block used across each component.
 - name: AIRONE_EXTENSIONS
   value: {{ default  .Values.airone.extensions | quote }}
 {{- end }}
+{{- if .Values.airone.canonicalBaseUrl }}
+- name: AIRONE_CANONICAL_BASE_URL
+  value: {{ .Values.airone.canonicalBaseUrl | quote }}
+{{- end }}
+{{- if .Values.airone.allowedHosts }}
+- name: AIRONE_ALLOWED_HOSTS
+  value: {{ .Values.airone.allowedHosts | quote }}
+{{- end }}
 {{- if .Values.airone.ldap.enabled }}
 - name: AIRONE_LDAP_ENABLE
   value: {{ default  .Values.airone.ldap.enabled | quote }}

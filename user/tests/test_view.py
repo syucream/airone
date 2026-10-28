@@ -2,6 +2,8 @@ import json
 from datetime import timedelta
 from unittest.mock import Mock, patch
 
+from django.core import mail
+from django.test import override_settings
 from django.urls import reverse
 
 from airone.lib.test import AironeViewTest
@@ -770,3 +772,25 @@ class ViewTest(AironeViewTest):
         form_with_ldap_user.is_valid()
         resp = view.form_valid(form_with_ldap_user)
         self.assertEqual(resp.status_code, 400)
+
+    def test_password_reset_link_ignores_host_header(self):
+        """
+        Regression test for reset-link poisoning via the Host header (CWE-640).
+        The emailed reset link must be built from the configured canonical base
+        URL, not from the client-controlled Host header.
+        """
+        self._create_user("user")
+        # mail.outbox is not cleared between tests in the same run
+        mail.outbox = []
+        with override_settings(CANONICAL_BASE_URL="https://pagoda.example.com"):
+            resp = self.client.post(
+                reverse("user:password_reset"),
+                {"username": "user"},
+                HTTP_HOST="attacker.example",
+            )
+
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(len(mail.outbox), 1)
+        body = mail.outbox[0].body
+        self.assertIn("https://pagoda.example.com", body)
+        self.assertNotIn("attacker.example", body)

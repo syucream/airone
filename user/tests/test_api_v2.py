@@ -5,6 +5,8 @@ from unittest.mock import Mock, patch
 
 import yaml
 from django.contrib.auth.tokens import default_token_generator
+from django.core import mail
+from django.test import override_settings
 from django.utils import timezone
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
@@ -12,7 +14,7 @@ from rest_framework import status
 from rest_framework.authtoken.models import Token
 
 from airone.lib.acl import ACLType
-from airone.lib.test import AironeViewTest, with_airone_settings
+from airone.lib.test import AironeViewTest, DisableStderr, with_airone_settings
 from airone.lib.types import (
     AttrType,
 )
@@ -350,6 +352,61 @@ class ViewTest(AironeViewTest):
             "/user/api/v2/password_reset", json.dumps(params), "application/json"
         )
         self.assertEqual(resp.status_code, 400)
+
+    def test_password_reset_link_ignores_host_header(self):
+        """
+        Regression test for reset-link poisoning via the Host header (CWE-640).
+        The emailed reset link must be built from the configured canonical base
+        URL, not from the client-controlled Host header.
+        """
+        user = self._create_user("user")
+        params = {
+            "username": user.username,
+        }
+        # mail.outbox is not cleared between tests in the same run
+        mail.outbox = []
+        with override_settings(CANONICAL_BASE_URL="https://pagoda.example.com"):
+            resp = self.client.post(
+                "/user/api/v2/password_reset",
+                json.dumps(params),
+                "application/json",
+                HTTP_HOST="attacker.example",
+            )
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(len(mail.outbox), 1)
+        body = mail.outbox[0].body
+        self.assertIn("https://pagoda.example.com", body)
+        self.assertNotIn("attacker.example", body)
+
+    def test_password_reset_fails_fast_without_canonical_base_url(self):
+        """
+        When no canonical base URL is configured and the fallback is disabled,
+        reset must fail instead of trusting the client-controlled Host header.
+        """
+        user = self._create_user("user")
+        params = {
+            "username": user.username,
+        }
+        # mail.outbox is not cleared between tests in the same run
+        mail.outbox = []
+        with override_settings(CANONICAL_BASE_URL="", CANONICAL_URL_FALLBACK=False):
+            with DisableStderr():
+                resp = self.client.post(
+                    "/user/api/v2/password_reset",
+                    json.dumps(params),
+                    "application/json",
+                    HTTP_HOST="attacker.example",
+                )
+
+        self.assertEqual(resp.status_code, 500)
+        # the 500 also triggers Django's AdminEmailHandler error report, so
+        # only assert that no reset email reached the victim's address
+        victim_email = user.email
+        self.assertFalse(
+            any(victim_email in m.to for m in mail.outbox),
+            "reset email must not be sent when failing fast",
+        )
 
     def test_password_reset_confirm(self):
         user = self._create_user("user")

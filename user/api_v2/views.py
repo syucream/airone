@@ -3,7 +3,6 @@ from typing import Any
 
 from django.contrib.auth.forms import UserModel
 from django.contrib.auth.tokens import default_token_generator
-from django.contrib.sites.shortcuts import get_current_site
 from django.core.mail import EmailMultiAlternatives
 from django.template import loader
 from django.utils import timezone
@@ -22,6 +21,7 @@ from rest_framework.serializers import Serializer
 
 from airone.exceptions.model import UnexpectedAttributeType
 from airone.lib.acl import ACLType
+from airone.lib.canonical import get_canonical_url_parts
 from airone.lib.drf import YAMLParser, YAMLRenderer
 from airone.lib.types import AttrType
 from entry.models import AttributeValue, Entry
@@ -565,19 +565,16 @@ class PasswordResetAPI(viewsets.GenericViewSet):
             return Response("user %s not found" % username, status=status.HTTP_400_BAD_REQUEST)
 
         user_email = getattr(user, UserModel.get_email_field_name())
-        use_https = request.is_secure()
         token_generator = default_token_generator
-        current_site = get_current_site(request)
-        site_name = current_site.name
-        domain = current_site.domain
+        url_parts = get_canonical_url_parts(request, use_https=request.is_secure())
         context = {
             "email": user_email,
             "uid": urlsafe_base64_encode(force_bytes(user.pk)),
             "user": user,
-            "domain": domain,
-            "site_name": site_name,
+            "domain": url_parts["domain"],
+            "site_name": url_parts["site_name"],
             "token": token_generator.make_token(user),
-            "protocol": "https" if use_https else "http",
+            "protocol": url_parts["protocol"],
         }
         self._send_mail(
             subject_template_name="registration/password_reset_subject.txt",

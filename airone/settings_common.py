@@ -32,7 +32,21 @@ class Common(Configuration):
     CELERY_TASK_SERIALIZER = "json"
     CELERY_BROKER_HEARTBEAT = 10
 
-    ALLOWED_HOSTS = ["*"]
+    # Host header validation. Production must set AIRONE_ALLOWED_HOSTS to the
+    # real service hostnames (comma separated); "*" disables Django's Host
+    # header validation entirely.
+    ALLOWED_HOSTS = env.list("AIRONE_ALLOWED_HOSTS", default=["*"])
+
+    # Canonical base URL (e.g. "https://pagoda.example.com") used to build
+    # externally-visible links such as password reset emails. These links must
+    # never be derived from the client-controlled Host header (CWE-640,
+    # reset-link poisoning), so production deployments MUST configure this.
+    CANONICAL_BASE_URL = env.str("AIRONE_CANONICAL_BASE_URL", "")
+
+    # Whether to fall back to the request host when CANONICAL_BASE_URL is not
+    # configured. Only development configuration classes may enable this;
+    # production must configure a canonical base URL instead.
+    CANONICAL_URL_FALLBACK = False
 
     # Application definition
 

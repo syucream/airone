@@ -51,6 +51,8 @@ airone:
   index: airone
   secretKey: changeme
   debug: ""
+  canonicalBaseUrl: ""
+  allowedHosts: ""
   fileStorePath: ""
   title: ""
   subtitle: ""
