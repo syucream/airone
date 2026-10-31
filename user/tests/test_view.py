@@ -770,3 +770,30 @@ class ViewTest(AironeViewTest):
         form_with_ldap_user.is_valid()
         resp = view.form_valid(form_with_ldap_user)
         self.assertEqual(resp.status_code, 400)
+
+    def test_do_edit_token_lifetime_of_another_user_is_forbidden(self):
+        self._guest_login()
+        original_lifetime = self.admin.token_lifetime
+
+        resp = self.client.post(
+            reverse("user:do_edit", args=[self.admin.id]),
+            json.dumps({"name": "admin", "email": "admin@example.com", "token_lifetime": "0"}),
+            "application/json",
+        )
+
+        self.assertEqual(resp.status_code, 400)
+        self.admin.refresh_from_db()
+        self.assertEqual(self.admin.token_lifetime, original_lifetime)
+
+    def test_do_edit_token_lifetime_of_own_account(self):
+        self._guest_login()
+
+        resp = self.client.post(
+            reverse("user:do_edit", args=[self.guest.id]),
+            json.dumps({"name": "guest", "email": "guest@example.com", "token_lifetime": "0"}),
+            "application/json",
+        )
+
+        self.assertEqual(resp.status_code, 200)
+        self.guest.refresh_from_db()
+        self.assertEqual(self.guest.token_lifetime, 0)
