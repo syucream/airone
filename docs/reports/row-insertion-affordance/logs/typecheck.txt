@@ -1,0 +1,4 @@
+
+> @dmm-com/pagoda-core@1.1.0 typecheck
+> tsc --noEmit --project tsconfig.json && tsc --noEmit --project tsconfig.test.json
+
