@@ -149,12 +149,9 @@ describe("Array Number Integration Tests", () => {
     });
     expect(getValues("attrs.2.value.asArrayNumber.0.value")).toBe(456.78);
 
-    // Add second element to array
-    const addButtons = screen
-      .getAllByRole("button")
-      .filter((btn) => btn.getAttribute("id") === "add_button");
+    // Add second element to array from the labelled append row
     act(() => {
-      addButtons[0].click();
+      screen.getByTestId("append-row-2").click();
     });
 
     // Should now have 4 total spinbutton inputs
@@ -174,11 +171,8 @@ describe("Array Number Integration Tests", () => {
     ]);
 
     // Test deletion - remove first element
-    const deleteButtons = screen
-      .getAllByRole("button")
-      .filter((btn) => btn.getAttribute("id") === "del_button");
     act(() => {
-      deleteButtons[0].click();
+      screen.getByTestId("delete-row-2-0").click();
     });
 
     await waitFor(() => {
@@ -333,12 +327,9 @@ describe("Array Number Integration Tests", () => {
       { value: 3 },
     ]);
 
-    // Insert new element after first one
-    const addButtons = screen
-      .getAllByRole("button")
-      .filter((btn) => btn.getAttribute("id") === "add_button");
+    // Insert new element on the boundary above the 2nd row
     act(() => {
-      addButtons[0].click(); // Add after first element
+      screen.getByTestId("insert-band-2-1").click();
     });
 
     await waitFor(() => {
@@ -359,11 +350,8 @@ describe("Array Number Integration Tests", () => {
     ]);
 
     // Delete the middle element (index 2, value 2)
-    const deleteButtons = screen
-      .getAllByRole("button")
-      .filter((btn) => btn.getAttribute("id") === "del_button");
     act(() => {
-      deleteButtons[2].click();
+      screen.getByTestId("delete-row-2-2").click();
     });
 
     await waitFor(() => {
@@ -412,23 +400,13 @@ describe("Array Number Integration Tests", () => {
       expect(input).toBeEnabled();
     });
 
-    // Check that buttons are properly labeled and functional
-    const addButtons = screen
-      .getAllByRole("button")
-      .filter((btn) => btn.getAttribute("id") === "add_button");
-    const deleteButtons = screen
-      .getAllByRole("button")
-      .filter((btn) => btn.getAttribute("id") === "del_button");
-
-    expect(addButtons).toHaveLength(1);
-    expect(deleteButtons).toHaveLength(1);
-
-    // Buttons should be clickable
-    addButtons.forEach((button) => {
-      expect(button).toBeEnabled();
-    });
-    deleteButtons.forEach((button) => {
-      expect(button).toBeEnabled();
-    });
+    // Check that the insertion controls are labelled and functional
+    expect(screen.getByTestId("append-row-2")).toBeEnabled();
+    expect(screen.getByTestId("insert-band-2-0")).toBeEnabled();
+    expect(
+      screen.getByRole("button", { name: "1行目の前に値を追加" }),
+    ).toBeEnabled();
+    expect(screen.getByTestId("delete-row-2-0")).toBeEnabled();
+    expect(screen.getByRole("button", { name: "1行目を削除" })).toBeEnabled();
   });
 });
