@@ -1,5 +1,4 @@
 /**
- * @jest-environment jsdom
  */
 
 import { Group } from "@dmm-com/airone-apiclient-typescript-fetch";
@@ -14,10 +13,12 @@ import {
 import { useForm } from "react-hook-form";
 
 import { TestWrapper } from "../../TestWrapper";
-import { schema } from "../entry/entryForm/EntryFormSchema";
 
 import { GroupForm } from "./GroupForm";
-import { Schema } from "./groupForm/GroupFormSchema";
+import { Schema, schema } from "./groupForm/GroupFormSchema";
+
+import i18n from "i18n/config";
+import { aironeApiClient } from "repository/AironeApiClient";
 
 describe("GroupForm", () => {
   const groups = [
@@ -63,17 +64,11 @@ describe("GroupForm", () => {
       }),
     );
 
-    /* eslint-disable */
-    jest
-      .spyOn(require("repository/AironeApiClient").aironeApiClient, "getUsers")
-      .mockResolvedValue(Promise.resolve([]));
-    jest
-      .spyOn(
-        require("repository/AironeApiClient").aironeApiClient,
-        "getGroupTrees",
-      )
-      .mockResolvedValue(Promise.resolve(groups));
-    /* eslint-enable */
+    vi.spyOn(aironeApiClient, "getUsers").mockResolvedValue({
+      count: 0,
+      results: [],
+    });
+    vi.spyOn(aironeApiClient, "getGroupTrees").mockResolvedValue(groups);
 
     render(<GroupForm control={control} setValue={setValue} groupId={1} />, {
       wrapper: TestWrapper,
@@ -86,5 +81,35 @@ describe("GroupForm", () => {
     });
 
     expect(screen.getByPlaceholderText("グループ名")).toHaveValue("group name");
+  });
+
+  test("renders in English", async () => {
+    await act(async () => {
+      await i18n.changeLanguage("en");
+    });
+
+    const {
+      result: {
+        current: { control, setValue },
+      },
+    } = renderHook(() =>
+      useForm<Schema>({
+        resolver: zodResolver(schema),
+        mode: "onBlur",
+        defaultValues,
+      }),
+    );
+
+    vi.spyOn(aironeApiClient, "getUsers").mockResolvedValue({
+      count: 0,
+      results: [],
+    });
+    vi.spyOn(aironeApiClient, "getGroupTrees").mockResolvedValue(groups);
+
+    render(<GroupForm control={control} setValue={setValue} groupId={1} />, {
+      wrapper: TestWrapper,
+    });
+
+    expect(screen.getByPlaceholderText("Group name")).toBeInTheDocument();
   });
 });

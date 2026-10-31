@@ -1,8 +1,13 @@
 /**
- * @jest-environment jsdom
  */
 
-import { act, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
 import { createMemoryRouter, RouterProvider } from "react-router";
@@ -12,6 +17,7 @@ import { editTriggerPath } from "../routes/Routes";
 import { TriggerEditPage } from "./TriggerEditPage";
 
 import { TestWrapperWithoutRoutes } from "TestWrapper";
+import i18n from "i18n/config";
 
 const server = setupServer(
   // getTrigger
@@ -114,5 +120,54 @@ describe("EditTriggerPage", () => {
     });
 
     expect(result).toMatchSnapshot();
+  });
+
+  test("filters model candidates regardless of width and case", async () => {
+    const router = createMemoryRouter(
+      [{ path: editTriggerPath(":triggerId"), element: <TriggerEditPage /> }],
+      { initialEntries: ["/ui/triggers/1"] },
+    );
+    render(<RouterProvider router={router} />, {
+      wrapper: TestWrapperWithoutRoutes,
+    });
+    await waitFor(() => {
+      expect(screen.queryByTestId("loading")).not.toBeInTheDocument();
+    });
+
+    fireEvent.change(screen.getAllByRole("combobox")[0], {
+      target: { value: "ＡＡ" },
+    });
+
+    expect(await screen.findByText("aaaaa")).toBeInTheDocument();
+  });
+
+  test("renders in English", async () => {
+    await act(async () => {
+      await i18n.changeLanguage("en");
+    });
+
+    const router = createMemoryRouter(
+      [
+        {
+          path: editTriggerPath(":triggerId"),
+          element: <TriggerEditPage />,
+        },
+      ],
+      {
+        initialEntries: ["/ui/triggers/1"],
+      },
+    );
+    await act(async () => {
+      render(<RouterProvider router={router} />, {
+        wrapper: TestWrapperWithoutRoutes,
+      });
+    });
+    await waitFor(() => {
+      expect(screen.queryByTestId("loading")).not.toBeInTheDocument();
+    });
+
+    expect(screen.getByText("Target model")).toBeInTheDocument();
+    expect(screen.getByText("Conditions")).toBeInTheDocument();
+    expect(screen.getByText("Actions")).toBeInTheDocument();
   });
 });

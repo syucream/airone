@@ -18,10 +18,11 @@ import {
 import { styled } from "@mui/material/styles";
 import { FC } from "react";
 import { Control, Controller, useFormState } from "react-hook-form";
-import { UseFormSetValue } from "react-hook-form/dist/types/form";
+import { UseFormSetValue } from "react-hook-form";
 
 import { AttributeValueField } from "components/entry/entryForm/AttributeValueField";
 import { Schema } from "components/entry/entryForm/EntryFormSchema";
+import { useTranslation } from "hooks/useTranslation";
 import { getStagedErrorStyle } from "utils/styleUtils";
 
 const ChipBox = styled(Box)(({}) => ({
@@ -47,7 +48,7 @@ const HeaderTableRow = styled(TableRow)(({}) => ({
 
 const HeaderTableCell = styled(TableCell)(({}) => ({
   color: "#FFFFFF",
-  width: "384px",
+  width: "150px",
 }));
 
 const TableBox = styled(Box)(({}) => ({
@@ -83,6 +84,7 @@ export const EntryForm: FC<EntryFormProps> = ({
   setValue,
   skipItemName,
 }) => {
+  const { t } = useTranslation();
   const { errors } = useFormState({
     control,
   });
@@ -102,7 +104,7 @@ export const EntryForm: FC<EntryFormProps> = ({
           component="a"
           href={`#name`}
           icon={<ArrowDropDownIcon />}
-          label="アイテム名"
+          label={t("entryForm.form.itemName")}
           clickable={true}
           variant="outlined"
         />
@@ -122,8 +124,10 @@ export const EntryForm: FC<EntryFormProps> = ({
       <Table id="table_attr_list">
         <TableHead>
           <HeaderTableRow>
-            <HeaderTableCell>項目</HeaderTableCell>
-            <HeaderTableCell>内容</HeaderTableCell>
+            <HeaderTableCell>{t("entryForm.form.columnItem")}</HeaderTableCell>
+            <HeaderTableCell>
+              {t("entryForm.form.columnContent")}
+            </HeaderTableCell>
             <HeaderTableCell
               sx={{ width: "30px", textAlign: "center" }}
             ></HeaderTableCell>
@@ -134,8 +138,10 @@ export const EntryForm: FC<EntryFormProps> = ({
             <TableRow>
               <StyledTableCell>
                 <TableBox>
-                  <StyledTypography id="name">アイテム名</StyledTypography>
-                  <RequiredLabel>必須</RequiredLabel>
+                  <StyledTypography id="name">
+                    {t("entryForm.form.itemName")}
+                  </StyledTypography>
+                  <RequiredLabel>{t("entryForm.form.required")}</RequiredLabel>
                 </TableBox>
               </StyledTableCell>
               <StyledTableCell>
@@ -151,7 +157,10 @@ export const EntryForm: FC<EntryFormProps> = ({
                       error={error != null}
                       helperText={error?.message}
                       fullWidth
-                      inputProps={{ "data-1p-ignore": true }}
+                      inputProps={{
+                        "aria-label": t("entryForm.form.itemName"),
+                        "data-1p-ignore": true,
+                      }}
                       sx={getStagedErrorStyle(!!error, isDirty)}
                     />
                   )}
@@ -181,12 +190,16 @@ export const EntryForm: FC<EntryFormProps> = ({
           )}
           {entity.attrs
             .sort((a, b) => a.index - b.index)
-            .map(({ id, name, type, isMandatory, isWritable }) => (
+            .map(({ id, name, type, isMandatory, isWritable, choices }) => (
               <TableRow key={id}>
                 <StyledTableCell id={`attrs-${name}`}>
                   <TableBox>
                     <StyledTypography>{name}</StyledTypography>
-                    {isMandatory && <RequiredLabel>必須</RequiredLabel>}
+                    {isMandatory && (
+                      <RequiredLabel>
+                        {t("entryForm.form.required")}
+                      </RequiredLabel>
+                    )}
                   </TableBox>
                 </StyledTableCell>
                 <StyledTableCell>
@@ -196,6 +209,7 @@ export const EntryForm: FC<EntryFormProps> = ({
                       setValue={setValue}
                       type={type}
                       schemaId={id}
+                      choices={choices ?? undefined}
                     />
                   ) : (
                     <Typography>Permission denied.</Typography>

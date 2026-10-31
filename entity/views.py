@@ -1,11 +1,12 @@
 import collections
 import io
 import re
-from typing import Any
+from typing import Any, cast
 
 import yaml
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
-from django.db.models import Q
+from django.db.models import Q, QuerySet
+from django.db.models.functions import Lower
 from django.http import HttpRequest, HttpResponse
 from django.http.response import JsonResponse
 
@@ -21,10 +22,16 @@ from airone.lib.http import (
 from airone.lib.types import AttrType, AttrTypeValue
 from entry.models import AttributeValue, Entry
 from job.models import Job
-from user.models import History
+from user.models import History, User
 
 from .models import Entity, EntityAttr
 from .settings import CONFIG
+
+# Entity/EntityAttr name is defined as a CharField with a concrete max_length, but the
+# type of Field.max_length is Optional[int]. Cast to int at module scope to keep the
+# per-request checker lambdas simple.
+_ENTITY_NAME_MAX_LENGTH: int = cast(int, Entity._meta.get_field("name").max_length)
+_ENTITY_ATTR_NAME_MAX_LENGTH: int = cast(int, EntityAttr._meta.get_field("name").max_length)
 
 
 @http_get
@@ -35,9 +42,11 @@ def index(request: HttpRequest) -> HttpResponse:
     # Get entities under the conditions of specified parameters
     query = Q(is_active=True)
     if param_keyword:
-        query &= Q(name__icontains=param_keyword)
+        query &= Q(name_lower__icontains=param_keyword.lower())
 
-    overall_entities = Entity.objects.filter(query).order_by("name")
+    overall_entities = (
+        Entity.objects.annotate(name_lower=Lower("name")).filter(query).order_by("name")
+    )
 
     p = Paginator(overall_entities, CONFIG.MAX_LIST_ENTITIES)
     try:
@@ -50,7 +59,9 @@ def index(request: HttpRequest) -> HttpResponse:
     except EmptyPage:
         return HttpResponse("Invalid page number. The page doesn't have anything", status=400)
 
-    return_entities = page_obj.object_list
+    # Paginator.page().object_list is a QuerySet slice at runtime, but stubs type
+    # it as the narrower `_SupportsPagination` protocol that lacks `.count()`.
+    return_entities = cast(QuerySet[Entity], page_obj.object_list)
     index_start = (page_obj.number - 1) * CONFIG.MAX_LIST_ENTITIES
 
     context = {
@@ -65,11 +76,12 @@ def index(request: HttpRequest) -> HttpResponse:
 
 @http_get
 def create(request: HttpRequest) -> HttpResponse:
+    user = cast(User, request.user)
     context = {
         "entities": [
             x
             for x in Entity.objects.filter(is_active=True)
-            if request.user.has_permission(x, ACLType.Readable)
+            if user.has_permission(x, ACLType.Readable)
         ],
         "attr_types": AttrTypeValue,
     }
@@ -78,8 +90,10 @@ def create(request: HttpRequest) -> HttpResponse:
 
 @http_get
 def edit(request: HttpRequest, entity_id: int) -> HttpResponse:
-    entity, error = get_obj_with_check_perm(request.user, Entity, entity_id, ACLType.Writable)
-    if error or entity is None:
+    user = cast(User, request.user)
+    entity, error = get_obj_with_check_perm(user, Entity, entity_id, ACLType.Writable)
+    if entity is None:
+        assert error is not None
         return error
 
     # when an entity in referral attribute is deleted
@@ -100,7 +114,7 @@ def edit(request: HttpRequest, entity_id: int) -> HttpResponse:
                 "referrals": x.referral.all(),
             }
             for x in entity.attrs.filter(is_active=True).order_by("index")
-            if request.user.has_permission(x, ACLType.Writable)
+            if user.has_permission(x, ACLType.Writable)
         ],
     }
     return render(request, "edit_entity.html", context)
@@ -111,9 +125,7 @@ def edit(request: HttpRequest, entity_id: int) -> HttpResponse:
         {
             "name": "name",
             "type": str,
-            "checker": lambda x: (
-                x["name"] and len(x["name"]) <= Entity._meta.get_field("name").max_length
-            ),
+            "checker": lambda x: x["name"] and len(x["name"]) <= _ENTITY_NAME_MAX_LENGTH,
         },
         {"name": "note", "type": str},
         {"name": "is_toplevel", "type": bool},
@@ -127,30 +139,30 @@ def edit(request: HttpRequest, entity_id: int) -> HttpResponse:
                     "checker": lambda x: (
                         x["name"]
                         and not re.match(r"^\s*$", x["name"])
-                        and len(x["name"]) <= EntityAttr._meta.get_field("name").max_length
+                        and len(x["name"]) <= _ENTITY_ATTR_NAME_MAX_LENGTH
                     ),
                 },
                 {
                     "name": "type",
                     "type": str,
-                    "checker": lambda x: (
-                        any([y == int(x["type"]) for y in AttrTypeValue.values()])
-                    ),
+                    "checker": lambda x: any([y == int(x["type"]) for y in AttrTypeValue.values()]),
                 },
                 {"name": "is_mandatory", "type": bool},
                 {"name": "is_delete_in_chain", "type": bool},
                 {
                     "name": "row_index",
                     "type": str,
-                    "checker": lambda x: (re.match(r"^[0-9]*$", x["row_index"])),
+                    "checker": lambda x: re.match(r"^[0-9]*$", x["row_index"]),
                 },
             ],
         },
     ]
 )
 def do_edit(request: HttpRequest, entity_id: int, recv_data: dict[str, Any]) -> HttpResponse:
-    entity, error = get_obj_with_check_perm(request.user, Entity, entity_id, ACLType.Writable)
-    if error or entity is None:
+    user = cast(User, request.user)
+    entity, error = get_obj_with_check_perm(user, Entity, entity_id, ACLType.Writable)
+    if entity is None:
+        assert error is not None
         return error
 
     # validation checks
@@ -181,7 +193,7 @@ def do_edit(request: HttpRequest, entity_id: int, recv_data: dict[str, Any]) -> 
         return HttpResponse("Target entity is now under processing", status=400)
 
     if custom_view.is_custom("edit_entity"):
-        resp = custom_view.call_custom(
+        resp: HttpResponse | None = custom_view.call_custom(
             "edit_entity", None, entity, recv_data["name"], recv_data["attrs"]
         )
         if resp:
@@ -197,7 +209,7 @@ def do_edit(request: HttpRequest, entity_id: int, recv_data: dict[str, Any]) -> 
     entity.set_status(Entity.STATUS_EDITING)
 
     # Create a new job to edit entity and run it
-    job = Job.new_edit_entity(request.user, entity, params=recv_data)
+    job = Job.new_edit_entity(user, entity, params=recv_data)
     job.run()
 
     new_name = recv_data["name"]
@@ -215,9 +227,7 @@ def do_edit(request: HttpRequest, entity_id: int, recv_data: dict[str, Any]) -> 
         {
             "name": "name",
             "type": str,
-            "checker": lambda x: (
-                x["name"] and len(x["name"]) <= Entity._meta.get_field("name").max_length
-            ),
+            "checker": lambda x: x["name"] and len(x["name"]) <= _ENTITY_NAME_MAX_LENGTH,
         },
         {"name": "note", "type": str},
         {"name": "is_toplevel", "type": bool},
@@ -231,22 +241,20 @@ def do_edit(request: HttpRequest, entity_id: int, recv_data: dict[str, Any]) -> 
                     "checker": lambda x: (
                         x["name"]
                         and not re.match(r"^\s*$", x["name"])
-                        and len(x["name"]) <= EntityAttr._meta.get_field("name").max_length
+                        and len(x["name"]) <= _ENTITY_ATTR_NAME_MAX_LENGTH
                     ),
                 },
                 {
                     "name": "type",
                     "type": str,
-                    "checker": lambda x: (
-                        any([y == int(x["type"]) for y in AttrTypeValue.values()])
-                    ),
+                    "checker": lambda x: any([y == int(x["type"]) for y in AttrTypeValue.values()]),
                 },
                 {"name": "is_mandatory", "type": bool},
                 {"name": "is_delete_in_chain", "type": bool},
                 {
                     "name": "row_index",
                     "type": str,
-                    "checker": lambda x: (re.match(r"^[0-9]*$", x["row_index"])),
+                    "checker": lambda x: re.match(r"^[0-9]*$", x["row_index"]),
                 },
             ],
         },
@@ -280,8 +288,11 @@ def do_create(request: HttpRequest, recv_data: dict[str, Any]) -> HttpResponse:
     if Entity.objects.filter(name=recv_data["name"], is_active=True).exists():
         return HttpResponse("Duplicate name entity is existed", status=400)
 
+    user = cast(User, request.user)
     if custom_view.is_custom("create_entity"):
-        resp = custom_view.call_custom("create_entity", None, recv_data["name"], recv_data["attrs"])
+        resp: HttpResponse | None = custom_view.call_custom(
+            "create_entity", None, recv_data["name"], recv_data["attrs"]
+        )
         if resp:
             return resp
 
@@ -289,7 +300,7 @@ def do_create(request: HttpRequest, recv_data: dict[str, Any]) -> HttpResponse:
     entity = Entity(
         name=recv_data["name"],
         note=recv_data["note"],
-        created_user=request.user,
+        created_user=user,
         status=Entity.STATUS_CREATING,
     )
 
@@ -300,7 +311,7 @@ def do_create(request: HttpRequest, recv_data: dict[str, Any]) -> HttpResponse:
     entity.save()
 
     # Create a new job to edit entity and run it
-    job = Job.new_create_entity(request.user, entity, params=recv_data)
+    job = Job.new_create_entity(user, entity, params=recv_data)
     job.run()
 
     return JsonResponse(
@@ -314,11 +325,12 @@ def do_create(request: HttpRequest, recv_data: dict[str, Any]) -> HttpResponse:
 
 @http_get
 def export(request: HttpRequest) -> HttpResponse:
+    user = cast(User, request.user)
     output = io.StringIO()
 
     data: dict[str, list[dict[str, Any]]] = {"Entity": [], "EntityAttr": []}
 
-    entities = get_permitted_objects(request.user, Entity, ACLType.Readable)
+    entities = get_permitted_objects(user, Entity, ACLType.Readable)
     for entity in entities:
         data["Entity"].append(
             {
@@ -330,7 +342,7 @@ def export(request: HttpRequest) -> HttpResponse:
             }
         )
 
-    attrs = get_permitted_objects(request.user, EntityAttr, ACLType.Readable)
+    attrs = get_permitted_objects(user, EntityAttr, ACLType.Readable)
     for attr in attrs:
         data["EntityAttr"].append(
             {
@@ -352,8 +364,10 @@ def export(request: HttpRequest) -> HttpResponse:
 
 @http_post([])
 def do_delete(request: HttpRequest, entity_id: int, recv_data: dict[str, Any]) -> HttpResponse:
-    entity, error = get_obj_with_check_perm(request.user, Entity, entity_id, ACLType.Full)
-    if error or entity is None:
+    user = cast(User, request.user)
+    entity, error = get_obj_with_check_perm(user, Entity, entity_id, ACLType.Full)
+    if entity is None:
+        assert error is not None
         return error
 
     if not entity.is_active:
@@ -366,7 +380,7 @@ def do_delete(request: HttpRequest, entity_id: int, recv_data: dict[str, Any]) -
         )
 
     if custom_view.is_custom("delete_entity"):
-        resp = custom_view.call_custom("delete_entity", None, entity)
+        resp: HttpResponse | None = custom_view.call_custom("delete_entity", None, entity)
         if resp:
             return resp
 
@@ -379,7 +393,7 @@ def do_delete(request: HttpRequest, entity_id: int, recv_data: dict[str, Any]) -
     entity.save_without_historical_record(update_fields=["is_active"])
 
     # Create a new job to delete entry and run it
-    job = Job.new_delete_entity(request.user, entity)
+    job = Job.new_delete_entity(user, entity)
     job.run()
 
     return JsonResponse(ret)
@@ -426,7 +440,9 @@ def dashboard(request: HttpRequest, entity_id: int) -> HttpResponse:
                         }
                     ).count(),
                 }
-                for r in Entry.objects.filter(schema=attr.referral.first(), is_active=True)
+                for r in Entry.objects.filter(
+                    schema=cast(Entity | None, attr.referral.first()), is_active=True
+                )
             ],
         }
 

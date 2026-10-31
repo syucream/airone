@@ -1,5 +1,4 @@
 /**
- * @jest-environment jsdom
  */
 
 import { EntryAttributeTypeTypeEnum } from "@dmm-com/airone-apiclient-typescript-fetch";
@@ -23,13 +22,13 @@ import { schema, Schema } from "./EntryFormSchema";
 
 const server = setupServer(
   http.get("http://localhost/entry/api/v2/*/attr_referrals/", () => {
-    return HttpResponse.json([]);
+    return HttpResponse.json({ has_restricted_items: false, results: [] });
   }),
   http.get("http://localhost/group/api/v2/groups", () => {
     return HttpResponse.json({ count: 0, results: [] });
   }),
   http.get("http://localhost/role/api/v2/", () => {
-    return HttpResponse.json([]);
+    return HttpResponse.json({ has_restricted_items: false, results: [] });
   }),
 );
 

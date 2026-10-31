@@ -1,5 +1,4 @@
 /**
- * @jest-environment jsdom
  */
 
 import { renderHook, act } from "@testing-library/react";
@@ -65,7 +64,7 @@ describe("useSimpleSearch", () => {
         wrapper: createWrapper(["/"]),
       });
 
-      const [, submitQuery] = result.current;
+      const [, , submitQuery] = result.current;
       expect(typeof submitQuery).toBe("function");
     });
 
@@ -75,7 +74,7 @@ describe("useSimpleSearch", () => {
       });
 
       act(() => {
-        const [, submitQuery] = result.current;
+        const [, , submitQuery] = result.current;
         submitQuery("newquery");
       });
 
@@ -89,7 +88,7 @@ describe("useSimpleSearch", () => {
       });
 
       act(() => {
-        const [, submitQuery] = result.current;
+        const [, , submitQuery] = result.current;
         submitQuery(undefined);
       });
 
@@ -103,7 +102,7 @@ describe("useSimpleSearch", () => {
       });
 
       act(() => {
-        const [, submitQuery] = result.current;
+        const [, , submitQuery] = result.current;
         submitQuery("test query");
       });
 

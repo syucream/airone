@@ -1,10 +1,8 @@
-import AutorenewIcon from "@mui/icons-material/Autorenew";
-import { Box, Divider, Tooltip, Typography } from "@mui/material";
+import { Box, Divider, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { FC, ReactNode } from "react";
-import { Link } from "react-router";
 
-import { jobsPath } from "routes/Routes";
+import { ChangeStatusNotice } from "./ChangeStatusNotice";
 
 const Frame = styled(Box)({
   width: "100%",
@@ -45,6 +43,7 @@ interface Props {
   title: string;
   description?: string;
   targetId?: number;
+  targetKind?: "model" | "item";
   hasOngoingProcess?: boolean;
   children?: ReactNode;
 }
@@ -53,6 +52,7 @@ export const PageHeader: FC<Props> = ({
   title,
   description,
   targetId,
+  targetKind,
   hasOngoingProcess,
   children,
 }) => {
@@ -66,12 +66,8 @@ export const PageHeader: FC<Props> = ({
           <Typography id="description" variant="subtitle1">
             {description}
           </Typography>
-          {hasOngoingProcess && (
-            <Tooltip title="未処理の変更があります。現在表示されているデータは最新でない可能性があります。">
-              <Box component={Link} to={jobsPath(targetId)}>
-                <AutorenewIcon />
-              </Box>
-            </Tooltip>
+          {hasOngoingProcess && targetId !== undefined && targetKind && (
+            <ChangeStatusNotice targetId={targetId} targetKind={targetKind} />
           )}
           <ChildrenBox>{children}</ChildrenBox>
         </Header>

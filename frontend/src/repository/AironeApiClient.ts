@@ -26,10 +26,11 @@ import {
   EntryBase,
   EntryCopy,
   EntryHint,
+  EntryNetworkSearchResponse,
   EntryRetrieve,
   EntrySearch,
   EntrySearchChain,
-  GetEntryAttrReferral,
+  GetEntryAttrReferralList,
   Group,
   GroupApi,
   GroupCreateUpdate,
@@ -48,6 +49,7 @@ import {
   Role,
   RoleApi,
   RoleCreateUpdate,
+  RoleFromJSON,
   TriggerApi,
   TriggerParent,
   TriggerParentUpdate,
@@ -57,11 +59,16 @@ import {
   UserToken,
   UserUpdate,
   WebhookCreateUpdate,
-  GroupTree as _GroupTree,
+  GroupTreeV2 as _GroupTree,
 } from "@dmm-com/airone-apiclient-typescript-fetch";
 
 import {
+  ImportPreview,
+  ImportPreviewAction,
+} from "components/common/ImportPreview";
+import {
   AdvancedSerarchResultListParam,
+  ImportPreviewParam,
   EntityHistoryListParam,
   EntityListParam,
   EntryHistoryListParam,
@@ -72,6 +79,14 @@ import {
 export type GroupTree = Pick<_GroupTree, "id" | "name"> & {
   children: Array<GroupTree>;
 };
+
+export interface RolePermission {
+  type: string;
+  id: number;
+  modelName: string;
+  name: string;
+  permission: string;
+}
 
 export function fileDownload(data: string, filename: string): void {
   const blob = new Blob([data], { type: "text/plain" });
@@ -84,10 +99,29 @@ export function fileDownload(data: string, filename: string): void {
 }
 
 // Get CSRF Token from Cookie set by Django
+export interface EntityDiffAttribute {
+  id: number;
+  name: string;
+  type: number;
+  value_t0: unknown;
+  value_t1: unknown;
+}
+
+export interface EntityDiffItem {
+  id: number;
+  name: string;
+  attrs: EntityDiffAttribute[];
+}
+
+export interface EntityDiff {
+  count: number;
+  items: EntityDiffItem[];
+}
+
 // see https://docs.djangoproject.com/en/3.2/ref/csrf/
 export function getCsrfToken(): string {
   const match = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]*)/);
-  return match ? decodeURIComponent(match[1]) : "";
+  return match?.[1] ? decodeURIComponent(match[1]) : "";
 }
 
 /**
@@ -371,10 +405,97 @@ class AironeApiClient {
     );
   }
 
-  async exportEntities(filename: string): Promise<void> {
-    const resp = await this.entity.entityApiV2ExportRetrieveRaw();
-    const data = await resp.raw.text();
-    fileDownload(data, filename);
+  async startImportEntitiesPreview(
+    data: string | ArrayBuffer,
+  ): Promise<number> {
+    const { jobId } = await this.entity.entityApiV2ImportPreviewCreate(
+      { entityImportExportRoot: { entity: [], entityAttr: [] } },
+      {
+        headers: {
+          "Content-Type": "application/yaml",
+          "X-CSRFToken": getCsrfToken(),
+        },
+        body: new Blob([data]),
+      },
+    );
+    return jobId;
+  }
+
+  async getImportPreview(
+    jobId: number,
+    { offset = 0, limit = ImportPreviewParam.MAX_ROW_COUNT, action = "" } = {},
+  ): Promise<ImportPreview> {
+    const preview = await this.job.jobApiV2PreviewRetrieve({
+      id: jobId,
+      offset,
+      limit,
+      action,
+    });
+
+    return {
+      summary: preview.summary,
+      count: preview.count,
+      truncated: preview.truncated,
+      rows: preview.rows.map((row) => ({
+        index: row.index,
+        kind: row.kind,
+        name: row.name,
+        action: row.action as ImportPreviewAction,
+        reason: row.reason,
+        changes: row.changes,
+        willInvokeTrigger: row.willInvokeTrigger,
+      })),
+    };
+  }
+
+  async downloadImportPreview(jobId: number, filename: string): Promise<void> {
+    fileDownload(
+      await this.job.jobApiV2PreviewDownloadRetrieve({ id: jobId }),
+      filename,
+    );
+  }
+
+  async startImportEntriesPreview(
+    data: string | ArrayBuffer,
+  ): Promise<{ jobIds: number[]; errors: string[] }> {
+    const { result } = await this.entry.entryApiV2ImportPreviewCreate(
+      { entryImportEntity: [] },
+      {
+        headers: {
+          "Content-Type": "application/yaml",
+          "X-CSRFToken": getCsrfToken(),
+        },
+        body: new Blob([data]),
+      },
+    );
+
+    return {
+      jobIds: result.jobs.map((job) => job.jobId),
+      errors: result.error,
+    };
+  }
+
+  async exportEntities(): Promise<void> {
+    await this.entity.entityApiV2ExportRetrieveRaw();
+  }
+
+  // The diff endpoint is not part of the generated client yet.
+  // t0 must be the earlier point in time and t1 the later one.
+  async getEntityDiff(
+    model: string,
+    attrs: string[],
+    t0: Date,
+    t1: Date,
+  ): Promise<EntityDiff> {
+    const params = new URLSearchParams({ model });
+    attrs.forEach((attr) => params.append("attr", attr));
+    params.set("t0", t0.toISOString());
+    params.set("t1", t1.toISOString());
+    const resp = await fetch(`/entity/api/v2/diff?${params.toString()}`);
+    if (!resp.ok) {
+      throw new Error(`Failed to get difference (status: ${resp.status})`);
+    }
+    return await resp.json();
   }
 
   async getEntityAttrs(
@@ -629,21 +750,62 @@ class AironeApiClient {
     );
   }
 
-  async exportGroups(filename: string): Promise<void> {
-    const resp = await this.group.groupApiV2GroupsExportListRaw();
-    const data = await resp.raw.text();
-    fileDownload(data, filename);
+  async exportGroups(): Promise<void> {
+    await this.group.groupApiV2GroupsExportListRaw();
   }
 
   async getRoles(keyword?: string): Promise<Role[]> {
-    return await this.role.roleApiV2List({
-      ordering: "name",
-      search: keyword,
+    const query = new URLSearchParams({ ordering: "name" });
+    if (keyword != null) {
+      query.set("search", keyword);
+    }
+
+    const response = await fetch(`/role/api/v2/?${query.toString()}`, {
+      credentials: "same-origin",
     });
+    if (!response.ok) {
+      throw new Error(`Role list retrieval failed: ${response.status}`);
+    }
+
+    const data: unknown = await response.json();
+    if (!Array.isArray(data)) {
+      throw new Error("Role list API returned an unexpected response");
+    }
+
+    return data.map((roleData: Record<string, unknown>) =>
+      RoleFromJSON({
+        ...roleData,
+        permissions: Array.isArray(roleData.permissions)
+          ? roleData.permissions
+          : [],
+      }),
+    );
   }
 
-  async getRole(roleId: number): Promise<Role> {
-    return await this.role.roleApiV2Retrieve({ id: roleId });
+  async getRole(
+    roleId: number,
+  ): Promise<Role & { permissions: RolePermission[] }> {
+    const response = await fetch(`/role/api/v2/${roleId}`, {
+      credentials: "same-origin",
+    });
+    if (!response.ok) {
+      throw new Error(`Role retrieval failed: ${response.status}`);
+    }
+
+    const data = (await response.json()) as {
+      permissions?: Array<
+        Omit<RolePermission, "modelName"> & { model_name: string }
+      >;
+    };
+    const permissions = Array.isArray(data.permissions) ? data.permissions : [];
+    const role = RoleFromJSON({ ...data, permissions });
+    return {
+      ...role,
+      permissions: permissions.map((permission) => ({
+        ...permission,
+        modelName: permission.model_name,
+      })),
+    };
   }
 
   async createRole(role: RoleCreateUpdate): Promise<void> {
@@ -702,10 +864,8 @@ class AironeApiClient {
     );
   }
 
-  async exportRoles(filename: string): Promise<void> {
-    const resp = await this.role.roleApiV2ExportListRaw();
-    const data = await resp.raw.text();
-    fileDownload(data, filename);
+  async exportRoles(): Promise<void> {
+    await this.role.roleApiV2ExportListRaw();
   }
 
   async getCategories(
@@ -795,9 +955,37 @@ class AironeApiClient {
     });
   }
 
-  async getSearchEntries(query: string): Promise<EntrySearch[]> {
-    return await this.entry.entryApiV2SearchList({
-      query: query,
+  async getSearchEntries(
+    query: string,
+    offset = 0,
+    limit?: number,
+  ): Promise<EntrySearch[]> {
+    const params = new URLSearchParams({
+      query,
+      offset: offset.toString(),
+    });
+    if (limit != null) {
+      params.set("limit", limit.toString());
+    }
+
+    const response = await fetch(`/entry/api/v2/search/?${params}`, {
+      credentials: "same-origin",
+    });
+    if (!response.ok) {
+      throw new Error(`Simple search failed: ${response.status}`);
+    }
+    return (await response.json()) as EntrySearch[];
+  }
+
+  async getNetworkSearchEntries(
+    query: string,
+    offset = 0,
+    limit = 30,
+  ): Promise<EntryNetworkSearchResponse> {
+    return await this.entry.entryApiV2SearchAttributeMatchesList({
+      query,
+      offset,
+      limit,
     });
   }
 
@@ -821,7 +1009,7 @@ class AironeApiClient {
   async getEntryAttrReferrals(
     attrId: number,
     keyword?: string,
-  ): Promise<Array<GetEntryAttrReferral>> {
+  ): Promise<GetEntryAttrReferralList> {
     return await this.entry.entryApiV2AttrReferralsList({
       attrId: attrId,
       keyword: keyword,
@@ -925,6 +1113,9 @@ class AironeApiClient {
     isAllEntities: boolean,
     format: "yaml" | "csv",
     hintEntry?: EntryHint,
+    referralName?: string,
+    referralIncludeModelIds: number[] = [],
+    referralExcludeModelIds: number[] = [],
   ): Promise<void> {
     await this.entry.entryApiV2AdvancedSearchResultExportCreate(
       {
@@ -936,7 +1127,16 @@ class AironeApiClient {
           isAllEntities: isAllEntities,
           exportStyle: format,
           hintEntry: hintEntry,
-        },
+          referralName: referralName,
+          ...(referralIncludeModelIds.length > 0
+            ? { includeReferrals: referralIncludeModelIds }
+            : {}),
+          ...(referralExcludeModelIds.length > 0
+            ? { excludeReferrals: referralExcludeModelIds }
+            : {}),
+        } as unknown as Parameters<
+          typeof this.entry.entryApiV2AdvancedSearchResultExportCreate
+        >[0]["advancedSearchResultExport"],
       },
       {
         headers: {
@@ -959,7 +1159,7 @@ class AironeApiClient {
 
   async updateTrigger(
     triggerId: number,
-    params: TriggerParentUpdate,
+    params: Omit<TriggerParentUpdate, "id">,
   ): Promise<void> {
     await this.trigger.triggerApiV2Update(
       {
@@ -975,7 +1175,7 @@ class AironeApiClient {
     );
   }
 
-  async createTrigger(params: TriggerParentUpdate): Promise<void> {
+  async createTrigger(params: Omit<TriggerParentUpdate, "id">): Promise<void> {
     await this.trigger.triggerApiV2Create(
       {
         triggerParentCreate: params,
@@ -1044,10 +1244,8 @@ class AironeApiClient {
     );
   }
 
-  async exportUsers(filename: string): Promise<void> {
-    const resp = await this.user.userApiV2ExportListRaw();
-    const data = await resp.raw.text();
-    fileDownload(data, filename);
+  async exportUsers(): Promise<void> {
+    await this.user.userApiV2ExportListRaw();
   }
 
   async updateUserPassword(
@@ -1127,6 +1325,10 @@ class AironeApiClient {
     });
   }
 
+  async getJob(id: number): Promise<JobSerializers> {
+    return await this.job.jobApiV2Retrieve({ id });
+  }
+
   async getRecentJobs(): Promise<Array<JobSerializers>> {
     // 'recent' means now - 1 hour
     const createdAfter = new Date();
@@ -1138,18 +1340,6 @@ class AironeApiClient {
       createdAfter: createdAfter,
     });
     return resp.results ?? [];
-  }
-
-  async rerunJob(id: number): Promise<void> {
-    await this.job.jobApiV2RerunPartialUpdate(
-      { id: id },
-      {
-        headers: {
-          "Content-Type": "application/yaml",
-          "X-CSRFToken": getCsrfToken(),
-        },
-      },
-    );
   }
 
   async cancelJob(id: number): Promise<void> {
@@ -1167,11 +1357,13 @@ class AironeApiClient {
   async importEntries(
     data: string | ArrayBuffer,
     force: boolean,
+    previewJobId?: number,
   ): Promise<void> {
     return await this.entry.entryApiV2ImportCreate(
       {
         entryImportEntity: [],
         force: force,
+        previewJobId,
       },
       {
         headers: {

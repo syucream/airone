@@ -1,17 +1,17 @@
 /**
- * @jest-environment jsdom
  */
 
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 
 import { CategoryControlMenu } from "./CategoryControlMenu";
 
 import { TestWrapper } from "TestWrapper";
+import i18n from "i18n/config";
 import { ACLType } from "services/ACLUtil";
 
 describe("CategoryControlMenu", () => {
   test("renders without crashing", () => {
-    const handleClose = jest.fn();
+    const handleClose = vi.fn();
 
     expect(() =>
       render(
@@ -31,7 +31,7 @@ describe("CategoryControlMenu", () => {
       <CategoryControlMenu
         categoryId={1}
         anchorElem={document.createElement("button")}
-        handleClose={jest.fn()}
+        handleClose={vi.fn()}
       />,
       { wrapper: TestWrapper },
     );
@@ -47,7 +47,7 @@ describe("CategoryControlMenu", () => {
       <CategoryControlMenu
         categoryId={1}
         anchorElem={null}
-        handleClose={jest.fn()}
+        handleClose={vi.fn()}
       />,
       { wrapper: TestWrapper },
     );
@@ -61,7 +61,7 @@ describe("CategoryControlMenu", () => {
     const defaultProps = {
       categoryId: 1,
       anchorElem: document.createElement("button"),
-      handleClose: jest.fn(),
+      handleClose: vi.fn(),
     };
 
     describe("when permission is Readable", () => {
@@ -132,5 +132,24 @@ describe("CategoryControlMenu", () => {
         expect(screen.getByText("削除")).toBeInTheDocument();
       });
     });
+  });
+
+  test("renders in English", async () => {
+    await act(async () => {
+      await i18n.changeLanguage("en");
+    });
+
+    render(
+      <CategoryControlMenu
+        categoryId={1}
+        anchorElem={document.createElement("button")}
+        handleClose={vi.fn()}
+      />,
+      { wrapper: TestWrapper },
+    );
+
+    expect(screen.getByText("Edit")).toBeInTheDocument();
+    expect(screen.getByText("ACL settings")).toBeInTheDocument();
+    expect(screen.getByText("Delete")).toBeInTheDocument();
   });
 });

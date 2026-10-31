@@ -1,5 +1,4 @@
 /**
- * @jest-environment jsdom
  */
 
 import { z } from "zod";
@@ -77,6 +76,7 @@ describe("schema", () => {
         nameOrder: "0",
         namePrefix: "",
         namePostfix: "",
+        displayAttr: "",
       },
     ],
   };
@@ -234,6 +234,7 @@ describe("schema", () => {
       nameOrder: "0",
       namePrefix: "",
       namePostfix: "",
+      displayAttr: "",
     };
 
     test("validation succeeds if attribute names are unique", () => {
@@ -430,6 +431,60 @@ describe("schema", () => {
         );
         expect(minLengthIssues.length).toBe(2);
       }
+    });
+  });
+
+  describe("english validation messages", () => {
+    test("name required message is in English", async () => {
+      vi.resetModules();
+      const { default: i18n } = await import("../../../i18n/config");
+      await i18n.changeLanguage("en");
+      const { schema: englishSchema } = await import("./EntityFormSchema");
+
+      const result = englishSchema.safeParse({
+        ...baseValue,
+        name: "",
+      });
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(
+          result.error.issues.some(
+            (issue: z.ZodIssue) => issue.message === "Entity name is required",
+          ),
+        ).toBe(true);
+      }
+
+      // restore for later tests in the file
+      vi.resetModules();
+    });
+
+    test("duplicate attribute name message is in English", async () => {
+      vi.resetModules();
+      const { default: i18n } = await import("../../../i18n/config");
+      await i18n.changeLanguage("en");
+      const { schema: englishSchema } = await import("./EntityFormSchema");
+
+      const result = englishSchema.safeParse({
+        ...baseValue,
+        attrs: [
+          { ...baseValue.attrs[0], name: "attr1" },
+          { ...baseValue.attrs[0], name: "attr1" },
+        ],
+      });
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(
+          result.error.issues.some(
+            (issue: z.ZodIssue) =>
+              issue.message === "Attribute name is duplicated",
+          ),
+        ).toBe(true);
+      }
+
+      // restore for later tests in the file
+      vi.resetModules();
     });
   });
 });

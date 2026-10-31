@@ -60,9 +60,7 @@ def get_airone_settings(key: str | None = None, default: Any = None) -> Any:
     return getattr(settings, key, default)
 
 
-def log_plugin_activity(
-    plugin_id: str, action: str, details: dict[str, Any] | None = None
-) -> None:
+def log_plugin_activity(plugin_id: str, action: str, details: dict[str, Any] | None = None) -> None:
     """Log plugin activity
 
     Provides centralized logging for plugin activities.

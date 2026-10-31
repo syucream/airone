@@ -1,5 +1,4 @@
 /**
- * @jest-environment jsdom
  */
 
 import { EntryBase } from "@dmm-com/airone-apiclient-typescript-fetch";
@@ -14,11 +13,12 @@ import {
 
 import { TestWrapper } from "TestWrapper";
 import { EntryList } from "components/entry/EntryList";
+import i18n from "i18n/config";
 import { aironeApiClient } from "repository/AironeApiClient";
 import { ACLType } from "services/ACLUtil";
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe("EntryList", () => {
@@ -59,9 +59,7 @@ describe("EntryList", () => {
   };
 
   test("should render a component with essential props", async () => {
-    jest
-      .spyOn(aironeApiClient, "getEntries")
-      .mockResolvedValue(Promise.resolve(mockApiResponse));
+    vi.spyOn(aironeApiClient, "getEntries").mockResolvedValue(mockApiResponse);
 
     await act(async () => {
       render(<EntryList entityId={1} />, {
@@ -73,12 +71,10 @@ describe("EntryList", () => {
   });
 
   test("should display empty state when no entries", async () => {
-    jest.spyOn(aironeApiClient, "getEntries").mockResolvedValue(
-      Promise.resolve({
-        count: 0,
-        results: [],
-      }),
-    );
+    vi.spyOn(aironeApiClient, "getEntries").mockResolvedValue({
+      count: 0,
+      results: [],
+    });
 
     await act(async () => {
       render(<EntryList entityId={0} />, {
@@ -90,9 +86,7 @@ describe("EntryList", () => {
   });
 
   test("should display entries in table format", async () => {
-    jest
-      .spyOn(aironeApiClient, "getEntries")
-      .mockResolvedValue(Promise.resolve(mockApiResponse));
+    vi.spyOn(aironeApiClient, "getEntries").mockResolvedValue(mockApiResponse);
 
     await act(async () => {
       render(<EntryList entityId={1} />, {
@@ -107,9 +101,9 @@ describe("EntryList", () => {
 
   // TODO: Fix search functionality test - API call not triggered correctly
   test.skip("should handle search functionality", async () => {
-    const getEntriesSpy = jest
+    const getEntriesSpy = vi
       .spyOn(aironeApiClient, "getEntries")
-      .mockResolvedValue(Promise.resolve(mockApiResponse));
+      .mockResolvedValue(mockApiResponse);
 
     await act(async () => {
       render(<EntryList entityId={1} />, {
@@ -152,14 +146,12 @@ describe("EntryList", () => {
 
   // TODO: Fix pagination test - text format mismatch
   test.skip("should handle pagination", async () => {
-    const getEntriesSpy = jest
+    const getEntriesSpy = vi
       .spyOn(aironeApiClient, "getEntries")
-      .mockResolvedValue(
-        Promise.resolve({
-          count: 25, // More than one page
-          results: mockEntries,
-        }),
-      );
+      .mockResolvedValue({
+        count: 25, // More than one page
+        results: mockEntries,
+      });
 
     await act(async () => {
       render(<EntryList entityId={1} />, {
@@ -200,14 +192,12 @@ describe("EntryList", () => {
 
   test("should handle loading state", async () => {
     // Mock a delayed API response
-    jest
-      .spyOn(aironeApiClient, "getEntries")
-      .mockImplementation(
-        () =>
-          new Promise((resolve) =>
-            setTimeout(() => resolve(mockApiResponse), 100),
-          ),
-      );
+    vi.spyOn(aironeApiClient, "getEntries").mockImplementation(
+      () =>
+        new Promise((resolve) =>
+          setTimeout(() => resolve(mockApiResponse), 100),
+        ),
+    );
 
     await act(async () => {
       render(<EntryList entityId={1} />, {
@@ -232,14 +222,12 @@ describe("EntryList", () => {
 
   test("should handle API errors gracefully", async () => {
     // Mock API error
-    jest
-      .spyOn(aironeApiClient, "getEntries")
-      .mockRejectedValue(new Error("API Error"));
+    vi.spyOn(aironeApiClient, "getEntries").mockRejectedValue(
+      new Error("API Error"),
+    );
 
     // Suppress console errors during test
-    const consoleSpy = jest
-      .spyOn(console, "error")
-      .mockImplementation(() => {});
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
     // Expect the component to throw due to usePagodaSWR
     await expect(async () => {
@@ -254,9 +242,9 @@ describe("EntryList", () => {
   });
 
   test("should refresh data when entityId changes", async () => {
-    const getEntriesSpy = jest
+    const getEntriesSpy = vi
       .spyOn(aironeApiClient, "getEntries")
-      .mockResolvedValue(Promise.resolve(mockApiResponse));
+      .mockResolvedValue(mockApiResponse);
 
     const { rerender } = render(<EntryList entityId={1} />, {
       wrapper: TestWrapper,
@@ -279,5 +267,22 @@ describe("EntryList", () => {
     });
 
     expect(getEntriesSpy).toHaveBeenCalledTimes(1);
+  });
+
+  test("renders in English", async () => {
+    await act(async () => {
+      await i18n.changeLanguage("en");
+    });
+
+    vi.spyOn(aironeApiClient, "getEntries").mockResolvedValue(mockApiResponse);
+
+    await act(async () => {
+      render(<EntryList entityId={1} />, {
+        wrapper: TestWrapper,
+      });
+    });
+
+    expect(screen.getByText("Create new entry")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Filter entries")).toBeInTheDocument();
   });
 });

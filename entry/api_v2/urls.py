@@ -102,6 +102,10 @@ urlpatterns = [
         ),
     ),
     path(
+        "search/attribute_matches/",
+        views.EntryNetworkSearchAPI.as_view(),
+    ),
+    path(
         "advanced_search_result_export/",
         views.AdvancedSearchResultAPI.as_view(),
     ),
@@ -128,6 +132,7 @@ urlpatterns = [
     path("advanced_search/", views.AdvancedSearchAPI.as_view()),
     path("advanced_search_chain/", views.AdvancedSearchChainAPI.as_view()),
     path("import/", views.EntryImportAPI.as_view()),
+    path("import/preview/", views.EntryImportPreviewAPI.as_view()),
     path("bulk_delete/", views.EntryBulkDeleteAPI.as_view()),
     path("bulk/", views.EntryBulkUpdateAPI.as_view()),
 ]

@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, cast
 
 from django.db.models import QuerySet
 from django_filters.rest_framework import DjangoFilterBackend
@@ -8,9 +8,11 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.serializers import Serializer
+from rest_framework.views import APIView
 
 from airone.lib.acl import ACLType
 from airone.lib.drf import ObjectNotExistsError
+from airone.lib.text import normalize_search_text
 from category.api_v2.serializers import (
     CategoryCreateSerializer,
     CategoryListSerializer,
@@ -18,17 +20,38 @@ from category.api_v2.serializers import (
 )
 from category.models import Category
 from entity.api_v2.views import EntityPermission
+from user.models import User
 
 
-class CategoryAPI(viewsets.ModelViewSet):
+class CategorySearchFilter(filters.SearchFilter):
+    def filter_queryset(self, request: Request, queryset: Any, view: APIView) -> Any:
+        terms = self.get_search_terms(request)
+        if not terms:
+            return queryset
+
+        normalized_terms = [normalize_search_text(term) for term in terms]
+        return [
+            category
+            for category in queryset
+            if all(
+                any(
+                    term in normalize_search_text(value)
+                    for value in [category.name, *(category.models.values_list("name", flat=True))]
+                )
+                for term in normalized_terms
+            )
+        ]
+
+
+class CategoryAPI(viewsets.ModelViewSet[Category]):
     pagination_class = LimitOffsetPagination
     permission_classes = [IsAuthenticated & EntityPermission]
-    filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter, CategorySearchFilter]
     search_fields = ["name", "models__name"]
     ordering = ["-priority", "name"]
 
-    def get_serializer_class(self) -> type[Serializer]:
-        serializer: dict[str, type[Serializer]] = {
+    def get_serializer_class(self) -> type[Serializer[Any]]:
+        serializer: dict[str, type[Serializer[Any]]] = {
             "create": CategoryCreateSerializer,
             "update": CategoryUpdateSerializer,
         }
@@ -40,9 +63,10 @@ class CategoryAPI(viewsets.ModelViewSet):
             return Category.objects.none()
 
         # get items that has permission to read
+        user = cast(User, self.request.user)
         targets = []
         for category in Category.objects.filter(is_active=True):
-            if self.request.user.has_permission(category, ACLType.Readable):
+            if user.has_permission(category, ACLType.Readable):
                 targets.append(category.id)
 
         return Category.objects.filter(id__in=targets)

@@ -2,11 +2,14 @@ import datetime
 import json
 import logging
 from unittest import mock
+from unittest.mock import patch
+from urllib.parse import urlencode
 
 import requests
 import yaml
 from django.conf import settings
 from django.urls import reverse
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 
@@ -16,9 +19,10 @@ from airone.lib.test import AironeViewTest
 from airone.lib.types import AttrType
 from entity import tasks
 from entity.models import Entity, EntityAttr, ItemNameType
-from entry.models import Entry
+from entry.models import AttributeValue, Entry
 from entry.tasks import create_entry_v2
 from group.models import Group
+from job.models import Job, JobStatus
 from role.models import Role
 from trigger import tasks as trigger_tasks
 from trigger.models import TriggerCondition
@@ -111,6 +115,9 @@ class ViewTest(AironeViewTest):
                     "referral": [],
                     "note": "",
                     "default_value": None,
+                    "display_attr": "",
+                    "choices": None,
+                    "choices_in_use": [],
                 },
                 {
                     "id": self.entity.attrs.get(name="vals").id,
@@ -127,6 +134,9 @@ class ViewTest(AironeViewTest):
                     "referral": [],
                     "note": "",
                     "default_value": None,
+                    "display_attr": "",
+                    "choices": None,
+                    "choices_in_use": [],
                 },
                 {
                     "id": self.entity.attrs.get(name="ref").id,
@@ -143,6 +153,9 @@ class ViewTest(AironeViewTest):
                     "referral": [],
                     "note": "",
                     "default_value": None,
+                    "display_attr": "",
+                    "choices": None,
+                    "choices_in_use": [],
                 },
                 {
                     "id": self.entity.attrs.get(name="refs").id,
@@ -159,6 +172,9 @@ class ViewTest(AironeViewTest):
                     "referral": [],
                     "note": "",
                     "default_value": None,
+                    "display_attr": "",
+                    "choices": None,
+                    "choices_in_use": [],
                 },
                 {
                     "id": self.entity.attrs.get(name="name").id,
@@ -175,6 +191,9 @@ class ViewTest(AironeViewTest):
                     "referral": [],
                     "note": "",
                     "default_value": None,
+                    "display_attr": "",
+                    "choices": None,
+                    "choices_in_use": [],
                 },
                 {
                     "id": self.entity.attrs.get(name="names").id,
@@ -191,6 +210,9 @@ class ViewTest(AironeViewTest):
                     "referral": [],
                     "note": "",
                     "default_value": None,
+                    "display_attr": "",
+                    "choices": None,
+                    "choices_in_use": [],
                 },
                 {
                     "id": self.entity.attrs.get(name="group").id,
@@ -207,6 +229,9 @@ class ViewTest(AironeViewTest):
                     "referral": [],
                     "note": "",
                     "default_value": None,
+                    "display_attr": "",
+                    "choices": None,
+                    "choices_in_use": [],
                 },
                 {
                     "id": self.entity.attrs.get(name="groups").id,
@@ -223,6 +248,9 @@ class ViewTest(AironeViewTest):
                     "referral": [],
                     "note": "",
                     "default_value": None,
+                    "display_attr": "",
+                    "choices": None,
+                    "choices_in_use": [],
                 },
                 {
                     "id": self.entity.attrs.get(name="bool").id,
@@ -239,6 +267,9 @@ class ViewTest(AironeViewTest):
                     "referral": [],
                     "note": "",
                     "default_value": None,
+                    "display_attr": "",
+                    "choices": None,
+                    "choices_in_use": [],
                 },
                 {
                     "id": self.entity.attrs.get(name="text").id,
@@ -255,6 +286,9 @@ class ViewTest(AironeViewTest):
                     "referral": [],
                     "note": "",
                     "default_value": None,
+                    "display_attr": "",
+                    "choices": None,
+                    "choices_in_use": [],
                 },
                 {
                     "id": self.entity.attrs.get(name="date").id,
@@ -271,6 +305,9 @@ class ViewTest(AironeViewTest):
                     "referral": [],
                     "note": "",
                     "default_value": None,
+                    "display_attr": "",
+                    "choices": None,
+                    "choices_in_use": [],
                 },
                 {
                     "id": self.entity.attrs.get(name="role").id,
@@ -287,6 +324,9 @@ class ViewTest(AironeViewTest):
                     "referral": [],
                     "note": "",
                     "default_value": None,
+                    "display_attr": "",
+                    "choices": None,
+                    "choices_in_use": [],
                 },
                 {
                     "id": self.entity.attrs.get(name="roles").id,
@@ -303,6 +343,9 @@ class ViewTest(AironeViewTest):
                     "referral": [],
                     "note": "",
                     "default_value": None,
+                    "display_attr": "",
+                    "choices": None,
+                    "choices_in_use": [],
                 },
                 {
                     "id": self.entity.attrs.get(name="datetime").id,
@@ -319,6 +362,9 @@ class ViewTest(AironeViewTest):
                     "referral": [],
                     "note": "",
                     "default_value": None,
+                    "display_attr": "",
+                    "choices": None,
+                    "choices_in_use": [],
                 },
                 {
                     "id": self.entity.attrs.get(name="num").id,
@@ -335,6 +381,9 @@ class ViewTest(AironeViewTest):
                     "type": AttrType.NUMBER,
                     "note": "",
                     "default_value": None,
+                    "display_attr": "",
+                    "choices": None,
+                    "choices_in_use": [],
                 },
                 {
                     "id": self.entity.attrs.get(name="nums").id,
@@ -351,6 +400,9 @@ class ViewTest(AironeViewTest):
                     "referral": [],
                     "note": "",
                     "default_value": None,
+                    "display_attr": "",
+                    "choices": None,
+                    "choices_in_use": [],
                 },
             ],
         )
@@ -385,6 +437,9 @@ class ViewTest(AironeViewTest):
                 ],
                 "note": "",
                 "default_value": None,
+                "display_attr": "",
+                "choices": None,
+                "choices_in_use": [],
             },
         )
 
@@ -1565,6 +1620,7 @@ class ViewTest(AironeViewTest):
                     "is_delete_in_chain": True,
                     "is_summarized": True,
                     "note": "change-attr1 note",
+                    "display_attr": "change-display-attr",
                 }
             ],
             "webhooks": [
@@ -1601,6 +1657,7 @@ class ViewTest(AironeViewTest):
         self.assertEqual(entity_attr.is_summarized, True)
         self.assertEqual(entity_attr.created_user, self.user)
         self.assertEqual(entity_attr.note, "change-attr1 note")
+        self.assertEqual(entity_attr.display_attr, "change-display-attr")
 
         self.assertEqual(entity.webhooks.count(), 1)
         webhook.refresh_from_db()
@@ -2942,7 +2999,7 @@ class ViewTest(AironeViewTest):
             resp.json(),
             [
                 {
-                    "code": "AE-121000",
+                    "code": "AE-240000",
                     "message": "cannot delete Entity because one or more Entries are not deleted",
                 }
             ],
@@ -3008,6 +3065,16 @@ class ViewTest(AironeViewTest):
         resp = self.client.get("/entity/api/v2/%d/entries/?search=-0" % self.entity.id)
         self.assertEqual(resp.json()["count"], 1)
         self.assertEqual(resp.json()["results"][0]["name"], "e-0")
+
+    def test_list_entry_with_param_search_case_insensitive(self):
+        self.add_entry(self.user, "Foo-0", self.entity)
+
+        for search in ["foo", "FOO", "Foo"]:
+            resp = self.client.get(
+                "/entity/api/v2/%d/entries/?search=%s" % (self.entity.id, search)
+            )
+            self.assertEqual(resp.json()["count"], 1)
+            self.assertEqual(resp.json()["results"][0]["name"], "Foo-0")
 
     def test_list_entry_with_ordering(self):
         self.add_entry(self.user, "e-2", self.entity)
@@ -3623,6 +3690,235 @@ class ViewTest(AironeViewTest):
         self.assertEqual(entity.attrs.get(name="attr-obj").referral.count(), 1)
         self.assertEqual(entity.attrs.get(name="attr-arr-obj").referral.count(), 2)
 
+    def _clear_entities(self):
+        self.ref_entity.delete()
+        self.entity.attrs.all().delete()
+        self.entity.delete()
+
+    def _preview_import(self, payload, **params):
+        """Start a preview job, run it inline, and read the result back."""
+        with mock.patch(
+            "entity.tasks.import_entities_preview_v2.delay",
+            mock.Mock(side_effect=tasks.import_entities_preview_v2),
+        ):
+            resp = self.client.post(
+                "/entity/api/v2/import/preview", payload, content_type="application/yaml"
+            )
+        self.assertEqual(resp.status_code, 202)
+
+        job_id = resp.json()["job_id"]
+        query = "?" + urlencode(params) if params else ""
+        preview = self.client.get("/job/api/v2/%d/preview%s" % (job_id, query))
+        self.assertEqual(preview.status_code, 200)
+        return preview.json()
+
+    def test_import_preview_reports_creations_without_writing(self):
+        self.admin_login()
+        self._clear_entities()
+
+        entity_count = Entity.objects.filter(is_active=True).count()
+        attr_count = EntityAttr.objects.filter(is_active=True).count()
+
+        fp = self.open_fixture_file("entity.yaml")
+        body = self._preview_import(fp.read())
+        fp.close()
+
+        # 3 Entities and 4 EntityAttrs would be created
+        self.assertEqual(body["summary"]["created"], 7)
+        self.assertEqual(body["summary"]["total"], 7)
+        self.assertEqual(body["summary"]["updated"], 0)
+        self.assertEqual(body["summary"]["errored"], 0)
+
+        # An EntityAttr referring to an Entity created by the very same file must be
+        # previewed as a creation, not as an error
+        attr_obj = next(x for x in body["rows"] if x["name"] == "attr-obj")
+        self.assertEqual(attr_obj["kind"], "EntityAttr")
+        self.assertEqual(attr_obj["action"], "create")
+        self.assertIn(
+            "entity1", [x["after"] for x in attr_obj["changes"] if x["field"] == "referral"]
+        )
+
+        # nothing was actually persisted
+        self.assertEqual(Entity.objects.filter(is_active=True).count(), entity_count)
+        self.assertEqual(EntityAttr.objects.filter(is_active=True).count(), attr_count)
+
+    def test_import_preview_reports_updates_and_unchanged_rows(self):
+        self.admin_login()
+        self._clear_entities()
+
+        fp = self.open_fixture_file("entity.yaml")
+        payload = fp.read()
+        fp.close()
+        self.assertEqual(
+            self.client.post(
+                "/entity/api/v2/import", payload, content_type="application/yaml"
+            ).status_code,
+            200,
+        )
+
+        # Previewing the very same file again reports no change, except for the one
+        # EntityAttr row that carries no id: the importer cannot match it against the
+        # existing attribute and creates a duplicate. That is existing import behavior,
+        # and being able to see it beforehand is exactly the point of the preview.
+        body = self._preview_import(payload)
+        self.assertEqual(body["summary"]["unchanged"], 6)
+        self.assertEqual(body["summary"]["updated"], 0)
+        self.assertEqual([x["name"] for x in body["rows"] if x["action"] == "create"], ["attr-str"])
+
+        # changing a single value is reported as that single field's difference
+        changed = yaml.safe_load(payload)
+        changed["Entity"][2]["note"] = "note1-updated"
+        body = self._preview_import(yaml.dump(changed))
+        self.assertEqual(body["summary"]["updated"], 1)
+        self.assertEqual(body["summary"]["unchanged"], 5)
+
+        updated = next(x for x in body["rows"] if x["action"] == "update")
+        self.assertEqual(updated["name"], "entity")
+        self.assertEqual(
+            updated["changes"], [{"field": "note", "before": "note1", "after": "note1-updated"}]
+        )
+
+        # the preview did not apply the change
+        self.assertEqual(Entity.objects.get(name="entity").note, "note1")
+
+    def test_import_preview_surfaces_rows_the_import_would_drop(self):
+        self.admin_login()
+        self._clear_entities()
+
+        fp = self.open_fixture_file("entity_without_mandatory_param.yaml")
+        body = self._preview_import(fp.read())
+        fp.close()
+
+        # These rows are only logged as warnings by the real import, so the preview is
+        # the sole way for a user to notice them beforehand.
+        self.assertEqual(body["summary"]["errored"], 3)
+        reasons = sorted(x["reason"] for x in body["rows"] if x["action"] == "error")
+        self.assertEqual(
+            reasons,
+            [
+                "Mandatory key doesn't exist",
+                "The parameter 'type' is mandatory when a new EntityAtter create",
+                "refer to invalid entity object",
+            ],
+        )
+
+    def test_import_new_attr_into_unwritable_entity_is_skipped(self):
+        owner = User.objects.create(username="owner")
+        self.create_entity(owner, "private-entity", is_public=False)
+
+        payload = yaml.dump(
+            {
+                "Entity": [],
+                "EntityAttr": [
+                    {
+                        "name": "injected",
+                        "entity": "private-entity",
+                        "type": int(AttrType.STRING),
+                        "refer": "",
+                        "created_user": self.user.username,
+                        "is_mandatory": False,
+                    }
+                ],
+            }
+        )
+
+        # the preview reports the row the way the import treats it
+        body = self._preview_import(payload)
+        row = next(x for x in body["rows"] if x["name"] == "injected")
+        self.assertEqual(row["action"], "skip")
+        self.assertEqual(row["reason"], "permission_denied")
+
+        resp = self.client.post("/entity/api/v2/import", payload, content_type="application/yaml")
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(EntityAttr.objects.filter(name="injected").exists())
+
+    def test_import_preview_pages_its_rows(self):
+        self.admin_login()
+        self._clear_entities()
+
+        fp = self.open_fixture_file("entity.yaml")
+        payload = fp.read()
+        fp.close()
+
+        body = self._preview_import(payload, offset=2, limit=3)
+        # The summary always covers the whole file, however few rows are listed
+        self.assertEqual(body["summary"]["total"], 7)
+        self.assertEqual(body["count"], 7)
+        self.assertFalse(body["truncated"])
+        self.assertEqual(len(body["rows"]), 3)
+        self.assertEqual([x["index"] for x in body["rows"]], [2, 3, 4])
+
+    def test_import_preview_never_writes(self):
+        self.admin_login()
+        self._clear_entities()
+
+        fp = self.open_fixture_file("entity.yaml")
+        payload = fp.read()
+        fp.close()
+
+        # A preview must be a read. Nothing it does may reach the database --
+        # not even inside a transaction it means to roll back, which would still
+        # take write locks and would leave the rows behind if it never ran.
+        with mock.patch.object(Entity, "save", side_effect=AssertionError("wrote Entity")):
+            with mock.patch.object(
+                EntityAttr, "save", side_effect=AssertionError("wrote EntityAttr")
+            ):
+                body = self._preview_import(payload)
+
+        self.assertEqual(body["summary"]["created"], 7)
+
+    def test_import_preview_filters_rows_by_action(self):
+        self.admin_login()
+        self._clear_entities()
+
+        fp = self.open_fixture_file("entity_without_mandatory_param.yaml")
+        payload = fp.read()
+        fp.close()
+
+        body = self._preview_import(payload, action="error")
+
+        # Filtering narrows the list, never the summary: a user who asks to see
+        # only the errors still has to be told how much else the file does.
+        self.assertEqual(body["count"], 3)
+        self.assertEqual({x["action"] for x in body["rows"]}, {"error"})
+        self.assertEqual(body["summary"]["total"], 7)
+
+    def test_import_preview_rejects_an_unknown_action(self):
+        self.admin_login()
+        self._clear_entities()
+
+        fp = self.open_fixture_file("entity.yaml")
+        payload = fp.read()
+        fp.close()
+
+        with mock.patch(
+            "entity.tasks.import_entities_preview_v2.delay",
+            mock.Mock(side_effect=tasks.import_entities_preview_v2),
+        ):
+            resp = self.client.post(
+                "/entity/api/v2/import/preview", payload, content_type="application/yaml"
+            )
+        job_id = resp.json()["job_id"]
+
+        resp = self.client.get("/job/api/v2/%d/preview?action=nonsense" % job_id)
+        self.assertEqual(resp.status_code, 400)
+
+    def test_import_preview_keeps_the_summary_exact_when_rows_are_capped(self):
+        self.admin_login()
+        self._clear_entities()
+
+        fp = self.open_fixture_file("entity.yaml")
+        payload = fp.read()
+        fp.close()
+
+        with mock.patch("airone.lib.import_preview.PREVIEW_MAX_DETAIL_ROWS", 2):
+            body = self._preview_import(payload)
+
+        self.assertEqual(body["summary"]["total"], 7)
+        self.assertEqual(body["summary"]["created"], 7)
+        self.assertEqual(body["count"], 2)
+        self.assertTrue(body["truncated"])
+
     def test_import_with_unnecessary_param(self):
         self.admin_login()
 
@@ -3703,8 +3999,21 @@ class ViewTest(AironeViewTest):
     def test_export(self):
         self.admin_login()
 
-        resp = self.client.get("/entity/api/v2/export")
+        with patch.object(Job, "run") as enqueue:
+            resp = self.client.get("/entity/api/v2/export")
+        enqueue.assert_called_once_with()
+        self.assertEqual(resp.status_code, 202)
+        self.assertNotIn("Content-Disposition", resp)
+        job = Job.objects.get(id=resp.json()["id"])
+        job.run(will_delay=False)
+        job.refresh_from_db()
+        self.assertEqual(job.status, JobStatus.DONE)
+        resp = self.client.get(f"/job/api/v2/{job.id}/download")
         self.assertEqual(resp.status_code, 200)
+        self.assertRegex(
+            resp["Content-Disposition"],
+            r'^attachment; filename="entity_\d{4}_\d{2}_\d{2}_\d{2}_\d{2}\.yaml"$',
+        )
 
         obj = yaml.load(resp.content, Loader=yaml.SafeLoader)
         self.assertTrue(isinstance(obj, dict))
@@ -3966,15 +4275,55 @@ class ViewTest(AironeViewTest):
     @mock.patch(
         "entity.tasks.create_entity_v2.delay", mock.Mock(side_effect=tasks.create_entity_v2)
     )
-    def test_create_entity_with_unsupported_type_default_value(self):
-        """Test that unsupported types clear default_value"""
+    def test_create_entity_with_object_default_values(self):
+        """Object defaults round-trip as Entry IDs through create and retrieve."""
+        first_ref = self.add_entry(self.user, "first-ref", self.ref_entity)
+        second_ref = self.add_entry(self.user, "second-ref", self.ref_entity)
         params = {
-            "name": "entity_with_unsupported_default",
+            "name": "entity_with_object_defaults",
             "attrs": [
                 {
                     "name": "object_attr",
                     "type": AttrType.OBJECT,
-                    "default_value": "some value",  # Should be cleared
+                    "default_value": first_ref.id,
+                    "referral": [self.ref_entity.id],
+                    "index": 1,
+                },
+                {
+                    "name": "array_object_attr",
+                    "type": AttrType.ARRAY_OBJECT,
+                    "default_value": [second_ref.id, first_ref.id],
+                    "referral": [self.ref_entity.id],
+                    "index": 2,
+                },
+            ],
+        }
+
+        resp = self.client.post("/entity/api/v2/", json.dumps(params), "application/json")
+        self.assertEqual(resp.status_code, status.HTTP_202_ACCEPTED)
+
+        entity = Entity.objects.get(name="entity_with_object_defaults")
+        object_attr = entity.attrs.get(name="object_attr")
+        array_object_attr = entity.attrs.get(name="array_object_attr")
+        self.assertEqual(object_attr.default_value, first_ref.id)
+        self.assertEqual(array_object_attr.default_value, [second_ref.id, first_ref.id])
+
+        detail = self.client.get(f"/entity/api/v2/{entity.id}/")
+        self.assertEqual(detail.status_code, status.HTTP_200_OK)
+        defaults = {attr["name"]: attr["default_value"] for attr in detail.json()["attrs"]}
+        self.assertEqual(defaults["object_attr"], first_ref.id)
+        self.assertEqual(defaults["array_object_attr"], [second_ref.id, first_ref.id])
+
+    def test_create_entity_rejects_object_default_from_unreferred_entity(self):
+        other_entity = self.create_entity(self.user, "other-default-entity")
+        outside = self.add_entry(self.user, "outside", other_entity)
+        params = {
+            "name": "entity_with_invalid_object_default",
+            "attrs": [
+                {
+                    "name": "object_attr",
+                    "type": AttrType.OBJECT,
+                    "default_value": outside.id,
                     "referral": [self.ref_entity.id],
                     "index": 1,
                 }
@@ -3982,12 +4331,8 @@ class ViewTest(AironeViewTest):
         }
 
         resp = self.client.post("/entity/api/v2/", json.dumps(params), "application/json")
-        self.assertEqual(resp.status_code, status.HTTP_202_ACCEPTED)
-
-        # Verify entity was created and default_value was cleared
-        entity = Entity.objects.get(name="entity_with_unsupported_default")
-        object_attr = entity.attrs.get(name="object_attr")
-        self.assertIsNone(object_attr.default_value)
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("must be active and belong", str(resp.json()))
 
     @mock.patch("entity.tasks.edit_entity_v2.delay", mock.Mock(side_effect=tasks.edit_entity_v2))
     def test_update_entity_attr_default_values(self):
@@ -4042,6 +4387,94 @@ class ViewTest(AironeViewTest):
 
         self.assertEqual(string_attr.default_value, "updated string value")
         self.assertEqual(bool_attr.default_value, True)
+
+    @mock.patch("entity.tasks.edit_entity_v2.delay", mock.Mock(side_effect=tasks.edit_entity_v2))
+    def test_update_entity_attr_clear_default_value(self):
+        """Explicitly null default_value must clear an existing default value"""
+        entity = Entity.objects.create(name="clear_default_entity", created_user=self.user)
+        string_attr = EntityAttr.objects.create(
+            name="string_attr",
+            type=AttrType.STRING,
+            created_user=self.user,
+            parent_entity=entity,
+            default_value="old default",
+        )
+        number_attr = EntityAttr.objects.create(
+            name="number_attr",
+            type=AttrType.NUMBER,
+            created_user=self.user,
+            parent_entity=entity,
+            default_value=42,
+        )
+
+        params = {
+            "id": entity.id,
+            "name": "clear_default_entity",
+            "attrs": [
+                {
+                    "id": string_attr.id,
+                    "name": "string_attr",
+                    "type": AttrType.STRING,
+                    "default_value": None,
+                    "index": 1,
+                },
+                {
+                    "id": number_attr.id,
+                    "name": "number_attr",
+                    "type": AttrType.NUMBER,
+                    "default_value": None,
+                    "index": 2,
+                },
+            ],
+        }
+
+        resp = self.client.put(
+            f"/entity/api/v2/{entity.id}/", json.dumps(params), "application/json"
+        )
+        self.assertEqual(resp.status_code, status.HTTP_202_ACCEPTED)
+
+        # Verify default values were cleared
+        string_attr.refresh_from_db()
+        number_attr.refresh_from_db()
+
+        self.assertIsNone(string_attr.default_value)
+        self.assertIsNone(number_attr.default_value)
+
+    @mock.patch("entity.tasks.edit_entity_v2.delay", mock.Mock(side_effect=tasks.edit_entity_v2))
+    def test_update_entity_attr_default_value_kept_when_omitted(self):
+        """Omitting default_value in an update must keep the existing value"""
+        entity = Entity.objects.create(name="keep_default_entity", created_user=self.user)
+        string_attr = EntityAttr.objects.create(
+            name="string_attr",
+            type=AttrType.STRING,
+            created_user=self.user,
+            parent_entity=entity,
+            default_value="existing default",
+        )
+
+        # Update another field of the attribute without specifying default_value
+        params = {
+            "id": entity.id,
+            "name": "keep_default_entity",
+            "attrs": [
+                {
+                    "id": string_attr.id,
+                    "name": "string_attr",
+                    "type": AttrType.STRING,
+                    "note": "updated note",
+                    "index": 1,
+                },
+            ],
+        }
+
+        resp = self.client.put(
+            f"/entity/api/v2/{entity.id}/", json.dumps(params), "application/json"
+        )
+        self.assertEqual(resp.status_code, status.HTTP_202_ACCEPTED)
+
+        string_attr.refresh_from_db()
+        self.assertEqual(string_attr.default_value, "existing default")
+        self.assertEqual(string_attr.note, "updated note")
 
     def test_retrieve_entity_includes_default_values(self):
         """Test that entity retrieval includes default_value in response"""
@@ -4447,3 +4880,97 @@ class ReadonlyUserPermissionTest(AironeViewTest):
             "/entity/api/v2/import", b"Entity: []", content_type="application/yaml"
         )
         self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_import_preview_is_forbidden_for_readonly_user(self):
+        resp = self.client.post(
+            "/entity/api/v2/import/preview",
+            b"Entity: []\nEntityAttr: []",
+            content_type="application/yaml",
+        )
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class EntityDiffAPITest(AironeViewTest):
+    def setUp(self):
+        super().setUp()
+        self.user = self.guest_login()
+        self.entity = self.create_entity(
+            self.user,
+            "diff-entity",
+            attrs=[
+                {"name": "str", "type": AttrType.STRING},
+                {"name": "other", "type": AttrType.STRING},
+            ],
+        )
+
+    def _set_value(self, entry, value, at, attr_name="str"):
+        attr = entry.attrs.get(schema__name=attr_name)
+        attr.add_value(self.user, value)
+        AttributeValue.objects.filter(parent_attr=attr, is_latest=True).update(created_time=at)
+
+    def test_diff(self):
+        t = timezone.now()
+        t0, t1 = t - datetime.timedelta(days=2), t - datetime.timedelta(days=1)
+        changed = self.add_entry(self.user, "changed", self.entity)
+        same = self.add_entry(self.user, "same", self.entity)
+        self._set_value(changed, "a", t0 - datetime.timedelta(hours=1))
+        self._set_value(changed, "b", t0 + datetime.timedelta(hours=1))
+        self._set_value(same, "x", t0 - datetime.timedelta(hours=1))
+
+        resp = self.client.get(
+            "/entity/api/v2/diff",
+            {"model": "diff-entity", "attr": "str", "t0": t0.isoformat(), "t1": t1.isoformat()},
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()["count"], 1)
+        item = resp.json()["items"][0]
+        self.assertEqual(item["id"], changed.id)
+        self.assertEqual(item["name"], "changed")
+        self.assertEqual(len(item["attrs"]), 1)
+        attribute = item["attrs"][0]
+        self.assertEqual(attribute["name"], "str")
+        self.assertEqual(attribute["type"], AttrType.STRING)
+        self.assertEqual(attribute["value_t0"], "a")
+        self.assertEqual(attribute["value_t1"], "b")
+
+    def test_diff_multiple_attrs(self):
+        t = timezone.now()
+        t0, t1 = t - datetime.timedelta(days=2), t - datetime.timedelta(days=1)
+        both = self.add_entry(self.user, "both", self.entity)
+        only_other = self.add_entry(self.user, "only_other", self.entity)
+        same = self.add_entry(self.user, "same", self.entity)
+        before, after = t0 - datetime.timedelta(hours=1), t0 + datetime.timedelta(hours=1)
+        for entry in (both, only_other):
+            self._set_value(entry, "a", before, "other")
+            self._set_value(entry, "b", after, "other")
+        self._set_value(both, "a", before)
+        self._set_value(both, "b", after)
+        self._set_value(same, "x", before)
+
+        resp = self.client.get(
+            "/entity/api/v2/diff",
+            {
+                "model": "diff-entity",
+                "attr": ["str", "other"],
+                "t0": t0.isoformat(),
+                "t1": t1.isoformat(),
+            },
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()["count"], 2)
+        attrs_by_entry = {
+            item["name"]: sorted(a["name"] for a in item["attrs"]) for item in resp.json()["items"]
+        }
+        self.assertEqual(attrs_by_entry, {"both": ["other", "str"], "only_other": ["other"]})
+
+    def test_diff_invalid_params(self):
+        params = {"model": "nothing", "attr": "str", "t0": "2024-01-01", "t1": "2024-01-02"}
+        self.assertEqual(self.client.get("/entity/api/v2/diff", params).status_code, 404)
+        params["model"] = "diff-entity"
+        params["attr"] = "nothing"
+        self.assertEqual(self.client.get("/entity/api/v2/diff", params).status_code, 404)
+        params["attr"] = ["str", "nothing"]
+        self.assertEqual(self.client.get("/entity/api/v2/diff", params).status_code, 404)
+        params["attr"] = "str"
+        del params["t1"]
+        self.assertEqual(self.client.get("/entity/api/v2/diff", params).status_code, 400)

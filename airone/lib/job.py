@@ -27,7 +27,8 @@ def _handle_task(
 
     try:
         # running Job processing
-        ret: JobStatus | tuple[JobStatus, str, ACLBase | None] | None = func(kls, job)
+        # Handlers are loaded dynamically, so validate the result before trusting it.
+        ret: object = func(kls, job)
     except Exception as e:
         Logger.error(f"An error occurred while processing Job(id={job.id}): {str(e)}")
         # reporting by email when an exception error in celery
@@ -38,8 +39,6 @@ Job ID: {job.id}
 Job Target ID: {job.target_id}
 Job Target Type: {job.target_type}
 Job Operaion ID: {job.operation}
-Job Params: {job.params}
-
 raised exception:
 {traceback.format_exc()}
 """

@@ -104,9 +104,7 @@ def generate_plugin_cache_key(plugin_id: str, key: str) -> str:
     return f"pagoda:plugin:{sanitized_id}:{key}"
 
 
-def log_plugin_activity(
-    plugin_id: str, action: str, details: dict[str, Any] | None = None
-) -> None:
+def log_plugin_activity(plugin_id: str, action: str, details: dict[str, Any] | None = None) -> None:
     """Log plugin activity
 
     Args:
@@ -193,3 +191,13 @@ class PluginLogger:
     def debug(self, message: str, **kwargs: Any) -> None:
         """Log debug message"""
         self.logger.debug(f"[{self.plugin_id}] {message}", **kwargs)
+
+
+def _is_authenticated(user: object) -> bool:
+    """Return whether ``user`` is an authenticated user.
+
+    Host applications and plugin authors can hand over ``None`` (or any other
+    object) even where the annotations promise a user, so this accepts anything
+    and treats a missing or falsy ``is_authenticated`` as unauthenticated.
+    """
+    return bool(getattr(user, "is_authenticated", False))

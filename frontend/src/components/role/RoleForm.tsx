@@ -7,6 +7,7 @@ import {
   Box,
   Chip,
   FormHelperText,
+  Link as MuiLink,
   Table,
   TableBody,
   TableCell,
@@ -22,22 +23,42 @@ import {
   FieldError,
   UseFormSetValue,
 } from "react-hook-form";
+import { Link as RouterLink } from "react-router";
 
 import { usePagodaSWR } from "../../hooks/usePagodaSWR";
+import { useTranslation } from "../../hooks/useTranslation";
 import { aironeApiClient } from "../../repository/AironeApiClient";
+import { aclPath } from "../../routes/Routes";
 
 import { Schema } from "./roleForm/RoleFormSchema";
+
+import type { RolePermission } from "../../repository/AironeApiClient";
+
+import { ACLType, ACLTypeLabels } from "services/ACLUtil";
+import { fuzzyMatch } from "services/StringUtil";
 
 interface Props {
   control: Control<Schema>;
   setValue: UseFormSetValue<Schema>;
+  permissions?: RolePermission[];
 }
 
-export const RoleForm: FC<Props> = ({ control, setValue }) => {
+export const RoleForm: FC<Props> = ({
+  control,
+  setValue,
+  permissions = [],
+}) => {
+  const { t } = useTranslation();
   const [userKeyword, setUserKeyword] = useState("");
   const [adminUserKeyword, setAdminUserKeyword] = useState("");
   const [groupUserKeyword, setGroupUserKeyword] = useState("");
   const [adminGroupUserKeyword, setGroupAdminUserKeyword] = useState("");
+  const permissionColumns = [
+    { label: t("role.form.permission.type"), key: "type" },
+    { label: t("role.form.permission.modelName"), key: "modelName" },
+    { label: t("role.form.permission.name"), key: "name" },
+    { label: t("role.form.permission.permission"), key: "permission" },
+  ];
 
   // TODO implement pagination and incremental search
   const { data: adminGroups } = usePagodaSWR(
@@ -80,13 +101,17 @@ export const RoleForm: FC<Props> = ({ control, setValue }) => {
         <Table className="table table-bordered" data-testid="basic">
           <TableHead>
             <TableRow sx={{ backgroundColor: "#455A64" }}>
-              <TableCell sx={{ color: "#FFFFFF" }}>項目</TableCell>
-              <TableCell sx={{ color: "#FFFFFF" }}>内容</TableCell>
+              <TableCell sx={{ color: "#FFFFFF" }}>
+                {t("role.form.columnItem")}
+              </TableCell>
+              <TableCell sx={{ color: "#FFFFFF" }}>
+                {t("role.form.columnContent")}
+              </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             <TableRow>
-              <TableCell>ロール名</TableCell>
+              <TableCell>{t("role.form.name")}</TableCell>
               <TableCell>
                 <Controller
                   name="name"
@@ -97,7 +122,7 @@ export const RoleForm: FC<Props> = ({ control, setValue }) => {
                       {...field}
                       variant="standard"
                       required
-                      placeholder="ロール名"
+                      placeholder={t("role.form.namePlaceholder")}
                       error={error != null}
                       helperText={error?.message}
                       sx={{ width: "100%" }}
@@ -108,7 +133,7 @@ export const RoleForm: FC<Props> = ({ control, setValue }) => {
               </TableCell>
             </TableRow>
             <TableRow>
-              <TableCell>備考</TableCell>
+              <TableCell>{t("role.form.description")}</TableCell>
               <TableCell>
                 <Controller
                   name="description"
@@ -117,7 +142,7 @@ export const RoleForm: FC<Props> = ({ control, setValue }) => {
                   render={({ field }) => (
                     <TextField
                       variant="standard"
-                      placeholder="備考"
+                      placeholder={t("role.form.descriptionPlaceholder")}
                       {...field}
                       sx={{ width: "100%" }}
                     />
@@ -129,31 +154,80 @@ export const RoleForm: FC<Props> = ({ control, setValue }) => {
         </Table>
       </Box>
 
+      <Box mt="48px">
+        <Typography variant="h5" my="16px">
+          {t("role.form.permissionsTitle")}
+        </Typography>
+        <Table aria-label={t("role.form.permissionsTitle")}>
+          <TableHead>
+            <TableRow sx={{ backgroundColor: "#455A64" }}>
+              {permissionColumns.map(({ label, key }) => (
+                <TableCell key={key} sx={{ color: "#FFFFFF" }}>
+                  {label}
+                </TableCell>
+              ))}
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {permissions.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4}>
+                  {t("role.form.noPermissions")}
+                </TableCell>
+              </TableRow>
+            ) : (
+              permissions.map((permission) => (
+                <TableRow key={`${permission.type}-${permission.id}`}>
+                  <TableCell>{permission.type}</TableCell>
+                  <TableCell>{permission.modelName}</TableCell>
+                  <TableCell>
+                    <MuiLink component={RouterLink} to={aclPath(permission.id)}>
+                      {permission.name}
+                    </MuiLink>
+                  </TableCell>
+                  <TableCell>
+                    {permission.permission === "full"
+                      ? ACLTypeLabels[ACLType.Full]
+                      : permission.permission === "writable"
+                        ? ACLTypeLabels[ACLType.Writable]
+                        : ACLTypeLabels[ACLType.Readable]}
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </Box>
+
       <Box mt="64px">
         <Box my="32px">
           <Typography variant="h4" align="center" my="16px">
-            ユーザ/グループを登録
+            {t("role.form.registerSectionTitle")}
           </Typography>
           <Typography variant="h6" align="center" my="16px">
-            ロール管理するグループまたはユーザを登録してください。
+            {t("role.form.registerSectionHelp")}
           </Typography>
         </Box>
 
         <Box my="64px">
           <Typography align="left" my="8px">
-            グループ登録
+            {t("role.form.groupRegisterTitle")}
           </Typography>
           <Table data-testid="group">
             <TableHead>
               <TableRow sx={{ backgroundColor: "#455A64" }}>
-                <TableCell sx={{ color: "#FFFFFF" }}>項目</TableCell>
-                <TableCell sx={{ color: "#FFFFFF" }}>内容</TableCell>
+                <TableCell sx={{ color: "#FFFFFF" }}>
+                  {t("role.form.columnItem")}
+                </TableCell>
+                <TableCell sx={{ color: "#FFFFFF" }}>
+                  {t("role.form.columnContent")}
+                </TableCell>
                 <TableCell />
               </TableRow>
             </TableHead>
             <TableBody>
               <TableRow>
-                <TableCell>管理者</TableCell>
+                <TableCell>{t("role.form.admin")}</TableCell>
                 <TableCell>
                   <Controller
                     name="adminGroups"
@@ -164,6 +238,11 @@ export const RoleForm: FC<Props> = ({ control, setValue }) => {
                         {...field}
                         options={adminGroups ?? []}
                         getOptionLabel={(option: RoleGroup) => option.name}
+                        filterOptions={(options, state) =>
+                          options.filter((option) =>
+                            fuzzyMatch(option.name, state.inputValue),
+                          )
+                        }
                         isOptionEqualToValue={(option, value) =>
                           option.id === value.id
                         }
@@ -225,7 +304,7 @@ export const RoleForm: FC<Props> = ({ control, setValue }) => {
                 </TableCell>
               </TableRow>
               <TableRow>
-                <TableCell>メンバー</TableCell>
+                <TableCell>{t("role.form.member")}</TableCell>
                 <TableCell>
                   <Controller
                     name="groups"
@@ -236,6 +315,11 @@ export const RoleForm: FC<Props> = ({ control, setValue }) => {
                         {...field}
                         options={groups ?? []}
                         getOptionLabel={(option: RoleGroup) => option.name}
+                        filterOptions={(options, state) =>
+                          options.filter((option) =>
+                            fuzzyMatch(option.name, state.inputValue),
+                          )
+                        }
                         isOptionEqualToValue={(option, value) =>
                           option.id === value.id
                         }
@@ -302,19 +386,23 @@ export const RoleForm: FC<Props> = ({ control, setValue }) => {
 
         <Box my="64px">
           <Typography align="left" my="8px">
-            ユーザ登録
+            {t("role.form.userRegisterTitle")}
           </Typography>
           <Table data-testid="user">
             <TableHead>
               <TableRow sx={{ backgroundColor: "#455A64" }}>
-                <TableCell sx={{ color: "#FFFFFF" }}>項目</TableCell>
-                <TableCell sx={{ color: "#FFFFFF" }}>内容</TableCell>
+                <TableCell sx={{ color: "#FFFFFF" }}>
+                  {t("role.form.columnItem")}
+                </TableCell>
+                <TableCell sx={{ color: "#FFFFFF" }}>
+                  {t("role.form.columnContent")}
+                </TableCell>
                 <TableCell />
               </TableRow>
             </TableHead>
             <TableBody>
               <TableRow>
-                <TableCell>管理者</TableCell>
+                <TableCell>{t("role.form.admin")}</TableCell>
                 <TableCell>
                   <Controller
                     name="adminUsers"
@@ -325,6 +413,11 @@ export const RoleForm: FC<Props> = ({ control, setValue }) => {
                         {...field}
                         options={adminUsers ?? []}
                         getOptionLabel={(option: RoleUser) => option.username}
+                        filterOptions={(options, state) =>
+                          options.filter((option) =>
+                            fuzzyMatch(option.username, state.inputValue),
+                          )
+                        }
                         isOptionEqualToValue={(option, value) =>
                           option.id === value.id
                         }
@@ -386,7 +479,7 @@ export const RoleForm: FC<Props> = ({ control, setValue }) => {
                 </TableCell>
               </TableRow>
               <TableRow>
-                <TableCell>メンバー</TableCell>
+                <TableCell>{t("role.form.member")}</TableCell>
                 <TableCell>
                   <Controller
                     name="users"
@@ -397,6 +490,11 @@ export const RoleForm: FC<Props> = ({ control, setValue }) => {
                         {...field}
                         options={users ?? []}
                         getOptionLabel={(option: RoleUser) => option.username}
+                        filterOptions={(options, state) =>
+                          options.filter((option) =>
+                            fuzzyMatch(option.username, state.inputValue),
+                          )
+                        }
                         isOptionEqualToValue={(option, value) =>
                           option.id === value.id
                         }

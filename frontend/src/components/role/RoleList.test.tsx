@@ -1,5 +1,4 @@
 /**
- * @jest-environment jsdom
  */
 
 import { Role } from "@dmm-com/airone-apiclient-typescript-fetch";
@@ -8,9 +7,11 @@ import { act, render, screen, waitFor, within } from "@testing-library/react";
 import { RoleList } from "./RoleList";
 
 import { TestWrapper } from "TestWrapper";
+import i18n from "i18n/config";
+import { aironeApiClient } from "repository/AironeApiClient";
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe("RoleList", () => {
@@ -23,6 +24,7 @@ describe("RoleList", () => {
       groups: [],
       adminUsers: [],
       adminGroups: [],
+      permissions: [],
       isEditable: true,
     },
     {
@@ -33,22 +35,14 @@ describe("RoleList", () => {
       groups: [],
       adminUsers: [],
       adminGroups: [],
+      permissions: [],
       isEditable: true,
     },
   ];
 
   test("should show role list", async () => {
-    /* eslint-disable */
-    jest
-      .spyOn(require("repository/AironeApiClient").aironeApiClient, "getRoles")
-      .mockResolvedValue(Promise.resolve(roles));
-    jest
-      .spyOn(
-        require("repository/AironeApiClient").aironeApiClient,
-        "deleteRole",
-      )
-      .mockResolvedValue(Promise.resolve());
-    /* eslint-enable */
+    vi.spyOn(aironeApiClient, "getRoles").mockResolvedValue(roles);
+    vi.spyOn(aironeApiClient, "deleteRole").mockResolvedValue(undefined);
 
     await act(async () => {
       render(<RoleList />, { wrapper: TestWrapper });
@@ -75,5 +69,23 @@ describe("RoleList", () => {
     await waitFor(() => {
       screen.getByText("ロールの削除が完了しました");
     });
+  });
+
+  test("renders in English", async () => {
+    vi.spyOn(aironeApiClient, "getRoles").mockResolvedValue(roles);
+
+    await act(async () => {
+      await i18n.changeLanguage("en");
+    });
+
+    await act(async () => {
+      render(<RoleList />, { wrapper: TestWrapper });
+    });
+    await waitFor(() => {
+      expect(screen.queryByTestId("loading")).not.toBeInTheDocument();
+    });
+
+    expect(screen.getByText("Role")).toBeInTheDocument();
+    expect(screen.getByText("Notes")).toBeInTheDocument();
   });
 });

@@ -11,13 +11,14 @@ import {
   Typography,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { FC } from "react";
+import { FC, useEffect, useState } from "react";
 import { Control, Controller, useFieldArray } from "react-hook-form";
-import { UseFormSetValue } from "react-hook-form/dist/types/form";
+import { UseFormSetValue } from "react-hook-form";
 
 import { Schema } from "./EntryFormSchema";
 import { ReferralsAutocomplete } from "./ReferralsAutocomplete";
 
+import { useTranslation } from "hooks/useTranslation";
 import { getStagedErrorStyle } from "utils/styleUtils";
 
 const StyledList = styled(List)(({}) => ({
@@ -67,6 +68,9 @@ export const ObjectAttributeValueField: FC<
     multiple?: boolean;
   }
 > = ({ multiple, attrId, control, setValue, isDisabled = false }) => {
+  const [hasRestrictedItems, setHasRestrictedItems] = useState(false);
+  const { t } = useTranslation();
+
   const handleChange = (
     value: GetEntryAttrReferral | GetEntryAttrReferral[] | null,
   ) => {
@@ -103,27 +107,35 @@ export const ObjectAttributeValueField: FC<
 
   return (
     <Box>
-      <StyledTypography variant="caption">アイテムを選択</StyledTypography>
       <StyledBox>
-        <Controller
-          name={
-            multiple
-              ? `attrs.${attrId}.value.asArrayObject`
-              : `attrs.${attrId}.value.asObject`
-          }
-          control={control}
-          render={({ field, fieldState: { error } }) => (
-            <ReferralsAutocomplete
-              attrId={attrId}
-              value={field.value ?? null}
-              handleChange={handleChange}
-              multiple={multiple}
-              error={error}
-              isDisabled={isDisabled}
-            />
-          )}
-        />
+        <StyledTypography variant="caption">
+          {t("entryForm.objectField.selectItem")}
+        </StyledTypography>
+        {hasRestrictedItems && (
+          <StyledTypography variant="caption" sx={{ color: "error.main" }}>
+            {t("entryForm.objectField.restrictedItemsNote")}
+          </StyledTypography>
+        )}
       </StyledBox>
+      <Controller
+        name={
+          multiple
+            ? `attrs.${attrId}.value.asArrayObject`
+            : `attrs.${attrId}.value.asObject`
+        }
+        control={control}
+        render={({ field, fieldState: { error } }) => (
+          <ReferralsAutocomplete
+            attrId={attrId}
+            value={field.value ?? null}
+            handleChange={handleChange}
+            multiple={multiple}
+            error={error}
+            isDisabled={isDisabled}
+            onRestrictedItemsChange={setHasRestrictedItems}
+          />
+        )}
+      />
     </Box>
   );
 };
@@ -144,6 +156,9 @@ export const NamedObjectAttributeValueField: FC<
   handleClickDeleteListItem,
   withBoolean,
 }) => {
+  const [hasRestrictedItems, setHasRestrictedItems] = useState(false);
+  const { t } = useTranslation();
+
   const handleChange = (
     value: GetEntryAttrReferral | GetEntryAttrReferral[] | null,
   ) => {
@@ -203,7 +218,9 @@ export const NamedObjectAttributeValueField: FC<
       </FlexBox>
       {withBoolean === true && (
         <BooleanBox>
-          <StyledTypography variant="caption">使用不可</StyledTypography>
+          <StyledTypography variant="caption">
+            {t("entryForm.objectField.disabled")}
+          </StyledTypography>
           <Controller
             name={`attrs.${attrId}.value.asArrayNamedObject.${index}._boolean`}
             control={control}
@@ -217,7 +234,16 @@ export const NamedObjectAttributeValueField: FC<
         </BooleanBox>
       )}
       <Box flexGrow={1}>
-        <StyledTypography variant="caption">アイテムを選択</StyledTypography>
+        <Box display="flex" alignItems="center" gap={1}>
+          <StyledTypography variant="caption">
+            {t("entryForm.objectField.selectItem")}
+          </StyledTypography>
+          {hasRestrictedItems && (
+            <StyledTypography variant="caption" sx={{ color: "error.main" }}>
+              {t("entryForm.objectField.restrictedItemsNote")}
+            </StyledTypography>
+          )}
+        </Box>
         <Controller
           name={
             index != null
@@ -231,6 +257,7 @@ export const NamedObjectAttributeValueField: FC<
               value={field.value ?? null}
               handleChange={handleChange}
               error={error}
+              onRestrictedItemsChange={setHasRestrictedItems}
             />
           )}
         />
@@ -264,7 +291,7 @@ export const ArrayNamedObjectAttributeValueField: FC<
     withBoolean?: boolean;
   }
 > = ({ attrId, control, setValue, withBoolean }) => {
-  const { fields, insert, remove } = useFieldArray({
+  const { fields, insert, remove, replace } = useFieldArray({
     control,
     name: `attrs.${attrId}.value.asArrayNamedObject`,
   });
@@ -278,10 +305,14 @@ export const ArrayNamedObjectAttributeValueField: FC<
     fields.length === 1 && handleClickAddListItem(0);
   };
 
-  /* insert empty value if it's necessary */
-  if (fields.length === 0) {
-    handleClickAddListItem(-1);
-  }
+  // Keep at least one (empty) row. This must not run during render: it
+  // updates form state owned by the parent form component. `replace` keeps
+  // it idempotent when StrictMode runs the effect twice.
+  useEffect(() => {
+    if (fields.length === 0) {
+      replace([{ name: "", object: null, _boolean: false }]);
+    }
+  }, [fields.length, replace]);
 
   return (
     <StyledList>

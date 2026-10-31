@@ -19,16 +19,40 @@ import { useSnackbar } from "notistack";
 import { FC, useState } from "react";
 import { useNavigate } from "react-router";
 
+import { useTranslation } from "../../hooks/useTranslation";
 import { aironeApiClient } from "../../repository/AironeApiClient";
 import { entityEntriesPath, entryDetailsPath } from "../../routes/Routes";
 import { JobOperations, JobStatuses } from "../../services/Constants";
 import { formatDateTime } from "../../services/DateUtil";
-import { jobOperationLabel, jobStatusLabel } from "../../services/JobUtil";
+import {
+  isExportJob,
+  jobOperationLabel,
+  jobStatusLabel,
+} from "../../services/JobUtil";
 import { AironeTableHeadCell } from "../common/AironeTableHeadCell";
 import { AironeTableHeadRow } from "../common/AironeTableHeadRow";
 import { Confirmable } from "../common/Confirmable";
 
 import { AironeLink } from "components/common";
+
+const JOB_TEXT_DISPLAY_LIMIT = 300;
+const CANCELABLE_JOB_OPERATIONS = new Set([
+  JobOperations.CREATE_ENTRY,
+  JobOperations.COPY_ENTRY,
+  JobOperations.IMPORT_ENTRY,
+  JobOperations.IMPORT_ENTRY_V2,
+  JobOperations.EXPORT_ENTRY,
+  JobOperations.EXPORT_ENTRY_V2,
+  JobOperations.REGISTER_REFERRALS,
+  JobOperations.EXPORT_SEARCH_RESULT,
+  JobOperations.EXPORT_SEARCH_RESULT_V2,
+  JobOperations.BULK_EDIT_ENTRY,
+]);
+
+const getJobTextForDisplay = (text: string | null | undefined): string => {
+  if (!text || text.length <= JOB_TEXT_DISPLAY_LIMIT) return text ?? "";
+  return text.slice(0, JOB_TEXT_DISPLAY_LIMIT) + "...";
+};
 
 const StyledTableRow = styled(TableRow)(({}) => ({
   "&:nth-of-type(odd)": {
@@ -103,6 +127,8 @@ const jobStatusIcons = (jobStatus: number | undefined) => {
       return <PreparingIcon />;
     case JobStatuses.CANCELED:
       return <CancelledIcon />;
+    case JobStatuses.WARNING:
+      return <ErrorIcon />;
     default:
       return <UnknownIcon />;
   }
@@ -114,17 +140,13 @@ interface Props {
 }
 
 export const JobList: FC<Props> = ({ jobs, showUser }) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
 
   const [encodes, setEncodes] = useState<{
     [key: number]: string;
   }>({});
-
-  const handleRerun = async (jobId: number) => {
-    await aironeApiClient.rerunJob(jobId);
-    navigate(0);
-  };
 
   const handleCancel = async (jobId: number) => {
     await aironeApiClient
@@ -133,7 +155,7 @@ export const JobList: FC<Props> = ({ jobs, showUser }) => {
         navigate(0);
       })
       .catch(() => {
-        enqueueSnackbar("キャンセルに失敗しました。", { variant: "error" });
+        enqueueSnackbar(t("job.list.cancelFailed"), { variant: "error" });
       });
   };
 
@@ -143,28 +165,28 @@ export const JobList: FC<Props> = ({ jobs, showUser }) => {
         <AironeTableHeadRow>
           {showUser && (
             <AironeTableHeadCell sx={{ width: "120px" }}>
-              実行ユーザー
+              {t("job.list.userColumn")}
             </AironeTableHeadCell>
           )}
           <AironeTableHeadCell sx={{ width: "160px" }}>
-            対象モデル
+            {t("job.list.targetEntityColumn")}
           </AironeTableHeadCell>
           <AironeTableHeadCell sx={{ width: "160px" }}>
-            対象アイテム
+            {t("job.list.targetEntryColumn")}
           </AironeTableHeadCell>
           <AironeTableHeadCell sx={{ width: "120px" }}>
-            状況
+            {t("job.list.statusColumn")}
           </AironeTableHeadCell>
           <AironeTableHeadCell sx={{ width: "100px" }}>
-            操作
+            {t("job.list.operationColumn")}
           </AironeTableHeadCell>
           <AironeTableHeadCell sx={{ width: "80px" }}>
-            実行時間
+            {t("job.list.executionTimeColumn")}
           </AironeTableHeadCell>
           <AironeTableHeadCell sx={{ width: "160px" }}>
-            実行日時
+            {t("job.list.executionDatetimeColumn")}
           </AironeTableHeadCell>
-          <AironeTableHeadCell>備考</AironeTableHeadCell>
+          <AironeTableHeadCell>{t("job.list.noteColumn")}</AironeTableHeadCell>
         </AironeTableHeadRow>
       </TableHead>
       <TableBody>
@@ -260,40 +282,25 @@ export const JobList: FC<Props> = ({ jobs, showUser }) => {
                   <Typography>{jobStatusLabel(job.status)}</Typography>
                 </Box>
                 <Box>
-                  {![
-                    JobStatuses.DONE,
-                    JobStatuses.PROCESSING,
-                    JobStatuses.CANCELED,
-                  ].includes(job.status ?? 0) && (
-                    <Button
-                      variant="contained"
-                      color="error"
-                      sx={{ my: "4px" }}
-                      onClick={() => handleRerun(job.id)}
-                    >
-                      再実行
-                    </Button>
-                  )}
-                  {![
-                    JobStatuses.DONE,
-                    JobStatuses.ERROR,
-                    JobStatuses.CANCELED,
-                  ].includes(job.status ?? 0) && (
-                    <Confirmable
-                      componentGenerator={(handleOpen) => (
-                        <Button
-                          variant="contained"
-                          color="secondary"
-                          sx={{ my: "4px" }}
-                          onClick={handleOpen}
-                        >
-                          キャンセル
-                        </Button>
-                      )}
-                      dialogTitle="本当にキャンセルしますか？"
-                      onClickYes={() => handleCancel(job.id)}
-                    />
-                  )}
+                  {[JobStatuses.PREPARING, JobStatuses.PROCESSING].includes(
+                    job.status ?? 0,
+                  ) &&
+                    CANCELABLE_JOB_OPERATIONS.has(job.operation ?? 0) && (
+                      <Confirmable
+                        componentGenerator={(handleOpen) => (
+                          <Button
+                            variant="contained"
+                            color="secondary"
+                            sx={{ my: "4px" }}
+                            onClick={handleOpen}
+                          >
+                            {t("common.cancel")}
+                          </Button>
+                        )}
+                        dialogTitle={t("job.list.confirmCancelTitle")}
+                        onClickYes={() => handleCancel(job.id)}
+                      />
+                    )}
                 </Box>
               </Box>
             </TableCell>
@@ -307,11 +314,7 @@ export const JobList: FC<Props> = ({ jobs, showUser }) => {
               <Typography>{formatDateTime(job.createdAt)}</Typography>
             </TableCell>
             <TableCell>
-              {(job.operation == JobOperations.EXPORT_ENTRY ||
-                job.operation == JobOperations.EXPORT_SEARCH_RESULT ||
-                job.operation == JobOperations.EXPORT_ENTRY_V2 ||
-                job.operation == JobOperations.EXPORT_SEARCH_RESULT_V2) &&
-              job.status == JobStatuses.DONE ? (
+              {isExportJob(job.operation) && job.status == JobStatuses.DONE ? (
                 <Box display="flex" gap="4px" alignItems="center">
                   <Select
                     defaultValue="utf-8"
@@ -337,7 +340,7 @@ export const JobList: FC<Props> = ({ jobs, showUser }) => {
                   </Tooltip>
                 </Box>
               ) : (
-                <Typography>{job.text}</Typography>
+                <Typography>{getJobTextForDisplay(job.text)}</Typography>
               )}
             </TableCell>
           </StyledTableRow>

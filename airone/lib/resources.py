@@ -1,5 +1,5 @@
 import importlib
-from collections.abc import Sequence
+from typing import Any, Sequence
 
 import tablib
 from import_export.exceptions import ImportError as ImportExportError
@@ -11,29 +11,38 @@ from airone.lib.acl import ACLType
 from user.models import User
 
 
-class AironeModelResource(ModelResource):
-    COMPARING_KEYS: list[str] = []
+class AironeModelResource(ModelResource):  # type: ignore[misc]
     DISALLOW_UPDATE_KEYS: list[str] = []
 
     def __init__(self, *args: object, **kwargs: object) -> None:
-        super().__init__(*args, **kwargs)
+        super(AironeModelResource, self).__init__(*args, **kwargs)
 
         # This parameter is needed to check that imported object has permission
         # to add/update it by the user who import data.
         self.request_user: User | None = None
-
-    """
-    This private method checks that two instance has same content in each attribute.
-    """
-
-    def _is_updated(self, comp1: ACLBase, comp2: ACLBase) -> bool:
-        return bool(any([getattr(comp1, x) != getattr(comp2, x) for x in self.COMPARING_KEYS]))
 
     def validate_update(self, new: ACLBase, old: ACLBase) -> bool:
         # This cancels update when the value of disallow update key is updated.
         if not all([getattr(new, x) == getattr(old, x) for x in self.DISALLOW_UPDATE_KEYS]):
             return False
         return True
+
+    def get_permission_targets(self, instance: Any) -> list[ACLBase]:
+        """Return the objects the importing user must be able to write to save this row.
+
+        Resources whose model is not an ACLBase override this to return the
+        ACLBase object that owns the instance.
+        """
+        return [instance]
+
+    def _is_writable(self, instance: Any) -> bool:
+        if not self.request_user:
+            return False
+
+        targets = self.get_permission_targets(instance)
+        return bool(targets) and all(
+            self.request_user.has_permission(x, ACLType.Writable) for x in targets
+        )
 
     def skip_row(
         self,
@@ -42,23 +51,28 @@ class AironeModelResource(ModelResource):
         row: dict[str, object],
         import_validation_errors: dict[str, list[object]] | None = None,
     ) -> bool:
+        if not self.request_user:
+            return True
+
         # the case of creating new instance
         if not self._meta.model.objects.filter(id=instance.id).exists():
             # Inhibits the spoofing
-            if isinstance(instance, ACLBase) and instance.created_user != self.request_user:
+            if instance.created_user != self.request_user:
                 return True
 
-        # the case of instance is updated
-        elif self._is_updated(instance, original):
-            # the case user try to update but he doen't have writable permition
-            if not self.request_user or not self.request_user.has_permission(
-                instance, ACLType.Writable
-            ):
-                return True
+            # the user has to be able to write where the new instance is created
+            return not self._is_writable(instance)
 
-            # the case user try to change params which are disallow to update
-            if not self.validate_update(instance, original):
-                return True
+        # The case of updating an existing instance. Permission is checked whichever
+        # field the row changes, both for the stored object and for what the row would
+        # turn it into, so that a row cannot move an object under a parent the user
+        # cannot write.
+        if not self._is_writable(original) or not self._is_writable(instance):
+            return True
+
+        # the case user try to change params which are disallow to update
+        if not self.validate_update(instance, original):
+            return True
 
         return False
 
@@ -68,17 +82,17 @@ class AironeModelResource(ModelResource):
         pass
 
     @classmethod
-    def import_data_from_request(cls, data: dict[str, object], request_user: User) -> Result:
-        resource = getattr(
-            importlib.import_module(cls._IMPORT_INFO["resource_module"]),
-            cls._IMPORT_INFO["resource_model_name"],
-        )()
-        if not resource:
-            raise RuntimeError("Resource object is not defined")
+    def normalize_import_row(cls, data: dict[str, Any]) -> dict[str, Any]:
+        """Shape a row the way the importer sees it: every header key, blank if absent."""
+        return {key: data.get(key, "") or "" for key in cls._IMPORT_INFO["header"]}
 
-        # set user who import the data for checking permission
-        resource.request_user = request_user
+    @classmethod
+    def validate_import_row(cls, data: dict[str, object]) -> None:
+        """Reject a row the import could not accept. Raises RuntimeError.
 
+        The import preview calls this too, so that a row rejected here is
+        reported the same way whether the user previews or imports.
+        """
         # check mandatory keys are existed, or not
         if not all([x in data for x in cls._IMPORT_INFO["mandatory_keys"]]):
             raise RuntimeError("Mandatory key doesn't exist")
@@ -95,11 +109,33 @@ class AironeModelResource(ModelResource):
         if not all([x in cls._IMPORT_INFO["header"] for x in data.keys()]):
             raise RuntimeError("Unnecessary key is specified")
 
+    @classmethod
+    def _build_resource_and_dataset(
+        cls, data: dict[str, object], request_user: User
+    ) -> tuple["AironeModelResource", tablib.Dataset]:
+        resource = getattr(
+            importlib.import_module(cls._IMPORT_INFO["resource_module"]),
+            cls._IMPORT_INFO["resource_model_name"],
+        )()
+        if not resource:
+            raise RuntimeError("Resource object is not defined")
+
+        # set user who import the data for checking permission
+        resource.request_user = request_user
+
+        cls.validate_import_row(data)
+
         # get dataset to import
         dataset = tablib.Dataset(
             [x in data and data[x] or "" for x in cls._IMPORT_INFO["header"]],
             headers=cls._IMPORT_INFO["header"],
         )
+
+        return resource, dataset
+
+    @classmethod
+    def import_data_from_request(cls, data: dict[str, object], request_user: User) -> Result:
+        resource, dataset = cls._build_resource_and_dataset(data, request_user)
 
         try:
             return resource.import_data(dataset, raise_errors=True)

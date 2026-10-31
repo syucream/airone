@@ -6,6 +6,7 @@ from unittest.mock import Mock, patch
 import yaml
 from rest_framework import status
 
+from acl.models import ACLType
 from airone.lib.elasticsearch import EntryFilterKey, FilterKey
 from airone.lib.types import (
     AttrType,
@@ -15,6 +16,7 @@ from entry import tasks
 from entry.models import Entry
 from entry.tests.test_api_v2 import BaseViewTest
 from job.models import Job, JobOperation, JobStatus
+from user.models import User
 
 
 class ViewTest(BaseViewTest):
@@ -56,8 +58,16 @@ class ViewTest(BaseViewTest):
         return (model_lb, model_sg)
 
     @mock.patch("entry.tasks.create_entry_v2.delay", mock.Mock(side_effect=tasks.create_entry_v2))
-    def test_create_entry_with_default_values(self):
+    @mock.patch("entry.api_v2.serializers.Job.new_notify_create_entry")
+    @mock.patch("entry.api_v2.serializers.Job.new_invoke_trigger")
+    def test_create_entry_with_default_values(self, invoke_trigger, notify_create):
         """Test entries are created with default values from EntityAttr when no value provided"""
+        notify_create.return_value.run.return_value = None
+        invoke_trigger.return_value.run.return_value = None
+        referred_entity = self.create_entity(self.user, "ReferredEntity")
+        first_ref = self.add_entry(self.user, "first-ref", referred_entity)
+        second_ref = self.add_entry(self.user, "second-ref", referred_entity)
+
         # Create entity with attributes that have default values
         entity = self.create_entity(
             self.user,
@@ -67,6 +77,12 @@ class ViewTest(BaseViewTest):
                 {"name": "bool_with_default", "type": AttrType.BOOLEAN},
                 {"name": "text_with_default", "type": AttrType.TEXT},
                 {"name": "number_with_default", "type": AttrType.NUMBER},
+                {"name": "object_with_default", "type": AttrType.OBJECT, "ref": referred_entity},
+                {
+                    "name": "array_object_with_default",
+                    "type": AttrType.ARRAY_OBJECT,
+                    "ref": referred_entity,
+                },
                 {"name": "string_no_default", "type": AttrType.STRING},
             ],
         )
@@ -87,6 +103,14 @@ class ViewTest(BaseViewTest):
         number_attr = entity.attrs.get(name="number_with_default")
         number_attr.default_value = 42.5
         number_attr.save()
+
+        object_attr = entity.attrs.get(name="object_with_default")
+        object_attr.default_value = first_ref.id
+        object_attr.save()
+
+        array_object_attr = entity.attrs.get(name="array_object_with_default")
+        array_object_attr.default_value = [second_ref.id, first_ref.id]
+        array_object_attr.save()
 
         # Create entry without providing values for attributes with defaults
         params = {
@@ -122,6 +146,26 @@ class ViewTest(BaseViewTest):
 
         number_attr_value = entry.attrs.get(schema=number_attr)
         self.assertEqual(number_attr_value.get_latest_value().get_value(), 42.5)
+
+        object_attr_value = entry.attrs.get(schema=object_attr)
+        self.assertEqual(object_attr_value.get_latest_value().referral_id, first_ref.id)
+
+        array_object_attr_value = entry.attrs.get(schema=array_object_attr)
+        self.assertEqual(
+            list(
+                array_object_attr_value.get_latest_value()
+                .data_array.order_by("id")
+                .values_list("referral_id", flat=True)
+            ),
+            [second_ref.id, first_ref.id],
+        )
+
+        effective_attrs = invoke_trigger.call_args.args[2]
+        self.assertIn({"id": object_attr.id, "value": first_ref.id}, effective_attrs)
+        self.assertIn(
+            {"id": array_object_attr.id, "value": [second_ref.id, first_ref.id]},
+            effective_attrs,
+        )
 
         # Check that attribute without default was not created (no value provided)
         string_no_default_attr = entity.attrs.get(name="string_no_default")
@@ -195,24 +239,16 @@ class ViewTest(BaseViewTest):
     @mock.patch("entry.tasks.create_entry_v2.delay", mock.Mock(side_effect=tasks.create_entry_v2))
     def test_create_entry_unsupported_type_no_default(self):
         """Test that unsupported types don't get default values applied"""
-        # Create reference entity
-        ref_entity = self.create_entity(self.user, "RefEntity", attrs=[])
-
         # Create entity with unsupported type attribute that has default_value
         entity = self.create_entity(
             self.user,
             "TestEntity",
             attrs=[
-                {"name": "object_attr", "type": AttrType.OBJECT, "referral": [ref_entity]},
                 {"name": "date_attr", "type": AttrType.DATE},
             ],
         )
 
         # Try to set default values (should be ignored for unsupported types)
-        object_attr = entity.attrs.get(name="object_attr")
-        object_attr.default_value = "ignored value"
-        object_attr.save()
-
         date_attr = entity.attrs.get(name="date_attr")
         date_attr.default_value = "2023-01-01"
         date_attr.save()
@@ -237,16 +273,10 @@ class ViewTest(BaseViewTest):
 
         # Since unsupported types don't apply default_value, these attributes should either
         # not have AttributeValues created or use the hardcoded type defaults
-        object_attr_values = entry.attrs.filter(schema=object_attr)
         date_attr_values = entry.attrs.filter(schema=date_attr)
 
         # For unsupported types, no custom default should be applied
         # The behavior should be the same as before (either no value or type default)
-        if object_attr_values.exists():
-            object_attr_value = object_attr_values.first()
-            # Should not be the custom default "ignored value"
-            self.assertNotEqual(object_attr_value.get_latest_value().get_value(), "ignored value")
-
         if date_attr_values.exists():
             date_attr_value = date_attr_values.first()
             # Should not be the custom default "2023-01-01"
@@ -799,6 +829,133 @@ class ViewTest(BaseViewTest):
         for itemname, expected_value in expected_values:
             item = Entry.objects.get(name=itemname, schema=self.entity)
             self.assertEqual(item.get_attrv("val").value, expected_value)
+
+    def test_bulk_update_rejects_array_attributes(self):
+        original_job_count = Job.objects.filter(operation=JobOperation.BULK_EDIT_ENTRY).count()
+        for attr_type in (AttrType.ARRAY_STRING, AttrType.MULTI_SELECT):
+            with self.subTest(attr_type=attr_type):
+                attr = EntityAttr.objects.create(
+                    name=f"array-{attr_type}",
+                    type=attr_type,
+                    parent_entity=self.entity,
+                    created_user=self.user,
+                )
+                response = self.client.put(
+                    "/entry/api/v2/bulk/",
+                    {
+                        "value": {"id": attr.id, "value": ["unsafe"]},
+                        "modelid": self.entity.id,
+                        "attrinfo": [],
+                    },
+                    "application/json",
+                )
+                self.assertEqual(response.status_code, 400)
+        wrong_model_response = self.client.put(
+            "/entry/api/v2/bulk/",
+            {
+                "value": {"id": 999999, "value": ["unsafe"]},
+                "modelid": self.entity.id,
+                "attrinfo": [],
+            },
+            "application/json",
+        )
+        self.assertEqual(wrong_model_response.status_code, 400)
+        self.assertEqual(
+            Job.objects.filter(operation=JobOperation.BULK_EDIT_ENTRY).count(),
+            original_job_count,
+        )
+
+    def test_bulk_update_job_rejects_array_attribute(self):
+        attr = self.entity.attrs.get(name="vals")
+        job = Job.new_bulk_edit_entry_v2(
+            self.user,
+            self.entity,
+            params={
+                "modelid": self.entity.id,
+                "value": {"id": attr.id, "value": ["unsafe"]},
+            },
+        )
+
+        job.run(will_delay=False)
+        job.refresh_from_db()
+        self.assertEqual(job.status, JobStatus.ERROR)
+        self.assertIn("Array attributes cannot be bulk updated", job.text)
+
+    @patch("entry.tasks.bulk_update_entries.delay", Mock(side_effect=tasks.bulk_update_entries))
+    def test_bulk_update_only_selected_items(self):
+        entries = [
+            self.add_entry(self.user, f"selected-{index}", self.entity, values={"val": "old"})
+            for index in range(3)
+        ]
+        updating_attr = self.entity.attrs.get(name="val")
+        response = self.client.put(
+            "/entry/api/v2/bulk/",
+            {
+                "value": {"id": updating_attr.id, "value": "updated"},
+                "modelid": self.entity.id,
+                "entry_ids": [entries[1].id],
+                "attrinfo": [],
+            },
+            "application/json",
+        )
+        self.assertEqual(response.status_code, 202)
+        for index, entry in enumerate(entries):
+            entry.refresh_from_db()
+            self.assertEqual(
+                entry.get_attrv("val").value,
+                "updated" if index == 1 else "old",
+            )
+
+    @patch("entry.tasks.bulk_update_entries.delay", Mock(side_effect=tasks.bulk_update_entries))
+    def test_bulk_update_selected_items_excludes_other_model_and_unreadable_entry(self):
+        selected = self.add_entry(self.user, "selected", self.entity, values={"val": "old"})
+        other_entity = self.create_entity(
+            self.user, "other-model", attrs=[{"name": "val", "type": AttrType.STRING}]
+        )
+        other_model_entry = self.add_entry(
+            self.user, "other-model-entry", other_entity, values={"val": "old"}
+        )
+        other_user = User.objects.create(username="bulk-update-private-owner")
+        unreadable = self.add_entry(
+            other_user, "unreadable", self.entity, values={"val": "old"}, is_public=False
+        )
+        self.assertFalse(self.user.has_permission(unreadable, ACLType.Readable))
+
+        response = self.client.put(
+            "/entry/api/v2/bulk/",
+            {
+                "value": {"id": self.entity.attrs.get(name="val").id, "value": "updated"},
+                "modelid": self.entity.id,
+                "entry_ids": [selected.id, other_model_entry.id, unreadable.id],
+            },
+            "application/json",
+        )
+        self.assertEqual(response.status_code, 202)
+        job = Job.objects.filter(operation=JobOperation.BULK_EDIT_ENTRY).last()
+        self.assertEqual(job.status, JobStatus.DONE, job.text)
+        self.assertEqual(selected.get_attrv("val").value, "updated")
+        self.assertEqual(other_model_entry.get_attrv("val").value, "old")
+        self.assertEqual(unreadable.get_attrv("val").value, "old")
+
+    @patch("entry.tasks.bulk_update_entries.delay", Mock(side_effect=tasks.bulk_update_entries))
+    def test_bulk_update_without_selection_updates_all_matching_items(self):
+        # The search UI shows 30 entries per page; an empty selection targets every page.
+        entries = [
+            self.add_entry(self.user, f"all-{index}", self.entity, values={"val": "old"})
+            for index in range(31)
+        ]
+        response = self.client.put(
+            "/entry/api/v2/bulk/",
+            {
+                "value": {"id": self.entity.attrs.get(name="val").id, "value": "updated"},
+                "modelid": self.entity.id,
+                "hint_entry": {"filter_key": EntryFilterKey.TEXT_CONTAINED, "keyword": "all-"},
+            },
+            "application/json",
+        )
+        self.assertEqual(response.status_code, 202)
+        for entry in entries:
+            self.assertEqual(entry.get_attrv("val").value, "updated")
 
     @patch("entry.tasks.bulk_update_entries.delay", Mock(side_effect=tasks.bulk_update_entries))
     def test_bulk_update_items_with_referral_name_filter(self):

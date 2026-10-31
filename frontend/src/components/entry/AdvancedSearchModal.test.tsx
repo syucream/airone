@@ -1,20 +1,20 @@
 /**
- * @jest-environment jsdom
  */
 import {
   AdvancedSearchResultAttrInfo,
   AdvancedSearchResultAttrInfoFilterKeyEnum,
   AdvancedSearchJoinAttrInfo,
 } from "@dmm-com/airone-apiclient-typescript-fetch";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { act, render, screen, fireEvent } from "@testing-library/react";
 
 import { AdvancedSearchModal } from "./AdvancedSearchModal";
 
 import { TestWrapper } from "TestWrapper";
+import i18n from "i18n/config";
 
-jest.mock("react-router", () => ({
-  ...jest.requireActual("react-router"),
-  useNavigate: () => jest.fn(),
+vi.mock("react-router", async () => ({
+  ...((await vi.importActual("react-router")) as object),
+  useNavigate: () => vi.fn(),
 }));
 
 describe("AdvancedSearchModal", () => {
@@ -39,11 +39,93 @@ describe("AdvancedSearchModal", () => {
   ];
   const joinAttrs: AdvancedSearchJoinAttrInfo[] = [];
 
+  afterEach(() => {
+    window.history.replaceState(null, "", "/");
+  });
+
+  test("discards unsaved changes when reopened with the current search", () => {
+    const props = {
+      openModal: true,
+      setOpenModal: vi.fn(),
+      attrNames,
+      initialAttrNames,
+      attrInfos,
+      joinAttrs,
+    };
+    const { rerender } = render(<AdvancedSearchModal {...props} />, {
+      wrapper: TestWrapper,
+    });
+
+    fireEvent.click(screen.getByLabelText("Clear"));
+    fireEvent.click(screen.getByRole("checkbox"));
+    expect(screen.queryByText("attrA")).not.toBeInTheDocument();
+    expect(screen.getByRole("checkbox")).toBeChecked();
+
+    fireEvent.click(screen.getByText("キャンセル"));
+    rerender(<AdvancedSearchModal {...props} openModal={false} />);
+    window.history.replaceState(null, "", "/?has_referral=true");
+    rerender(<AdvancedSearchModal {...props} initialAttrNames={["attrB"]} />);
+
+    expect(screen.queryByText("attrA")).not.toBeInTheDocument();
+    expect(screen.getByText("attrB")).toBeInTheDocument();
+    expect(screen.queryByText("attrC")).not.toBeInTheDocument();
+    expect(screen.getByRole("checkbox")).toBeChecked();
+
+    fireEvent.click(screen.getByRole("checkbox"));
+    rerender(
+      <AdvancedSearchModal
+        {...props}
+        openModal={false}
+        initialAttrNames={["attrB"]}
+      />,
+    );
+    rerender(<AdvancedSearchModal {...props} initialAttrNames={["attrB"]} />);
+    expect(screen.getByRole("checkbox")).toBeChecked();
+  });
+
+  test("preserves edits for equivalent props and resets when search changes", () => {
+    const props = {
+      openModal: true,
+      setOpenModal: vi.fn(),
+      attrNames,
+      initialAttrNames,
+      attrInfos,
+      joinAttrs,
+    };
+    const { rerender } = render(<AdvancedSearchModal {...props} />, {
+      wrapper: TestWrapper,
+    });
+
+    fireEvent.click(screen.getByLabelText("Clear"));
+    fireEvent.click(screen.getByRole("checkbox"));
+    rerender(
+      <AdvancedSearchModal
+        {...props}
+        initialAttrNames={[...initialAttrNames]}
+      />,
+    );
+    expect(screen.queryByText("attrA")).not.toBeInTheDocument();
+    expect(screen.queryByText("attrC")).not.toBeInTheDocument();
+    expect(screen.getByRole("checkbox")).toBeChecked();
+
+    rerender(<AdvancedSearchModal {...props} initialAttrNames={["attrB"]} />);
+    expect(screen.getByText("attrB")).toBeInTheDocument();
+    expect(screen.getByRole("checkbox")).not.toBeChecked();
+
+    window.history.replaceState(null, "", "/?has_referral=true");
+    rerender(<AdvancedSearchModal {...props} initialAttrNames={["attrB"]} />);
+    expect(screen.getByText("attrB")).toBeInTheDocument();
+    expect(screen.getByRole("checkbox")).toBeChecked();
+
+    rerender(<AdvancedSearchModal {...props} initialAttrNames={[]} />);
+    expect(screen.queryByText("attrB")).not.toBeInTheDocument();
+  });
+
   test("should render modal with title, buttons, and checkbox", () => {
     render(
       <AdvancedSearchModal
         openModal={true}
-        setOpenModal={jest.fn()}
+        setOpenModal={vi.fn()}
         attrNames={attrNames}
         initialAttrNames={initialAttrNames}
         attrInfos={attrInfos}
@@ -59,7 +141,7 @@ describe("AdvancedSearchModal", () => {
   });
 
   test("should call setOpenModal(false) when clicking cancel button", () => {
-    const setOpenModal = jest.fn();
+    const setOpenModal = vi.fn();
     render(
       <AdvancedSearchModal
         openModal={true}
@@ -75,11 +157,53 @@ describe("AdvancedSearchModal", () => {
     expect(setOpenModal).toHaveBeenCalledWith(false);
   });
 
+  test("selects every available attribute from the reset modal", async () => {
+    render(
+      <AdvancedSearchModal
+        openModal={true}
+        setOpenModal={vi.fn()}
+        attrNames={attrNames}
+        initialAttrNames={initialAttrNames}
+        attrInfos={attrInfos}
+        joinAttrs={joinAttrs}
+      />,
+      { wrapper: TestWrapper },
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Open" }));
+    fireEvent.click(await screen.findByText("すべて選択"));
+
+    expect(screen.getByText("attrA")).toBeInTheDocument();
+    expect(screen.getByText("attrB")).toBeInTheDocument();
+    expect(screen.getByText("attrC")).toBeInTheDocument();
+  });
+
+  test("renders in English", async () => {
+    await act(async () => {
+      await i18n.changeLanguage("en");
+    });
+    render(
+      <AdvancedSearchModal
+        openModal={true}
+        setOpenModal={vi.fn()}
+        attrNames={attrNames}
+        initialAttrNames={initialAttrNames}
+        attrInfos={attrInfos}
+        joinAttrs={joinAttrs}
+      />,
+      { wrapper: TestWrapper },
+    );
+    expect(screen.getByText("Reset search attributes")).toBeInTheDocument();
+    expect(screen.getByText("Save")).toBeInTheDocument();
+    expect(screen.getByText("Cancel")).toBeInTheDocument();
+    expect(screen.getByText("Include referral entries")).toBeInTheDocument();
+  });
+
   test("should not render modal when openModal is false", () => {
     render(
       <AdvancedSearchModal
         openModal={false}
-        setOpenModal={jest.fn()}
+        setOpenModal={vi.fn()}
         attrNames={attrNames}
         initialAttrNames={initialAttrNames}
         attrInfos={attrInfos}

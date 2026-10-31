@@ -1,5 +1,4 @@
 /**
- * @jest-environment jsdom
  */
 
 import { act, render, screen } from "@testing-library/react";
@@ -7,23 +6,24 @@ import { act, render, screen } from "@testing-library/react";
 import { CategoryList } from "./CategoryList";
 
 import { TestWrapper } from "TestWrapper";
+import i18n from "i18n/config";
 import { aironeApiClient } from "repository/AironeApiClient";
 import { ACLType } from "services/ACLUtil";
 import { ServerContext } from "services/ServerContext";
 
 // Setup API mocks
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe("CategoryList", () => {
   test("should render with categories when ReadOnly User", async () => {
     // Mock ServerContext to simulate a ReadOnly user
-    jest.spyOn(ServerContext, "getInstance").mockReturnValue({
+    vi.spyOn(ServerContext, "getInstance").mockReturnValue({
       user: { isReadonly: true },
     } as unknown as ServerContext);
     // Mock API response
-    const getCategoriesMock = jest
+    const getCategoriesMock = vi
       .spyOn(aironeApiClient, "getCategories")
       .mockResolvedValue({
         count: 2,
@@ -80,7 +80,7 @@ describe("CategoryList", () => {
 
   test("should render with categories when isEdit is true", async () => {
     // Mock API response
-    jest.spyOn(aironeApiClient, "getCategories").mockResolvedValue({
+    vi.spyOn(aironeApiClient, "getCategories").mockResolvedValue({
       count: 1,
       results: [
         {
@@ -106,7 +106,7 @@ describe("CategoryList", () => {
 
   test("should render loading state", async () => {
     // Delay API response to show loading state
-    jest.spyOn(aironeApiClient, "getCategories").mockImplementation(
+    vi.spyOn(aironeApiClient, "getCategories").mockImplementation(
       () =>
         new Promise(() => {
           // Never resolve to keep loading state
@@ -125,7 +125,7 @@ describe("CategoryList", () => {
 
   test("should render empty state", async () => {
     // Mock API with empty results
-    jest.spyOn(aironeApiClient, "getCategories").mockResolvedValue({
+    vi.spyOn(aironeApiClient, "getCategories").mockResolvedValue({
       count: 0,
       results: [],
     });
@@ -141,5 +141,27 @@ describe("CategoryList", () => {
 
     // Verify pagination shows zero items
     expect(screen.getByText("0 - 0 / 0 件")).toBeInTheDocument();
+  });
+
+  test("renders in English", async () => {
+    await act(async () => {
+      await i18n.changeLanguage("en");
+    });
+
+    vi.spyOn(aironeApiClient, "getCategories").mockResolvedValue({
+      count: 0,
+      results: [],
+    });
+
+    await act(async () => {
+      render(<CategoryList />, {
+        wrapper: TestWrapper,
+      });
+    });
+
+    expect(screen.getByText("Create new category")).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText("Filter categories"),
+    ).toBeInTheDocument();
   });
 });

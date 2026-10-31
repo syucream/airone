@@ -1,5 +1,4 @@
 /**
- * @jest-environment jsdom
  */
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,12 +11,11 @@ import {
 } from "@testing-library/react";
 import { useForm } from "react-hook-form";
 
-import { schema } from "../../entry/entryForm/EntryFormSchema";
-
-import { Schema } from "./EntityFormSchema";
+import { Schema, schema } from "./EntityFormSchema";
 import { WebhookFields } from "./WebhookFields";
 
 import { TestWrapper } from "TestWrapper";
+import i18n from "i18n/config";
 
 describe("WebhookFields", () => {
   const defaultValues: Schema = {
@@ -101,5 +99,29 @@ describe("WebhookFields", () => {
     expect(getValues("webhooks.0.url")).toEqual("");
     expect(getValues("webhooks.0.label")).toEqual("");
     expect(getValues("webhooks.0.isEnabled")).toBeFalsy();
+  });
+
+  test("should render in English", async () => {
+    await act(async () => {
+      await i18n.changeLanguage("en");
+    });
+
+    const {
+      result: {
+        current: { control },
+      },
+    } = renderHook(() =>
+      useForm<Schema>({
+        resolver: zodResolver(schema),
+        mode: "onBlur",
+        defaultValues,
+      }),
+    );
+
+    render(<WebhookFields control={control} />, { wrapper: TestWrapper });
+
+    expect(screen.getByText("Webhook")).toBeInTheDocument();
+    expect(screen.getByText("Label")).toBeInTheDocument();
+    expect(screen.getByText("Enabled")).toBeInTheDocument();
   });
 });

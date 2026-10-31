@@ -1,4 +1,4 @@
-from datetime import UTC
+from unittest.mock import patch
 
 from django.test import TestCase
 
@@ -43,6 +43,38 @@ class ElasticSearchTest(TestCase):
         # with empty string
         p3 = elasticsearch._get_regex_pattern("")
         self.assertEqual(p3, ".*.*")
+
+    def test_bulk_entries_raises_when_elasticsearch_reports_item_errors(self):
+        response = {
+            "errors": True,
+            "items": [
+                {
+                    "index": {
+                        "_id": "1",
+                        "status": 400,
+                        "error": {"type": "mapper_parsing_exception"},
+                    }
+                }
+            ],
+        }
+
+        with (
+            patch.object(elasticsearch.ESS, "bulk", return_value=response),
+            patch.object(elasticsearch.InMemoryESS, "bulk", return_value=response),
+        ):
+            with self.assertRaisesRegex(RuntimeError, r"failed for 1 item\(s\)"):
+                elasticsearch.ESS().bulk_entries([{"index": {"_id": "1"}}, {"name": "entry"}])
+
+    def test_bulk_entries_returns_none_when_all_items_succeed(self):
+        response = {"errors": False, "items": [{"index": {"_id": "1", "status": 201}}]}
+
+        with (
+            patch.object(elasticsearch.ESS, "bulk", return_value=response),
+            patch.object(elasticsearch.InMemoryESS, "bulk", return_value=response),
+        ):
+            result = elasticsearch.ESS().bulk_entries([{"index": {"_id": "1"}}, {"name": "entry"}])
+
+        self.assertIsNone(result)
 
     def test_make_query(self):
         query = elasticsearch.make_query(
@@ -201,7 +233,6 @@ class ElasticSearchTest(TestCase):
                                 }
                             },
                         ],
-                        "should": [],
                     }
                 }
             },
@@ -332,7 +363,6 @@ class ElasticSearchTest(TestCase):
                             }
                         },
                     ],
-                    "should": [],
                 }
             }
         }
@@ -381,45 +411,49 @@ class ElasticSearchTest(TestCase):
                                         },
                                         {
                                             "bool": {
-                                                "filter": {
-                                                    "nested": {
-                                                        "path": "attr",
-                                                        "query": {
-                                                            "bool": {
-                                                                "should": [
-                                                                    {
-                                                                        "bool": {
-                                                                            "filter": [
-                                                                                {
-                                                                                    "regexp": {
-                                                                                        "attr.value": ".*[hH][oO][gG][eE].*"
+                                                "filter": [
+                                                    {
+                                                        "nested": {
+                                                            "path": "attr",
+                                                            "query": {
+                                                                "bool": {
+                                                                    "should": [
+                                                                        {
+                                                                            "bool": {
+                                                                                "filter": [
+                                                                                    {
+                                                                                        "regexp": {
+                                                                                            "attr.value": ".*[hH][oO][gG][eE].*"
+                                                                                        }
                                                                                     }
-                                                                                }
-                                                                            ]
-                                                                        }
-                                                                    },
-                                                                    {
-                                                                        "bool": {
-                                                                            "filter": [
-                                                                                {
-                                                                                    "regexp": {
-                                                                                        "attr.value": ".*[fF][uU][gG][aA].*"
-                                                                                    }
-                                                                                },
-                                                                                {
-                                                                                    "regexp": {
-                                                                                        "attr.value": ".*1.*"
-                                                                                    }
-                                                                                },
-                                                                            ]
-                                                                        }
-                                                                    },
-                                                                ]
-                                                            }
-                                                        },
-                                                        "inner_hits": {"_source": ["attr.name"]},
+                                                                                ]
+                                                                            }
+                                                                        },
+                                                                        {
+                                                                            "bool": {
+                                                                                "filter": [
+                                                                                    {
+                                                                                        "regexp": {
+                                                                                            "attr.value": ".*[fF][uU][gG][aA].*"
+                                                                                        }
+                                                                                    },
+                                                                                    {
+                                                                                        "regexp": {
+                                                                                            "attr.value": ".*1.*"
+                                                                                        }
+                                                                                    },
+                                                                                ]
+                                                                            }
+                                                                        },
+                                                                    ]
+                                                                }
+                                                            },
+                                                            "inner_hits": {
+                                                                "_source": ["attr.name"]
+                                                            },
+                                                        }
                                                     }
-                                                }
+                                                ]
                                             }
                                         },
                                     ]
@@ -670,7 +704,9 @@ class ElasticSearchTest(TestCase):
 
         # Test Elasticsearch query generation with date range in _make_an_attribute_filter
         hint = elasticsearch.AttrHint(name="test_date")
-        filter_query = elasticsearch._make_an_attribute_filter(hint, "2023-01-01~2023-12-31")
+        filter_query = elasticsearch._make_an_attribute_filter(
+            hint, "2023-01-01~2023-12-31"
+        ).to_dict()
 
         # Verify expected query structure
         self.assertEqual(filter_query["nested"]["path"], "attr")
@@ -689,7 +725,7 @@ class ElasticSearchTest(TestCase):
 
     def test_is_date_check(self):
         """Test the _is_date_check function with legacy date formats and ISO8601 datetime formats"""
-        from datetime import datetime
+        from datetime import datetime, timezone
 
         from airone.lib.elasticsearch import _is_date_check
 
@@ -742,12 +778,12 @@ class ElasticSearchTest(TestCase):
         # ISO8601 with timezone
         result = _is_date_check("2023-01-01T12:34:56Z")
         self.assertEqual(result[0], "")
-        self.assertEqual(result[1], datetime(2023, 1, 1, 12, 34, 56, tzinfo=UTC))
+        self.assertEqual(result[1], datetime(2023, 1, 1, 12, 34, 56, tzinfo=timezone.utc))
 
         result = _is_date_check("2023-01-01T12:34:56+09:00")
         self.assertEqual(result[0], "")
         # Expect UTC normalized time (12:34:56+09:00 -> 03:34:56Z)
-        self.assertEqual(result[1], datetime(2023, 1, 1, 3, 34, 56, tzinfo=UTC))
+        self.assertEqual(result[1], datetime(2023, 1, 1, 3, 34, 56, tzinfo=timezone.utc))
 
         # ISO8601 with milliseconds
         result = _is_date_check("2023-01-01T12:34:56.789")
@@ -777,9 +813,9 @@ class ElasticSearchTest(TestCase):
         # ISO8601 timestamp range with timezones
         result = _is_date_check("2023-01-01T00:00:00Z~2023-01-01T23:59:59+09:00")
         self.assertEqual(result[0], "~")
-        self.assertEqual(result[1][0], datetime(2023, 1, 1, 0, 0, 0, tzinfo=UTC))
+        self.assertEqual(result[1][0], datetime(2023, 1, 1, 0, 0, 0, tzinfo=timezone.utc))
         self.assertEqual(
-            result[1][1], datetime(2023, 1, 1, 14, 59, 59, tzinfo=UTC)
+            result[1][1], datetime(2023, 1, 1, 14, 59, 59, tzinfo=timezone.utc)
         )  # 23:59:59+09:00 -> 14:59:59Z
 
         # 秒なしの形式も有効とする

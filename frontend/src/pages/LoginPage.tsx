@@ -25,12 +25,15 @@ import { PasswordResetConfirmModal } from "../components/user/PasswordResetConfi
 import { PasswordResetModal } from "../components/user/PasswordResetModal";
 import { aironeApiClient } from "../repository/AironeApiClient";
 
+import { useTranslation } from "hooks/useTranslation";
+import { iframeLoginCompletePath, iframePath, loginPath } from "routes/Routes";
 import { ServerContext } from "services/ServerContext";
 
 export const LoginPage: FC = () => {
   const serverContext = ServerContext.getInstance();
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation();
 
   const [showPassword, setShowPassword] = useState(false);
   const [isAlert, setIsAlert] = useState(false);
@@ -39,23 +42,28 @@ export const LoginPage: FC = () => {
   const [agreeWithServiceContract, setAgreeWithServiceContract] =
     useState(false);
   const [openPasswordResetModal, setOpenPasswordResetModal] = useState(false);
-  const [uidb64, setUidb64] = useState<string>("");
-  const [token, setToken] = useState<string>("");
+
+  // Capture the password reset parameters once on mount. They are kept in
+  // state (instead of being derived from the URL) because the token is removed
+  // from the location right after, to avoid leaking it via the Referer header.
+  const [resetParams] = useState(() => {
+    const params = new URLSearchParams(location.search);
+    return {
+      uidb64: params.get("uidb64") ?? "",
+      token: params.get("token") ?? "",
+    };
+  });
   const [openPasswordResetConfirmModal, setOpenPasswordResetConfirmModal] =
-    useState(false);
+    useState(() => {
+      const params = new URLSearchParams(location.search);
+      return params.get("uidb64") != null && params.get("token") != null;
+    });
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
 
-    const _uidb64 = params.get("uidb64");
-    if (_uidb64 != null) {
-      setUidb64(_uidb64);
-    }
-
     // get token from query parameter, then delete it to avoid leaking via Referer header(a similar logic to Django auth module).
-    const _token = params.get("token");
-    if (_token != null) {
-      setToken(_token);
+    if (params.get("token") != null) {
       params.delete("token");
       navigate(
         {
@@ -64,10 +72,6 @@ export const LoginPage: FC = () => {
         },
         { replace: true },
       );
-    }
-
-    if (_uidb64 != null && _token != null) {
-      setOpenPasswordResetConfirmModal(true);
     }
   }, [location.pathname, location.search, navigate]);
 
@@ -116,6 +120,40 @@ export const LoginPage: FC = () => {
     setOpenPasswordResetConfirmModal(false);
   }, [setOpenPasswordResetConfirmModal]);
 
+  const nextUrl = new URL(
+    serverContext?.loginNext || "/",
+    window.location.origin,
+  );
+  const isIframeDestination =
+    nextUrl.origin === window.location.origin &&
+    (nextUrl.pathname === iframePath().replace(/\/$/, "") ||
+      nextUrl.pathname.startsWith(iframePath())) &&
+    nextUrl.pathname !== iframeLoginCompletePath();
+
+  if (isIframeDestination) {
+    const loginUrl = `${loginPath()}?${new URLSearchParams({
+      next: iframeLoginCompletePath(),
+    })}`;
+    return (
+      <Box p={3}>
+        <Typography>AirOne にログインしてください。</Typography>
+        <Button
+          component="a"
+          href={loginUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          variant="contained"
+        >
+          別タブでログイン
+        </Button>
+        <Typography>ログイン後、この画面で再読み込みしてください。</Typography>
+        <Button onClick={() => window.location.assign(nextUrl.href)}>
+          再読み込み
+        </Button>
+      </Box>
+    );
+  }
+
   return (
     <Box
       display="flex"
@@ -154,10 +192,10 @@ export const LoginPage: FC = () => {
                       }}
                     />
                   }
-                  label="以下の規約に合意する。"
+                  label={t("user.login.agreeTerms")}
                 />
                 <Link href={serverContext?.termsOfServiceUrl} target="_blank">
-                  Pagoda サービス規約
+                  {t("user.login.termsLinkLabel")}
                 </Link>
               </FormGroup>
               <FormHelperText>
@@ -168,7 +206,7 @@ export const LoginPage: FC = () => {
                       setShowAlertForTermsOfService(false);
                     }}
                   >
-                    ご利用には、サービス規約への合意が必要です。
+                    {t("user.login.termsRequired")}
                   </Alert>
                 )}
               </FormHelperText>
@@ -183,7 +221,7 @@ export const LoginPage: FC = () => {
                 setIsAlert(false);
               }}
             >
-              ユーザ名またはパスワードが違います。
+              {t("user.login.invalidCredentials")}
             </Alert>
           ) : (
             ""
@@ -241,7 +279,7 @@ export const LoginPage: FC = () => {
                   }}
                 />
                 <Typography fontSize="16px" ml={1} display="inline">
-                  SSO ログイン
+                  {t("user.login.ssoLogin")}
                 </Typography>
               </Link>
             )}
@@ -268,7 +306,7 @@ export const LoginPage: FC = () => {
                 display="inline"
                 sx={{ textDecoration: "line-through" }}
               >
-                パスワードリセット
+                {t("user.login.passwordReset")}
               </Typography>
             ) : (
               <Link
@@ -283,7 +321,7 @@ export const LoginPage: FC = () => {
                   }}
                 />
                 <Typography fontSize="16px" ml={1} display="inline">
-                  パスワードリセット
+                  {t("user.login.passwordReset")}
                 </Typography>
               </Link>
             )}
@@ -305,8 +343,8 @@ export const LoginPage: FC = () => {
       <PasswordResetConfirmModal
         openModal={openPasswordResetConfirmModal}
         closeModal={handleClosePasswordResetConfirmModal}
-        uidb64={uidb64}
-        token={token}
+        uidb64={resetParams.uidb64}
+        token={resetParams.token}
       />
     </Box>
   );

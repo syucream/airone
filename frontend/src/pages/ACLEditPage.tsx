@@ -1,12 +1,8 @@
-import {
-  ACLObjtypeEnum,
-  EntityDetail,
-  EntryRetrieve,
-} from "@dmm-com/airone-apiclient-typescript-fetch";
+import { ACLObjtypeEnum } from "@dmm-com/airone-apiclient-typescript-fetch";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Box, Container, Typography } from "@mui/material";
 import { useSnackbar } from "notistack";
-import { FC, Suspense, useCallback, useEffect, useState } from "react";
+import { FC, Suspense, useCallback, useEffect, useMemo } from "react";
 import { FieldErrors, useForm } from "react-hook-form";
 import { useNavigate } from "react-router";
 
@@ -20,8 +16,10 @@ import { PageHeader } from "components/common/PageHeader";
 import { SubmitButton } from "components/common/SubmitButton";
 import { EntityBreadcrumbs } from "components/entity/EntityBreadcrumbs";
 import { EntryBreadcrumbs } from "components/entry/EntryBreadcrumbs";
+import { useIdParams } from "hooks/useIdParams";
 import { usePrompt } from "hooks/usePrompt";
-import { useTypedParams } from "hooks/useTypedParams";
+import { useTranslation } from "hooks/useTranslation";
+import { translate } from "i18n/config";
 import { aironeApiClient } from "repository/AironeApiClient";
 import {
   editEntityPath,
@@ -32,27 +30,9 @@ import {
 } from "routes/Routes";
 
 const ACLEditContent: FC<{ objectId: number }> = ({ objectId }) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
-  const [entity, setEntity] = useState<EntityDetail>();
-  const [entry, setEntry] = useState<EntryRetrieve>();
-  const [breadcrumbs, setBreadcrumbs] = useState<JSX.Element>(<Box />);
-
-  const {
-    formState: { isDirty, isSubmitting, isSubmitSuccessful },
-    handleSubmit,
-    reset,
-    control,
-    watch,
-  } = useForm<Schema>({
-    resolver: zodResolver(schema),
-    mode: "onSubmit",
-  });
-
-  usePrompt(
-    isDirty && !isSubmitSuccessful,
-    "編集した内容は失われてしまいますが、このページを離れてもよろしいですか？",
-  );
 
   const { data: acl } = usePagodaSWR(
     ["acl", objectId],
@@ -60,7 +40,104 @@ const ACLEditContent: FC<{ objectId: number }> = ({ objectId }) => {
     { suspense: true },
   );
 
-  const historyReplace = () => {
+  // Initialize form values from the fetched acl. Dirty fields are kept so a
+  // background revalidation does not clobber user edits.
+  const initialValues = useMemo(
+    () => ({
+      isPublic: acl.isPublic ?? false,
+      defaultPermission: acl.defaultPermission,
+      objtype: acl.objtype,
+      roles: acl.roles,
+    }),
+    [acl],
+  );
+
+  const {
+    formState: { isDirty, isSubmitting, isSubmitSuccessful },
+    handleSubmit,
+    control,
+    watch,
+  } = useForm<Schema>({
+    resolver: zodResolver(schema),
+    mode: "onSubmit",
+    // Sync form values when the fetched acl arrives.
+    values: initialValues,
+    resetOptions: { keepDirtyValues: true },
+  });
+
+  usePrompt(isDirty && !isSubmitSuccessful, t("acl.form.confirmLeave"));
+
+  // Fetch the parent/self entity or entry that the breadcrumbs and
+  // cancel-navigation need, depending on the ACL object type.
+  const entityId = (() => {
+    switch (acl.objtype) {
+      case ACLObjtypeEnum.Entity:
+        return objectId;
+      case ACLObjtypeEnum.EntityAttr:
+        return acl.parent?.id;
+      default:
+        return undefined;
+    }
+  })();
+
+  // One-shot page context (breadcrumbs / navigation target); no need to
+  // track server freshness on window focus.
+  const { data: entity } = usePagodaSWR(
+    entityId != null ? ["entity", entityId] : null,
+    () => aironeApiClient.getEntity(entityId ?? 0),
+    { revalidateOnFocus: false },
+  );
+
+  const { data: entry } = usePagodaSWR(
+    acl.objtype === ACLObjtypeEnum.Entry ? ["entry", objectId] : null,
+    () => aironeApiClient.getEntry(objectId),
+    { revalidateOnFocus: false },
+  );
+
+  // Derived from fetched data; no state needed.
+  const breadcrumbs = (() => {
+    switch (acl.objtype) {
+      case ACLObjtypeEnum.Category:
+        return (
+          <AironeBreadcrumbs>
+            <Typography component={AironeLink} to={topPath()}>
+              Top
+            </Typography>
+            <Typography component={AironeLink} to={listCategoryPath()}>
+              {t("acl.breadcrumb.categoryList")}
+            </Typography>
+            <Typography color="textPrimary">{acl.name}</Typography>
+            <Typography color="textPrimary">{t("acl.page.title")}</Typography>
+          </AironeBreadcrumbs>
+        );
+      case ACLObjtypeEnum.Entity:
+        return entity != null ? (
+          <EntityBreadcrumbs entity={entity} title={t("acl.page.title")} />
+        ) : (
+          <Box />
+        );
+      case ACLObjtypeEnum.EntityAttr:
+        return entity != null ? (
+          <EntityBreadcrumbs
+            entity={entity}
+            attr={acl.name}
+            title={t("acl.page.title")}
+          />
+        ) : (
+          <Box />
+        );
+      case ACLObjtypeEnum.Entry:
+        return entry != null ? (
+          <EntryBreadcrumbs entry={entry} title={t("acl.page.title")} />
+        ) : (
+          <Box />
+        );
+      default:
+        return <Box />;
+    }
+  })();
+
+  const historyReplace = useCallback(() => {
     switch (acl.objtype) {
       case ACLObjtypeEnum.Category:
         navigate(listCategoryPath(), { replace: true });
@@ -77,13 +154,13 @@ const ACLEditContent: FC<{ objectId: number }> = ({ objectId }) => {
         break;
       case ACLObjtypeEnum.Entry:
         if (entry?.id) {
-          navigate(entryDetailsPath(entry?.schema.id, entry?.id), {
+          navigate(entryDetailsPath(entry.schema.id, entry.id), {
             replace: true,
           });
         }
         break;
     }
-  };
+  }, [acl.objtype, entity, entry, navigate]);
 
   const handleSubmitOnInvalid = useCallback(
     async (err: FieldErrors<Schema & { generalError: string }>) => {
@@ -109,7 +186,9 @@ const ACLEditContent: FC<{ objectId: number }> = ({ objectId }) => {
         aclForm.defaultPermission,
       );
 
-      enqueueSnackbar("ACL設定の更新が成功しました", { variant: "success" });
+      enqueueSnackbar(translate("acl.form.updateSuccess"), {
+        variant: "success",
+      });
     },
     [objectId, enqueueSnackbar],
   );
@@ -118,72 +197,21 @@ const ACLEditContent: FC<{ objectId: number }> = ({ objectId }) => {
     historyReplace();
   };
 
-  /* initialize permissions and isPublic variables from acl parameter */
-  useEffect(() => {
-    reset({
-      isPublic: acl.isPublic,
-      defaultPermission: acl.defaultPermission,
-      objtype: acl.objtype,
-      roles: acl.roles,
-    });
-    switch (acl.objtype) {
-      case ACLObjtypeEnum.Category:
-        setBreadcrumbs(
-          <AironeBreadcrumbs>
-            <Typography component={AironeLink} to={topPath()}>
-              Top
-            </Typography>
-            <Typography component={AironeLink} to={listCategoryPath()}>
-              カテゴリ一覧
-            </Typography>
-            <Typography color="textPrimary">{acl.name}</Typography>
-            <Typography color="textPrimary">ACL設定</Typography>
-          </AironeBreadcrumbs>,
-        );
-        break;
-      case ACLObjtypeEnum.Entity:
-        aironeApiClient.getEntity(objectId).then((resp) => {
-          setEntity(resp);
-          setBreadcrumbs(<EntityBreadcrumbs entity={resp} title="ACL設定" />);
-        });
-        break;
-      case ACLObjtypeEnum.EntityAttr:
-        if (acl.parent?.id) {
-          aironeApiClient.getEntity(acl.parent?.id).then((resp) => {
-            setEntity(resp);
-            setBreadcrumbs(
-              <EntityBreadcrumbs
-                entity={resp}
-                attr={acl.name}
-                title="ACL設定"
-              />,
-            );
-          });
-        }
-
-        break;
-      case ACLObjtypeEnum.Entry:
-        aironeApiClient.getEntry(objectId).then((resp) => {
-          setEntry(resp);
-          setBreadcrumbs(<EntryBreadcrumbs entry={resp} title="ACL設定" />);
-        });
-        break;
-    }
-  }, [acl, reset, objectId]);
-
+  // Navigate after the submit succeeded. This must stay in an effect so that
+  // the usePrompt blocker is disabled (isSubmitSuccessful=true) before leaving.
   useEffect(() => {
     if (isSubmitSuccessful) {
       historyReplace();
     }
-  }, [isSubmitSuccessful]);
+  }, [isSubmitSuccessful, historyReplace]);
 
   return (
     <>
       {breadcrumbs}
 
-      <PageHeader title={acl.name} description="ACL設定">
+      <PageHeader title={acl.name} description={t("acl.page.title")}>
         <SubmitButton
-          name="保存"
+          name={t("common.save")}
           disabled={isSubmitting || isSubmitSuccessful}
           isSubmitting={isSubmitting}
           handleSubmit={handleSubmit(
@@ -206,7 +234,7 @@ const ACLEditContent: FC<{ objectId: number }> = ({ objectId }) => {
 };
 
 export const ACLEditPage: FC = () => {
-  const { objectId } = useTypedParams<{ objectId: number }>();
+  const { objectId } = useIdParams({ required: ["objectId"] });
 
   return (
     <Box className="container-fluid">

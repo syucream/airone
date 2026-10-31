@@ -9,11 +9,16 @@ import environ
 from configurations import Configuration
 from ddtrace import config, patch_all, tracer  # type: ignore[attr-defined]
 
+from airone.lib import devmode
+
 env = environ.Env()
 env.read_env(os.path.join(environ.Path(__file__) - 2, ".env"))
 
+# Lite mode: no MySQL, no Elasticsearch, no RabbitMQ. See airone/lib/devmode.py.
+LITE = devmode.is_lite()
 
-class Common(Configuration):
+
+class Common(Configuration):  # type: ignore[misc]
     # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -24,7 +29,20 @@ class Common(Configuration):
     SECRET_KEY = env.str("AIRONE_SECRET_KEY", "(ch@ngeMe)")
 
     # Celery settings
-    CELERY_BROKER_URL = env.str("AIRONE_RABBITMQ_URL", "amqp://guest:guest@localhost//")
+    #
+    # Lite mode replaces RabbitMQ with kombu's in-process "memory" transport.
+    # That reproduces the environment the test-suite is written against -- a
+    # broker that accepts tasks and no worker that consumes them -- without a
+    # container, so `.delay()` neither blocks on a connection nor runs inline.
+    #
+    # Set AIRONE_CELERY_EAGER=1 to execute tasks inline instead. That is what
+    # the lite dev *server* wants (jobs actually complete), but it changes the
+    # semantics tests rely on, so it is opt-in rather than implied by LITE.
+    CELERY_BROKER_URL = env.str(
+        "AIRONE_RABBITMQ_URL", "memory://" if LITE else "amqp://guest:guest@localhost//"
+    )
+    CELERY_TASK_ALWAYS_EAGER = env.bool("AIRONE_CELERY_EAGER", False)
+    CELERY_TASK_EAGER_PROPAGATES = env.bool("AIRONE_CELERY_EAGER_PROPAGATES", False)
 
     #: Only add pickle to this list if your broker is secured
     #: from unwanted access (see userguide/security.html)
@@ -47,6 +65,17 @@ class Common(Configuration):
     # configured. Only development configuration classes may enable this;
     # production must configure a canonical base URL instead.
     CANONICAL_URL_FALLBACK = False
+
+    # https://github.com/adamchainz/django-cors-headers
+    # No origins are allowed by default; set AIRONE_CORS_ALLOWED_ORIGINS to a
+    # comma-separated list of origins (e.g. "https://example.com,https://foo.example.com")
+    # to enable cross-origin requests from those hosts.
+    CORS_ALLOWED_ORIGINS = env.list("AIRONE_CORS_ALLOWED_ORIGINS", default=[])
+    CORS_ALLOW_CREDENTIALS = env.bool("AIRONE_CORS_ALLOW_CREDENTIALS", False)
+    CORS_ALLOW_METHODS = env.list(
+        "AIRONE_CORS_ALLOW_METHODS",
+        default=["DELETE", "GET", "OPTIONS", "PATCH", "POST", "PUT"],
+    )
 
     # Application definition
 
@@ -76,6 +105,7 @@ class Common(Configuration):
         "rest_framework.authtoken",
         "drf_spectacular",
         "django_filters",
+        "corsheaders",
         "social_django",
         "simple_history",
         "storages",
@@ -99,8 +129,11 @@ class Common(Configuration):
             INSTALLED_APPS.insert(job_index, plugin_module)
             job_index += 1  # Keep job at the same relative position
 
+    IFRAME_ALLOWED_ORIGINS = env.list("AIRONE_IFRAME_ALLOWED_ORIGINS", default=[])
+
     MIDDLEWARE = [
         "django.middleware.security.SecurityMiddleware",
+        "corsheaders.middleware.CorsMiddleware",
         "whitenoise.middleware.WhiteNoiseMiddleware",
         "airone.middleware.log.LoggingRequestMiddleware",
         "django.contrib.sessions.middleware.SessionMiddleware",
@@ -108,6 +141,8 @@ class Common(Configuration):
         "django.middleware.csrf.CsrfViewMiddleware",
         "django.contrib.auth.middleware.AuthenticationMiddleware",
         "django.contrib.messages.middleware.MessageMiddleware",
+        # Responses run in reverse order: adjust framing after the default protection.
+        "airone.middleware.iframe.IframePolicyMiddleware",
         "django.middleware.clickjacking.XFrameOptionsMiddleware",
         "social_django.middleware.SocialAuthExceptionMiddleware",
         "airone.lib.multidb.AironePinningRouterMiddleware",
@@ -152,7 +187,12 @@ class Common(Configuration):
     USE_X_FORWARDED_PORT = True
 
     # https://docs.djangoproject.com/en/3.2/ref/settings/#session-cookie-secure
-    SESSION_COOKIE_SECURE = env.bool("AIRONE_SSL_ENABLE", True)
+    # The lite dev server speaks plain HTTP on localhost; leaving this on would
+    # make the browser drop the session cookie and every login silently fail.
+    SESSION_COOKIE_SECURE = env.bool("AIRONE_SSL_ENABLE", not LITE)
+
+    # Set AIRONE_SESSION_COOKIE_SAMESITE to Lax, Strict, or the string None.
+    SESSION_COOKIE_SAMESITE = env.str("AIRONE_SESSION_COOKIE_SAMESITE", "Lax")
 
     # https://docs.djangoproject.com/en/3.2/ref/middleware/#http-strict-transport-security
     SECURE_HSTS_PRELOAD = True
@@ -161,12 +201,40 @@ class Common(Configuration):
     # Database
     # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 
+    # Lite mode defaults to a per-checkout SQLite file so that concurrent
+    # worktrees never share (or corrupt) each other's database.
     DATABASES = {
         "default": env.db(
             "AIRONE_MYSQL_MASTER_URL",
-            "mysql://airone:password@127.0.0.1:3306/airone?charset=utf8mb4",
+            devmode.sqlite_url()
+            if LITE
+            else "mysql://airone:password@127.0.0.1:3306/airone?charset=utf8mb4",
         )
     }
+
+    if DATABASES["default"].get("ENGINE") == "django.db.backends.sqlite3":
+        if LITE:
+            # Only lite mode keeps a database file; tools/test_local.sh --sqlite
+            # runs in memory and should not leave a state directory behind.
+            devmode.ensure_state_dir()
+        # Swap in the MySQL-flavoured SQLite backend (integer ranges and
+        # case-insensitive text) so any SQLite run -- lite mode or
+        # tools/test_local.sh --sqlite -- agrees with MySQL on validation and
+        # name lookups. See airone/db/backends/sqlite_pagoda/base.py.
+        DATABASES["default"]["ENGINE"] = env.str(
+            "AIRONE_SQLITE_ENGINE", "airone.db.backends.sqlite_pagoda"
+        )
+        # WAL keeps readers from blocking on the writer, and a generous busy
+        # timeout absorbs the lock contention that eager Celery tasks would
+        # otherwise hit while a request is mid-transaction.
+        DATABASES["default"].setdefault("OPTIONS", {})
+        DATABASES["default"]["OPTIONS"].update(
+            {
+                "init_command": "PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;",
+                "transaction_mode": "IMMEDIATE",
+                "timeout": 20,
+            }
+        )
 
     DATABASE_ROUTERS = ["multidb.PinningReplicaRouter"]
     REPLICA_DATABASES = ["default"]
@@ -218,7 +286,10 @@ class Common(Configuration):
     if os.path.exists(_custom_static):
         STATICFILES_DIRS.append(_custom_static)
     STATIC_ROOT = os.path.join(BASE_DIR, "static_root")
-    MEDIA_ROOT = env.str("AIRONE_FILE_STORE_PATH", "/tmp/airone_app")
+    MEDIA_ROOT = env.str(
+        "AIRONE_FILE_STORE_PATH",
+        os.path.join(devmode.state_dir(), "media") if LITE else "/tmp/airone_app",
+    )
 
     STORAGES = {
         "default": {
@@ -258,14 +329,16 @@ class Common(Configuration):
             env.str(
                 "EXTENDED_HEADER_MENUS",
                 json.dumps([]),
-            )
+            ).strip()
+            or "[]"
         ),
         # This is the general parameter that would be passed to custom-views from external world
         "EXTENDED_GENERAL_PARAMETERS": json.loads(
             env.str(
                 "EXTENDED_GENERAL_PARAMETERS",
                 json.dumps({}),
-            )
+            ).strip()
+            or "{}"
         ),
         # This is an example to set EXTENDED_HEADER_MENUS
         # "EXTENDED_HEADER_MENUS": json.loads(env.str(
@@ -293,7 +366,8 @@ class Common(Configuration):
             env.str(
                 "FRONTEND_PLUGIN_ENTITY_OVERRIDES",
                 json.dumps({"9681": {"plugin": "sample", "pages": ["entry.list"]}}),
-            )
+            ).strip()
+            or "{}"
         ),
         # Backend plugin entity override configuration
         # Format: { "entityId": { "plugin": "plugin-id", "operations": ["create", "update"],
@@ -307,7 +381,8 @@ class Common(Configuration):
             env.str(
                 "BACKEND_PLUGIN_ENTITY_OVERRIDES",
                 json.dumps({}),
-            )
+            ).strip()
+            or "{}"
         ),
     }
 
@@ -341,14 +416,28 @@ class Common(Configuration):
             # do nothing and use 'unknown' as version when git does not exists
             logging.getLogger(__name__).warning("git command not found.")
 
+    _es_default_index = "airone-%s" % devmode.namespace() if LITE else "airone"
     ES_CONFIG = env.search_url(
-        "AIRONE_ELASTICSEARCH_URL", "elasticsearch://airone:password@localhost:9200/airone"
+        "AIRONE_ELASTICSEARCH_URL",
+        f"elasticsearch://airone:password@localhost:9200/{_es_default_index}",
     )
+    _es_hosts = env.list("AIRONE_ELASTICSEARCH_HOSTS", default=[])
+    ES_CONFIG["URL"] = _es_hosts or [ES_CONFIG["URL"]]
     ES_CONFIG.update(
         {
             "MAXIMUM_RESULTS_NUM": 500000,
             "MAXIMUM_NESTED_OBJECT_NUM": 999999,
             "TIMEOUT": None,
+            # "inmemory" runs the index inside this process (see
+            # airone/lib/es_inmemory.py); "http" talks to a real cluster.
+            # Lite mode defaults to in-memory but can be pointed at a shared
+            # container with AIRONE_ES_BACKEND=http, in which case the
+            # per-checkout index name above keeps worktrees from colliding.
+            "BACKEND": env.str("AIRONE_ES_BACKEND", "inmemory" if LITE else "http"),
+            # Where the in-memory backend mirrors its documents so a dev server
+            # restart does not silently empty the search index. Tests clear
+            # this (see AironeTestCase) to stay isolated.
+            "PERSIST_PATH": os.path.join(devmode.state_dir(), "es") if LITE else None,
         }
     )
 
@@ -490,6 +579,10 @@ class Common(Configuration):
         ],
         "PAGE_SIZE": 30,
         "EXCEPTION_HANDLER": "airone.lib.drf.custom_exception_handler",
+        # DRF 3.18 switched ListSerializer errors from a positional list to an
+        # index-keyed dict. Keep the list shape that API clients (including the
+        # frontend's indexed-error handling) rely on. Removed in DRF 3.20.
+        "LIST_SERIALIZER_ERRORS_AS_DICT": False,
     }
 
     # Silence rest_framework.W001 warning
@@ -548,7 +641,8 @@ class Common(Configuration):
         env.str(
             "PLUGIN_OPERATION_ID_CONFIG",
             json.dumps({}),
-        )
+        ).strip()
+        or "{}"
     )
     PLUGIN_OPERATION_ID_CONFIG: dict[str, tuple[int, int]] = {
         plugin_id: tuple(range_values) for plugin_id, range_values in _raw_plugin_config.items()

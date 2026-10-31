@@ -1,29 +1,37 @@
 /**
- * @jest-environment jsdom
  */
 
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 
 import { RoleImportModal } from "./RoleImportModal";
 
+import type { Mock } from "vitest";
+
 import { TestWrapper } from "TestWrapper";
+import i18n from "i18n/config";
 import { aironeApiClient } from "repository/AironeApiClient";
 
 // Mock dependencies
-jest.mock("repository/AironeApiClient", () => ({
+vi.mock("repository/AironeApiClient", () => ({
   aironeApiClient: {
-    importRoles: jest.fn(),
+    importRoles: vi.fn(),
   },
 }));
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe("RoleImportModal", () => {
   const defaultProps = {
     openImportModal: true,
-    closeImportModal: jest.fn(),
+    closeImportModal: vi.fn(),
   };
 
   test("should render modal with correct title and description", () => {
@@ -67,7 +75,7 @@ describe("RoleImportModal", () => {
   });
 
   test("should successfully import file", async () => {
-    (aironeApiClient.importRoles as jest.Mock).mockResolvedValue(undefined);
+    (aironeApiClient.importRoles as Mock).mockResolvedValue(undefined);
 
     render(<RoleImportModal {...defaultProps} />, { wrapper: TestWrapper });
 
@@ -173,5 +181,21 @@ describe("RoleImportModal", () => {
       ".MuiTypography-caption.css-1hldsye-MuiTypography-root",
     );
     expect(errorContainer).toBeInTheDocument();
+  });
+
+  test("renders in English", async () => {
+    await act(async () => {
+      await i18n.changeLanguage("en");
+    });
+
+    render(<RoleImportModal {...defaultProps} />, { wrapper: TestWrapper });
+
+    expect(screen.getByText("Import roles")).toBeInTheDocument();
+    expect(
+      screen.getByText("Please select a file to import."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("* CSV files cannot be selected."),
+    ).toBeInTheDocument();
   });
 });

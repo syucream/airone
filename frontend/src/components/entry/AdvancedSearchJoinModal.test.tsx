@@ -1,16 +1,17 @@
 /**
- * @jest-environment jsdom
  */
 import {
   AdvancedSearchJoinAttrInfo,
   AdvancedSearchResultAttrInfoFilterKeyEnum,
   EntryAttributeTypeTypeEnum,
 } from "@dmm-com/airone-apiclient-typescript-fetch";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { act, render, screen, fireEvent } from "@testing-library/react";
+import { MemoryRouter } from "react-router";
 
 import { AdvancedSearchJoinModal } from "./AdvancedSearchJoinModal";
 
 import { TestWrapper } from "TestWrapper";
+import i18n from "i18n/config";
 import { aironeApiClient } from "repository/AironeApiClient";
 
 const joinAttrs: AdvancedSearchJoinAttrInfo[] = [
@@ -41,15 +42,15 @@ const joinAttrs: AdvancedSearchJoinAttrInfo[] = [
   },
 ];
 
-jest.mock("hooks/usePagodaSWR", () => ({
+vi.mock("hooks/usePagodaSWR", () => ({
   usePagodaSWR: () => ({ data: ["attrA", "attrB", "attrC"] }),
 }));
-jest.mock("react-router", () => ({
-  ...jest.requireActual("react-router"),
-  useNavigate: () => jest.fn(),
+const navigateMock = vi.hoisted(() => vi.fn());
+vi.mock("react-router", async () => ({
+  ...((await vi.importActual("react-router")) as object),
+  useNavigate: () => navigateMock,
 }));
-jest
-  .spyOn(aironeApiClient, "getEntityAttrs")
+vi.spyOn(aironeApiClient, "getEntityAttrs")
   //.mockResolvedValue(["attrA", "attrB", "attrC"]);
   .mockResolvedValue([
     { name: "attrA", id: 1, type: EntryAttributeTypeTypeEnum.STRING },
@@ -65,7 +66,7 @@ describe("AdvancedSearchJoinModal", () => {
         searchAllEntities={false}
         targetAttrname="ref_item"
         joinAttrs={joinAttrs}
-        handleClose={jest.fn()}
+        handleClose={vi.fn()}
       />,
       { wrapper: TestWrapper },
     );
@@ -75,7 +76,7 @@ describe("AdvancedSearchJoinModal", () => {
   });
 
   test("should call handleClose when clicking cancel button", () => {
-    const onClose = jest.fn();
+    const onClose = vi.fn();
     render(
       <AdvancedSearchJoinModal
         targetEntityIds={[1]}
@@ -90,6 +91,52 @@ describe("AdvancedSearchJoinModal", () => {
     expect(onClose).toHaveBeenCalled();
   });
 
+  test("should preserve item-name filter when adding a join", () => {
+    const hintEntry = encodeURIComponent(
+      JSON.stringify({ filterKey: 1, keyword: "target-item" }),
+    );
+    render(
+      <MemoryRouter
+        initialEntries={[`/ui/advanced-search-results?hint_entry=${hintEntry}`]}
+      >
+        <AdvancedSearchJoinModal
+          targetEntityIds={[1]}
+          searchAllEntities={false}
+          targetAttrname="ref_item"
+          joinAttrs={joinAttrs}
+          handleClose={vi.fn()}
+        />
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(screen.getByText("保存"));
+
+    const navigation = navigateMock.mock.calls.at(-1)?.[0];
+    expect(navigation.search).toContain("hint_entry=");
+    expect(decodeURIComponent(navigation.search)).toContain("target-item");
+  });
+
+  test("renders in English", async () => {
+    await act(async () => {
+      await i18n.changeLanguage("en");
+    });
+    render(
+      <AdvancedSearchJoinModal
+        targetEntityIds={[1]}
+        searchAllEntities={false}
+        targetAttrname="ref_item"
+        joinAttrs={joinAttrs}
+        handleClose={vi.fn()}
+      />,
+      { wrapper: TestWrapper },
+    );
+    expect(
+      screen.getByText("Attribute name of the item to join"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Save")).toBeInTheDocument();
+    expect(screen.getByText("Cancel")).toBeInTheDocument();
+  });
+
   test("should not render modal when targetAttrname is empty", () => {
     render(
       <AdvancedSearchJoinModal
@@ -97,7 +144,7 @@ describe("AdvancedSearchJoinModal", () => {
         searchAllEntities={false}
         targetAttrname=""
         joinAttrs={joinAttrs}
-        handleClose={jest.fn()}
+        handleClose={vi.fn()}
       />,
       { wrapper: TestWrapper },
     );

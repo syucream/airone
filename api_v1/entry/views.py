@@ -1,9 +1,10 @@
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any, List, Optional, cast
 from zoneinfo import ZoneInfo
 
 from django.conf import settings
 from django.db.models import Q
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from pydantic import BaseModel, Field, RootModel, ValidationError, field_validator
 from rest_framework import status
 from rest_framework.request import Request
@@ -18,16 +19,24 @@ from airone.lib.elasticsearch import (
     AttrHint,
 )
 from airone.lib.multidb import db_readonly
-from api_v1.entry.serializer import EntrySearchChainSerializer
+from api_v1.entry.serializer import (
+    EntryReferredResponseSerializer,
+    EntrySearchChainSerializer,
+    EntrySearchRequestSerializer,
+    EntrySearchResponseSerializer,
+    EntrySearchResultsSerializer,
+    UpdateHistoryItemSerializer,
+)
 from entity.models import Entity
 from entry.models import Entry
 from entry.services import AdvancedSearchService
 from entry.settings import CONFIG as CONFIG_ENTRY
+from user.models import User
 
 
 class EntrySearchChainAPIResponse(BaseModel):
     ret_count: int
-    ret_values: list[AdvancedSearchResultRecord]
+    ret_values: List[AdvancedSearchResultRecord]
 
 
 class EntrySearchAPIRequest(BaseModel):
@@ -47,7 +56,9 @@ class EntrySearchAPIRequest(BaseModel):
     @field_validator("attrinfo")
     def validate_attrinfo_keyword_length(cls, v: list[Any]) -> list[Any]:
         for item in v:
-            if isinstance(item, dict) and "keyword" in item and item["keyword"]:
+            if isinstance(item, dict) and "keyword" in item and item["keyword"] is not None:
+                if isinstance(item["keyword"], bool):
+                    item["keyword"] = str(item["keyword"])
                 if len(item["keyword"]) > CONFIG_ENTRY.MAX_QUERY_SIZE:
                     raise ValueError("Keyword length exceeds maximum allowed size")
         return v
@@ -59,6 +70,16 @@ class EntrySearchAPIResponse(BaseModel):
 
 @db_readonly
 class EntrySearchChainAPI(APIView):
+    @extend_schema(
+        request=EntrySearchChainSerializer,
+        responses={
+            200: EntrySearchResultsSerializer,
+            400: {
+                "type": "object",
+                "properties": {"reason": {"type": "string"}},
+            },
+        },
+    )
     def post(self, request: Request) -> Response:
         serializer = EntrySearchChainSerializer(data=request.data)
         if not serializer.is_valid():
@@ -83,7 +104,7 @@ class EntrySearchChainAPI(APIView):
             ret_values: list[AdvancedSearchResultRecord] = []
             for i in range(0, len(ret_data), 100):
                 entry_info = AdvancedSearchService.search_entries(
-                    request.user,
+                    cast(User, request.user),
                     serializer.validated_data["entities"],
                     entry_name="|".join(["^%s$" % x["name"] for x in ret_data[i : i + 100]]),
                     is_output_all=True,
@@ -105,8 +126,12 @@ class EntrySearchChainAPI(APIView):
 
 @db_readonly
 class EntrySearchAPI(APIView):
+    @extend_schema(
+        request=EntrySearchRequestSerializer,
+        responses={200: EntrySearchResponseSerializer, 400: str},
+    )
     def post(self, request: Request, format: str | None = None) -> Response:
-        if not isinstance(request.data, dict):
+        if not isinstance(cast(Any, request.data), dict):
             return Response(
                 "parameter must be in dictionary format", status=status.HTTP_400_BAD_REQUEST
             )
@@ -164,11 +189,12 @@ class EntrySearchAPI(APIView):
                 else:
                     entity = Entity.objects.filter(name=hint_entity, is_active=True).first()
 
-            if entity and request.user.has_permission(entity, ACLType.Readable):
-                hint_entity_ids.append(entity.id)
+            user = cast(User, request.user)
+            if entity and user.has_permission(entity, ACLType.Readable):
+                hint_entity_ids.append(str(entity.id))
 
         resp = AdvancedSearchService.search_entries(
-            request.user,
+            cast(User, request.user),
             hint_entity_ids,
             hint_attrs,
             params.entry_limit,
@@ -182,8 +208,8 @@ class EntrySearchAPI(APIView):
 
 class EntryReferredResponse(BaseModel):
     class Entity(BaseModel):
-        id: int | None = None
-        name: str | None = None
+        id: Optional[int] = None
+        name: Optional[str] = None
 
     class ReferralEntry(BaseModel):
         id: int
@@ -193,12 +219,22 @@ class EntryReferredResponse(BaseModel):
     class EntryReferred(BaseModel):
         id: int
         entity: "EntryReferredResponse.Entity"
-        referral: list["EntryReferredResponse.ReferralEntry"]
+        referral: List["EntryReferredResponse.ReferralEntry"]
 
-    result: list[EntryReferred]
+    result: List[EntryReferred]
 
 
 class EntryReferredAPI(APIView):
+    @extend_schema(
+        responses={
+            200: EntryReferredResponseSerializer,
+            400: {
+                "type": "object",
+                "properties": {"result": {"type": "string"}},
+                "required": ["result"],
+            },
+        },
+    )
     def get(self, request: Request) -> Response:
         # set each request parameters to description variables
         param_entity: str | None = request.query_params.get("entity")
@@ -245,7 +281,7 @@ class EntryReferredAPI(APIView):
         return Response(EntryReferredResponse(result=entries_data).model_dump(exclude_none=True))
 
 
-class UpdateHistoryResponse(RootModel[list["UpdateHistoryResponse.ResponseItem"]]):
+class UpdateHistoryResponse(RootModel[List["UpdateHistoryResponse.ResponseItem"]]):
     class Entity(BaseModel):
         id: int
         name: str
@@ -263,7 +299,7 @@ class UpdateHistoryResponse(RootModel[list["UpdateHistoryResponse.ResponseItem"]
     class Attribute(BaseModel):
         id: int
         name: str
-        history: list["UpdateHistoryResponse.AttributeHistory"]
+        history: List["UpdateHistoryResponse.AttributeHistory"]
 
     class ResponseItem(BaseModel):
         entity: "UpdateHistoryResponse.Entity"
@@ -272,6 +308,17 @@ class UpdateHistoryResponse(RootModel[list["UpdateHistoryResponse.ResponseItem"]
 
 
 class UpdateHistory(APIView):
+    @extend_schema(
+        parameters=[
+            OpenApiParameter("attribute", str, required=True),
+            OpenApiParameter("entry", str),
+            OpenApiParameter("entry_id", str),
+            OpenApiParameter("entity", str),
+            OpenApiParameter("older_than", str),
+            OpenApiParameter("newer_than", str),
+        ],
+        responses={200: UpdateHistoryItemSerializer(many=True), 400: str},
+    )
     def get(self, request: Request) -> Response:
         # validate whether mandatory parameters are specified
         p_attr = request.GET.get("attribute")
@@ -337,7 +384,7 @@ class UpdateHistory(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        results: list[UpdateHistoryResponse.ResponseItem] = []
+        results: List[UpdateHistoryResponse.ResponseItem] = []
         for entry in target_entries:
             attr = entry.attrs.filter(schema__name=p_attr, is_active=True).first()
             if not attr:
@@ -346,7 +393,7 @@ class UpdateHistory(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            history_items: list[UpdateHistoryResponse.AttributeHistory] = []
+            history_items: List[UpdateHistoryResponse.AttributeHistory] = []
             for attrv in attr.values.filter(
                 created_time__gt=newer_than, created_time__lt=older_than
             ).order_by("-created_time")[: CONFIG_ENTRY.MAX_HISTORY_COUNT]:

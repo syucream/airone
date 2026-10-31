@@ -1,10 +1,10 @@
 import importlib
 import sys
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 from django.conf import settings
-from django.contrib.auth.models import Group, Permission
+from django.contrib.auth.models import Permission
 from django.db import models
 from django.db.models import Q, QuerySet
 from simple_history.models import HistoricalRecords
@@ -14,6 +14,7 @@ from airone.lib.types import AttrType
 
 if TYPE_CHECKING:
     from acl.models import ACLBase
+    from group.models import Group
     from user.models import User
 
 
@@ -28,7 +29,7 @@ class Role(models.Model):
     admin_groups = models.ManyToManyField("group.Group", related_name="admin_role", blank=True)
 
     @classmethod
-    def editable(kls, user: "User", admin_users: list["User"], admin_groups: list[Group]) -> bool:
+    def editable(kls, user: "User", admin_users: list["User"], admin_groups: list["Group"]) -> bool:
         # This checks whether spcified user is belonged to the specified
         # admin_users and admin_groups.
         if user.is_superuser:
@@ -135,7 +136,7 @@ class Role(models.Model):
             if x.get_objid() == aclbase.id  # type: ignore[attr-defined]
         ]
         if permissions:
-            return cast("int", permissions[0].get_aclid())  # type: ignore[attr-defined]
+            return permissions[0].get_aclid()  # type: ignore[attr-defined,no-any-return]
         else:
             return ACLType.Nothing.id
 
@@ -164,14 +165,12 @@ class Role(models.Model):
             entry_model = importlib.import_module("entry.models")
 
         # get Entries that has AttributeValues, which specify this Role instance.
-        return cast(
-            "QuerySet[Any]",
-            entry_model.Entry.objects.filter(
-                pk__in=entry_model.AttributeValue.objects.filter(query).values_list(
-                    "parent_attr__parent_entry", flat=True
-                )
-            ),
+        qs: QuerySet[Any] = entry_model.Entry.objects.filter(
+            pk__in=entry_model.AttributeValue.objects.filter(query).values_list(
+                "parent_attr__parent_entry", flat=True
+            )
         )
+        return qs
 
 
 class HistoricalPermission(Permission):

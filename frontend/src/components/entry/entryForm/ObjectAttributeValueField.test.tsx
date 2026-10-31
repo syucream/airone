@@ -1,5 +1,4 @@
 /**
- * @jest-environment jsdom
  */
 
 import {
@@ -25,6 +24,8 @@ import {
 } from "./ObjectAttributeValueField";
 
 import { TestWrapper } from "TestWrapper";
+import i18n from "i18n/config";
+import { aironeApiClient } from "repository/AironeApiClient";
 
 import "@testing-library/jest-dom";
 
@@ -102,10 +103,12 @@ describe("ObjectAttributeValueField", () => {
     {
       id: 1,
       name: "entry1",
+      displayLabel: null,
     },
     {
       id: 2,
       name: "entry2",
+      displayLabel: null,
     },
   ];
 
@@ -122,14 +125,10 @@ describe("ObjectAttributeValueField", () => {
       }),
     );
 
-    /* eslint-disable */
-    jest
-      .spyOn(
-        require("../../../repository/AironeApiClient").aironeApiClient,
-        "getEntryAttrReferrals",
-      )
-      .mockResolvedValue(Promise.resolve(entries));
-    /* eslint-enable */
+    vi.spyOn(aironeApiClient, "getEntryAttrReferrals").mockResolvedValue({
+      results: entries,
+      hasRestrictedItems: false,
+    });
 
     await act(async () => {
       render(
@@ -161,6 +160,7 @@ describe("ObjectAttributeValueField", () => {
     expect(getValues("attrs.0.value.asObject")).toEqual({
       id: 2,
       name: "entry2",
+      displayLabel: null,
       _boolean: false,
     });
   });
@@ -180,14 +180,10 @@ describe("ObjectAttributeValueField", () => {
       }),
     );
 
-    /* eslint-disable */
-    jest
-      .spyOn(
-        require("../../../repository/AironeApiClient").aironeApiClient,
-        "getEntryAttrReferrals",
-      )
-      .mockResolvedValue(Promise.resolve(entries));
-    /* eslint-enable */
+    vi.spyOn(aironeApiClient, "getEntryAttrReferrals").mockResolvedValue({
+      results: entries,
+      hasRestrictedItems: false,
+    });
 
     await act(async () => {
       render(
@@ -229,6 +225,7 @@ describe("ObjectAttributeValueField", () => {
       {
         id: 2,
         name: "entry2",
+        displayLabel: null,
         _boolean: false,
       },
     ]);
@@ -249,14 +246,10 @@ describe("ObjectAttributeValueField", () => {
       }),
     );
 
-    /* eslint-disable */
-    jest
-      .spyOn(
-        require("../../../repository/AironeApiClient").aironeApiClient,
-        "getEntryAttrReferrals",
-      )
-      .mockResolvedValue(Promise.resolve(entries));
-    /* eslint-enable */
+    vi.spyOn(aironeApiClient, "getEntryAttrReferrals").mockResolvedValue({
+      results: entries,
+      hasRestrictedItems: false,
+    });
 
     await act(async () => {
       render(
@@ -303,14 +296,10 @@ describe("ObjectAttributeValueField", () => {
       }),
     );
 
-    /* eslint-disable */
-    jest
-      .spyOn(
-        require("../../../repository/AironeApiClient").aironeApiClient,
-        "getEntryAttrReferrals",
-      )
-      .mockResolvedValue(Promise.resolve(entries));
-    /* eslint-enable */
+    vi.spyOn(aironeApiClient, "getEntryAttrReferrals").mockResolvedValue({
+      results: entries,
+      hasRestrictedItems: false,
+    });
 
     await act(async () => {
       render(
@@ -349,7 +338,7 @@ describe("ObjectAttributeValueField", () => {
     expect(screen.getByRole("combobox")).toHaveValue("entry2");
     expect(getValues("attrs.2.value.asNamedObject")).toEqual({
       name: "new name",
-      object: { id: 2, name: "entry2", _boolean: false },
+      object: { id: 2, name: "entry2", displayLabel: null, _boolean: false },
     });
   });
 
@@ -366,14 +355,10 @@ describe("ObjectAttributeValueField", () => {
       }),
     );
 
-    /* eslint-disable */
-    jest
-      .spyOn(
-        require("../../../repository/AironeApiClient").aironeApiClient,
-        "getEntryAttrReferrals",
-      )
-      .mockResolvedValue(Promise.resolve(entries));
-    /* eslint-enable */
+    vi.spyOn(aironeApiClient, "getEntryAttrReferrals").mockResolvedValue({
+      results: entries,
+      hasRestrictedItems: false,
+    });
 
     await act(async () => {
       render(
@@ -410,7 +395,7 @@ describe("ObjectAttributeValueField", () => {
     expect(getValues("attrs.3.value.asArrayNamedObject")).toEqual([
       {
         name: "new name",
-        object: { id: 1, name: "entry1", _boolean: false },
+        object: { id: 1, name: "entry1", displayLabel: null, _boolean: false },
         _boolean: false,
       },
     ]);
@@ -429,7 +414,7 @@ describe("ObjectAttributeValueField", () => {
     expect(getValues("attrs.3.value.asArrayNamedObject")).toEqual([
       {
         name: "new name",
-        object: { id: 1, name: "entry1", _boolean: false },
+        object: { id: 1, name: "entry1", displayLabel: null, _boolean: false },
         _boolean: false,
       },
       {
@@ -455,5 +440,78 @@ describe("ObjectAttributeValueField", () => {
         _boolean: false,
       },
     ]);
+  });
+
+  test("renders caption in english", async () => {
+    vi.spyOn(aironeApiClient, "getEntryAttrReferrals").mockResolvedValue({
+      results: entries,
+      hasRestrictedItems: false,
+    });
+
+    await act(async () => {
+      await i18n.changeLanguage("en");
+    });
+
+    const {
+      result: {
+        current: { control, setValue },
+      },
+    } = renderHook(() =>
+      useForm<Schema>({
+        resolver: zodResolver(schema),
+        mode: "onBlur",
+        defaultValues,
+      }),
+    );
+
+    await act(async () => {
+      render(
+        <ObjectAttributeValueField
+          attrId={0}
+          control={control}
+          setValue={setValue}
+        />,
+        { wrapper: TestWrapper },
+      );
+    });
+
+    expect(screen.getByText("Select an entry")).toBeInTheDocument();
+  });
+
+  test("renders disabled boolean caption in english", async () => {
+    vi.spyOn(aironeApiClient, "getEntryAttrReferrals").mockResolvedValue({
+      results: entries,
+      hasRestrictedItems: false,
+    });
+
+    await act(async () => {
+      await i18n.changeLanguage("en");
+    });
+
+    const {
+      result: {
+        current: { control, setValue },
+      },
+    } = renderHook(() =>
+      useForm<Schema>({
+        resolver: zodResolver(schema),
+        mode: "onBlur",
+        defaultValues,
+      }),
+    );
+
+    await act(async () => {
+      render(
+        <ArrayNamedObjectAttributeValueField
+          attrId={3}
+          control={control}
+          setValue={setValue}
+          withBoolean
+        />,
+        { wrapper: TestWrapper },
+      );
+    });
+
+    expect(screen.getByText("Disabled")).toBeInTheDocument();
   });
 });

@@ -1,5 +1,6 @@
 import math
-from typing import Any, Union
+import uuid
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 from django.conf import settings
 from django.db import models
@@ -11,6 +12,9 @@ from airone.lib.types import AttrDefaultValue, AttrType
 from category.models import Category
 from webhook.models import Webhook
 
+if TYPE_CHECKING:
+    from user.models import User
+
 
 class ItemNameType(models.TextChoices):
     USER = ("US", "USER")  # Specify Item name manually by user
@@ -19,6 +23,17 @@ class ItemNameType(models.TextChoices):
 
 
 class EntityAttr(ACLBase):
+    CUSTOM_DEFAULT_VALUE_TYPES = frozenset(
+        {
+            AttrType.STRING,
+            AttrType.TEXT,
+            AttrType.BOOLEAN,
+            AttrType.NUMBER,
+            AttrType.OBJECT,
+            AttrType.ARRAY_OBJECT,
+        }
+    )
+
     # This parameter is needed to make a relationship to the corresponding Entity at importing
     parent_entity = models.ForeignKey("Entity", related_name="attrs", on_delete=models.DO_NOTHING)
 
@@ -40,6 +55,10 @@ class EntityAttr(ACLBase):
     note = models.CharField(max_length=200, blank=True, default="")
     default_value = models.JSONField(null=True, blank=True, default=None)
 
+    # Stores [{"value": str, "label": str}, ...] for SELECT / MULTI_SELECT types.
+    # NULL for all other types.
+    choices = models.JSONField(null=True, blank=True, default=None)
+
     history = HistoricalRecords(m2m_fields=[referral], excluded_fields=["status", "updated_time"])
 
     # These fields describes the configuration of specifying Item name from Attriute
@@ -47,6 +66,12 @@ class EntityAttr(ACLBase):
     name_order = models.IntegerField(default=0)
     name_prefix = models.CharField(max_length=20, blank=True, default="")
     name_postfix = models.CharField(max_length=20, blank=True, default="")
+
+    # For object-like attribute types (OBJECT / NAMED_OBJECT / ARRAY_OBJECT /
+    # ARRAY_NAMED_OBJECT). When set to a non-empty attr name, the value of that
+    # attribute on the referred Entry is used as the display label instead of
+    # Entry.name. Empty string means "fall back to Entry.name" (default).
+    display_attr = models.CharField(max_length=200, blank=True, default="")
 
     def __init__(self, *args: Any, **kwargs: Any):
         super(ACLBase, self).__init__(*args, **kwargs)
@@ -95,7 +120,7 @@ class EntityAttr(ACLBase):
         elif isinstance(referral, str):
             adding_referral = Entity.objects.filter(name=referral, is_active=True).first()
 
-        elif isinstance(referral, int) and not isinstance(referral, bool):  # noqa: E721
+        elif isinstance(referral, int) and not isinstance(referral, bool):
             adding_referral = Entity.objects.filter(id=referral, is_active=True).first()
 
         elif isinstance(referral, Entity) and referral.is_active:
@@ -126,9 +151,7 @@ class EntityAttr(ACLBase):
         if value is None:
             return True  # None is always valid
 
-        # Only String, Text, Boolean, Number types support custom default values, currently
-        supported_types = [AttrType.STRING, AttrType.TEXT, AttrType.BOOLEAN, AttrType.NUMBER]
-        if self.type not in supported_types:
+        if self.type not in self.CUSTOM_DEFAULT_VALUE_TYPES:
             return False
 
         # Type-specific validation for supported types
@@ -144,8 +167,128 @@ class EntityAttr(ACLBase):
             if isinstance(value, float) and (math.isnan(value) or math.isinf(value)):
                 return False
             return True
+        elif self.type == AttrType.OBJECT:
+            return isinstance(value, int) and not isinstance(value, bool) and value > 0
+        elif self.type == AttrType.ARRAY_OBJECT:
+            return (
+                isinstance(value, list)
+                and all(
+                    isinstance(item, int) and not isinstance(item, bool) and item > 0
+                    for item in value
+                )
+                and len(value) == len(set(value))
+            )
 
         return True
+
+    @staticmethod
+    def validate_default_object_referrals(
+        attr_type: int, default_value: Any, referral_ids: list[int]
+    ) -> None:
+        """Validate object defaults against the active referred entities."""
+        if default_value is None or attr_type not in (AttrType.OBJECT, AttrType.ARRAY_OBJECT):
+            return
+
+        from entry.models import Entry
+
+        entry_ids = [default_value] if attr_type == AttrType.OBJECT else default_value
+        valid_ids = set(
+            Entry.objects.filter(
+                id__in=entry_ids,
+                is_active=True,
+                schema_id__in=referral_ids,
+            ).values_list("id", flat=True)
+        )
+        invalid_ids = [entry_id for entry_id in entry_ids if entry_id not in valid_ids]
+        if invalid_ids:
+            raise ValueError(
+                "Object default entries must be active and belong to a referred entity: %s"
+                % ", ".join(str(entry_id) for entry_id in invalid_ids)
+            )
+
+    @staticmethod
+    def validate_choices(choices: Any) -> None:
+        """Validates choices payload for SELECT / MULTI_SELECT types.
+
+        Each choice must carry a non-empty `label`. The `value` is an internal
+        identifier that the system auto-assigns; it may be omitted by the
+        caller (new choice) but must be a non-empty unique string when present
+        (referring to an existing choice for label rename / re-ordering).
+
+        Raises ValueError when the payload is malformed.
+        """
+        if not isinstance(choices, list) or len(choices) == 0:
+            raise ValueError("choices must be a non-empty list")
+
+        present_values: list[str] = []
+        labels: list[str] = []
+        for c in choices:
+            if not isinstance(c, dict):
+                raise ValueError("each choice must be an object with a label")
+            lb = c.get("label")
+            if not isinstance(lb, str) or not lb:
+                raise ValueError("choice 'label' must be a non-empty string")
+            labels.append(lb)
+
+            if "value" in c and c["value"] is not None:
+                v = c["value"]
+                if not isinstance(v, str) or not v:
+                    raise ValueError("choice 'value' must be a non-empty string when given")
+                present_values.append(v)
+
+        if len(set(labels)) != len(labels):
+            raise ValueError("choice 'label' must be unique")
+        if len(set(present_values)) != len(present_values):
+            raise ValueError("choice 'value' must be unique")
+
+    @staticmethod
+    def normalize_choices(choices: list[dict[str, Any]]) -> list[dict[str, str]]:
+        """Assigns a UUID4-based `value` to every choice that lacks one.
+
+        Called after `validate_choices` to materialise the immutable internal
+        id for newly added entries while preserving the id of pre-existing
+        entries (which carry their `value`).
+        """
+        normalised: list[dict[str, str]] = []
+        for c in choices:
+            value = c.get("value")
+            if not value:
+                value = uuid.uuid4().hex
+            normalised.append({"value": value, "label": c["label"]})
+        return normalised
+
+    def get_choices_in_use(self) -> set[str]:
+        """Returns the set of choice values currently referenced by latest AttributeValues.
+
+        For SELECT, scans is_latest=True rows directly.
+        For MULTI_SELECT, child rows have is_latest=False; traverse via parent_attrv.
+        """
+        from entry.models import AttributeValue
+
+        in_use: set[str] = set()
+
+        if self.type == AttrType.SELECT:
+            in_use.update(
+                AttributeValue.objects.filter(
+                    parent_attr__schema=self,
+                    data_type=AttrType.SELECT,
+                    is_latest=True,
+                )
+                .exclude(value="")
+                .values_list("value", flat=True)
+            )
+        elif self.type == AttrType.MULTI_SELECT:
+            in_use.update(
+                AttributeValue.objects.filter(
+                    parent_attr__schema=self,
+                    data_type=AttrType.MULTI_SELECT,
+                    parent_attrv__is_latest=True,
+                )
+                .exclude(value="")
+                .values_list("value", flat=True)
+            )
+
+        return in_use
 
 
 class Entity(ACLBase):
@@ -154,7 +297,7 @@ class Entity(ACLBase):
     STATUS_EDITING = 1 << 2
 
     # This describes which Attribute types are selectable when itm_name_type is ATTR
-    ITEM_NAME_SELECTABLE_TYPES = [AttrType.STRING, AttrType.OBJECT, AttrType.NUMBER]
+    ITEM_NAME_SELECTABLE_TYPES = [AttrType.STRING, AttrType.OBJECT, AttrType.NUMBER, AttrType.DATE]
 
     note = models.CharField(max_length=200, blank=True)
 
@@ -162,6 +305,10 @@ class Entity(ACLBase):
     webhooks = models.ManyToManyField(Webhook, default=[], related_name="registered_entity")
 
     history = HistoricalRecords(excluded_fields=["status", "updated_time"])
+
+    # HistoricalRecords sets `_history_user` dynamically to pick up the acting user
+    # for each save; declare it here so callers can assign without a type: ignore.
+    _history_user: Optional["User"]
 
     # The Category that groups Models according to their purpose (which is defined by User)
     categories = models.ManyToManyField(Category, default=[], related_name="models")

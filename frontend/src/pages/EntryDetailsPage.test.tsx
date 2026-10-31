@@ -1,5 +1,4 @@
 /**
- * @jest-environment jsdom
  */
 
 import { act, render, screen, waitFor } from "@testing-library/react";
@@ -8,6 +7,7 @@ import { setupServer } from "msw/node";
 import { createMemoryRouter, RouterProvider } from "react-router";
 
 import { TestWrapperWithoutRoutes } from "TestWrapper";
+import i18n from "i18n/config";
 import { EntryDetailsPage } from "pages/EntryDetailsPage";
 import { entryDetailsPath } from "routes/Routes";
 
@@ -42,6 +42,22 @@ const server = setupServer(
           aliases: [],
         },
       ],
+    });
+  }),
+  // getEntity
+  http.get("http://localhost/entity/api/v2/2/", () => {
+    return HttpResponse.json({
+      id: 2,
+      name: "test entity",
+      note: "",
+      is_toplevel: false,
+      attrs: [],
+      webhooks: [],
+      isolation_rules: [],
+      is_public: true,
+      has_ongoing_changes: false,
+      permission: 8,
+      delete_chain_exclude_entities: [],
     });
   }),
   // getTrigger
@@ -82,5 +98,35 @@ test("should match snapshot", async () => {
 
   expect(result).toMatchSnapshot();
 
-  jest.clearAllMocks();
+  vi.clearAllMocks();
+});
+
+test("renders in English", async () => {
+  await act(async () => {
+    await i18n.changeLanguage("en");
+  });
+
+  const router = createMemoryRouter(
+    [
+      {
+        path: entryDetailsPath(":entityId", ":entryId"),
+        element: <EntryDetailsPage />,
+      },
+    ],
+    {
+      initialEntries: [entryDetailsPath(2, 1)],
+    },
+  );
+  await act(async () => {
+    render(<RouterProvider router={router} />, {
+      wrapper: TestWrapperWithoutRoutes,
+    });
+  });
+  await waitFor(() => {
+    expect(screen.queryByTestId("loading")).not.toBeInTheDocument();
+  });
+
+  expect(screen.getAllByText("Attribute list").length).toBeGreaterThan(0);
+
+  vi.clearAllMocks();
 });

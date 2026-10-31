@@ -1,11 +1,11 @@
 /**
- * @jest-environment jsdom
  */
 
 import { JobSerializers } from "@dmm-com/airone-apiclient-typescript-fetch";
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 
 import { TestWrapper } from "../../TestWrapper";
+import i18n from "../../i18n/config";
 import { JobOperations, JobStatuses } from "../../services/Constants";
 
 import { JobList } from "./JobList";
@@ -43,12 +43,12 @@ describe("JobList", () => {
       }),
     ).toHaveLength(35);
 
-    // 4 export operations should have a download link
+    // All five export operations should have a download link.
     expect(
       screen.queryAllByRole("link", {
         name: (content) => content.includes("Download"),
       }),
-    ).toHaveLength(4);
+    ).toHaveLength(5);
   });
 
   test("should show operation buttons based on job status", async () => {
@@ -73,13 +73,92 @@ describe("JobList", () => {
     render(<JobList jobs={jobs} />, {
       wrapper: TestWrapper,
     });
-
-    // jobs with "PREPARING", "TIMEOUT", "ERROR" should have a retry button
-    expect(screen.queryAllByRole("button", { name: "再実行" })).toHaveLength(3);
-
-    // jobs with "PREPARING", "PROCESSING", "TIMEOUT" should have a cancel button
+    // Only jobs that have not reached a terminal state can be canceled.
     expect(
       screen.queryAllByRole("button", { name: "キャンセル" }),
-    ).toHaveLength(3);
+    ).toHaveLength(2);
+  });
+  test("does not offer cancellation for a non-cancelable model edit", () => {
+    render(
+      <JobList
+        jobs={[
+          {
+            id: 1,
+            user: "test-user",
+            text: "",
+            status: JobStatuses.PROCESSING,
+            operation: JobOperations.EDIT_ENTITY,
+            target: { id: 1, name: "model", schemaId: null, schemaName: null },
+            createdAt: new Date(),
+            passedTime: 0,
+          },
+        ]}
+      />,
+      { wrapper: TestWrapper },
+    );
+
+    expect(
+      screen.queryByRole("button", { name: "キャンセル" }),
+    ).not.toBeInTheDocument();
+  });
+  test("should truncate long job text to 300 characters", () => {
+    const text = "a".repeat(301);
+    render(
+      <JobList
+        jobs={[
+          {
+            id: 1,
+            user: "test-user",
+            text,
+            status: JobStatuses.DONE,
+            operation: JobOperations.CREATE_ENTRY,
+            target: { id: 1, name: "test", schemaId: null, schemaName: null },
+            createdAt: new Date(),
+            passedTime: 0,
+          },
+        ]}
+      />,
+      { wrapper: TestWrapper },
+    );
+
+    expect(screen.getByText("a".repeat(300) + "...")).toBeInTheDocument();
+  });
+
+  describe("English", () => {
+    afterEach(async () => {
+      await i18n.changeLanguage("ja");
+    });
+
+    test("should show operation buttons in English", async () => {
+      await act(async () => {
+        await i18n.changeLanguage("en");
+      });
+
+      const jobs = Object.values(JobStatuses).map(
+        (status, index): JobSerializers => ({
+          id: index,
+          user: "test-user",
+          text: `status-${index}`,
+          status,
+          operation: JobOperations.CREATE_ENTRY,
+          target: {
+            id: 1,
+            name: "test",
+            schemaId: null,
+            schemaName: null,
+          },
+          createdAt: new Date(),
+          passedTime: 0,
+        }),
+      );
+
+      render(<JobList jobs={jobs} />, {
+        wrapper: TestWrapper,
+      });
+
+      expect(screen.queryAllByRole("button", { name: "Cancel" })).toHaveLength(
+        2,
+      );
+    });
   });
 });

@@ -10,6 +10,7 @@ import { PaginationFooter } from "components/common/PaginationFooter";
 import { SearchBox } from "components/common/SearchBox";
 import { usePage } from "hooks/usePage";
 import { usePagodaSWR } from "hooks/usePagodaSWR";
+import { useTranslation } from "hooks/useTranslation";
 import { ServerContext } from "index";
 import { aironeApiClient } from "repository";
 import { entityEntriesPath, newCategoryPath } from "routes/Routes";
@@ -17,6 +18,7 @@ import { EntityListParam } from "services/Constants";
 import { normalizeToMatch } from "services/StringUtil";
 
 const CategoryListContent: FC = () => {
+  const { t } = useTranslation();
   const { page, query, changeQuery, changePage } = usePage();
 
   const isReadonly = ServerContext.getInstance()?.user?.isReadonly ?? false;
@@ -35,10 +37,16 @@ const CategoryListContent: FC = () => {
   return (
     <Container>
       {/* Show control menus to filter and create category */}
-      <Box display="flex" justifyContent="space-between" mb="16px">
-        <Box width="600px">
+      <Box
+        display="flex"
+        flexWrap="wrap"
+        justifyContent="space-between"
+        gap="16px"
+        mb="16px"
+      >
+        <Box width="600px" maxWidth="100%">
           <SearchBox
-            placeholder="カテゴリを絞り込む"
+            placeholder={t("category.list.searchPlaceholder")}
             defaultValue={query}
             onKeyPress={(e) => {
               e.key === "Enter" &&
@@ -53,17 +61,23 @@ const CategoryListContent: FC = () => {
           color="secondary"
           component={Link}
           to={newCategoryPath()}
-          sx={{ height: "48px", borderRadius: "24px" }}
+          sx={{
+            height: "48px",
+            borderRadius: "24px",
+            whiteSpace: "nowrap",
+            flexShrink: 0,
+          }}
           disabled={isReadonly}
         >
-          <AddIcon /> 新規カテゴリを作成
+          <AddIcon />
+          {t("category.list.createButton")}
         </Button>
       </Box>
 
       {/* Context of Category */}
       <Grid container spacing={3}>
         {categories.results.map((category) => (
-          <Grid size={4} key={category.id}>
+          <Grid size={{ xs: 12, sm: 6, md: 4 }} key={category.id}>
             <List
               subheader={
                 <CategoryListHeader

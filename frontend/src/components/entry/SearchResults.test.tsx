@@ -1,19 +1,19 @@
 /**
- * @jest-environment jsdom
  */
 
 import {
   AdvancedSearchResult,
+  AdvancedSearchResultJoinedAttrFromJSON,
   AdvancedSearchResultAttrInfoFilterKeyEnum,
   EntryAttributeTypeTypeEnum,
 } from "@dmm-com/airone-apiclient-typescript-fetch";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, within } from "@testing-library/react";
 import { Component, ReactNode } from "react";
 
 import { TestWrapper } from "TestWrapper";
 import { SearchResults } from "components/entry/SearchResults";
 
-// Sample data for tests
+// Sample data for tests.
 const createMockResults = (count: number = 2): AdvancedSearchResult => ({
   count,
   totalCount: count,
@@ -36,9 +36,9 @@ describe("SearchResults", () => {
   const defaultProps = {
     results: createMockResults(),
     page: 1,
-    changePage: jest.fn(),
+    changePage: vi.fn(),
     bulkOperationEntryIds: [] as number[],
-    setBulkOperationEntryIds: jest.fn(),
+    setBulkOperationEntryIds: vi.fn(),
     hasReferral: false,
     entityIds: [100],
     joinAttrs: [],
@@ -48,7 +48,7 @@ describe("SearchResults", () => {
   };
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe("rendering", () => {
@@ -82,6 +82,67 @@ describe("SearchResults", () => {
     });
   });
 
+  test.each([
+    ["Ready", "", "Offline", "", ""],
+    ["Ready", "", "Offline"],
+    [],
+  ])("keeps every source slot including trailing blanks: %j", (...statuses) => {
+    const results = createMockResults(1);
+    const result = results.values[0]!;
+    result.attrs.RackSpace = {
+      type: EntryAttributeTypeTypeEnum.ARRAY_OBJECT,
+      isReadable: true,
+      value: {
+        asArrayObject: [
+          { id: 10, name: "Space A", schema: { id: 200, name: "RackSpace" } },
+          { id: 11, name: "Space B", schema: { id: 200, name: "RackSpace" } },
+          { id: 12, name: "Space C", schema: { id: 200, name: "RackSpace" } },
+          { id: 13, name: "Space D", schema: { id: 200, name: "RackSpace" } },
+          { id: 14, name: "Space E", schema: { id: 200, name: "RackSpace" } },
+        ],
+      },
+    };
+    result.joinedAttrs = {
+      "RackSpace.Status": AdvancedSearchResultJoinedAttrFromJSON({
+        values: statuses.map((status) => ({
+          type: EntryAttributeTypeTypeEnum.STRING,
+          is_readable: true,
+          value: { as_string: status },
+        })),
+      }),
+    };
+    render(
+      <SearchResults
+        {...defaultProps}
+        results={results}
+        joinAttrs={[{ name: "RackSpace", attrinfo: [{ name: "Status" }] }]}
+        defaultAttrsFilter={{
+          RackSpace: {
+            filterKey: AdvancedSearchResultAttrInfoFilterKeyEnum.CLEARED,
+            keyword: "",
+          },
+          "RackSpace.Status": {
+            filterKey: AdvancedSearchResultAttrInfoFilterKeyEnum.CLEARED,
+            keyword: "",
+          },
+        }}
+      />,
+      { wrapper: TestWrapper },
+    );
+    expect(screen.getAllByText("Entry 1")).toHaveLength(1);
+    const row = screen.getByText("Entry 1").closest("tr")!;
+    expect(within(row).getByText("Space A")).toBeInTheDocument();
+    expect(within(row).getByText("Space C")).toBeInTheDocument();
+    const cell = within(row).getAllByRole("cell").at(-1)!;
+    const slots = within(cell).getAllByRole("list")[0]!.children;
+    expect(slots).toHaveLength(5);
+    expect(slots[0]?.textContent?.trim()).toBe(statuses[0] ?? "");
+    expect(slots[1]?.textContent?.trim()).toBe("");
+    expect(slots[2]?.textContent?.trim()).toBe(statuses[2] ?? "");
+    expect(slots[3]?.textContent?.trim()).toBe("");
+    expect(slots[4]?.textContent?.trim()).toBe("");
+  });
+
   describe("bulk operations", () => {
     test("should render checkboxes for bulk operations when not readonly", () => {
       render(<SearchResults {...defaultProps} />, { wrapper: TestWrapper });
@@ -103,7 +164,7 @@ describe("SearchResults", () => {
     });
 
     test("should call setBulkOperationEntryIds when checkbox is clicked", () => {
-      const mockSetBulkIds = jest.fn();
+      const mockSetBulkIds = vi.fn();
       render(
         <SearchResults
           {...defaultProps}
@@ -258,7 +319,7 @@ describe("SearchResults", () => {
         }
       }
 
-      const errSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+      const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
       try {
         render(
@@ -329,7 +390,7 @@ describe("SearchResults", () => {
     test("disables bulk-update button when type cannot be resolved", () => {
       const NEW_ATTR = "newattr";
 
-      const errSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+      const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
       try {
         render(
           <SearchResults
@@ -399,7 +460,7 @@ describe("SearchResults", () => {
         ],
       };
 
-      const errSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+      const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
       try {
         render(
           <SearchResults

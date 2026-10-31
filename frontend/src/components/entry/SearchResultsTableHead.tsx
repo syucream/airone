@@ -27,7 +27,6 @@ import {
   ChangeEvent,
   FC,
   useCallback,
-  useEffect,
   useMemo,
   useReducer,
   useState,
@@ -40,6 +39,7 @@ import { SearchResultControlMenu } from "./SearchResultControlMenu";
 import { SearchResultControlMenuForEntry } from "./SearchResultControlMenuForEntry";
 import { SearchResultControlMenuForReferral } from "./SearchResultControlMenuForReferral";
 
+import { useTranslation } from "hooks/useTranslation";
 import { getIsFiltered } from "pages/AdvancedSearchResultsPage";
 import {
   AttrFilter,
@@ -98,7 +98,7 @@ const StyledTableCell = styled(TableCell)(({ theme }) => ({
 
 interface Props {
   hasReferral: boolean;
-  attrTypes: Record<string, number>;
+  attrTypes: Record<string, number | undefined>;
   defaultEntryFilter?: EntryHint;
   defaultReferralFilter?: string;
   defaultReferralIncludeModelIds?: number[];
@@ -145,6 +145,7 @@ export const SearchResultsTableHead: FC<Props> = ({
 }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [checked, setChecked] = useState(false);
 
   /* These are used for AdvancedSearchEditModal component */
@@ -184,9 +185,18 @@ export const SearchResultsTableHead: FC<Props> = ({
       (_state: Array<number>, value: Array<number>) => value,
       defaultReferralExcludeModelIds ?? [],
     );
-  const [attrsFilter, setAttrsFilter] = useState<AttrsFilter>(
-    defaultAttrsFilter ?? {},
-  );
+  // The locally edited filters are kept together with the default filters they
+  // were derived from. As soon as the defaults change (for example because the
+  // search conditions in the URL changed) the local edits are discarded, which
+  // is the same behaviour an effect used to implement.
+  const [attrsFilterOverride, setAttrsFilterOverride] = useState<{
+    base: AttrsFilter;
+    value: AttrsFilter;
+  } | null>(null);
+  const attrsFilter =
+    attrsFilterOverride?.base === defaultAttrsFilter
+      ? attrsFilterOverride.value
+      : (defaultAttrsFilter ?? {});
 
   const [joinAttrName, setJoinAttrname] = useState<string>("");
   const [attributeMenuEls, setAttributeMenuEls] = useState<{
@@ -206,16 +216,12 @@ export const SearchResultsTableHead: FC<Props> = ({
           const attrFilter = defaultAttrsFilter[attrName];
           return [
             attrName,
-            getIsFiltered(attrFilter.filterKey, attrFilter.keyword),
+            getIsFiltered(attrFilter?.filterKey, attrFilter?.keyword),
           ];
         }),
       ),
     [defaultAttrsFilter],
   );
-
-  useEffect(() => {
-    setAttrsFilter(defaultAttrsFilter ?? {});
-  }, [defaultAttrsFilter]);
 
   const handleSelectFilterConditions =
     (attrName?: string) =>
@@ -260,12 +266,13 @@ export const SearchResultsTableHead: FC<Props> = ({
             attrinfo: Object.keys(_attrsFilter)
               .filter(
                 (j) =>
-                  _attrsFilter[j].baseAttrname === _attrsFilter[k].baseAttrname,
+                  _attrsFilter[j]?.baseAttrname ===
+                  _attrsFilter[k]?.baseAttrname,
               )
               .map((j) => ({
                 name: _attrsFilter[j]?.joinedAttrname ?? "",
-                filterKey: _attrsFilter[j].filterKey,
-                keyword: _attrsFilter[j].keyword,
+                filterKey: _attrsFilter[j]?.filterKey,
+                keyword: _attrsFilter[j]?.keyword,
               })),
           }))
           // This removes duplicates
@@ -281,10 +288,16 @@ export const SearchResultsTableHead: FC<Props> = ({
 
   const handleUpdateAttrFilter =
     (attrName: string) => (attrFilter: AttrFilter) => {
-      setAttrsFilter((attrsFilter) => ({
-        ...attrsFilter,
-        [attrName]: attrFilter,
-      }));
+      setAttrsFilterOverride((prev) => {
+        const current =
+          prev?.base === defaultAttrsFilter
+            ? prev.value
+            : (defaultAttrsFilter ?? {});
+        return {
+          base: defaultAttrsFilter,
+          value: { ...current, [attrName]: attrFilter },
+        };
+      });
     };
 
   const handleSort = (targetAttrname: string) => {
@@ -357,14 +370,18 @@ export const SearchResultsTableHead: FC<Props> = ({
                     },
                 }}
               >
-                <Typography>アイテム名</Typography>
+                <Typography>
+                  {t("advancedSearch.tableHead.entryName")}
+                </Typography>
               </TableSortLabel>
             )}
 
             {/* SearchControlMenu would be invisible when NarrowDown Mode is True */}
             {isNarrowDown && !omitHeadline && (
               <>
-                <Tooltip title="アイテム名でフィルタ">
+                <Tooltip
+                  title={t("advancedSearch.tableHead.filterByEntryName")}
+                >
                   <StyledIconButton
                     onClick={(e) => {
                       setEntryMenuEls(e.currentTarget);
@@ -417,10 +434,12 @@ export const SearchResultsTableHead: FC<Props> = ({
               )}
 
               {/* Bulk operation checkbox would be invisible when NarrowDown mode is true */}
-              {(attrTypes[attrName] & EntryAttributeTypeTypeEnum.OBJECT) > 0 &&
+              {((attrTypes[attrName] ?? 0) &
+                EntryAttributeTypeTypeEnum.OBJECT) >
+                0 &&
                 isNarrowDown &&
                 attrsFilter[attrName]?.joinedAttrname === undefined && (
-                  <Tooltip title="アイテムの属性を結合する">
+                  <Tooltip title={t("advancedSearch.tableHead.joinAttr")}>
                     <StyledIconButton onClick={() => setJoinAttrname(attrName)}>
                       <AddIcon />
                     </StyledIconButton>
@@ -437,7 +456,9 @@ export const SearchResultsTableHead: FC<Props> = ({
               )}
               {isNarrowDown && (
                 <>
-                  <Tooltip title="属性値でフィルタ">
+                  <Tooltip
+                    title={t("advancedSearch.tableHead.filterByAttrValue")}
+                  >
                     <StyledIconButton
                       onClick={(e) => {
                         setAttributeMenuEls({
@@ -487,8 +508,8 @@ export const SearchResultsTableHead: FC<Props> = ({
         {hasReferral && (
           <StyledTableCell sx={{ outline: "1px solid #FFFFFF" }}>
             <HeaderBox>
-              <Typography>参照アイテム</Typography>
-              <Tooltip title="参照アイテムでフィルタ">
+              <Typography>{t("advancedSearch.tableHead.referral")}</Typography>
+              <Tooltip title={t("advancedSearch.tableHead.filterByReferral")}>
                 <StyledIconButton
                   onClick={(e) => {
                     setReferralMenuEls(e.currentTarget);

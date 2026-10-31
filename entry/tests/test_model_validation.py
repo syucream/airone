@@ -871,6 +871,61 @@ class ModelValidationTest(BaseModelTest):
         ret = entry.check_duplication_entry_at_restoring(entry_chain=[])
         self.assertFalse(ret)
 
+    def test_check_duplication_entry_at_restoring_default_chain_is_not_shared(self):
+        """
+        Regression test for a mutable-default-argument bug: entry_chain used to
+        default to a shared list object (``entry_chain: list["Entry"] = []``), so
+        a chain built up while processing one Entry could leak into a later,
+        unrelated call. Because the chain-membership check runs before the
+        duplicate-name check, a leaked chain makes an unrelated call
+        short-circuit to "safe" (False) even though a real duplicate exists.
+        Now that entry_chain defaults to None (a fresh list per top-level call),
+        the two independent calls below must not influence each other.
+        """
+        ref_entity = Entity.objects.create(name="ReferredEntity", created_user=self._user)
+        shared_ref_entry = Entry.objects.create(
+            name="shared-ref", created_user=self._user, schema=ref_entity
+        )
+
+        attr = EntityAttr.objects.create(
+            name="obj",
+            type=AttrType.OBJECT,
+            is_delete_in_chain=True,
+            created_user=self._user,
+            parent_entity=self._entity,
+        )
+        attr.referral.add(ref_entity)
+
+        # entry1 refers to shared_ref_entry; deleting it cascades to delete
+        # shared_ref_entry as well (nothing else refers to it yet).
+        entry1 = Entry.objects.create(name="entry1", schema=self._entity, created_user=self._user)
+        entry1.complement_attrs(self._user)
+        entry1.attrs.get(schema__name="obj").add_value(self._user, shared_ref_entry)
+        entry1.delete()
+
+        shared_ref_entry.refresh_from_db()
+        self.assertFalse(shared_ref_entry.is_active)
+
+        # First, independent call: no duplicate exists yet, so this must return
+        # False. Under the old mutable-default bug, this call would populate the
+        # shared default list with shared_ref_entry as a side effect.
+        self.assertFalse(entry1.check_duplication_entry_at_restoring())
+
+        # entry2 also refers to the now-inactive shared_ref_entry.
+        entry2 = Entry.objects.create(name="entry2", schema=self._entity, created_user=self._user)
+        entry2.complement_attrs(self._user)
+        entry2.attrs.get(schema__name="obj").add_value(self._user, shared_ref_entry)
+        entry2.delete()
+
+        # create a duplicate-named active entry, so a correct, independent
+        # check for entry2 must now return True.
+        Entry.objects.create(name="shared-ref", created_user=self._user, schema=ref_entity)
+
+        # Second, independent call: if entry_chain leaked from the first call,
+        # shared_ref_entry would already be "in chain" and this would
+        # incorrectly return False instead of True.
+        self.assertTrue(entry2.check_duplication_entry_at_restoring())
+
     def test_get_prev_refers_objects_for_array_object_attr(self):
         user = User.objects.create(username="test-user")
 
@@ -1492,6 +1547,29 @@ class ModelValidationTest(BaseModelTest):
             },
         )
         self.assertEqual(lb_sg1.autoname, "[LB0001] pagoda-test.example.com:80 #100")
+
+    def test_autoname_date_attribute(self):
+        model = self.create_entity(
+            self._user,
+            "DateAutoName",
+            attrs=[
+                {
+                    "name": "start_date",
+                    "type": AttrType.DATE,
+                    "name_order": 1,
+                    "name_prefix": "date=",
+                }
+            ],
+            item_name_type=ItemNameType.ATTR,
+        )
+        item = self.add_entry(
+            self._user,
+            "temporary",
+            model,
+            values={"start_date": date(2026, 9, 8)},
+        )
+
+        self.assertEqual(item.autoname, "date=2026-09-08")
 
     def test_save_autoname_with_duplicated_values(self):
         model = self.create_entity(

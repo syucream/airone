@@ -1,5 +1,4 @@
 /**
- * @jest-environment jsdom
  */
 
 import {
@@ -9,10 +8,12 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   act,
+  fireEvent,
   screen,
   render,
   renderHook,
   within,
+  waitFor,
 } from "@testing-library/react";
 import { useForm } from "react-hook-form";
 
@@ -21,14 +22,17 @@ import { aironeApiClient } from "../../../repository/AironeApiClient";
 import { schema, Schema } from "./EntryFormSchema";
 import { RoleAttributeValueField } from "./RoleAttributeValueField";
 
+import type { Mock } from "vitest";
+
 import { TestWrapper } from "TestWrapper";
+import i18n from "i18n/config";
 
 import "@testing-library/jest-dom";
 
 // ✅ Mock the aironeApiClient module
-jest.mock("../../../repository/AironeApiClient", () => ({
+vi.mock("../../../repository/AironeApiClient", () => ({
   aironeApiClient: {
-    getRoles: jest.fn(),
+    getRoles: vi.fn(),
   },
 }));
 
@@ -81,6 +85,7 @@ describe("RoleAttributeValueField", () => {
       groups: [],
       adminUsers: [],
       adminGroups: [],
+      permissions: [],
       isEditable: true,
     },
     {
@@ -91,12 +96,13 @@ describe("RoleAttributeValueField", () => {
       groups: [],
       adminUsers: [],
       adminGroups: [],
+      permissions: [],
       isEditable: true,
     },
   ];
 
   test("should provide role value editor", async () => {
-    (aironeApiClient.getRoles as jest.Mock).mockResolvedValue(roles);
+    (aironeApiClient.getRoles as Mock).mockResolvedValue(roles);
 
     const {
       result: {
@@ -140,7 +146,7 @@ describe("RoleAttributeValueField", () => {
   });
 
   test("should provide array-role value editor", async () => {
-    (aironeApiClient.getRoles as jest.Mock).mockResolvedValue(roles);
+    (aironeApiClient.getRoles as Mock).mockResolvedValue(roles);
 
     const {
       result: {
@@ -189,5 +195,58 @@ describe("RoleAttributeValueField", () => {
       { id: 1, name: "role1" },
       { id: 2, name: "role2" },
     ]);
+  });
+  test("searches roles with entered text", async () => {
+    const spy = aironeApiClient.getRoles as Mock;
+    spy.mockResolvedValue(roles);
+    const { result } = renderHook(() =>
+      useForm<Schema>({ resolver: zodResolver(schema), defaultValues }),
+    );
+    render(
+      <RoleAttributeValueField
+        attrId={0}
+        control={result.current.control}
+        setValue={result.current.setValue}
+      />,
+      { wrapper: TestWrapper },
+    );
+    const input = screen.getByRole("combobox");
+    input.focus();
+    fireEvent.input(input, { target: { value: "admin" } });
+    await waitFor(() => expect(input).toHaveValue("admin"));
+    await waitFor(() => expect(spy).toHaveBeenCalledWith("admin"));
+  });
+
+  test("renders caption in english", async () => {
+    (aironeApiClient.getRoles as Mock).mockResolvedValue(roles);
+
+    await act(async () => {
+      await i18n.changeLanguage("en");
+    });
+
+    const {
+      result: {
+        current: { control, setValue },
+      },
+    } = renderHook(() =>
+      useForm<Schema>({
+        resolver: zodResolver(schema),
+        mode: "onBlur",
+        defaultValues,
+      }),
+    );
+
+    await act(async () => {
+      render(
+        <RoleAttributeValueField
+          attrId={0}
+          control={control}
+          setValue={setValue}
+        />,
+        { wrapper: TestWrapper },
+      );
+    });
+
+    expect(screen.getByText("Select a role")).toBeInTheDocument();
   });
 });

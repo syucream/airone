@@ -1,9 +1,12 @@
 import { Entity } from "@dmm-com/airone-apiclient-typescript-fetch";
+import {
+  DraggableAttributes,
+  DraggableSyntheticListeners,
+} from "@dnd-kit/core";
 import AddIcon from "@mui/icons-material/Add";
-import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
-import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import BadgeIcon from "@mui/icons-material/Badge";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import EditNoteIcon from "@mui/icons-material/EditNote";
 import GroupIcon from "@mui/icons-material/Group";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
@@ -28,15 +31,21 @@ import {
 import { styled } from "@mui/material/styles";
 import { FC, useMemo, useState } from "react";
 import { Control, Controller, useWatch } from "react-hook-form";
-import { UseFormSetValue } from "react-hook-form/dist/types/form";
+import { UseFormSetValue } from "react-hook-form";
 import { Link } from "react-router";
 
 import { AttributeAutoNameConfigModal } from "./AttributeAutoNameConfigModal";
 import { AttributeNoteModal } from "./AttributeNoteModal";
+import { ChoicesEditor } from "./ChoicesEditor";
+import { DefaultObjectValueField } from "./DefaultObjectValueField";
 import { Schema } from "./EntityFormSchema";
 
+import { usePagodaSWR } from "hooks/usePagodaSWR";
+import { useTranslation } from "hooks/useTranslation";
+import { aironeApiClient } from "repository/AironeApiClient";
 import { aclPath } from "routes/Routes";
-import { AttributeTypes } from "services/Constants";
+import { AttributeTypeKey, AttributeTypes } from "services/Constants";
+import { fuzzyMatch } from "services/StringUtil";
 
 const StyledBox = styled(Box)(({ theme }) => ({
   margin: theme.spacing(1),
@@ -50,10 +59,24 @@ const AUTONAME_SELECTABLE_TYPES = [
   AttributeTypes.string.type,
   AttributeTypes.object.type,
   AttributeTypes.number.type,
+  AttributeTypes.date.type,
 ];
 
+// Attribute types eligible as display_attr on a referred entry (mirrors backend
+// entry.api_v2.serializers._DISPLAY_LABEL_ALLOWED_TYPES). Array / named / group
+// / role are intentionally excluded — backend returns null for those.
+const DISPLAY_ATTR_ALLOWED_TYPES: ReadonlySet<number> = new Set([
+  AttributeTypes.string.type,
+  AttributeTypes.text.type,
+  AttributeTypes.number.type,
+  AttributeTypes.boolean.type,
+  AttributeTypes.date.type,
+  AttributeTypes.datetime.type,
+  AttributeTypes.object.type,
+]);
+
 // Define the custom display order for attribute types
-const ATTRIBUTE_TYPE_ORDER = [
+const ATTRIBUTE_TYPE_ORDER: AttributeTypeKey[] = [
   "string",
   "array_string",
   "object",
@@ -68,18 +91,28 @@ const ATTRIBUTE_TYPE_ORDER = [
   "boolean",
   "number",
   "array_number",
+  "select",
+  "multi_select",
   "date",
   "datetime",
 ];
 
+// Props forwarded from the sortable row wrapper so this cell can host the
+// drag handle (pointer + keyboard activation) for reordering attributes.
+interface AttributeDragHandleProps {
+  setActivatorNodeRef: (element: HTMLElement | null) => void;
+  attributes: DraggableAttributes;
+  listeners: DraggableSyntheticListeners;
+  isDragging: boolean;
+}
+
 interface Props {
   control: Control<Schema>;
   setValue: UseFormSetValue<Schema>;
-  maxIndex: number;
   referralEntities: Entity[];
   handleAppendAttribute: (index: number) => void;
   handleDeleteAttribute: (index: number) => void;
-  handleChangeOrderAttribute: (index: number, order: number) => void;
+  dragHandleProps?: AttributeDragHandleProps;
   attrId?: number;
   index?: number;
 }
@@ -87,17 +120,21 @@ interface Props {
 export const AttributeField: FC<Props> = ({
   control,
   setValue,
-  maxIndex,
   referralEntities,
   handleAppendAttribute,
   handleDeleteAttribute,
-  handleChangeOrderAttribute,
+  dragHandleProps,
   attrId,
   index,
 }) => {
+  const { t } = useTranslation();
   const attrType = useWatch({
     control,
     name: `attrs.${index ?? -1}.type`,
+  });
+  const attrName = useWatch({
+    control,
+    name: `attrs.${index ?? -1}.name`,
   });
 
   const isWritable = useWatch({
@@ -120,7 +157,43 @@ export const AttributeField: FC<Props> = ({
   }, []);
 
   const isObjectLikeType = ((attrType ?? 0) & AttributeTypes.object.type) > 0;
+  const isSelectLikeType = ((attrType ?? 0) & AttributeTypes.select.type) > 0;
   const isAutoNameSupported = AUTONAME_SELECTABLE_TYPES.includes(attrType ?? 0);
+
+  // Watch selected referral entities so display_attr candidates can be
+  // narrowed to the attrs those entities actually declare.
+  const referral = useWatch({
+    control,
+    name: `attrs.${index ?? -1}.referral`,
+  });
+  const referralIds = useMemo(
+    () => (referral ?? []).map((r: { id: number }) => r.id),
+    [referral],
+  );
+  // Candidate fetching is optional UX — a fetch failure must never crash the
+  // entity edit form (usePagodaSWR re-throws errors in render). Swallow errors
+  // in the fetcher so SWR sees success-with-empty-list on failure.
+  const { data: refEntityAttrs, isLoading: displayAttrLoading } = usePagodaSWR(
+    isObjectLikeType && referralIds.length > 0
+      ? (["displayAttrCandidates", referralIds] as const)
+      : null,
+    async () => {
+      try {
+        return await aironeApiClient.getEntityAttrs(referralIds, false);
+      } catch {
+        return [];
+      }
+    },
+  );
+  const displayAttrOptions = useMemo(() => {
+    const names = new Set<string>();
+    (refEntityAttrs ?? []).forEach((a: { name: string; type: number }) => {
+      if (DISPLAY_ATTR_ALLOWED_TYPES.has(a.type)) {
+        names.add(a.name);
+      }
+    });
+    return Array.from(names).sort();
+  }, [refEntityAttrs]);
 
   const handleCloseModal = () => setOpenModal(false);
   const handleCloseAutoNameConfigModal = () =>
@@ -128,6 +201,33 @@ export const AttributeField: FC<Props> = ({
 
   return index != null ? (
     <>
+      {/* Drag handle to reorder attributes (pointer & keyboard) */}
+      <TableCell>
+        <Box display="flex" alignItems="center" justifyContent="center">
+          <Tooltip title={t("entity.form.dragReorderTooltip")}>
+            {/* span keeps the tooltip working while the button is disabled */}
+            <span>
+              <IconButton
+                ref={dragHandleProps?.setActivatorNodeRef}
+                disabled={!isWritable || dragHandleProps == null}
+                aria-label={t("entity.form.dragReorderAriaLabel", {
+                  index: index + 1,
+                })}
+                data-testid="attr-drag-handle"
+                sx={{
+                  cursor: dragHandleProps?.isDragging ? "grabbing" : "grab",
+                  touchAction: "none",
+                }}
+                {...(dragHandleProps?.attributes ?? {})}
+                {...(dragHandleProps?.listeners ?? {})}
+              >
+                <DragIndicatorIcon />
+              </IconButton>
+            </span>
+          </Tooltip>
+        </Box>
+      </TableCell>
+
       {/* Attribute Name */}
       <TableCell>
         <Controller
@@ -140,7 +240,7 @@ export const AttributeField: FC<Props> = ({
               id="attr-name"
               required
               disabled={!isWritable}
-              placeholder="属性名"
+              placeholder={t("entity.form.attrNameHeader")}
               error={error != null}
               helperText={error?.message}
               size="small"
@@ -161,6 +261,11 @@ export const AttributeField: FC<Props> = ({
               <Select
                 {...field}
                 id="attr_type"
+                inputProps={{
+                  "aria-label": t("entity.form.attrTypeAriaLabel", {
+                    name: attrName || t("entity.form.unnamedAttribute"),
+                  }),
+                }}
                 size="small"
                 fullWidth
                 disabled={attrId != null}
@@ -181,6 +286,11 @@ export const AttributeField: FC<Props> = ({
                   getOptionLabel={(option: { id: number; name: string }) =>
                     option.name
                   }
+                  filterOptions={(options, state) =>
+                    options.filter((option) =>
+                      fuzzyMatch(option.name, state.inputValue),
+                    )
+                  }
                   isOptionEqualToValue={(
                     option: { id: number; name: string },
                     value: { id: number; name: string },
@@ -189,7 +299,7 @@ export const AttributeField: FC<Props> = ({
                     <TextField
                       {...params}
                       variant="outlined"
-                      placeholder="モデルを選択"
+                      placeholder={t("entity.form.selectEntityPlaceholder")}
                       disabled={!isWritable}
                     />
                   )}
@@ -205,6 +315,55 @@ export const AttributeField: FC<Props> = ({
               )}
             />
           )}
+          {isObjectLikeType && (
+            <Controller
+              name={`attrs.${index}.displayAttr`}
+              control={control}
+              defaultValue=""
+              render={({ field }) => (
+                <Autocomplete
+                  freeSolo
+                  options={displayAttrOptions}
+                  value={field.value ?? ""}
+                  onChange={(_e, v) =>
+                    field.onChange(typeof v === "string" ? v : (v ?? ""))
+                  }
+                  onInputChange={(_e, v, reason) => {
+                    if (reason === "input" || reason === "clear") {
+                      field.onChange(v);
+                    }
+                  }}
+                  size="small"
+                  fullWidth
+                  disabled={!isWritable}
+                  loading={displayAttrLoading}
+                  noOptionsText={
+                    referralIds.length === 0
+                      ? t("entity.form.selectEntityFirstOption")
+                      : t("entity.form.noMatchingAttrOption")
+                  }
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      id="display_attr"
+                      placeholder={t("entity.form.displayAttrPlaceholder")}
+                      inputProps={{
+                        ...params.inputProps,
+                        "data-1p-ignore": true,
+                      }}
+                    />
+                  )}
+                />
+              )}
+            />
+          )}
+          {isSelectLikeType && (
+            <ChoicesEditor
+              control={control}
+              index={index}
+              disabled={!isWritable}
+            />
+          )}
         </StyledBox>
       </TableCell>
 
@@ -214,12 +373,31 @@ export const AttributeField: FC<Props> = ({
           name={`attrs.${index}.defaultValue`}
           control={control}
           render={({ field }) => {
+            if (
+              attrType === AttributeTypes.object.type ||
+              attrType === AttributeTypes.array_object.type
+            ) {
+              return (
+                <DefaultObjectValueField
+                  value={field.value as number | number[] | null | undefined}
+                  referralEntityIds={referralIds}
+                  multiple={attrType === AttributeTypes.array_object.type}
+                  disabled={!isWritable || referralIds.length === 0}
+                  ariaLabel={t("entity.form.defaultValueAriaLabel", {
+                    index: index + 1,
+                  })}
+                  onChange={field.onChange}
+                />
+              );
+            }
+
             // Check if this attribute type supports default values
             const isDefaultValueSupported =
               attrType === AttributeTypes.string.type ||
               attrType === AttributeTypes.text.type ||
               attrType === AttributeTypes.boolean.type ||
-              attrType === AttributeTypes.number.type;
+              attrType === AttributeTypes.number.type ||
+              attrType === AttributeTypes.select.type;
 
             // Boolean type gets a checkbox
             if (attrType === AttributeTypes.boolean.type) {
@@ -228,6 +406,11 @@ export const AttributeField: FC<Props> = ({
                   checked={Boolean(field.value) ?? false}
                   onChange={(e) => field.onChange(e.target.checked)}
                   disabled={!isWritable}
+                  inputProps={{
+                    "aria-label": t("entity.form.defaultValueAriaLabel", {
+                      index: index + 1,
+                    }),
+                  }}
                 />
               );
             }
@@ -239,7 +422,7 @@ export const AttributeField: FC<Props> = ({
                   {...field}
                   type="number"
                   value={field.value ?? ""}
-                  placeholder="デフォルト値"
+                  placeholder={t("entity.form.defaultValueHeader")}
                   size="small"
                   fullWidth
                   disabled={!isWritable}
@@ -254,8 +437,8 @@ export const AttributeField: FC<Props> = ({
                 value={field.value ?? ""}
                 placeholder={
                   isDefaultValueSupported
-                    ? "デフォルト値"
-                    : "この型では未サポート"
+                    ? t("entity.form.defaultValueHeader")
+                    : t("entity.form.defaultValueUnsupported")
                 }
                 size="small"
                 fullWidth
@@ -266,28 +449,12 @@ export const AttributeField: FC<Props> = ({
         />
       </TableCell>
 
-      {/* Change Attribute order to be shown at Item detail page */}
-      <TableCell>
-        <Box display="flex" flexDirection="column">
-          <IconButton
-            disabled={index === 0 || !isWritable}
-            onClick={() => handleChangeOrderAttribute(index, 1)}
-          >
-            <ArrowUpwardIcon />
-          </IconButton>
-
-          <IconButton
-            disabled={index === maxIndex || !isWritable}
-            onClick={() => handleChangeOrderAttribute(index, -1)}
-          >
-            <ArrowDownwardIcon />
-          </IconButton>
-        </Box>
-      </TableCell>
-
       {/* Delete target Attribute */}
       <TableCell>
         <IconButton
+          aria-label={t("entity.form.deleteAttrAriaLabel", {
+            index: index + 1,
+          })}
           onClick={() => handleDeleteAttribute(index)}
           disabled={!isWritable}
         >
@@ -297,15 +464,23 @@ export const AttributeField: FC<Props> = ({
 
       {/* Add another Attribute button */}
       <TableCell>
-        <IconButton onClick={() => handleAppendAttribute(index ?? 0)}>
+        <IconButton
+          aria-label={t("entity.form.appendAttrAriaLabel", {
+            index: index + 1,
+          })}
+          onClick={() => handleAppendAttribute(index ?? 0)}
+        >
           <AddIcon />
         </IconButton>
       </TableCell>
 
       {/* Icon other settings */}
       <TableCell>
-        <Tooltip title="詳細">
+        <Tooltip title={t("common.details")}>
           <IconButton
+            aria-label={t("entity.form.attrMenuAriaLabel", {
+              index: index + 1,
+            })}
             onClick={(e) => {
               setAttrMenuElem(e.currentTarget);
             }}
@@ -326,7 +501,10 @@ export const AttributeField: FC<Props> = ({
               <ListItemIcon>
                 <EditNoteIcon />
               </ListItemIcon>
-              <ListItemText primary="属性説明" secondary="属性の説明文を設定" />
+              <ListItemText
+                primary={t("entity.form.attrDescriptionMenuTitle")}
+                secondary={t("entity.form.attrDescriptionMenuSubtitle")}
+              />
             </ListItemButton>
 
             {/* Open modal for setting Attribute auto-naming configuration */}
@@ -338,8 +516,8 @@ export const AttributeField: FC<Props> = ({
                 <BadgeIcon />
               </ListItemIcon>
               <ListItemText
-                primary="自動命名"
-                secondary="属性値からアイテム名を自動設定"
+                primary={t("entity.form.autoNameMenuTitle")}
+                secondary={t("entity.form.autoNameMenuSubtitle")}
               />
             </ListItemButton>
 
@@ -352,7 +530,10 @@ export const AttributeField: FC<Props> = ({
               <ListItemIcon>
                 <GroupIcon />
               </ListItemIcon>
-              <ListItemText primary="ACL設定" secondary="属性の権限を設定" />
+              <ListItemText
+                primary={t("entity.form.aclMenuTitle")}
+                secondary={t("entity.form.aclMenuSubtitle")}
+              />
             </ListItemButton>
 
             <Divider />
@@ -367,6 +548,11 @@ export const AttributeField: FC<Props> = ({
                   render={({ field }) => (
                     <Checkbox
                       id="mandatory"
+                      inputProps={{
+                        "aria-label": t("entity.form.mandatoryAriaLabel", {
+                          index: index + 1,
+                        }),
+                      }}
                       disabled={!isWritable}
                       checked={field.value}
                       onChange={(e) => field.onChange(e.target.checked)}
@@ -375,8 +561,8 @@ export const AttributeField: FC<Props> = ({
                 />
               </ListItemIcon>
               <ListItemText
-                primary="必須設定"
-                secondary="属性値の設定を必須化"
+                primary={t("entity.form.mandatoryMenuTitle")}
+                secondary={t("entity.form.mandatoryMenuSubtitle")}
               />
             </ListItem>
 
@@ -390,6 +576,11 @@ export const AttributeField: FC<Props> = ({
                   render={({ field }) => (
                     <Checkbox
                       id="delete_in_chain"
+                      inputProps={{
+                        "aria-label": t("entity.form.deleteInChainAriaLabel", {
+                          index: index + 1,
+                        }),
+                      }}
                       disabled={!isWritable}
                       checked={field.value}
                       onChange={(e) => field.onChange(e.target.checked)}
@@ -398,8 +589,8 @@ export const AttributeField: FC<Props> = ({
                 />
               </ListItemIcon>
               <ListItemText
-                primary="関連削除"
-                secondary="参照アイテムの削除に連動"
+                primary={t("entity.form.deleteInChainMenuTitle")}
+                secondary={t("entity.form.deleteInChainMenuSubtitle")}
               />
             </ListItem>
           </List>
@@ -429,7 +620,10 @@ export const AttributeField: FC<Props> = ({
       <TableCell />
       <TableCell />
       <TableCell>
-        <IconButton onClick={() => handleAppendAttribute(index ?? 0)}>
+        <IconButton
+          aria-label={t("entity.form.addAttrAriaLabel")}
+          onClick={() => handleAppendAttribute(index ?? 0)}
+        >
           <AddIcon />
         </IconButton>
       </TableCell>

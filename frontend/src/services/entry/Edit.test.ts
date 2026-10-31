@@ -1,5 +1,4 @@
 /**
- * @jest-environment jsdom
  */
 
 import { EntryAttributeTypeTypeEnum } from "@dmm-com/airone-apiclient-typescript-fetch";
@@ -19,7 +18,12 @@ import { ACLType } from "services/ACLUtil";
 Object.defineProperty(window, "django_context", {
   value: {
     user: {
+      id: 1,
+      username: "admin",
       isSuperuser: true,
+      isReadonly: false,
+      parentUser: null,
+      email: "admin@example.com",
     },
   },
   writable: false,
@@ -107,6 +111,8 @@ test("formalizeEntryInfo should return expect value", () => {
           asGroup: null,
           asRole: null,
           asNamedObject: { name: "", object: null },
+          asSelect: null,
+          asMultiSelect: [],
         },
       },
       3: {
@@ -131,6 +137,8 @@ test("formalizeEntryInfo should return expect value", () => {
           asGroup: null,
           asRole: null,
           asNamedObject: { name: "", object: null },
+          asSelect: null,
+          asMultiSelect: [],
         },
       },
       4: {
@@ -155,6 +163,8 @@ test("formalizeEntryInfo should return expect value", () => {
           asGroup: null,
           asRole: null,
           asNamedObject: { name: "", object: null },
+          asSelect: null,
+          asMultiSelect: [],
         },
       },
     },
@@ -171,6 +181,7 @@ test("formalizeEntryInfo should return expect value", () => {
     isActive: true,
     deletedUser: null,
     permission: ACLType.Full,
+    hasOngoingChanges: false,
     attrs: [
       {
         id: 20,
@@ -329,6 +340,32 @@ test("formalizeEntryInfo should use defaultValue when creating new entry", () =>
         note: "",
         defaultValue: null,
       },
+      {
+        id: 6,
+        index: 4,
+        name: "object_with_default",
+        type: EntryAttributeTypeTypeEnum.OBJECT,
+        isMandatory: false,
+        isDeleteInChain: false,
+        isWritable: true,
+        isSummarized: false,
+        referral: [{ id: 10, name: "References" }],
+        note: "",
+        defaultValue: 101 as unknown as object,
+      },
+      {
+        id: 7,
+        index: 5,
+        name: "array_object_with_default",
+        type: EntryAttributeTypeTypeEnum.ARRAY_OBJECT,
+        isMandatory: false,
+        isDeleteInChain: false,
+        isWritable: true,
+        isSummarized: false,
+        referral: [{ id: 10, name: "References" }],
+        note: "",
+        defaultValue: [102, 101] as unknown as object,
+      },
     ],
     webhooks: [],
     isolationRules: [],
@@ -348,6 +385,132 @@ test("formalizeEntryInfo should use defaultValue when creating new entry", () =>
   expect(result.attrs[4].value.asString).toBe("default\ntext\nvalue");
 
   // Check string attribute without default value (should use empty string)
+  expect(result.attrs[5].value.asString).toBe("");
+
+  expect(result.attrs[6].value.asObject).toEqual({ id: 101, name: "" });
+  expect(result.attrs[7].value.asArrayObject).toEqual([
+    { id: 102, name: "" },
+    { id: 101, name: "" },
+  ]);
+
+  const existingResult = formalizeEntryInfo(
+    {
+      id: 200,
+      name: "Existing entry",
+      schema: {
+        id: entity.id,
+        name: entity.name,
+        permission: ACLType.Full,
+      },
+      isActive: true,
+      deletedUser: null,
+      permission: ACLType.Full,
+      hasOngoingChanges: false,
+      attrs: [],
+    },
+    entity,
+    [],
+  );
+
+  expect(existingResult.attrs[6].value.asObject).toBeNull();
+  expect(existingResult.attrs[7].value.asArrayObject).toEqual([]);
+});
+
+test("formalizeEntryInfo should not prefill defaultValue when editing an existing entry", () => {
+  // Same entity fixture as the create-mode test above
+  const entity = {
+    id: 1,
+    name: "TestEntity",
+    note: "hoge",
+    status: 0,
+    isToplevel: true,
+    hasOngoingChanges: false,
+    permission: ACLType.Full,
+    attrs: [
+      {
+        id: 2,
+        index: 0,
+        name: "string_with_default",
+        type: EntryAttributeTypeTypeEnum.STRING,
+        isMandatory: true,
+        isDeleteInChain: true,
+        isWritable: true,
+        isSummarized: false,
+        referral: [],
+        note: "",
+        defaultValue: { asString: "default string value" },
+      },
+      {
+        id: 3,
+        index: 1,
+        name: "boolean_with_default",
+        type: EntryAttributeTypeTypeEnum.BOOLEAN,
+        isMandatory: false,
+        isDeleteInChain: true,
+        isWritable: true,
+        isSummarized: false,
+        referral: [],
+        note: "",
+        defaultValue: { asBoolean: true },
+      },
+      {
+        id: 4,
+        index: 2,
+        name: "text_with_default",
+        type: EntryAttributeTypeTypeEnum.TEXT,
+        isMandatory: false,
+        isDeleteInChain: true,
+        isWritable: true,
+        isSummarized: false,
+        referral: [],
+        note: "",
+        defaultValue: { asString: "default\ntext\nvalue" },
+      },
+      {
+        id: 5,
+        index: 3,
+        name: "string_without_default",
+        type: EntryAttributeTypeTypeEnum.STRING,
+        isMandatory: false,
+        isDeleteInChain: true,
+        isWritable: true,
+        isSummarized: false,
+        referral: [],
+        note: "",
+        defaultValue: null,
+      },
+    ],
+    webhooks: [],
+    isolationRules: [],
+    deleteChainExcludeEntities: [],
+    isPublic: true,
+  };
+
+  // An entry whose attributes have no stored value (e.g. the attribute was
+  // added to the entity after the entry was created). Prefilling the entity
+  // default here would re-materialize it on every save and an explicitly
+  // emptied value could never stick.
+  const entry = {
+    id: 10,
+    name: "TestEntry",
+    schema: {
+      id: 1,
+      name: "TestEntity",
+      permission: ACLType.Full,
+    },
+    isActive: true,
+    deletedUser: null,
+    permission: ACLType.Full,
+    hasOngoingChanges: false,
+    attrs: [],
+  };
+
+  const result = formalizeEntryInfo(entry, entity, []);
+
+  // Valueless attributes must stay empty instead of being prefilled
+  expect(result.attrs[2].value.asString).toBe("");
+  expect(result.attrs[3].value.asBoolean).toBe(false);
+  expect(result.attrs[4].value.asString).toBe("");
   expect(result.attrs[5].value.asString).toBe("");
 });
 
@@ -535,6 +698,39 @@ test("convertAttrsFormatCtoS() returns expected value", () => {
         },
       },
       expected_data: [123, 456],
+    },
+    // select
+    {
+      client_data: {
+        type: EntryAttributeTypeTypeEnum.SELECT,
+        value: {
+          asSelect: { value: "active", label: "稼働中" },
+        },
+      },
+      expected_data: "active",
+    },
+    // select (cleared)
+    {
+      client_data: {
+        type: EntryAttributeTypeTypeEnum.SELECT,
+        value: {
+          asSelect: null,
+        },
+      },
+      expected_data: null,
+    },
+    // multi_select
+    {
+      client_data: {
+        type: EntryAttributeTypeTypeEnum.MULTI_SELECT,
+        value: {
+          asMultiSelect: [
+            { value: "a", label: "Alpha" },
+            { value: "b", label: "Beta" },
+          ],
+        },
+      },
+      expected_data: ["a", "b"],
     },
   ];
 

@@ -4,6 +4,7 @@ from unittest.mock import Mock, patch
 import yaml
 
 from airone.lib.test import AironeViewTest
+from entry.models import Attribute, Entry
 from group.models import Group
 from job.models import Job, JobOperation, JobStatus
 from role import tasks
@@ -285,6 +286,33 @@ class ViewTest(AironeViewTest):
         self.assertEqual(Role.objects.filter(name="role1").count(), 1)
 
     @patch("role.tasks.import_role_v2.delay", Mock(side_effect=tasks.import_role_v2))
+    def test_import_by_non_superuser_is_forbidden(self):
+        role = self._create_role("role1")
+        self.guest_login()
+
+        payload = yaml.dump(
+            [
+                {
+                    "id": role.id,
+                    "name": "role1",
+                    "description": "taken over",
+                    "users": ["guest"],
+                    "groups": [],
+                    "admin_users": [],
+                    "admin_groups": [],
+                    "permissions": [],
+                }
+            ]
+        )
+        resp = self.client.post("/role/api/v2/import", payload, content_type="application/yaml")
+
+        self.assertEqual(resp.status_code, 403)
+        self.assertFalse(Job.objects.filter(operation=JobOperation.IMPORT_ROLE_V2).exists())
+        role.refresh_from_db()
+        self.assertEqual(role.description, "")
+        self.assertFalse(role.users.filter(username="guest").exists())
+
+    @patch("role.tasks.import_role_v2.delay", Mock(side_effect=tasks.import_role_v2))
     def test_import_for_update(self):
         self.admin_login()
 
@@ -327,6 +355,100 @@ class ViewTest(AironeViewTest):
         permission = role.permissions.first()
         self.assertEqual(permission, entity.full)
 
+    def test_import_rejects_missing_role_id_before_creating_job(self):
+        self.admin_login()
+        payload = (
+            "- id: 31000\n  name: missing\n  users: []\n  groups: []\n"
+            "  admin_users: []\n  admin_groups: []\n"
+        )
+
+        resp = self.client.post("/role/api/v2/import", payload, content_type="application/yaml")
+
+        self.assertEqual(resp.status_code, 400)
+        self.assertContains(resp, "role id 31000 does not exist", status_code=400)
+        self.assertFalse(Job.objects.filter(operation=JobOperation.IMPORT_ROLE_V2).exists())
+
+    @patch("role.tasks.import_role_v2.delay", Mock(side_effect=tasks.import_role_v2))
+    def test_import_skips_duplicate_user_membership_and_imports_valid_roles(self):
+        self.admin_login()
+        self._create_user("same-user")
+        payload = (
+            "- name: invalid\n  users: [same-user]\n  groups: []\n"
+            "  admin_users: [same-user]\n  admin_groups: []\n"
+            "- name: valid\n  users: []\n  groups: []\n"
+            "  admin_users: [same-user]\n  admin_groups: []\n"
+        )
+
+        resp = self.client.post("/role/api/v2/import", payload, content_type="application/yaml")
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(Role.objects.filter(name="invalid").count(), 0)
+        self.assertEqual(Role.objects.filter(name="valid").count(), 1)
+        job = Job.objects.get(operation=JobOperation.IMPORT_ROLE_V2)
+        self.assertEqual(job.status, JobStatus.WARNING)
+        self.assertIn("same-user", job.text)
+
+    @patch("role.tasks.import_role_v2.delay", Mock(side_effect=tasks.import_role_v2))
+    def test_import_skips_duplicate_group_membership_and_imports_valid_roles(self):
+        self.admin_login()
+        self._create_group("same-group")
+        payload = (
+            "- name: invalid\n  users: []\n  groups: [same-group]\n"
+            "  admin_users: []\n  admin_groups: [same-group]\n"
+            "- name: valid\n  users: []\n  groups: []\n"
+            "  admin_users: []\n  admin_groups: [same-group]\n"
+        )
+
+        resp = self.client.post("/role/api/v2/import", payload, content_type="application/yaml")
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(Role.objects.filter(name="invalid").count(), 0)
+        self.assertEqual(Role.objects.filter(name="valid").count(), 1)
+        job = Job.objects.get(operation=JobOperation.IMPORT_ROLE_V2)
+        self.assertEqual(job.status, JobStatus.WARNING)
+        self.assertIn("same-group", job.text)
+
+    @patch("role.tasks.import_role_v2.delay", Mock(side_effect=tasks.import_role_v2))
+    def test_import_does_not_modify_existing_role_when_users_and_groups_are_duplicated(self):
+        self.admin_login()
+        role = self._create_role("existing")
+        role.users.add(self.user1)
+        role.admin_users.add(self.user2)
+        role.groups.add(self.group1)
+        role.admin_groups.add(self.group2)
+
+        payload = (
+            f"- id: {role.id}\n  name: existing\n"
+            "  users: [user1]\n  groups: [group1]\n"
+            "  admin_users: [user1]\n  admin_groups: [group1]\n"
+        )
+
+        resp = self.client.post("/role/api/v2/import", payload, content_type="application/yaml")
+
+        self.assertEqual(resp.status_code, 200)
+        role.refresh_from_db()
+        self.assertEqual(list(role.users.values_list("username", flat=True)), ["user1"])
+        self.assertEqual(list(role.admin_users.values_list("username", flat=True)), ["user2"])
+        self.assertEqual(list(role.groups.values_list("name", flat=True)), ["group1"])
+        self.assertEqual(list(role.admin_groups.values_list("name", flat=True)), ["group2"])
+        job = Job.objects.get(operation=JobOperation.IMPORT_ROLE_V2)
+        self.assertEqual(job.status, JobStatus.WARNING)
+        self.assertIn("users: user1", job.text)
+        self.assertIn("groups: group1", job.text)
+
+    def test_import_rejects_missing_member_before_creating_job(self):
+        self.admin_login()
+        payload = (
+            "- name: invalid\n  users: [missing-user]\n  groups: []\n"
+            "  admin_users: []\n  admin_groups: []\n"
+        )
+
+        resp = self.client.post("/role/api/v2/import", payload, content_type="application/yaml")
+
+        self.assertEqual(resp.status_code, 400)
+        self.assertContains(resp, "specified object is not found", status_code=400)
+        self.assertFalse(Job.objects.filter(operation=JobOperation.IMPORT_ROLE_V2).exists())
+
     def test_export(self):
         admin = self.admin_login()
 
@@ -345,7 +467,21 @@ class ViewTest(AironeViewTest):
         user.delete()
         group.delete()
 
-        resp = self.client.get("/role/api/v2/export")
+        with patch.object(Job, "run") as enqueue:
+            resp = self.client.get("/role/api/v2/export")
+        enqueue.assert_called_once_with()
+        self.assertEqual(resp.status_code, 202)
+        self.assertNotIn("Content-Disposition", resp)
+        job = Job.objects.get(id=resp.json()["id"])
+        job.run(will_delay=False)
+        job.refresh_from_db()
+        self.assertEqual(job.status, JobStatus.DONE)
+        resp = self.client.get(f"/job/api/v2/{job.id}/download")
+        self.assertEqual(resp.status_code, 200)
+        self.assertRegex(
+            resp["Content-Disposition"],
+            r'^attachment; filename="role_\d{4}_\d{2}_\d{2}_\d{2}_\d{2}\.yaml"$',
+        )
         data = yaml.safe_load(resp.content.decode("utf-8"))
 
         self.assertEqual(
@@ -401,6 +537,74 @@ class ViewTest(AironeViewTest):
         # Assert that the users and groups lists are empty
         self.assertEqual(role_data["users"], [])
         self.assertEqual(role_data["groups"], [])
+
+    def test_retrieve_role_includes_permission_targets(self):
+        admin = self.admin_login()
+        role = self._create_role("test-role")
+        entity = self.create_entity(
+            admin,
+            "Rack",
+            attrs=[{"name": "Monthly cost (C) power adjustment"}],
+        )
+        entity_attr = entity.attrs.get(name="Monthly cost (C) power adjustment")
+        entry = Entry.objects.create(name="rack-01", schema=entity, created_user=admin)
+        entry_attr = Attribute.objects.create(
+            name=entity_attr.name,
+            schema=entity_attr,
+            parent_entry=entry,
+            created_user=admin,
+        )
+        category = self.create_category(admin, "Rack categories")
+        inactive_entity = self.create_entity(admin, "Inactive model")
+        inactive_entity.is_active = False
+        inactive_entity.save(update_fields=["is_active"])
+
+        for target in (entity, entity_attr, entry, entry_attr, category, inactive_entity):
+            target.full.roles.add(role)
+
+        response = self.client.get(f"/role/api/v2/{role.id}")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertCountEqual(
+            response.json()["permissions"],
+            [
+                {
+                    "type": "Entity",
+                    "id": entity.id,
+                    "model_name": "-",
+                    "name": "Rack",
+                    "permission": "full",
+                },
+                {
+                    "type": "EntityAttr",
+                    "id": entity_attr.id,
+                    "model_name": "Rack",
+                    "name": "Monthly cost (C) power adjustment",
+                    "permission": "full",
+                },
+                {
+                    "type": "Entry",
+                    "id": entry.id,
+                    "model_name": "Rack",
+                    "name": "rack-01",
+                    "permission": "full",
+                },
+                {
+                    "type": "Attribute",
+                    "id": entry_attr.id,
+                    "model_name": "Rack",
+                    "name": "Monthly cost (C) power adjustment",
+                    "permission": "full",
+                },
+                {
+                    "type": "Category",
+                    "id": category.id,
+                    "model_name": "-",
+                    "name": "Rack categories",
+                    "permission": "full",
+                },
+            ],
+        )
 
     def test_list_roles_with_ordering(self):
         self.admin_login()
@@ -523,7 +727,16 @@ class ViewTest(AironeViewTest):
         role_not_related.users.add(self.user1)
 
         # Request role export
-        resp = self.client.get("/role/api/v2/export")
+        with patch.object(Job, "run") as enqueue:
+            resp = self.client.get("/role/api/v2/export")
+        enqueue.assert_called_once_with()
+        self.assertEqual(resp.status_code, 202)
+        self.assertNotIn("Content-Disposition", resp)
+        job = Job.objects.get(id=resp.json()["id"])
+        job.run(will_delay=False)
+        job.refresh_from_db()
+        self.assertEqual(job.status, JobStatus.DONE)
+        resp = self.client.get(f"/job/api/v2/{job.id}/download")
         self.assertEqual(resp.status_code, 200)
 
         data = yaml.safe_load(resp.content.decode("utf-8"))
@@ -547,7 +760,16 @@ class ViewTest(AironeViewTest):
         role2.users.add(self.user2)
 
         # Request role export
-        resp = self.client.get("/role/api/v2/export")
+        with patch.object(Job, "run") as enqueue:
+            resp = self.client.get("/role/api/v2/export")
+        enqueue.assert_called_once_with()
+        self.assertEqual(resp.status_code, 202)
+        self.assertNotIn("Content-Disposition", resp)
+        job = Job.objects.get(id=resp.json()["id"])
+        job.run(will_delay=False)
+        job.refresh_from_db()
+        self.assertEqual(job.status, JobStatus.DONE)
+        resp = self.client.get(f"/job/api/v2/{job.id}/download")
         self.assertEqual(resp.status_code, 200)
 
         data = yaml.safe_load(resp.content.decode("utf-8"))
@@ -600,6 +822,19 @@ class ReadonlyUserPermissionTest(AironeViewTest):
         resp = self.client.delete(f"/role/api/v2/{self.role.id}")
         self.assertEqual(resp.status_code, 403)
 
-    def test_retrieve_role_is_allowed_for_readonly_user(self):
+    def test_retrieve_role_is_forbidden_for_readonly_user(self):
         resp = self.client.get(f"/role/api/v2/{self.role.id}")
-        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 403)
+
+    def test_retrieve_role_is_forbidden_for_non_admin_member(self):
+        self.user.is_readonly = False
+        self.user.save(update_fields=["is_readonly"])
+
+        resp = self.client.get(f"/role/api/v2/{self.role.id}")
+        self.assertEqual(resp.status_code, 403)
+
+    def test_retrieve_role_is_forbidden_for_non_member(self):
+        role = Role.objects.create(name="role-for-other-user")
+
+        resp = self.client.get(f"/role/api/v2/{role.id}")
+        self.assertEqual(resp.status_code, 403)

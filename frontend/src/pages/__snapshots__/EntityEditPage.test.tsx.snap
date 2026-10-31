@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`EditEntityPage should match snapshot 1`] = `
+exports[`EditEntityPage > should match snapshot 1`] = `
 {
   "asFragment": [Function],
   "baseElement": <body>
@@ -65,8 +65,10 @@ exports[`EditEntityPage should match snapshot 1`] = `
                       class="MuiBox-root css-162tvoi"
                     >
                       <a
+                        aria-label="test entity"
                         class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
                         data-discover="true"
+                        data-mui-internal-clone-element="true"
                         href="/ui/entities/1/entries"
                       >
                         test entity
@@ -94,7 +96,9 @@ exports[`EditEntityPage should match snapshot 1`] = `
                     class="MuiBreadcrumbs-li"
                   >
                     <p
+                      aria-label="編集"
                       class="MuiTypography-root MuiTypography-body1 css-1bgbmvw-MuiTypography-root"
+                      data-mui-internal-clone-element="true"
                     >
                       編集
                     </p>
@@ -261,7 +265,7 @@ exports[`EditEntityPage should match snapshot 1`] = `
                         <input
                           aria-invalid="false"
                           class="MuiInputBase-input MuiOutlinedInput-input MuiInputBase-inputSizeSmall css-1pzfmz2-MuiInputBase-input-MuiOutlinedInput-input"
-                          id="_r_3_"
+                          id="_r_5_"
                           name="note"
                           placeholder="備考"
                           required=""
@@ -304,6 +308,7 @@ exports[`EditEntityPage should match snapshot 1`] = `
                       <div
                         aria-expanded="false"
                         aria-haspopup="listbox"
+                        aria-label="アイテム名の登録方法"
                         aria-labelledby="itemNameType"
                         class="MuiSelect-select MuiSelect-outlined MuiInputBase-input MuiOutlinedInput-input MuiInputBase-inputSizeSmall css-si86to-MuiSelect-select-MuiInputBase-input-MuiOutlinedInput-input"
                         id="itemNameType"
@@ -369,7 +374,7 @@ exports[`EditEntityPage should match snapshot 1`] = `
                         <input
                           aria-invalid="false"
                           class="MuiInputBase-input MuiOutlinedInput-input MuiInputBase-inputSizeSmall css-1pzfmz2-MuiInputBase-input-MuiOutlinedInput-input"
-                          id="_r_5_"
+                          id="_r_7_"
                           name="itemNamePattern"
                           placeholder="アイテム名の許可パターン"
                           required=""
@@ -457,7 +462,7 @@ exports[`EditEntityPage should match snapshot 1`] = `
                             autocapitalize="none"
                             autocomplete="off"
                             class="MuiInputBase-input MuiOutlinedInput-input MuiInputBase-inputSizeSmall MuiInputBase-inputAdornedEnd MuiAutocomplete-input MuiAutocomplete-inputFocused css-13meb6w-MuiInputBase-input-MuiOutlinedInput-input"
-                            id="_r_6_"
+                            id="_r_8_"
                             placeholder="モデルを選択"
                             role="combobox"
                             spellcheck="false"
@@ -529,6 +534,13 @@ exports[`EditEntityPage should match snapshot 1`] = `
                 <th
                   class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-8816du-MuiTableCell-root"
                   scope="col"
+                  width="100px"
+                >
+                  並び替え
+                </th>
+                <th
+                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-8816du-MuiTableCell-root"
+                  scope="col"
                   width="300px"
                 >
                   属性名
@@ -546,13 +558,6 @@ exports[`EditEntityPage should match snapshot 1`] = `
                   width="200px"
                 >
                   デフォルト値
-                </th>
-                <th
-                  class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-8816du-MuiTableCell-root"
-                  scope="col"
-                  width="100px"
-                >
-                  並び替え
                 </th>
                 <th
                   class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-8816du-MuiTableCell-root"
@@ -602,6 +607,7 @@ exports[`EditEntityPage should match snapshot 1`] = `
                   class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
                 >
                   <button
+                    aria-label="属性を追加"
                     class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium css-53g0n7-MuiButtonBase-root-MuiIconButton-root"
                     tabindex="0"
                     type="button"
@@ -625,6 +631,23 @@ exports[`EditEntityPage should match snapshot 1`] = `
               </tr>
             </tbody>
           </table>
+          <div
+            id="DndDescribedBy-0"
+            style="display: none;"
+          >
+            
+    To pick up a draggable item, press the space bar.
+    While dragging, use the arrow keys to move the item.
+    Press space again to drop the item in its new position, or press escape to cancel.
+  
+          </div>
+          <div
+            aria-atomic="true"
+            aria-live="assertive"
+            id="DndLiveRegion-0"
+            role="status"
+            style="position: fixed; top: 0px; left: 0px; width: 1px; height: 1px; margin: -1px; border: 0px; padding: 0px; overflow: hidden; clip-path: inset(100%); white-space: nowrap;"
+          />
           <h4
             class="MuiTypography-root MuiTypography-h4 MuiTypography-alignCenter css-1ulnhey-MuiTypography-root"
             style="--Typography-textAlign: center;"
@@ -911,8 +934,10 @@ exports[`EditEntityPage should match snapshot 1`] = `
                     class="MuiBox-root css-162tvoi"
                   >
                     <a
+                      aria-label="test entity"
                       class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
                       data-discover="true"
+                      data-mui-internal-clone-element="true"
                       href="/ui/entities/1/entries"
                     >
                       test entity
@@ -940,7 +965,9 @@ exports[`EditEntityPage should match snapshot 1`] = `
                   class="MuiBreadcrumbs-li"
                 >
                   <p
+                    aria-label="編集"
                     class="MuiTypography-root MuiTypography-body1 css-1bgbmvw-MuiTypography-root"
+                    data-mui-internal-clone-element="true"
                   >
                     編集
                   </p>
@@ -1107,7 +1134,7 @@ exports[`EditEntityPage should match snapshot 1`] = `
                       <input
                         aria-invalid="false"
                         class="MuiInputBase-input MuiOutlinedInput-input MuiInputBase-inputSizeSmall css-1pzfmz2-MuiInputBase-input-MuiOutlinedInput-input"
-                        id="_r_3_"
+                        id="_r_5_"
                         name="note"
                         placeholder="備考"
                         required=""
@@ -1150,6 +1177,7 @@ exports[`EditEntityPage should match snapshot 1`] = `
                     <div
                       aria-expanded="false"
                       aria-haspopup="listbox"
+                      aria-label="アイテム名の登録方法"
                       aria-labelledby="itemNameType"
                       class="MuiSelect-select MuiSelect-outlined MuiInputBase-input MuiOutlinedInput-input MuiInputBase-inputSizeSmall css-si86to-MuiSelect-select-MuiInputBase-input-MuiOutlinedInput-input"
                       id="itemNameType"
@@ -1215,7 +1243,7 @@ exports[`EditEntityPage should match snapshot 1`] = `
                       <input
                         aria-invalid="false"
                         class="MuiInputBase-input MuiOutlinedInput-input MuiInputBase-inputSizeSmall css-1pzfmz2-MuiInputBase-input-MuiOutlinedInput-input"
-                        id="_r_5_"
+                        id="_r_7_"
                         name="itemNamePattern"
                         placeholder="アイテム名の許可パターン"
                         required=""
@@ -1303,7 +1331,7 @@ exports[`EditEntityPage should match snapshot 1`] = `
                           autocapitalize="none"
                           autocomplete="off"
                           class="MuiInputBase-input MuiOutlinedInput-input MuiInputBase-inputSizeSmall MuiInputBase-inputAdornedEnd MuiAutocomplete-input MuiAutocomplete-inputFocused css-13meb6w-MuiInputBase-input-MuiOutlinedInput-input"
-                          id="_r_6_"
+                          id="_r_8_"
                           placeholder="モデルを選択"
                           role="combobox"
                           spellcheck="false"
@@ -1375,6 +1403,13 @@ exports[`EditEntityPage should match snapshot 1`] = `
               <th
                 class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-8816du-MuiTableCell-root"
                 scope="col"
+                width="100px"
+              >
+                並び替え
+              </th>
+              <th
+                class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-8816du-MuiTableCell-root"
+                scope="col"
                 width="300px"
               >
                 属性名
@@ -1392,13 +1427,6 @@ exports[`EditEntityPage should match snapshot 1`] = `
                 width="200px"
               >
                 デフォルト値
-              </th>
-              <th
-                class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-8816du-MuiTableCell-root"
-                scope="col"
-                width="100px"
-              >
-                並び替え
               </th>
               <th
                 class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeMedium css-8816du-MuiTableCell-root"
@@ -1448,6 +1476,7 @@ exports[`EditEntityPage should match snapshot 1`] = `
                 class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
               >
                 <button
+                  aria-label="属性を追加"
                   class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium css-53g0n7-MuiButtonBase-root-MuiIconButton-root"
                   tabindex="0"
                   type="button"
@@ -1471,6 +1500,23 @@ exports[`EditEntityPage should match snapshot 1`] = `
             </tr>
           </tbody>
         </table>
+        <div
+          id="DndDescribedBy-0"
+          style="display: none;"
+        >
+          
+    To pick up a draggable item, press the space bar.
+    While dragging, use the arrow keys to move the item.
+    Press space again to drop the item in its new position, or press escape to cancel.
+  
+        </div>
+        <div
+          aria-atomic="true"
+          aria-live="assertive"
+          id="DndLiveRegion-0"
+          role="status"
+          style="position: fixed; top: 0px; left: 0px; width: 1px; height: 1px; margin: -1px; border: 0px; padding: 0px; overflow: hidden; clip-path: inset(100%); white-space: nowrap;"
+        />
         <h4
           class="MuiTypography-root MuiTypography-h4 MuiTypography-alignCenter css-1ulnhey-MuiTypography-root"
           style="--Typography-textAlign: center;"

@@ -8,7 +8,9 @@ import {
 } from "@dmm-com/airone-apiclient-typescript-fetch";
 import { Box, Checkbox, Chip, Divider, List, ListItem } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { FC } from "react";
+import { FC, ReactNode } from "react";
+
+import { ExternalLinkConfirmDialog } from "./ExternalLinkConfirmDialog";
 
 import { AironeLink } from "components/common";
 import { entryDetailsPath, groupsPath, rolePath } from "routes/Routes";
@@ -18,16 +20,46 @@ const StyledBox = styled(Box)(() => ({
   gap: "20px",
 }));
 
-const StyledList = styled(List)(() => ({
+export const AttributeValueList = styled(List)(() => ({
   padding: "0",
 }));
 
-const StyledListItem = styled(ListItem)(({ theme }) => ({
+export const AttributeValueListItem = styled(ListItem)(({ theme }) => ({
   padding: "4px",
   "&:not(:last-child)": {
     borderBottom: `1px solid ${theme.palette.divider}`,
   },
 }));
+
+const URL_RE = /(https?:\/\/[^\s<>()]+[^\s<>().,;:"'\]])/g;
+
+const renderTextWithLinks = (text: string): ReactNode[] => {
+  const parts: ReactNode[] = [];
+  let lastIndex = 0;
+
+  for (const match of text.matchAll(URL_RE)) {
+    const url = match[0];
+    const index = match.index ?? 0;
+
+    if (index > lastIndex) {
+      parts.push(text.slice(lastIndex, index));
+    }
+
+    parts.push(
+      <ExternalLinkConfirmDialog key={`${index}-${url}`} url={url}>
+        {url}
+      </ExternalLinkConfirmDialog>,
+    );
+
+    lastIndex = index + url.length;
+  }
+
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+
+  return parts.length > 0 ? parts : [text];
+};
 
 const ElemBool: FC<{ attrValue: string | boolean }> = ({ attrValue }) => {
   const checkd =
@@ -40,12 +72,9 @@ const ElemBool: FC<{ attrValue: string | boolean }> = ({ attrValue }) => {
 const ElemString: FC<{ attrValue: string }> = ({ attrValue }) => {
   return (
     <Box>
-      {
-        // Separate line breaks with tags
-        attrValue?.split("\n").map((line, key) => (
-          <Box key={key}>{line}</Box>
-        ))
-      }
+      {attrValue?.split("\n").map((line, key) => (
+        <Box key={key}>{renderTextWithLinks(line)}</Box>
+      ))}
     </Box>
   );
 };
@@ -62,7 +91,7 @@ const ElemObject: FC<{
       component={AironeLink}
       to={entryDetailsPath(attrValue.schema?.id ?? 0, attrValue.id)}
     >
-      {attrValue.name}
+      {attrValue.displayLabel ?? attrValue.name}
     </Box>
   ) : (
     <Box />
@@ -88,7 +117,7 @@ const ElemNamedObject: FC<{
             attrValue.object.id ?? 0,
           )}
         >
-          {attrValue.object.name}
+          {attrValue.object.displayLabel ?? attrValue.object.name}
         </Box>
       ) : (
         <Box />
@@ -123,6 +152,16 @@ const ElemRole: FC<{ attrValue: EntryAttributeValueRole | undefined }> = ({
   );
 };
 
+const ElemSelect: FC<{
+  attrValue: { value: string; label: string } | null | undefined;
+}> = ({ attrValue }) => {
+  return attrValue ? (
+    <Chip label={attrValue.label || " "} size="small" variant="outlined" />
+  ) : (
+    <Box />
+  );
+};
+
 interface Props {
   attrInfo: {
     type: number;
@@ -134,11 +173,11 @@ export const AttributeValue: FC<Props> = ({ attrInfo }) => {
   switch (attrInfo.type) {
     case EntryAttributeTypeTypeEnum.OBJECT:
       return (
-        <StyledList>
-          <StyledListItem>
+        <AttributeValueList>
+          <AttributeValueListItem>
             <ElemObject attrValue={attrInfo.value.asObject ?? undefined} />
-          </StyledListItem>
-        </StyledList>
+          </AttributeValueListItem>
+        </AttributeValueList>
       );
 
     case EntryAttributeTypeTypeEnum.STRING:
@@ -146,126 +185,147 @@ export const AttributeValue: FC<Props> = ({ attrInfo }) => {
     case EntryAttributeTypeTypeEnum.DATE:
     case EntryAttributeTypeTypeEnum.DATETIME:
       return (
-        <StyledList>
-          <StyledListItem>
+        <AttributeValueList>
+          <AttributeValueListItem>
             <ElemString attrValue={attrInfo.value.asString ?? ""} />
-          </StyledListItem>
-        </StyledList>
+          </AttributeValueListItem>
+        </AttributeValueList>
       );
 
     case EntryAttributeTypeTypeEnum.BOOLEAN:
       return (
-        <StyledList>
-          <StyledListItem>
+        <AttributeValueList>
+          <AttributeValueListItem>
             <ElemBool attrValue={attrInfo.value.asBoolean ?? false} />
-          </StyledListItem>
-        </StyledList>
+          </AttributeValueListItem>
+        </AttributeValueList>
       );
 
     case EntryAttributeTypeTypeEnum.NUMBER:
       return (
-        <StyledList>
-          <StyledListItem>
+        <AttributeValueList>
+          <AttributeValueListItem>
             <ElemNumber attrValue={attrInfo.value.asNumber ?? null} />
-          </StyledListItem>
-        </StyledList>
+          </AttributeValueListItem>
+        </AttributeValueList>
       );
 
     case EntryAttributeTypeTypeEnum.NAMED_OBJECT:
       return (
-        <StyledList>
-          <StyledListItem>
+        <AttributeValueList>
+          <AttributeValueListItem>
             <ElemNamedObject
               attrValue={
                 attrInfo.value.asNamedObject ?? { name: "", object: null }
               }
             />
-          </StyledListItem>
-        </StyledList>
+          </AttributeValueListItem>
+        </AttributeValueList>
       );
 
     case EntryAttributeTypeTypeEnum.GROUP:
       return (
-        <StyledList>
-          <StyledListItem>
+        <AttributeValueList>
+          <AttributeValueListItem>
             <ElemGroup attrValue={attrInfo.value.asGroup ?? undefined} />
-          </StyledListItem>
-        </StyledList>
+          </AttributeValueListItem>
+        </AttributeValueList>
       );
 
     case EntryAttributeTypeTypeEnum.ROLE:
       return (
-        <StyledList>
-          <StyledListItem>
+        <AttributeValueList>
+          <AttributeValueListItem>
             <ElemRole attrValue={attrInfo.value.asRole ?? undefined} />
-          </StyledListItem>
-        </StyledList>
+          </AttributeValueListItem>
+        </AttributeValueList>
       );
 
     case EntryAttributeTypeTypeEnum.ARRAY_OBJECT:
       return (
-        <StyledList>
+        <AttributeValueList>
           {attrInfo.value?.asArrayObject?.map((info, n) => (
-            <StyledListItem key={n}>
+            <AttributeValueListItem key={n}>
               <ElemObject attrValue={info} />
-            </StyledListItem>
+            </AttributeValueListItem>
           ))}
-        </StyledList>
+        </AttributeValueList>
       );
 
     case EntryAttributeTypeTypeEnum.ARRAY_STRING:
       return (
-        <StyledList>
+        <AttributeValueList>
           {attrInfo.value?.asArrayString?.map((info, n) => (
-            <StyledListItem key={n}>
+            <AttributeValueListItem key={n}>
               <ElemString attrValue={info} />
-            </StyledListItem>
+            </AttributeValueListItem>
           ))}
-        </StyledList>
+        </AttributeValueList>
       );
 
     case EntryAttributeTypeTypeEnum.ARRAY_NAMED_OBJECT:
+    case EntryAttributeTypeTypeEnum.ARRAY_NAMED_OBJECT_BOOLEAN:
       return (
-        <StyledList>
+        <AttributeValueList>
           {attrInfo.value?.asArrayNamedObject?.map((info, n) => (
-            <StyledListItem key={n}>
+            <AttributeValueListItem key={n}>
               <ElemNamedObject attrValue={info} />
-            </StyledListItem>
+            </AttributeValueListItem>
           ))}
-        </StyledList>
+        </AttributeValueList>
       );
 
     case EntryAttributeTypeTypeEnum.ARRAY_GROUP:
       return (
-        <StyledList>
+        <AttributeValueList>
           {attrInfo.value?.asArrayGroup?.map((info, n) => (
-            <StyledListItem key={n}>
+            <AttributeValueListItem key={n}>
               <ElemGroup attrValue={info} />
-            </StyledListItem>
+            </AttributeValueListItem>
           ))}
-        </StyledList>
+        </AttributeValueList>
       );
 
     case EntryAttributeTypeTypeEnum.ARRAY_ROLE:
       return (
-        <StyledList>
+        <AttributeValueList>
           {attrInfo.value?.asArrayRole?.map((info, n) => (
-            <StyledListItem key={n}>
+            <AttributeValueListItem key={n}>
               <ElemRole attrValue={info} />
-            </StyledListItem>
+            </AttributeValueListItem>
           ))}
-        </StyledList>
+        </AttributeValueList>
       );
 
     case EntryAttributeTypeTypeEnum.ARRAY_NUMBER:
       return (
-        <StyledList>
+        <AttributeValueList>
           {attrInfo.value?.asArrayNumber?.map((info, n) => (
-            <StyledListItem key={n}>
+            <AttributeValueListItem key={n}>
               <ElemNumber attrValue={info} />
-            </StyledListItem>
+            </AttributeValueListItem>
           ))}
-        </StyledList>
+        </AttributeValueList>
+      );
+
+    case EntryAttributeTypeTypeEnum.SELECT:
+      return (
+        <AttributeValueList>
+          <AttributeValueListItem>
+            <ElemSelect attrValue={attrInfo.value.asSelect ?? null} />
+          </AttributeValueListItem>
+        </AttributeValueList>
+      );
+
+    case EntryAttributeTypeTypeEnum.MULTI_SELECT:
+      return (
+        <AttributeValueList>
+          {attrInfo.value?.asMultiSelect?.map((info, n) => (
+            <AttributeValueListItem key={n}>
+              <ElemSelect attrValue={info} />
+            </AttributeValueListItem>
+          ))}
+        </AttributeValueList>
       );
 
     default:

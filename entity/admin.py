@@ -13,6 +13,37 @@ admin.site.register(EntityAttr)
 admin.site.register(Entity)
 
 
+def check_entity_row(row: dict[str, Any]) -> None:
+    """Reject an Entity row the import could not accept. Raises RuntimeError."""
+    duplicated = Entity.objects.filter(name=row["name"]).first()
+    if duplicated and ("id" not in row or not row["id"] or duplicated.id != int(row["id"])):
+        raise RuntimeError("There is a duplicate entity object (%s)" % row["name"])
+
+
+def check_entity_attr_row(
+    row: dict[str, Any], is_new: bool, known_entity_names: set[str] | None = None
+) -> None:
+    """Reject an EntityAttr row the import could not accept. Raises RuntimeError.
+
+    ``known_entity_names`` lets a caller treat models as existing that do not
+    exist yet -- the import preview uses it for models the same file creates.
+    """
+    known = known_entity_names or set()
+
+    def _exists(name: str) -> bool:
+        return name in known or Entity.objects.filter(name=name).exists()
+
+    if not _exists(row["entity"]):
+        raise RuntimeError("failed to identify entity object")
+
+    if row["refer"] and not all([_exists(x) for x in row["refer"].split(",")]):
+        raise RuntimeError("refer to invalid entity object")
+
+    # The processing fails when 'type' parameter is not existed for creating a new instance
+    if is_new and not row["type"]:
+        raise RuntimeError("The parameter 'type' is mandatory when a new EntityAtter create")
+
+
 class EntityResource(AironeModelResource):
     _IMPORT_INFO = {
         "header": ["id", "name", "note", "created_user", "status"],
@@ -21,7 +52,6 @@ class EntityResource(AironeModelResource):
         "resource_model_name": "EntityResource",
     }
 
-    COMPARING_KEYS = ["name", "note", "created_user", "status"]
     DISALLOW_UPDATE_KEYS = ["created_user"]
 
     user = fields.Field(
@@ -36,11 +66,7 @@ class EntityResource(AironeModelResource):
         export_order = ("id", "name", "note", "user")
 
     def import_instance(self, instance: Entity, row: dict[str, Any], **kwargs: Any) -> None:
-        # will not import duplicate entity
-        if Entity.objects.filter(name=row["name"]).exists():
-            entity = Entity.objects.filter(name=row["name"]).get()
-            if "id" not in row or not row["id"] or entity.id != row["id"]:
-                raise RuntimeError("There is a duplicate entity object (%s)" % row["name"])
+        check_entity_row(row)
 
         # Set event handler for custom-view. When it returns not None, then it abort to import.
         if custom_view.is_custom("import_entity"):
@@ -67,13 +93,6 @@ class EntityAttrResource(AironeModelResource):
         "resource_model_name": "EntityAttrResource",
     }
 
-    COMPARING_KEYS = [
-        "name",
-        "is_mandatory",
-        "referral",
-        "parent_entity",
-        "created_user",
-    ]
     DISALLOW_UPDATE_KEYS = ["parent_entity", "created_user"]
 
     user = fields.Field(
@@ -97,17 +116,7 @@ class EntityAttrResource(AironeModelResource):
         fields = ("id", "name", "type", "is_mandatory", "user", "refer", "entity")
 
     def import_instance(self, instance: EntityAttr, row: dict[str, Any], **kwargs: Any) -> None:
-        if not Entity.objects.filter(name=row["entity"]).exists():
-            raise RuntimeError("failed to identify entity object")
-
-        if row["refer"] and not all(
-            [Entity.objects.filter(name=x).exists() for x in row["refer"].split(",")]
-        ):
-            raise RuntimeError("refer to invalid entity object")
-
-        # The processing fails when 'type' parameter is not existed for creating a new instance
-        if not instance.pk and not row["type"]:
-            raise RuntimeError("The parameter 'type' is mandatory when a new EntityAtter create")
+        check_entity_attr_row(row, is_new=not instance.pk)
 
         # Set event handler for custom-view. When it returns not None, then it abort to import.
         if custom_view.is_custom("import_entity_attr"):

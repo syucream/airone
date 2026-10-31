@@ -3,12 +3,14 @@ import {
   AdvancedSearchResultAttrInfo,
   AdvancedSearchResultAttrInfoFilterKeyEnum,
 } from "@dmm-com/airone-apiclient-typescript-fetch";
-import { Autocomplete, Box, Button, Checkbox, TextField } from "@mui/material";
+import { Box, Button, Checkbox, TextField } from "@mui/material";
 import { Dispatch, FC, SetStateAction, useState } from "react";
 import { useNavigate } from "react-router";
 
+import { useTranslation } from "../../hooks/useTranslation";
 import { formatAdvancedSearchParams } from "../../services/entry/AdvancedSearch";
 import { AironeModal } from "../common/AironeModal";
+import { AutocompleteWithAllSelector } from "../common/AutocompleteWithAllSelector";
 
 interface Props {
   openModal: boolean;
@@ -19,21 +21,32 @@ interface Props {
   joinAttrs: AdvancedSearchJoinAttrInfo[];
 }
 
-export const AdvancedSearchModal: FC<Props> = ({
+export const AdvancedSearchModal: FC<Props> = (props) => {
+  const initialHasReferral =
+    new URLSearchParams(location.search).get("has_referral") === "true";
+
+  return props.openModal ? (
+    <AdvancedSearchModalForm
+      {...props}
+      key={JSON.stringify([props.initialAttrNames, initialHasReferral])}
+      initialHasReferral={initialHasReferral}
+    />
+  ) : null;
+};
+
+const AdvancedSearchModalForm: FC<Props & { initialHasReferral: boolean }> = ({
   openModal,
   setOpenModal,
   attrNames,
   initialAttrNames,
   attrInfos,
   joinAttrs,
+  initialHasReferral,
 }) => {
   const navigate = useNavigate();
-  const params = new URLSearchParams(location.search);
-
+  const { t } = useTranslation();
   const [selectedAttrNames, setSelectedAttrNames] = useState(initialAttrNames);
-  const [hasReferral, setHasReferral] = useState(
-    params.get("has_referral") === "true",
-  );
+  const [hasReferral, setHasReferral] = useState(initialHasReferral);
 
   const handleUpdatePageURL = () => {
     const params = formatAdvancedSearchParams({
@@ -68,23 +81,28 @@ export const AdvancedSearchModal: FC<Props> = ({
 
   return (
     <AironeModal
-      title={"検索属性の再設定"}
+      title={t("advancedSearch.modal.resetAttrTitle")}
       open={openModal}
       onClose={() => setOpenModal(false)}
     >
-      <Autocomplete
+      <AutocompleteWithAllSelector
+        selectAllLabel={t("advancedSearch.page.selectAll")}
         options={attrNames}
-        defaultValue={initialAttrNames}
+        value={selectedAttrNames}
         onChange={(_, value: Array<string>) => setSelectedAttrNames(value)}
         renderInput={(params) => (
-          <TextField {...params} variant="outlined" placeholder="属性を選択" />
+          <TextField
+            {...params}
+            variant="outlined"
+            placeholder={t("advancedSearch.modal.selectAttrPlaceholder")}
+          />
         )}
         multiple
         sx={{ width: "100%", margin: "20px 0" }}
       />
       <Box display="flex" justifyContent="center">
         <Box>
-          参照アイテムも含める
+          {t("advancedSearch.modal.includeReferral")}
           <Checkbox
             checked={hasReferral}
             onChange={(e) => setHasReferral(e.target.checked)}
@@ -98,7 +116,7 @@ export const AdvancedSearchModal: FC<Props> = ({
           sx={{ mx: "4px" }}
           onClick={handleUpdatePageURL}
         >
-          保存
+          {t("common.save")}
         </Button>
         <Button
           variant="outlined"
@@ -106,7 +124,7 @@ export const AdvancedSearchModal: FC<Props> = ({
           sx={{ mx: "4px" }}
           onClick={() => setOpenModal(false)}
         >
-          キャンセル
+          {t("common.cancel")}
         </Button>
       </Box>
     </AironeModal>

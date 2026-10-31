@@ -1,5 +1,4 @@
 /**
- * @jest-environment jsdom
  */
 
 import { EntryAttributeTypeTypeEnum } from "@dmm-com/airone-apiclient-typescript-fetch";
@@ -25,11 +24,11 @@ const server = setupServer(
   }),
   // getEntryAttrReferrals
   http.get("http://localhost/entry/api/v2/9/attr_referrals/", () => {
-    return HttpResponse.json([]);
+    return HttpResponse.json({ has_restricted_items: false, results: [] });
   }),
   // getEntryAttrReferrals
   http.get("http://localhost/entry/api/v2/10/attr_referrals/", () => {
-    return HttpResponse.json([]);
+    return HttpResponse.json({ has_restricted_items: false, results: [] });
   }),
   // getGroups
   http.get("http://localhost/group/api/v2/groups", () => {
@@ -468,7 +467,7 @@ describe("AttributeValue", () => {
 
     // jsdom logs the thrown render error to console.error; silence it so the
     // test output stays focused on the assertion.
-    const errSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     try {
       expect(() =>
         render(

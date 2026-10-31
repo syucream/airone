@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, TypedDict
+from typing import Any, TypedDict, cast
 
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
@@ -11,9 +11,18 @@ from category.models import Category
 from entity.models import Entity, EntityAttr
 from entry.models import Attribute, Entry
 from role.models import HistoricalPermission, Role
+from user.models import User
 
-if TYPE_CHECKING:
-    from user.models import User
+
+def history_cache_key(history: Any) -> str:
+    """Build a prev_record cache key that is unique across historical models.
+
+    ``history_id`` is only unique within a single historical table, so keys must
+    be qualified by the model. Otherwise HistoricalEntity and HistoricalEntityAttr
+    records that share a ``history_id`` overwrite each other in the cache and
+    diff_against() ends up being called with mismatched types.
+    """
+    return "%s_%s" % (history.__class__.__name__, history.history_id)
 
 
 class ACLParentType(TypedDict):
@@ -22,29 +31,35 @@ class ACLParentType(TypedDict):
     is_public: bool
 
 
-class ACLRoleSerializer(serializers.Serializer):
+class ACLRoleType(TypedDict):
+    id: int
+    name: str
+    description: str
+    current_permission: int
+
+
+class ACLRoleSerializer(serializers.Serializer[ACLRoleType]):
     id = serializers.IntegerField()
     name = serializers.CharField()
     description = serializers.CharField()
     current_permission = serializers.IntegerField()
 
-    class ACLRoleType(TypedDict):
-        id: int
-        name: str
-        description: str
-        current_permission: int
 
-
-class ACLRoleListSerializer(serializers.ListSerializer):
+class ACLRoleListSerializer(serializers.ListSerializer[ACLRoleType]):
     child = ACLRoleSerializer()
 
 
-class ACLSettingSerializer(serializers.Serializer):
+class ACLSettingType(TypedDict):
+    member_id: int
+    value: int
+
+
+class ACLSettingSerializer(serializers.Serializer[ACLSettingType]):
     member_id = serializers.IntegerField()
     value = serializers.IntegerField()
 
 
-class ACLSerializer(serializers.ModelSerializer):
+class ACLSerializer(serializers.ModelSerializer[ACLBase]):
     @extend_schema_field(
         {
             "type": "integer",
@@ -55,7 +70,9 @@ class ACLSerializer(serializers.ModelSerializer):
     class ObjTypeField(serializers.IntegerField):
         pass
 
-    parent = serializers.SerializerMethodField(method_name="get_parent", read_only=True)
+    # "parent" shadows BaseSerializer.parent (which holds the nested parent
+    # serializer). The Any annotation is required to satisfy mypy here.
+    parent: Any = serializers.SerializerMethodField(method_name="get_parent", read_only=True)
     roles = serializers.SerializerMethodField(method_name="get_roles", read_only=True)
     # TODO better name?
     # acl = serializers.ListField(write_only=True, required=False)
@@ -103,7 +120,7 @@ class ACLSerializer(serializers.ModelSerializer):
             return None
 
     @extend_schema_field(ACLRoleListSerializer)
-    def get_roles(self, obj: ACLBase) -> list[ACLRoleSerializer.ACLRoleType]:
+    def get_roles(self, obj: ACLBase) -> list[ACLRoleType]:
         user = self.context["request"].user
 
         return [
@@ -128,8 +145,8 @@ class ACLSerializer(serializers.ModelSerializer):
         if Role.objects.filter(id__in=member_ids).count() != len(member_ids):
             raise ObjectNotExistsError("Invalid member_id of Role instance is specified")
 
-        acl: ACLBase = self.instance
-        user: User = self.context["request"].user
+        acl = cast("ACLBase", self.instance)
+        user = cast("User", self.context["request"].user)
         if not user.is_permitted_to_change(
             acl,
             ACLType.Full,
@@ -164,15 +181,22 @@ class ACLSerializer(serializers.ModelSerializer):
 
         obj.save()
 
-        permissions = {
-            "full": HistoricalPermission.objects.get(
-                codename="%s.%d" % (instance.id, ACLType.Full.id)
+        permissions: dict[str, HistoricalPermission] = {
+            "full": cast(
+                "HistoricalPermission",
+                HistoricalPermission.objects.get(codename="%s.%d" % (instance.id, ACLType.Full.id)),
             ),
-            "writable": HistoricalPermission.objects.get(
-                codename="%s.%d" % (instance.id, ACLType.Writable.id)
+            "writable": cast(
+                "HistoricalPermission",
+                HistoricalPermission.objects.get(
+                    codename="%s.%d" % (instance.id, ACLType.Writable.id)
+                ),
             ),
-            "readable": HistoricalPermission.objects.get(
-                codename="%s.%d" % (instance.id, ACLType.Readable.id)
+            "readable": cast(
+                "HistoricalPermission",
+                HistoricalPermission.objects.get(
+                    codename="%s.%d" % (instance.id, ACLType.Readable.id)
+                ),
             ),
         }
 
@@ -222,12 +246,17 @@ class ACLSerializer(serializers.ModelSerializer):
             permission.roles.add(role)
 
 
-class ACLHistoryUserSerializer(serializers.Serializer):
+class ACLHistoryUserType(TypedDict):
+    id: int
+    username: str
+
+
+class ACLHistoryUserSerializer(serializers.Serializer[ACLHistoryUserType]):
     id = serializers.IntegerField()
     username = serializers.CharField()
 
 
-class ACLHistoryChangeSerializer(serializers.Serializer):
+class ACLHistoryChangeSerializer(serializers.Serializer[Any]):
     # unkwnon | create | update | delete
     action = serializers.CharField()
     # is_public | default_permission | <role name>
@@ -242,7 +271,7 @@ class ACLHistoryChangeSerializer(serializers.Serializer):
         return change.after
 
 
-class ACLHistorySerializer(serializers.Serializer):
+class ACLHistorySerializer(serializers.Serializer[Any]):
     user = ACLHistoryUserSerializer(source="history_user")
     time = serializers.DateTimeField(source="history_date")
     name = serializers.SerializerMethodField()
@@ -256,21 +285,22 @@ class ACLHistorySerializer(serializers.Serializer):
             acl_id = history.codename.split(".")[0]
 
             if acl_id in acl_base_cache:
-                return acl_base_cache[acl_id]
+                cached_name: str = acl_base_cache[acl_id]
+                return cached_name
             else:
                 # Fallback to database query if not in cache
                 obj = ACLBase.objects.filter(id=acl_id).first()
                 return obj.name if obj else ""
         else:
-            return history.name
+            name: str = history.name
+            return name
 
     @extend_schema_field(ACLHistoryChangeSerializer(many=True))
     def get_changes(self, history: Any) -> list[dict[str, Any]]:
         if history.__class__.__name__ == "HistoricalHistoricalPermission":
             # Use cached prev_record to avoid DB queries
             prev_record_cache = self.context.get("prev_record_cache", {})
-            cache_key = f"permission_{history.history_id}"
-            prev_record = prev_record_cache.get(cache_key)
+            prev_record = prev_record_cache.get(history_cache_key(history))
 
             if prev_record:
                 delta = history.diff_against(prev_record, excluded_fields=["status"])
@@ -301,11 +331,12 @@ class ACLHistorySerializer(serializers.Serializer):
         else:
             # For regular historical records, use cached prev_record if available
             prev_record_cache = self.context.get("prev_record_cache", {})
-            cache_key = f"acl_{history.history_id}"
-            prev_record = prev_record_cache.get(cache_key)
+            prev_record = prev_record_cache.get(history_cache_key(history))
 
-            # Fallback to original method if not in cache
-            if prev_record is None:
+            # Fallback to original method if not in cache, or if the cached entry
+            # belongs to another historical model (diff_against() requires the
+            # same type)
+            if prev_record is None or prev_record.__class__ is not history.__class__:
                 prev_record = history.prev_record
 
             if prev_record:

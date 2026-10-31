@@ -1,12 +1,18 @@
 /**
- * @jest-environment jsdom
  */
 
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 
 import { EntityControlMenu } from "./EntityControlMenu";
 
 import { TestWrapper } from "TestWrapper";
+import i18n from "i18n/config";
 import { aironeApiClient } from "repository/AironeApiClient";
 import { ACLType } from "services/ACLUtil";
 
@@ -51,6 +57,34 @@ describe("EntityControlMenu", () => {
     expect(screen.getByText("インポート")).toBeInTheDocument();
     expect(screen.getByText("削除アイテムの復旧")).toBeInTheDocument();
     expect(screen.getByText("削除")).toBeInTheDocument();
+  });
+
+  test("menu items are displayed in English", async () => {
+    await act(async () => {
+      await i18n.changeLanguage("en");
+    });
+
+    render(
+      <EntityControlMenu
+        entityId={1}
+        anchorElem={document.createElement("button")}
+        handleClose={() => {}}
+        setOpenImportModal={() => false}
+      />,
+      { wrapper: TestWrapper },
+    );
+
+    expect(screen.getByText("Entries")).toBeInTheDocument();
+    expect(screen.getByText("Aliases")).toBeInTheDocument();
+    expect(screen.getByText("Edit")).toBeInTheDocument();
+    expect(screen.getByText("ACL settings")).toBeInTheDocument();
+    expect(screen.getByText("Change history")).toBeInTheDocument();
+    expect(screen.getByText("ACL change history")).toBeInTheDocument();
+    expect(screen.getByText("Export (YAML)")).toBeInTheDocument();
+    expect(screen.getByText("Export (CSV)")).toBeInTheDocument();
+    expect(screen.getByText("Import")).toBeInTheDocument();
+    expect(screen.getByText("Restore deleted entries")).toBeInTheDocument();
+    expect(screen.getByText("Delete")).toBeInTheDocument();
   });
 
   test("anchorElem is null, menu is closed", () => {
@@ -165,6 +199,120 @@ describe("EntityControlMenu", () => {
     });
   });
 
+  describe("delete notification", () => {
+    const defaultProps = {
+      entityId: 1,
+      anchorElem: document.createElement("button"),
+      handleClose: () => {},
+      setOpenImportModal: () => false,
+    };
+
+    const buildResponseError = (status: number, body: unknown) => {
+      const err = new Error("response error") as Error & {
+        response: Response;
+      };
+      err.name = "ResponseError";
+      err.response = new Response(JSON.stringify(body), {
+        status,
+        headers: { "Content-Type": "application/json" },
+      });
+      return err;
+    };
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    test("should show success snackbar on successful delete", async () => {
+      vi.spyOn(aironeApiClient, "deleteEntity").mockResolvedValue(undefined);
+
+      render(<EntityControlMenu {...defaultProps} />, {
+        wrapper: TestWrapper,
+      });
+
+      fireEvent.click(screen.getByText("削除"));
+      fireEvent.click(screen.getByRole("button", { name: "Yes" }));
+
+      await waitFor(() => {
+        expect(
+          screen.getByText("モデルの削除が完了しました"),
+        ).toBeInTheDocument();
+      });
+    });
+
+    test("should show specific message when entries remain (AE-240000)", async () => {
+      vi.spyOn(aironeApiClient, "deleteEntity").mockRejectedValue(
+        buildResponseError(400, [
+          {
+            code: "AE-240000",
+            message:
+              "cannot delete Entity because one or more Entries are not deleted",
+          },
+        ]),
+      );
+
+      render(<EntityControlMenu {...defaultProps} />, {
+        wrapper: TestWrapper,
+      });
+
+      fireEvent.click(screen.getByText("削除"));
+      fireEvent.click(screen.getByRole("button", { name: "Yes" }));
+
+      await waitFor(() => {
+        expect(
+          screen.getByText(
+            /モデルの削除が失敗しました: 紐づくアイテムが残っているため削除できません。先に全てのアイテムを削除してください。/,
+          ),
+        ).toBeInTheDocument();
+      });
+    });
+
+    test("should show backend message when response carries an unmapped code", async () => {
+      vi.spyOn(aironeApiClient, "deleteEntity").mockRejectedValue(
+        buildResponseError(400, [
+          {
+            code: "AE-999999",
+            message: "something went wrong on the server side",
+          },
+        ]),
+      );
+
+      render(<EntityControlMenu {...defaultProps} />, {
+        wrapper: TestWrapper,
+      });
+
+      fireEvent.click(screen.getByText("削除"));
+      fireEvent.click(screen.getByRole("button", { name: "Yes" }));
+
+      await waitFor(() => {
+        expect(
+          screen.getByText(
+            /モデルの削除が失敗しました: something went wrong on the server side/,
+          ),
+        ).toBeInTheDocument();
+      });
+    });
+
+    test("should fall back to generic message when error is not a ResponseError", async () => {
+      vi.spyOn(aironeApiClient, "deleteEntity").mockRejectedValue(
+        new Error("network error"),
+      );
+
+      render(<EntityControlMenu {...defaultProps} />, {
+        wrapper: TestWrapper,
+      });
+
+      fireEvent.click(screen.getByText("削除"));
+      fireEvent.click(screen.getByRole("button", { name: "Yes" }));
+
+      await waitFor(() => {
+        expect(
+          screen.getByText("モデルの削除が失敗しました"),
+        ).toBeInTheDocument();
+      });
+    });
+  });
+
   describe("export notification", () => {
     const defaultProps = {
       entityId: 1,
@@ -174,7 +322,7 @@ describe("EntityControlMenu", () => {
     };
 
     test("should show info variant snackbar on successful export", async () => {
-      jest.spyOn(aironeApiClient, "exportEntries").mockResolvedValue(undefined);
+      vi.spyOn(aironeApiClient, "exportEntries").mockResolvedValue(undefined);
 
       render(<EntityControlMenu {...defaultProps} />, {
         wrapper: TestWrapper,
@@ -190,9 +338,9 @@ describe("EntityControlMenu", () => {
     });
 
     test("should show error variant snackbar on failed export", async () => {
-      jest
-        .spyOn(aironeApiClient, "exportEntries")
-        .mockRejectedValue(new Error("export failed"));
+      vi.spyOn(aironeApiClient, "exportEntries").mockRejectedValue(
+        new Error("export failed"),
+      );
 
       render(<EntityControlMenu {...defaultProps} />, {
         wrapper: TestWrapper,

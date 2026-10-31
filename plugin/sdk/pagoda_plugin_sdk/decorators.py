@@ -11,9 +11,7 @@ from typing import Any, TypeVar, cast
 F = TypeVar("F", bound=Callable[..., Any])
 
 
-def entry_hook(
-    hook_type: str, entity: str | None = None, priority: int = 100
-) -> Callable[[F], F]:
+def entry_hook(hook_type: str, entity: str | None = None, priority: int = 100) -> Callable[[F], F]:
     """
     Decorator for entry lifecycle hooks.
 
@@ -44,9 +42,7 @@ def entry_hook(
     return decorator
 
 
-def entity_hook(
-    hook_type: str, entity: str | None = None, priority: int = 100
-) -> Callable[[F], F]:
+def entity_hook(hook_type: str, entity: str | None = None, priority: int = 100) -> Callable[[F], F]:
     """
     Decorator for entity lifecycle hooks.
 

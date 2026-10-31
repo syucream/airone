@@ -22,6 +22,8 @@ import {
 import { FC, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router";
 
+import { useTranslation } from "hooks/useTranslation";
+import { translate } from "i18n/config";
 import { aironeApiClient } from "repository/AironeApiClient";
 import { extractAdvancedSearchParams } from "services/entry/AdvancedSearch";
 
@@ -94,20 +96,50 @@ export const AttrStatsModal: FC<Props> = ({
   attrType,
   totalCount,
 }) => {
+  const { t } = useTranslation();
   const location = useLocation();
-  const [counts, setCounts] = useState<Map<string, number>>(new Map());
-  const [loadedCount, setLoadedCount] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
+  // The aggregation result is kept together with the request key it belongs to.
+  // A key change (closing the modal or changing the search conditions) makes
+  // the derived values fall back to the initial state, which removes the need
+  // to reset state synchronously from within the effect.
+  const requestKey = [
+    String(open),
+    location.search,
+    attrname,
+    String(attrType),
+    String(totalCount),
+  ].join("\u0000");
+
+  const [statsState, setStatsState] = useState<{
+    key: string;
+    counts: Map<string, number>;
+    loadedCount: number;
+    done: boolean;
+    loadFailed: boolean;
+  }>({
+    key: "",
+    counts: new Map(),
+    loadedCount: 0,
+    done: false,
+    loadFailed: false,
+  });
+
+  const currentStats =
+    statsState.key === requestKey
+      ? statsState
+      : {
+          counts: new Map<string, number>(),
+          loadedCount: 0,
+          done: false,
+          loadFailed: false,
+        };
+  const counts = currentStats.counts;
+  const loadedCount = currentStats.loadedCount;
+  const isLoading = open && totalCount > 0 && !currentStats.done;
+  const loadFailed = currentStats.loadFailed;
 
   useEffect(() => {
-    if (!open) {
-      setCounts(new Map());
-      setLoadedCount(0);
-      setIsLoading(false);
-      return;
-    }
-
-    if (totalCount === 0) return;
+    if (!open || totalCount === 0) return;
 
     const params = new URLSearchParams(location.search);
     const {
@@ -121,10 +153,6 @@ export const AttrStatsModal: FC<Props> = ({
       referralExcludeModelIds,
       referralIncludeModelIds,
     } = extractAdvancedSearchParams(params);
-
-    setCounts(new Map());
-    setLoadedCount(0);
-    setIsLoading(true);
 
     let cancelled = false;
     const totalPages = Math.ceil(totalCount / PAGE_SIZE);
@@ -150,28 +178,57 @@ export const AttrStatsModal: FC<Props> = ({
 
         if (cancelled) break;
 
-        setCounts((prev) => {
-          const next = new Map(prev);
+        setStatsState((prev) => {
+          const base =
+            prev.key === requestKey
+              ? prev
+              : {
+                  key: requestKey,
+                  counts: new Map<string, number>(),
+                  loadedCount: 0,
+                  done: false,
+                  loadFailed: false,
+                };
+
+          const nextCounts = new Map(base.counts);
           for (const row of results.values) {
             const attr = row.attrs[attrname];
             if (!attr || !attr.isReadable) continue;
-            const key = attrValueToKey(attr.value, attrType) || "(空白)";
-            next.set(key, (next.get(key) ?? 0) + 1);
+            const key =
+              attrValueToKey(attr.value, attrType) ||
+              translate("entry.attrStats.blank");
+            nextCounts.set(key, (nextCounts.get(key) ?? 0) + 1);
           }
-          return next;
+
+          return {
+            key: requestKey,
+            counts: nextCounts,
+            loadedCount: base.loadedCount + results.values.length,
+            done: false,
+            loadFailed: false,
+          };
         });
-        setLoadedCount((prev) => prev + results.values.length);
       }
 
-      if (!cancelled) setIsLoading(false);
+      if (!cancelled) {
+        setStatsState((prev) =>
+          prev.key === requestKey ? { ...prev, done: true } : prev,
+        );
+      }
     })().catch(() => {
-      if (!cancelled) setIsLoading(false);
+      if (!cancelled) {
+        setStatsState((prev) =>
+          prev.key === requestKey
+            ? { ...prev, done: true, loadFailed: true }
+            : prev,
+        );
+      }
     });
 
     return () => {
       cancelled = true;
     };
-  }, [open, location.search, attrname, attrType, totalCount]);
+  }, [open, location.search, attrname, attrType, totalCount, requestKey]);
 
   const stats = useMemo(
     () =>
@@ -183,9 +240,8 @@ export const AttrStatsModal: FC<Props> = ({
     [counts],
   );
 
-  const displayedCount = isLoading
-    ? Math.min(loadedCount, totalCount)
-    : totalCount;
+  const displayedCount =
+    isLoading || loadFailed ? Math.min(loadedCount, totalCount) : totalCount;
   const progress =
     totalCount > 0
       ? Math.min(Math.round((displayedCount / totalCount) * 100), 100)
@@ -194,7 +250,7 @@ export const AttrStatsModal: FC<Props> = ({
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>
-        「{attrname}」の集計
+        {t("entry.attrStats.title", { attrname })}
         <IconButton
           onClick={onClose}
           sx={{ position: "absolute", right: 8, top: 8 }}
@@ -208,7 +264,7 @@ export const AttrStatsModal: FC<Props> = ({
             sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}
           >
             <Typography variant="caption" color="text.secondary">
-              {displayedCount} / {totalCount} 件
+              {t("entry.attrStats.progress", { displayedCount, totalCount })}
             </Typography>
             <Typography variant="caption" color="text.secondary">
               {progress}%
@@ -219,13 +275,20 @@ export const AttrStatsModal: FC<Props> = ({
             value={progress}
             sx={{ borderRadius: 1 }}
           />
+          {loadFailed && (
+            <Typography variant="caption" color="error">
+              {t("entry.attrStats.loadFailed")}
+            </Typography>
+          )}
         </Box>
         <TableContainer component={Paper} variant="outlined">
           <Table size="small">
             <TableHead>
               <TableRow>
-                <TableCell>値</TableCell>
-                <TableCell align="right">件数</TableCell>
+                <TableCell>{t("entry.attrStats.valueHeader")}</TableCell>
+                <TableCell align="right">
+                  {t("entry.attrStats.countHeader")}
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>

@@ -1,7 +1,9 @@
 import json
-from typing import Any
+from datetime import datetime
+from typing import Any, cast
 
 import yaml
+from django.core.files.uploadedfile import UploadedFile
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.http import HttpRequest, HttpResponse
 from django.http.response import JsonResponse
@@ -9,7 +11,7 @@ from django.shortcuts import redirect
 from pydantic import ValidationError
 
 from airone.lib.acl import ACLType
-from airone.lib.elasticsearch import AttrHint
+from airone.lib.elasticsearch import AttrHint, SimpleSearchResultRecord
 from airone.lib.http import HttpResponseSeeOther, http_file_upload, http_get, http_post, render
 from airone.lib.log import Logger
 from entity.admin import EntityAttrResource, EntityResource
@@ -18,7 +20,8 @@ from entry.admin import AttrResource, AttrValueResource, EntryResource
 from entry.models import AttributeValue, Entry
 from entry.services import AdvancedSearchService
 from entry.settings import CONFIG as CONFIG_ENTRY
-from job.models import Job, JobStatus
+from job.models import Job, JobOperation, JobStatus
+from user.models import User
 
 from .settings import CONFIG
 
@@ -66,13 +69,17 @@ def import_data(request: HttpRequest) -> HttpResponse:
 
 @http_file_upload
 def do_import_data(request: HttpRequest, context: str) -> HttpResponse:
-    if request.FILES["file"].size >= CONFIG.LIMIT_FILE_SIZE:
+    uploaded_file = cast(UploadedFile, request.FILES["file"])
+    if (uploaded_file.size or 0) >= CONFIG.LIMIT_FILE_SIZE:
         return HttpResponse("File size over", status=400)
 
     try:
-        data = yaml.load(context, Loader=yaml.FullLoader)
-    except yaml.parser.ParserError:
+        data = yaml.safe_load(context)
+    except yaml.YAMLError:
         return HttpResponse("Couldn't parse uploaded file", status=400)
+
+    if not isinstance(data, dict):
+        return HttpResponse("Uploaded file has invalid data structure to import", status=400)
 
     def _do_import(resource: Any, iter_data: list[Any]) -> None:
         results: list[dict[str, Any]] = []
@@ -96,7 +103,7 @@ def do_import_data(request: HttpRequest, context: str) -> HttpResponse:
 
 def _search_by_keyword(
     query: str, entity_name: str | None, per_page: int, page_num: int
-) -> tuple[int, list[dict[str, Any]]]:
+) -> tuple[int, list[SimpleSearchResultRecord]]:
     # correct entries that contans query at EntryName or AttributeValue
     search_result = AdvancedSearchService.search_entries_for_simple(
         query, entity_name, [], per_page, (page_num - 1) * per_page
@@ -128,7 +135,7 @@ def search(request: HttpRequest) -> HttpResponse:
     # matches, this returns entry results
     if entity_name:
         entry = Entry.objects.filter(name=query, schema__name=entity_name, is_active=True).first()
-        if entry and request.user.has_permission(entry, ACLType.Readable):
+        if entry and cast(User, request.user).has_permission(entry, ACLType.Readable):
             return redirect("/entry/show/%s/" % entry.id)
 
     per_page = CONFIG.MAXIMUM_SEARCH_RESULTS
@@ -213,9 +220,10 @@ def advanced_search_result(request: HttpRequest) -> HttpResponse:
                     return HttpResponse("Sending parameter is too large", status=400)
 
     # check entity params
+    recv_entity_ids: list[Any]
     if is_all_entities:
         attr_names = [x.name for x in hint_attrs]
-        recv_entity = list(
+        recv_entity_ids = list(
             EntityAttr.objects.filter(
                 name__in=attr_names, is_active=True, parent_entity__is_active=True
             )
@@ -223,25 +231,28 @@ def advanced_search_result(request: HttpRequest) -> HttpResponse:
             .values_list("parent_entity__id", flat=True)
             .distinct()
         )
-        if not recv_entity:
+        if not recv_entity_ids:
             return HttpResponse("Invalid value for attribute parameter", status=400)
+    else:
+        recv_entity_ids = list(recv_entity)
 
-    if not recv_entity:
+    if not recv_entity_ids:
         return HttpResponse("The entity[] parameters are required", status=400)
 
-    hint_entity_ids = []
-    for entity_id in recv_entity:
-        if not isinstance(entity_id, int) and not entity_id.isnumeric():
+    user = cast(User, request.user)
+    hint_entity_ids: list[str] = []
+    for entity_id in recv_entity_ids:
+        if not isinstance(entity_id, int) and not str(entity_id).isnumeric():
             return HttpResponse("Invalid entity ID is specified", status=400)
         entity = Entity.objects.filter(id=entity_id, is_active=True).first()
         if not entity:
             return HttpResponse("Invalid entity ID is specified", status=400)
 
-        if request.user.has_permission(entity, ACLType.Readable):
-            hint_entity_ids.append(entity.id)
+        if user.has_permission(entity, ACLType.Readable):
+            hint_entity_ids.append(str(entity.id))
 
     results = AdvancedSearchService.search_entries(
-        request.user,
+        user,
         hint_entity_ids,
         hint_attrs,
         CONFIG.MAXIMUM_SEARCH_RESULTS,
@@ -308,10 +319,11 @@ def advanced_search_result(request: HttpRequest) -> HttpResponse:
     ]
 )
 def export_search_result(request: HttpRequest, recv_data: dict[str, Any]) -> HttpResponse:
+    user = cast(User, request.user)
     # check whether same job is sent
     job_status_not_finished: list[JobStatus] = [JobStatus.PREPARING, JobStatus.PROCESSING]
     if (
-        Job.get_job_with_params(request.user, recv_data)
+        Job.get_job_with_params(user, JobOperation.EXPORT_SEARCH_RESULT, recv_data)
         .filter(status__in=job_status_not_finished)
         .exists()
     ):
@@ -319,8 +331,9 @@ def export_search_result(request: HttpRequest, recv_data: dict[str, Any]) -> Htt
 
     # create a job to export search result and run it
     job = Job.new_export_search_result(
-        request.user,
-        text="search_results.%s" % recv_data["export_style"],
+        user,
+        text="search_results_%s.%s"
+        % (datetime.now().strftime("%Y_%m_%d_%H_%M"), recv_data["export_style"]),
         params=recv_data,
     )
     job.run()

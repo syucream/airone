@@ -1,5 +1,4 @@
 /**
- * @jest-environment jsdom
  */
 
 import { act, render, screen, waitFor } from "@testing-library/react";
@@ -10,6 +9,7 @@ import { createMemoryRouter, RouterProvider } from "react-router";
 import { RoleEditPage } from "./RoleEditPage";
 
 import { TestWrapperWithoutRoutes } from "TestWrapper";
+import i18n from "i18n/config";
 
 const server = setupServer(
   // getRole
@@ -105,5 +105,28 @@ describe("EditRolePage", () => {
     });
 
     expect(result).toMatchSnapshot();
+  });
+
+  test("renders in English", async () => {
+    await act(async () => {
+      await i18n.changeLanguage("en");
+    });
+
+    const router = createMemoryRouter([
+      {
+        path: "/",
+        element: <RoleEditPage />,
+      },
+    ]);
+    await act(async () => {
+      render(<RouterProvider router={router} />, {
+        wrapper: TestWrapperWithoutRoutes,
+      });
+    });
+    await waitFor(() => {
+      expect(screen.queryByTestId("loading")).not.toBeInTheDocument();
+    });
+
+    expect(screen.getAllByText("Edit role").length).toBeGreaterThan(0);
   });
 });

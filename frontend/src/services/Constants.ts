@@ -28,6 +28,12 @@ export const EntityHistoryListParam = {
   MAX_ROW_COUNT: 30,
 };
 
+export const ImportPreviewParam = {
+  // A preview is scanned, not paged through, so it fetches a large first page.
+  MAX_ROW_COUNT: 200,
+  POLL_INTERVAL_MS: 1000,
+};
+
 export const AdvancedSerarchResultListParam = {
   MAX_ROW_COUNT: 100,
 };
@@ -42,11 +48,35 @@ export const BaseAttributeTypes = {
   role: 1 << 6,
   datetime: 1 << 7,
   number: 1 << 8,
+  select: 1 << 9,
   array: 1 << 10,
   named: 1 << 11,
 };
 
-export const AttributeTypes: Record<string, { name: string; type: number }> = {
+export type AttributeTypeKey =
+  | "string"
+  | "array_string"
+  | "object"
+  | "array_object"
+  | "named_object"
+  | "array_named_object"
+  | "group"
+  | "array_group"
+  | "role"
+  | "array_role"
+  | "text"
+  | "boolean"
+  | "date"
+  | "datetime"
+  | "number"
+  | "array_number"
+  | "select"
+  | "multi_select";
+
+export const AttributeTypes: Record<
+  AttributeTypeKey,
+  { name: string; type: number }
+> = {
   string: {
     name: "string",
     type: BaseAttributeTypes.string,
@@ -114,6 +144,14 @@ export const AttributeTypes: Record<string, { name: string; type: number }> = {
     name: "array_number",
     type: BaseAttributeTypes.number | BaseAttributeTypes.array,
   },
+  select: {
+    name: "select",
+    type: BaseAttributeTypes.select,
+  },
+  multi_select: {
+    name: "multi_select",
+    type: BaseAttributeTypes.select | BaseAttributeTypes.array,
+  },
 };
 
 export const EntryReferralList = {
@@ -136,6 +174,7 @@ export const JobStatuses = {
   TIMEOUT: 4,
   PROCESSING: 5,
   CANCELED: 6,
+  WARNING: 7,
 };
 
 // TODO manage it in the API side
@@ -169,10 +208,12 @@ export const JobOperations = {
   CREATE_ENTRY_V2: 27,
   EDIT_ENTRY_V2: 28,
   DELETE_ENTRY_V2: 29,
+  IMPORT_ROLE_V2: 30,
   BULK_EDIT_ENTRY: 31,
+  EXPORT_CONFIGURATION_V2: 34,
 };
 
-export const JobRefreshIntervalMilliSec = 60 * 1000;
+export const JobRefreshIntervalMilliSec = 5 * 1000;
 
 export const TITLE_TEMPLATES = {
   userList: "User List",

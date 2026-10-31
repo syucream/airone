@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`RoleListPage should match snapshot 1`] = `
+exports[`RoleListPage > should match snapshot 1`] = `
 {
   "asFragment": [Function],
   "baseElement": <body>
@@ -85,8 +85,9 @@ exports[`RoleListPage should match snapshot 1`] = `
                   エクスポート
                 </button>
                 <button
-                  class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo css-1ep9zj1-MuiButtonBase-root-MuiButton-root"
-                  tabindex="0"
+                  class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo Mui-disabled MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo css-1ep9zj1-MuiButtonBase-root-MuiButton-root"
+                  disabled=""
+                  tabindex="-1"
                   type="button"
                 >
                   インポート
@@ -108,7 +109,8 @@ exports[`RoleListPage should match snapshot 1`] = `
                       d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6z"
                     />
                   </svg>
-                   新規ロールを作成
+                   
+                  新規ロールを作成
                 </a>
               </div>
             </div>
@@ -191,32 +193,30 @@ exports[`RoleListPage should match snapshot 1`] = `
                   <td
                     class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
                   >
-                    <div
-                      class="MuiBox-root css-0"
+                    <button
+                      aria-label="role1を削除"
+                      class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium css-4qb85i-MuiButtonBase-root-MuiIconButton-root"
+                      tabindex="0"
+                      type="button"
                     >
-                      <button
-                        class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium css-4qb85i-MuiButtonBase-root-MuiIconButton-root"
-                        tabindex="0"
-                        type="button"
+                      <svg
+                        aria-hidden="true"
+                        class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-1umw9bq-MuiSvgIcon-root"
+                        data-testid="DeleteOutlineIcon"
+                        focusable="false"
+                        viewBox="0 0 24 24"
                       >
-                        <svg
-                          aria-hidden="true"
-                          class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-1umw9bq-MuiSvgIcon-root"
-                          data-testid="DeleteOutlineIcon"
-                          focusable="false"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6zM8 9h8v10H8zm7.5-5-1-1h-5l-1 1H5v2h14V4z"
-                          />
-                        </svg>
-                      </button>
-                    </div>
+                        <path
+                          d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6zM8 9h8v10H8zm7.5-5-1-1h-5l-1 1H5v2h14V4z"
+                        />
+                      </svg>
+                    </button>
                   </td>
                   <td
                     class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
                   >
                     <a
+                      aria-label="role1を編集"
                       class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium css-4qb85i-MuiButtonBase-root-MuiIconButton-root"
                       data-discover="true"
                       href="/ui/roles/1"
@@ -324,8 +324,9 @@ exports[`RoleListPage should match snapshot 1`] = `
                 エクスポート
               </button>
               <button
-                class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo css-1ep9zj1-MuiButtonBase-root-MuiButton-root"
-                tabindex="0"
+                class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo Mui-disabled MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo css-1ep9zj1-MuiButtonBase-root-MuiButton-root"
+                disabled=""
+                tabindex="-1"
                 type="button"
               >
                 インポート
@@ -347,7 +348,8 @@ exports[`RoleListPage should match snapshot 1`] = `
                     d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6z"
                   />
                 </svg>
-                 新規ロールを作成
+                 
+                新規ロールを作成
               </a>
             </div>
           </div>
@@ -430,32 +432,30 @@ exports[`RoleListPage should match snapshot 1`] = `
                 <td
                   class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
                 >
-                  <div
-                    class="MuiBox-root css-0"
+                  <button
+                    aria-label="role1を削除"
+                    class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium css-4qb85i-MuiButtonBase-root-MuiIconButton-root"
+                    tabindex="0"
+                    type="button"
                   >
-                    <button
-                      class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium css-4qb85i-MuiButtonBase-root-MuiIconButton-root"
-                      tabindex="0"
-                      type="button"
+                    <svg
+                      aria-hidden="true"
+                      class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-1umw9bq-MuiSvgIcon-root"
+                      data-testid="DeleteOutlineIcon"
+                      focusable="false"
+                      viewBox="0 0 24 24"
                     >
-                      <svg
-                        aria-hidden="true"
-                        class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-1umw9bq-MuiSvgIcon-root"
-                        data-testid="DeleteOutlineIcon"
-                        focusable="false"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6zM8 9h8v10H8zm7.5-5-1-1h-5l-1 1H5v2h14V4z"
-                        />
-                      </svg>
-                    </button>
-                  </div>
+                      <path
+                        d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6zM8 9h8v10H8zm7.5-5-1-1h-5l-1 1H5v2h14V4z"
+                      />
+                    </svg>
+                  </button>
                 </td>
                 <td
                   class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
                 >
                   <a
+                    aria-label="role1を編集"
                     class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium css-4qb85i-MuiButtonBase-root-MuiIconButton-root"
                     data-discover="true"
                     href="/ui/roles/1"

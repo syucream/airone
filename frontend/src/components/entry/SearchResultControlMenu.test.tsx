@@ -1,13 +1,13 @@
 /**
- * @jest-environment jsdom
  */
 
 import { AdvancedSearchResultAttrInfoFilterKeyEnum } from "@dmm-com/airone-apiclient-typescript-fetch";
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 
 import { SearchResultControlMenu } from "./SearchResultControlMenu";
 
 import { TestWrapper } from "TestWrapper";
+import i18n from "i18n/config";
 
 describe("SearchResultControlMenu", () => {
   const defaultProps = {
@@ -17,17 +17,17 @@ describe("SearchResultControlMenu", () => {
       keyword: "",
     },
     anchorElem: null,
-    handleUpdateAttrFilter: jest.fn(),
-    handleSelectFilterConditions: jest.fn(),
-    handleClose: jest.fn(),
-    setOpenEditModal: jest.fn(),
+    handleUpdateAttrFilter: vi.fn(),
+    handleSelectFilterConditions: vi.fn(),
+    handleClose: vi.fn(),
+    setOpenEditModal: vi.fn(),
     isDisabledEditModal: false,
     entityAttrs: [],
     totalCount: 0,
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test("should render menu when anchorElem is provided", () => {
@@ -50,5 +50,21 @@ describe("SearchResultControlMenu", () => {
     );
 
     expect(container.querySelectorAll('[role="menuitem"]')).toHaveLength(0);
+  });
+
+  test("renders in English", async () => {
+    await act(async () => {
+      await i18n.changeLanguage("en");
+    });
+    const anchorElem = document.createElement("button");
+    render(
+      <SearchResultControlMenu {...defaultProps} anchorElem={anchorElem} />,
+      { wrapper: TestWrapper },
+    );
+
+    expect(screen.getByText("Filter conditions")).toBeInTheDocument();
+    expect(screen.getByText("Clear")).toBeInTheDocument();
+    expect(screen.getByText("Other functions")).toBeInTheDocument();
+    expect(screen.getByText("Bulk update")).toBeInTheDocument();
   });
 });

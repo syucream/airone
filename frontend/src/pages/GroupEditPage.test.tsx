@@ -1,13 +1,21 @@
 /**
- * @jest-environment jsdom
  */
 
-import { render, screen, act, waitFor } from "@testing-library/react";
+import {
+  render,
+  screen,
+  act,
+  waitFor,
+  fireEvent,
+} from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
+import { ReactNode, useEffect } from "react";
 import { createMemoryRouter, RouterProvider } from "react-router";
+import { useSWRConfig } from "swr";
 
 import { TestWrapperWithoutRoutes } from "TestWrapper";
+import i18n from "i18n/config";
 import { GroupEditPage } from "pages/GroupEditPage";
 
 const server = setupServer(
@@ -85,7 +93,12 @@ describe("EditGroupPage", () => {
   Object.defineProperty(window, "django_context", {
     value: {
       user: {
+        id: 1,
+        username: "admin",
         isSuperuser: true,
+        isReadonly: false,
+        parentUser: null,
+        email: "admin@example.com",
       },
     },
     writable: false,
@@ -108,5 +121,80 @@ describe("EditGroupPage", () => {
     });
 
     expect(result).toMatchSnapshot();
+  });
+
+  test("keeps dirty form values when the fetched group is revalidated", async () => {
+    let revalidate: (() => Promise<unknown>) | null = null;
+    const RevalidationProbe = (): ReactNode => {
+      const { mutate } = useSWRConfig();
+      useEffect(() => {
+        revalidate = () => mutate(["group", 1]);
+      }, [mutate]);
+      return null;
+    };
+
+    const router = createMemoryRouter(
+      [
+        {
+          path: "/groups/:groupId",
+          element: <GroupEditPage />,
+        },
+      ],
+      { initialEntries: ["/groups/1"] },
+    );
+    render(
+      <>
+        <RouterProvider router={router} />
+        <RevalidationProbe />
+      </>,
+      { wrapper: TestWrapperWithoutRoutes },
+    );
+    await waitFor(() => {
+      expect(screen.queryByTestId("loading")).not.toBeInTheDocument();
+    });
+
+    // The fetched group name is synced into the form
+    const getNameInputValue = () =>
+      (screen.getByPlaceholderText("グループ名") as HTMLInputElement).value;
+    await waitFor(() => {
+      expect(getNameInputValue()).toBe("group1");
+    });
+
+    // Edit a field without saving
+    fireEvent.change(screen.getByPlaceholderText("グループ名"), {
+      target: { value: "edited" },
+    });
+    expect(getNameInputValue()).toBe("edited");
+
+    // A background refetch replaces data with a new object identity,
+    // but must not clobber the unsaved user edit.
+    await act(async () => {
+      await revalidate?.();
+    });
+
+    expect(getNameInputValue()).toBe("edited");
+  });
+
+  test("renders in English", async () => {
+    await act(async () => {
+      await i18n.changeLanguage("en");
+    });
+
+    const router = createMemoryRouter([
+      {
+        path: "/",
+        element: <GroupEditPage />,
+      },
+    ]);
+    await act(async () => {
+      render(<RouterProvider router={router} />, {
+        wrapper: TestWrapperWithoutRoutes,
+      });
+    });
+    await waitFor(() => {
+      expect(screen.queryByTestId("loading")).not.toBeInTheDocument();
+    });
+
+    expect(screen.getAllByText("Create a new group").length).toBeGreaterThan(0);
   });
 });

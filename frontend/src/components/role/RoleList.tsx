@@ -18,14 +18,15 @@ import { OverridableComponent } from "@mui/material/OverridableComponent";
 import { styled } from "@mui/material/styles";
 import { useSnackbar } from "notistack";
 import { FC, Suspense } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link } from "react-router";
 
 import { usePagodaSWR } from "../../hooks/usePagodaSWR";
 import { aironeApiClient } from "../../repository/AironeApiClient";
 import { Confirmable } from "../common/Confirmable";
 import { Loading } from "../common/Loading";
 
-import { rolePath, rolesPath, topPath } from "routes/Routes";
+import { useTranslation } from "hooks/useTranslation";
+import { rolePath } from "routes/Routes";
 import { ServerContext } from "services";
 
 const StyledList = styled(List)(() => ({
@@ -41,8 +42,8 @@ const StyledIconButton = styled(IconButton)(({ theme }) => ({
 })) as OverridableComponent<ExtendButtonBaseTypeMap<IconButtonTypeMap>>;
 
 const RoleListContent: FC = () => {
-  const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
+  const { t } = useTranslation();
   const { data: roles, mutate: refreshRoles } = usePagodaSWR(
     ["roles"],
     () => aironeApiClient.getRoles(),
@@ -54,14 +55,12 @@ const RoleListContent: FC = () => {
   const handleDelete = async (roleId: number) => {
     try {
       await aironeApiClient.deleteRole(roleId);
-      enqueueSnackbar(`ロールの削除が完了しました`, {
+      enqueueSnackbar(t("role.list.deleteSuccess"), {
         variant: "success",
       });
-      navigate(topPath(), { replace: true });
-      navigate(rolesPath(), { replace: true });
       refreshRoles();
     } catch (e) {
-      enqueueSnackbar("ロールの削除が失敗しました", {
+      enqueueSnackbar(t("role.list.deleteFailure"), {
         variant: "error",
       });
     }
@@ -71,11 +70,21 @@ const RoleListContent: FC = () => {
     <Table data-testid="RoleList">
       <TableHead>
         <TableRow sx={{ backgroundColor: "#455A64" }}>
-          <TableCell sx={{ color: "#FFFFFF" }}>ロール</TableCell>
-          <TableCell sx={{ color: "#FFFFFF" }}>備考</TableCell>
-          <TableCell sx={{ color: "#FFFFFF" }}>登録ユーザ・グループ</TableCell>
-          <TableCell sx={{ color: "#FFFFFF" }}>削除</TableCell>
-          <TableCell sx={{ color: "#FFFFFF" }}>編集</TableCell>
+          <TableCell sx={{ color: "#FFFFFF" }}>
+            {t("role.list.roleColumn")}
+          </TableCell>
+          <TableCell sx={{ color: "#FFFFFF" }}>
+            {t("role.list.descriptionColumn")}
+          </TableCell>
+          <TableCell sx={{ color: "#FFFFFF" }}>
+            {t("role.list.membersColumn")}
+          </TableCell>
+          <TableCell sx={{ color: "#FFFFFF" }}>
+            {t("role.list.deleteColumn")}
+          </TableCell>
+          <TableCell sx={{ color: "#FFFFFF" }}>
+            {t("role.list.editColumn")}
+          </TableCell>
         </TableRow>
       </TableHead>
       <TableBody>
@@ -113,7 +122,7 @@ const RoleListContent: FC = () => {
                           borderRadius: "12px",
                         }}
                       >
-                        管理者
+                        {t("role.list.adminBadge")}
                       </Box>
                       <Typography>{user.username}</Typography>
                     </Box>
@@ -133,7 +142,7 @@ const RoleListContent: FC = () => {
                           borderRadius: "12px",
                         }}
                       >
-                        管理者
+                        {t("role.list.adminBadge")}
                       </Box>
                       <Typography>{group.name}</Typography>
                     </Box>
@@ -145,18 +154,22 @@ const RoleListContent: FC = () => {
               <Confirmable
                 componentGenerator={(handleOpen) => (
                   <StyledIconButton
+                    aria-label={t("role.list.deleteAriaLabel", {
+                      name: role.name,
+                    })}
                     disabled={!role.isEditable || isReadonly}
                     onClick={handleOpen}
                   >
                     <DeleteOutlineIcon />
                   </StyledIconButton>
                 )}
-                dialogTitle="本当に削除しますか？"
+                dialogTitle={t("role.list.deleteConfirm")}
                 onClickYes={() => handleDelete(role.id)}
               />
             </TableCell>
             <TableCell>
               <StyledIconButton
+                aria-label={t("role.list.editAriaLabel", { name: role.name })}
                 disabled={!role.isEditable || isReadonly}
                 component={Link}
                 to={rolePath(role.id)}

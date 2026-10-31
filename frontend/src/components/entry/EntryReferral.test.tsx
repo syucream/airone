@@ -1,5 +1,4 @@
 /**
- * @jest-environment jsdom
  */
 
 import {
@@ -11,18 +10,21 @@ import {
 } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 
+import type { Mock } from "vitest";
+
 import { TestWrapperWithoutRoutes } from "TestWrapper";
 import { EntryReferral } from "components/entry/EntryReferral";
+import i18n from "i18n/config";
 import { aironeApiClient } from "repository/AironeApiClient";
 
 // Mock API client
-jest.mock("repository/AironeApiClient", () => ({
+vi.mock("repository/AironeApiClient", () => ({
   aironeApiClient: {
-    getEntryReferral: jest.fn(),
+    getEntryReferral: vi.fn(),
   },
 }));
 
-const mockGetEntryReferral = aironeApiClient.getEntryReferral as jest.Mock;
+const mockGetEntryReferral = aironeApiClient.getEntryReferral as Mock;
 
 const createMockReferrals = (count: number) => ({
   results: Array.from({ length: count }, (_, i) => ({
@@ -57,7 +59,7 @@ describe("EntryReferral", () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockGetEntryReferral.mockResolvedValue(createMockReferrals(3));
   });
 
@@ -191,6 +193,19 @@ describe("EntryReferral", () => {
       expect(
         screen.getByText(/関連づけられたアイテム.*10/),
       ).toBeInTheDocument();
+    });
+  });
+
+  describe("English locale", () => {
+    test("renders in English", async () => {
+      await act(async () => {
+        await i18n.changeLanguage("en");
+      });
+
+      await renderComponent();
+
+      expect(screen.getByText(/Referring entries.*3/)).toBeInTheDocument();
+      expect(screen.getByPlaceholderText("Filter entries")).toBeInTheDocument();
     });
   });
 });

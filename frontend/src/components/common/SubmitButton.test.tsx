@@ -1,16 +1,16 @@
 /**
- * @jest-environment jsdom
  */
 
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 
 import { SubmitButton } from "./SubmitButton";
 
 import { TestWrapper } from "TestWrapper";
+import i18n from "i18n/config";
 
 // Mock MUI components
-jest.mock("@mui/material", () => {
-  const actual = jest.requireActual("@mui/material");
+vi.mock("@mui/material", async () => {
+  const actual = (await vi.importActual("@mui/material")) as object;
   return {
     ...actual,
     CircularProgress: ({ size }: { size: string }) => (
@@ -22,7 +22,7 @@ jest.mock("@mui/material", () => {
 describe("SubmitButton", () => {
   // Basic rendering test
   test("renders submit button correctly", () => {
-    const handleSubmit = jest.fn();
+    const handleSubmit = vi.fn();
 
     render(
       <SubmitButton
@@ -44,7 +44,7 @@ describe("SubmitButton", () => {
 
   // Test disabled state
   test("disables button when disabled prop is true", () => {
-    const handleSubmit = jest.fn();
+    const handleSubmit = vi.fn();
 
     render(
       <SubmitButton
@@ -62,7 +62,7 @@ describe("SubmitButton", () => {
 
   // Test isSubmitting state
   test("shows loading indicator when isSubmitting is true", () => {
-    const handleSubmit = jest.fn();
+    const handleSubmit = vi.fn();
 
     render(
       <SubmitButton
@@ -83,7 +83,7 @@ describe("SubmitButton", () => {
 
   // Test handleSubmit callback
   test("calls handleSubmit when button is clicked", () => {
-    const handleSubmit = jest.fn();
+    const handleSubmit = vi.fn();
 
     render(
       <SubmitButton
@@ -104,8 +104,8 @@ describe("SubmitButton", () => {
 
   // Test handleCancel
   test("renders cancel button when handleCancel is provided", () => {
-    const handleSubmit = jest.fn();
-    const handleCancel = jest.fn();
+    const handleSubmit = vi.fn();
+    const handleCancel = vi.fn();
 
     render(
       <SubmitButton
@@ -124,8 +124,8 @@ describe("SubmitButton", () => {
 
   // Test cancel button click
   test("calls handleCancel when cancel button is clicked", () => {
-    const handleSubmit = jest.fn();
-    const handleCancel = jest.fn();
+    const handleSubmit = vi.fn();
+    const handleCancel = vi.fn();
 
     render(
       <SubmitButton
@@ -143,5 +143,33 @@ describe("SubmitButton", () => {
       fireEvent.click(cancelButton);
       expect(handleCancel).toHaveBeenCalledTimes(1);
     }
+  });
+
+  describe("English", () => {
+    afterEach(async () => {
+      await i18n.changeLanguage("ja");
+    });
+
+    test("renders cancel button in English", async () => {
+      await act(async () => {
+        await i18n.changeLanguage("en");
+      });
+
+      const handleSubmit = vi.fn();
+      const handleCancel = vi.fn();
+
+      render(
+        <SubmitButton
+          name="Submit"
+          disabled={false}
+          isSubmitting={false}
+          handleSubmit={handleSubmit}
+          handleCancel={handleCancel}
+        />,
+        { wrapper: TestWrapper },
+      );
+
+      expect(screen.getByText("Cancel")).toBeInTheDocument();
+    });
   });
 });

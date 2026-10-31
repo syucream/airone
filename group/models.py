@@ -1,7 +1,7 @@
 import importlib
 import sys
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from django.conf import settings
 from django.contrib.auth.models import Group as DjangoGroup
@@ -21,6 +21,15 @@ class Group(DjangoGroup):
         "Group", on_delete=models.DO_NOTHING, related_name="subordinates", null=True
     )
 
+    if TYPE_CHECKING:
+        # The manager is inherited from django.contrib.auth's Group, so the stubs type it
+        # as a manager of the parent model and reject lookups on fields defined here
+        # (e.g. is_active). Re-declare it for the checker only; at runtime Django already
+        # binds the inherited manager to this model. The stubs' GroupManager is not generic,
+        # so narrowing it is reported as an incompatible override; this single ignore
+        # replaces one at every query site.
+        objects: ClassVar[models.Manager["Group"]]  # type: ignore[assignment]
+
     def save(self, *args: Any, **kwargs: Any) -> None:
         """
         Override Model.save method of Django
@@ -28,7 +37,7 @@ class Group(DjangoGroup):
         max_groups: int | None = settings.MAX_GROUPS
         if max_groups and Group.objects.count() >= max_groups:
             raise RuntimeError("The number of groups is over the limit")
-        return super().save(*args, **kwargs)
+        return super(Group, self).save(*args, **kwargs)
 
     def delete(self) -> None:  # type: ignore[override]
         from airone.lib import auto_complement
@@ -45,10 +54,7 @@ class Group(DjangoGroup):
 
         self.is_active = False
         current_name: str = self.name
-        self.name = "%s_deleted_%s" % (
-            current_name,
-            datetime.now().strftime("%Y%m%d_%H%M%S"),
-        )
+        self.name = f"{current_name}_deleted_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
         self.save()
 
         user = auto_complement.get_auto_complement_user(None)
@@ -106,11 +112,9 @@ class Group(DjangoGroup):
             entry_model = importlib.import_module("entry.models")
 
         # get Entries that has AttributeValues, which specify this Group instance.
-        return cast(
-            "QuerySet[Any]",
-            entry_model.Entry.objects.filter(
-                pk__in=entry_model.AttributeValue.objects.filter(query).values_list(
-                    "parent_attr__parent_entry", flat=True
-                )
-            ),
+        qs: QuerySet[Any] = entry_model.Entry.objects.filter(
+            pk__in=entry_model.AttributeValue.objects.filter(query).values_list(
+                "parent_attr__parent_entry", flat=True
+            )
         )
+        return qs

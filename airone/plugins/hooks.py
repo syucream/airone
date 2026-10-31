@@ -6,7 +6,6 @@ legacy custom_view hook names and the new standardized hook names for
 backward compatibility.
 """
 
-
 # Mapping from custom_view hook names to standard hook names
 # This ensures backward compatibility with existing custom_view implementations
 HOOK_ALIASES: dict[str, str] = {

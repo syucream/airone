@@ -1,28 +1,28 @@
 /**
- * @jest-environment jsdom
  */
 
-import { render, screen, fireEvent } from "@testing-library/react";
+import { act, render, screen, fireEvent } from "@testing-library/react";
 
 import { EntityImportModal } from "./EntityImportModal";
 
 import { TestWrapper } from "TestWrapper";
+import i18n from "i18n/config";
 
 // Mock API client
-jest.mock("../../repository/AironeApiClient", () => ({
+vi.mock("../../repository/AironeApiClient", () => ({
   aironeApiClient: {
-    importEntities: jest.fn(() => Promise.resolve()),
+    importEntities: vi.fn(() => Promise.resolve()),
   },
 }));
 
 describe("EntityImportModal", () => {
   const defaultProps = {
     openImportModal: true,
-    closeImportModal: jest.fn(),
+    closeImportModal: vi.fn(),
   };
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe("rendering", () => {
@@ -55,11 +55,27 @@ describe("EntityImportModal", () => {
 
       expect(screen.queryByText("モデルのインポート")).not.toBeInTheDocument();
     });
+
+    test("should render in English", async () => {
+      await act(async () => {
+        await i18n.changeLanguage("en");
+      });
+
+      render(<EntityImportModal {...defaultProps} />, { wrapper: TestWrapper });
+
+      expect(screen.getByText("Import entities")).toBeInTheDocument();
+      expect(
+        screen.getByText("Please select a file to import."),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText("* CSV files cannot be selected."),
+      ).toBeInTheDocument();
+    });
   });
 
   describe("modal close", () => {
     test("should call closeImportModal when cancel button is clicked", () => {
-      const mockClose = jest.fn();
+      const mockClose = vi.fn();
       render(
         <EntityImportModal {...defaultProps} closeImportModal={mockClose} />,
         { wrapper: TestWrapper },

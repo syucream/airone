@@ -3,7 +3,14 @@ import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import { Box, Chip, IconButton, Stack, Typography } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import { styled } from "@mui/material/styles";
-import { FC, Suspense, useEffect, useState } from "react";
+import {
+  FC,
+  ReactElement,
+  Suspense,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { useNavigate } from "react-router";
 
 import { Loading } from "components/common/Loading";
@@ -12,9 +19,10 @@ import { EntryAttributes } from "components/entry/EntryAttributes";
 import { EntryBreadcrumbs } from "components/entry/EntryBreadcrumbs";
 import { EntryControlMenu } from "components/entry/EntryControlMenu";
 import { EntryReferral } from "components/entry/EntryReferral";
+import { useIdParams } from "hooks/useIdParams";
 import { usePageTitle } from "hooks/usePageTitle";
 import { usePagodaSWR } from "hooks/usePagodaSWR";
-import { useTypedParams } from "hooks/useTypedParams";
+import { useTranslation } from "hooks/useTranslation";
 import { aironeApiClient } from "repository/AironeApiClient";
 import { entryDetailsPath, restoreEntryPath } from "routes/Routes";
 import { TITLE_TEMPLATES } from "services";
@@ -62,9 +70,9 @@ interface Props {
   additionalContents?: {
     name: string;
     label: string;
-    content: JSX.Element;
+    content: ReactElement;
   }[];
-  sideContent?: JSX.Element;
+  sideContent?: ReactElement;
 }
 
 const EntryDetailsContent: FC<Props> = ({
@@ -72,10 +80,10 @@ const EntryDetailsContent: FC<Props> = ({
   additionalContents = [],
   sideContent = <Box />,
 }) => {
-  const { entityId, entryId } = useTypedParams<{
-    entityId: number;
-    entryId: number;
-  }>();
+  const { t } = useTranslation();
+  const { entityId, entryId } = useIdParams({
+    required: ["entityId", "entryId"],
+  });
   const navigate = useNavigate();
 
   const [entryAnchorEl, setEntryAnchorEl] = useState<HTMLButtonElement | null>(
@@ -85,11 +93,25 @@ const EntryDetailsContent: FC<Props> = ({
   const { data: entry } = usePagodaSWR(
     ["entry", entryId],
     () => aironeApiClient.getEntry(entryId),
-    { suspense: true },
+    { suspense: true, refreshInterval: 15_000 },
   );
 
   const { data: triggers } = usePagodaSWR(["triggers"], () =>
     aironeApiClient.getTriggers(),
+  );
+
+  const { data: entity } = usePagodaSWR(["entity", entityId], () =>
+    aironeApiClient.getEntity(entityId),
+  );
+
+  const attrNotes = useMemo(
+    () =>
+      Object.fromEntries(
+        (entity?.attrs ?? [])
+          .filter((attr) => attr.note !== "")
+          .map((attr) => [attr.id, attr.note]),
+      ),
+    [entity],
   );
 
   useEffect(() => {
@@ -114,13 +136,19 @@ const EntryDetailsContent: FC<Props> = ({
     <FlexBox>
       <EntryBreadcrumbs entry={entry} />
 
-      <PageHeader title={entry.name ?? ""} description="アイテム詳細">
+      <PageHeader
+        title={entry.name ?? ""}
+        description={t("entry.details.pageDescription")}
+        targetId={entryId}
+        targetKind="item"
+        hasOngoingProcess={entry.hasOngoingChanges}
+      >
         <ChipBox>
           <Stack direction="row" spacing={1}>
             {[
               {
                 name: "attr_list",
-                label: "項目一覧",
+                label: t("entry.details.attrListLabel"),
               },
               ...additionalContents,
             ].map((content) => {
@@ -150,6 +178,7 @@ const EntryDetailsContent: FC<Props> = ({
             <EntryControlMenu
               entityId={entityId}
               entryId={entryId}
+              entryName={entry.name}
               anchorElem={entryAnchorEl}
               handleClose={() => setEntryAnchorEl(null)}
               permission={entry.permission}
@@ -167,13 +196,14 @@ const EntryDetailsContent: FC<Props> = ({
           {[
             {
               name: "attr_list",
-              label: "項目一覧",
+              label: t("entry.details.attrListLabel"),
               content: (
                 <EntryAttributes
                   attributes={entry.attrs.filter(
                     (attr) => !excludeAttrs.includes(attr.schema.name),
                   )}
                   triggers={triggers?.results}
+                  attrNotes={attrNotes}
                 />
               ),
             },

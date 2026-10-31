@@ -1,13 +1,21 @@
 import { z } from "zod";
 
+import { translate } from "../../../i18n/config";
 import { AttributeTypes } from "../../../services/Constants";
 
 const isObjectLikeType = (type: number): boolean => {
   return (type & AttributeTypes.object.type) !== 0;
 };
 
+const isSelectLikeType = (type: number): boolean => {
+  return (type & AttributeTypes.select.type) !== 0;
+};
+
 export const schema = z.object({
-  name: z.string().min(1, "モデル名は必須です").default(""),
+  name: z
+    .string()
+    .min(1, translate("entity.form.validation.nameRequired"))
+    .default(""),
   note: z.string().default(""),
   itemNamePattern: z
     .string()
@@ -21,7 +29,7 @@ export const schema = z.object({
           return false;
         }
       },
-      { message: "正規表現として正しい文字列を入力してください" },
+      { message: translate("entity.form.validation.invalidRegex") },
     ),
   itemNameType: z.enum(["US", "ID", "AT"]).default("US"),
   isToplevel: z.boolean().default(false),
@@ -50,7 +58,7 @@ export const schema = z.object({
               isUnmatch: z.boolean().default(false),
             }),
           )
-          .min(1, "条件は1つ以上必要です"),
+          .min(1, translate("entity.form.validation.conditionsRequired")),
         action: z.object({
           id: z.number().optional(),
           isPreventAll: z.boolean().default(false),
@@ -68,8 +76,8 @@ export const schema = z.object({
         id: z.number().optional(),
         url: z
           .string()
-          .min(1, "URLは必須です")
-          .url("URLとして正しい文字列を入力してください")
+          .min(1, translate("entity.form.validation.urlRequired"))
+          .url(translate("entity.form.validation.invalidUrl"))
           .default(""),
         label: z.string().default(""),
         isEnabled: z.boolean().default(false),
@@ -78,7 +86,10 @@ export const schema = z.object({
         headers: z
           .array(
             z.object({
-              headerKey: z.string().min(1, "ヘッダキーは必須です").default(""),
+              headerKey: z
+                .string()
+                .min(1, translate("entity.form.validation.headerKeyRequired"))
+                .default(""),
               headerValue: z.string().default(""),
             }),
           )
@@ -91,7 +102,10 @@ export const schema = z.object({
       z
         .object({
           id: z.number().optional(),
-          name: z.string().min(1, "属性名は必須です").default(""),
+          name: z
+            .string()
+            .min(1, translate("entity.form.validation.attrNameRequired"))
+            .default(""),
           type: z.number(),
           isMandatory: z.boolean().default(false),
           isDeleteInChain: z.boolean().default(false),
@@ -107,11 +121,35 @@ export const schema = z.object({
             .default([]),
           note: z.string().default(""),
           defaultValue: z
-            .union([z.string(), z.number(), z.boolean(), z.null()])
+            .union([
+              z.string(),
+              z.number(),
+              z.boolean(),
+              z.array(z.number().int().positive()),
+              z.null(),
+            ])
             .optional(),
+          choices: z
+            .array(
+              z.object({
+                // value is the backend-assigned internal id. New rows omit it;
+                // existing rows keep it so the server can rename labels in place.
+                value: z.string().optional(),
+                label: z
+                  .string()
+                  .min(
+                    1,
+                    translate("entity.form.validation.choiceLabelRequired"),
+                  ),
+              }),
+            )
+            .nullable()
+            .optional(),
+          choicesInUse: z.array(z.string()).optional(),
           nameOrder: z.string().default("0"),
           namePrefix: z.string().default(""),
           namePostfix: z.string().default(""),
+          displayAttr: z.string().default(""),
         })
         .refine(
           (attr) => {
@@ -122,8 +160,35 @@ export const schema = z.object({
             return true;
           },
           {
-            message: "オブジェクト型を選択した場合、参照先は必須です",
+            message: translate("entity.form.validation.referralRequired"),
             path: ["referral"],
+          },
+        )
+        .refine(
+          (attr) => {
+            // SELECT / MULTI_SELECT require non-empty choices
+            if (isSelectLikeType(attr.type)) {
+              return Array.isArray(attr.choices) && attr.choices.length > 0;
+            }
+            return true;
+          },
+          {
+            message: translate("entity.form.validation.choicesRequired"),
+            path: ["choices"],
+          },
+        )
+        .refine(
+          (attr) => {
+            // SELECT / MULTI_SELECT labels must be unique
+            if (isSelectLikeType(attr.type) && Array.isArray(attr.choices)) {
+              const labels = attr.choices.map((c) => c.label);
+              return new Set(labels).size === labels.length;
+            }
+            return true;
+          },
+          {
+            message: translate("entity.form.validation.choiceLabelUnique"),
+            path: ["choices"],
           },
         ),
     )
@@ -142,7 +207,7 @@ export const schema = z.object({
           indices.forEach((index) => {
             ctx.addIssue({
               code: z.ZodIssueCode.custom,
-              message: "属性名が重複しています",
+              message: translate("entity.form.validation.duplicateAttrName"),
               path: [index, "name"],
             });
           });

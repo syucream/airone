@@ -1,5 +1,5 @@
 import io
-from typing import Any
+from typing import Any, cast
 
 import yaml
 from django.http import HttpRequest, HttpResponse
@@ -99,7 +99,7 @@ def do_edit(request: HttpRequest, group_id: int, recv_data: dict[str, Any]) -> H
     job_register_referrals = None
     if group.name != recv_data["name"]:
         job_register_referrals = Job.new_register_referrals(
-            request.user,
+            cast(User, request.user),
             None,
             operation_value=JobOperation.GROUP_REGISTER_REFERRAL,
             params={"group_id": group.id},
@@ -108,7 +108,8 @@ def do_edit(request: HttpRequest, group_id: int, recv_data: dict[str, Any]) -> H
     # update group_name with specified one
     group.name = recv_data["name"]
     group.parent_group = Group.objects.filter(
-        id=recv_data.get("parent_group", 0), is_active=True
+        id=recv_data.get("parent_group", 0),
+        is_active=True,
     ).first()
     group.save()
 
@@ -184,7 +185,8 @@ def do_create(request: HttpRequest, recv_data: dict[str, Any]) -> HttpResponse:
     new_group = Group(
         name=recv_data["name"],
         parent_group=Group.objects.filter(
-            id=recv_data.get("parent_group", 0), is_active=True
+            id=recv_data.get("parent_group", 0),
+            is_active=True,
         ).first(),
     )
     new_group.save()

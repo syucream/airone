@@ -1,5 +1,4 @@
 /**
- * @jest-environment jsdom
  */
 
 import {
@@ -9,10 +8,12 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   act,
+  fireEvent,
   screen,
   render,
   renderHook,
   within,
+  waitFor,
 } from "@testing-library/react";
 import { useForm } from "react-hook-form";
 
@@ -20,6 +21,8 @@ import { schema, Schema } from "./EntryFormSchema";
 import { GroupAttributeValueField } from "./GroupAttributeValueField";
 
 import { TestWrapper } from "TestWrapper";
+import i18n from "i18n/config";
+import { aironeApiClient } from "repository/AironeApiClient";
 
 import "@testing-library/jest-dom";
 
@@ -92,14 +95,7 @@ describe("GroupAttributeValueField", () => {
       }),
     );
 
-    /* eslint-disable */
-    jest
-      .spyOn(
-        require("../../../repository/AironeApiClient").aironeApiClient,
-        "getGroups",
-      )
-      .mockResolvedValue(Promise.resolve(groups));
-    /* eslint-enable */
+    vi.spyOn(aironeApiClient, "getGroups").mockResolvedValue(groups);
 
     await act(async () => {
       render(
@@ -147,14 +143,7 @@ describe("GroupAttributeValueField", () => {
       }),
     );
 
-    /* eslint-disable */
-    jest
-      .spyOn(
-        require("../../../repository/AironeApiClient").aironeApiClient,
-        "getGroups",
-      )
-      .mockResolvedValue(Promise.resolve(groups));
-    /* eslint-enable */
+    vi.spyOn(aironeApiClient, "getGroups").mockResolvedValue(groups);
 
     await act(async () => {
       render(
@@ -188,5 +177,59 @@ describe("GroupAttributeValueField", () => {
       { id: 1, name: "group1" },
       { id: 2, name: "group2" },
     ]);
+  });
+  test("searches groups with entered text", async () => {
+    const spy = vi
+      .spyOn(aironeApiClient, "getGroups")
+      .mockResolvedValue(groups);
+    const { result } = renderHook(() =>
+      useForm<Schema>({ resolver: zodResolver(schema), defaultValues }),
+    );
+    render(
+      <GroupAttributeValueField
+        attrId={0}
+        control={result.current.control}
+        setValue={result.current.setValue}
+      />,
+      { wrapper: TestWrapper },
+    );
+    const input = screen.getByRole("combobox");
+    input.focus();
+    fireEvent.input(input, { target: { value: "admin" } });
+    await waitFor(() => expect(input).toHaveValue("admin"));
+    await waitFor(() => expect(spy).toHaveBeenCalledWith(1, "admin"));
+  });
+
+  test("renders caption in english", async () => {
+    vi.spyOn(aironeApiClient, "getGroups").mockResolvedValue(groups);
+
+    await act(async () => {
+      await i18n.changeLanguage("en");
+    });
+
+    const {
+      result: {
+        current: { control, setValue },
+      },
+    } = renderHook(() =>
+      useForm<Schema>({
+        resolver: zodResolver(schema),
+        mode: "onBlur",
+        defaultValues,
+      }),
+    );
+
+    await act(async () => {
+      render(
+        <GroupAttributeValueField
+          attrId={0}
+          control={control}
+          setValue={setValue}
+        />,
+        { wrapper: TestWrapper },
+      );
+    });
+
+    expect(screen.getByText("Select a group")).toBeInTheDocument();
   });
 });

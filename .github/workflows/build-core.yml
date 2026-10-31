@@ -9,33 +9,44 @@ on:
       - "**/*.py"
       - "templates/**/*.html"
       - ".github/workflows/build-core.yml"
+      - ".github/actions/setup-pagoda-env/action.yml"
+      - "pyproject.toml"
+      - "plugin/**/pyproject.toml"
       - "uv.lock"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   lint:
     runs-on: ubuntu-24.04
-    strategy:
-      matrix:
-        python-version: ["3.14"]
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-      - name: Install uv
-        run: pipx install uv
-      - uses: actions/setup-python@7f4fc3e22c37d6ff65e88745f38bd3157c663f7c # v4
+      - name: Set up Pagoda env
+        uses: ./.github/actions/setup-pagoda-env
         with:
-          python-version: ${{ matrix.python-version }}
-          cache: "pip"
-      - name: apt-get
+          clone: "false"
+          base-dir: .
+      - name: Fetch mypy comparison base
         run: |
-          sudo apt-get update
-          sudo apt-get install libldap2-dev libsasl2-dev libxmlsec1-dev libmysqlclient-dev pkg-config
-      - name: uv sync
-        run: |
-          uv sync --extra dev
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            base="${{ github.event.pull_request.base.sha }}"
+          else
+            base="${{ github.event.before }}"
+          fi
+          if ! [[ "${base}" =~ ^[0-9a-f]{40}$ ]] || [[ "${base}" =~ ^0+$ ]]; then
+            echo "::error::Invalid mypy comparison base: ${base}"
+            exit 1
+          fi
+          git fetch --no-tags --depth=1 origin "${base}"
+          git cat-file -e "${base}^{commit}"
+          echo "MYPY_BASE_REF=${base}" >> "$GITHUB_ENV"
+
       - name: staticchecks
         run: |
           mv custom_view_sample custom_view
-          uv run mypy ./
+          uv run python tools/mypy_ratchet.py --base-ref "${MYPY_BASE_REF}"
           uv run ruff check --output-format=github .
           uv run ruff format --check .
       - name: Check OpenAPI schema generation
@@ -43,9 +54,21 @@ jobs:
           # Use the same configuration as npm run generate:client
           export DJANGO_CONFIGURATION=DRFSpectacularExcludeCustomView
 
-          # Check for errors (fail the build)
-          # grep for actual error lines like "Error [ViewName]: ..." (not summary lines)
-          errors=$(uv run python manage.py spectacular 2>&1 > /dev/null | grep "Error \[" || true)
+          # Generate the schema once and capture stderr so that both hard
+          # failures and per-view errors can be inspected.
+          spec_err=$(mktemp)
+          if ! uv run python manage.py spectacular > /dev/null 2>"$spec_err"; then
+            echo "::error::OpenAPI schema generation crashed:"
+            cat "$spec_err"
+            exit 1
+          fi
+
+          # Spectacular reports per-view errors on stderr without failing the
+          # command itself. Match both "Error [ViewName]: ..." (with
+          # breadcrumbs) and plain "Error: ..." lines, allowing the optional
+          # "source:line: " prefix Spectacular adds. Requiring a boundary before
+          # "Error" avoids matching exception names such as "ImportError:".
+          errors=$(grep -E '(^|[[:space:]])Error(:| \[)' "$spec_err" || true)
           if [ -n "$errors" ]; then
             echo "::error::OpenAPI schema generation errors:"
             echo "$errors"
@@ -53,7 +76,7 @@ jobs:
           fi
 
           # Check for warnings (report but don't fail - for gradual cleanup)
-          warnings=$(uv run python manage.py spectacular 2>&1 > /dev/null | grep -i WARN || true)
+          warnings=$(grep -i 'warn' "$spec_err" || true)
           if [ -n "$warnings" ]; then
             echo "::warning::OpenAPI schema generation warnings:"
             echo "$warnings"
@@ -82,7 +105,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.14"]
         target: ${{ fromJson(needs.setup_python.outputs.targets) }}
     services:
       rabbitmq:
@@ -90,7 +112,7 @@ jobs:
         ports:
           - 5672:5672
       elasticsearch:
-        image: docker.elastic.co/elasticsearch/elasticsearch:8.17.0
+        image: docker.elastic.co/elasticsearch/elasticsearch:8.19.3
         ports:
           - 9200:9200
         env:
@@ -118,23 +140,12 @@ jobs:
           --health-retries=3
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-      - name: Install uv
-        run: pipx install uv
-      - uses: actions/setup-python@7f4fc3e22c37d6ff65e88745f38bd3157c663f7c # v4
+      - name: Set up Pagoda env
+        uses: ./.github/actions/setup-pagoda-env
         with:
-          python-version: ${{ matrix.python-version }}
-          cache: "pip"
-      - name: Install additional dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libldap2-dev libsasl2-dev libxmlsec1-dev default-mysql-client default-libmysqlclient-dev
-      - name: Prepare MySQL
-        run: |
-          mysql -protocol=tcp -uroot -h127.0.0.1 -ppassword -e "SET GLOBAL character_set_server=utf8; SET GLOBAL collation_server=utf8_general_ci; SET GLOBAL default_storage_engine=InnoDB;"
-          mysql -protocol=tcp -uroot -h127.0.0.1 -ppassword -e "GRANT ALL ON *.* to airone@'%'"
-      - name: uv sync
-        run: |
-          uv sync --extra dev
+          clone: "false"
+          base-dir: .
+          prepare-mysql: "true"
       - name: test
         run: |
           mv custom_view_sample custom_view
@@ -152,24 +163,20 @@ jobs:
 
   report-coverage:
     runs-on: ubuntu-24.04
-    needs: [setup_python, test]
+    needs: test
     permissions:
       contents: read
       pull-requests: write
-    strategy:
-      fail-fast: false
-      matrix:
-        target: ${{ fromJson(needs.setup_python.outputs.targets) }}
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-      - name: Download coverage report
+      - name: Download coverage reports
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
-          name: coverage-${{ matrix.target }}
+          pattern: coverage-*
+          path: coverage-reports
       - name: octocov
         uses: k1LoW/octocov-action@b3b6ee60482a667950f87553abf1df63217235d9 # v1
         with:
           config: .octocov.yml
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
-

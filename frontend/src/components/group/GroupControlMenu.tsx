@@ -1,6 +1,5 @@
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import {
-  Box,
   ListItemIcon,
   ListItemText,
   Menu,
@@ -9,11 +8,12 @@ import {
 } from "@mui/material";
 import { useSnackbar } from "notistack";
 import { FC, useCallback } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link } from "react-router";
 
 import { Confirmable } from "components/common/Confirmable";
+import { useTranslation } from "hooks/useTranslation";
 import { aironeApiClient } from "repository/AironeApiClient";
-import { groupPath, groupsPath, topPath } from "routes/Routes";
+import { groupPath } from "routes/Routes";
 
 interface Props {
   groupId: number;
@@ -29,23 +29,22 @@ export const GroupControlMenu: FC<Props> = ({
   setToggle,
 }) => {
   const { enqueueSnackbar } = useSnackbar();
-  const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const handleDelete = useCallback(async () => {
     try {
       await aironeApiClient.deleteGroup(groupId);
-      enqueueSnackbar(`グループの削除が完了しました`, {
+      handleClose();
+      enqueueSnackbar(t("group.controlMenu.deleteSuccess"), {
         variant: "success",
       });
-      navigate(topPath(), { replace: true });
-      navigate(groupsPath(), { replace: true });
       setToggle && setToggle();
     } catch (e) {
-      enqueueSnackbar("グループの削除が失敗しました", {
+      enqueueSnackbar(t("group.controlMenu.deleteFailure"), {
         variant: "error",
       });
     }
-  }, [navigate, enqueueSnackbar, groupId, setToggle]);
+  }, [enqueueSnackbar, groupId, handleClose, setToggle, t]);
 
   return (
     <Menu
@@ -61,23 +60,21 @@ export const GroupControlMenu: FC<Props> = ({
         horizontal: "right",
       }}
     >
-      <Box sx={{ width: 150 }}>
-        <MenuItem component={Link} to={groupPath(groupId)}>
-          <Typography>グループ編集</Typography>
-        </MenuItem>
-        <Confirmable
-          componentGenerator={(handleOpen) => (
-            <MenuItem onClick={handleOpen} sx={{ justifyContent: "end" }}>
-              <ListItemText>削除</ListItemText>
-              <ListItemIcon>
-                <DeleteOutlineIcon />
-              </ListItemIcon>
-            </MenuItem>
-          )}
-          dialogTitle={`本当に削除しますか？`}
-          onClickYes={handleDelete}
-        />
-      </Box>
+      <MenuItem component={Link} to={groupPath(groupId)}>
+        <Typography>{t("group.controlMenu.editGroup")}</Typography>
+      </MenuItem>
+      <Confirmable
+        componentGenerator={(handleOpen) => (
+          <MenuItem onClick={handleOpen} sx={{ justifyContent: "end" }}>
+            <ListItemText>{t("common.delete")}</ListItemText>
+            <ListItemIcon>
+              <DeleteOutlineIcon />
+            </ListItemIcon>
+          </MenuItem>
+        )}
+        dialogTitle={t("group.controlMenu.deleteConfirm")}
+        onClickYes={handleDelete}
+      />
     </Menu>
   );
 };

@@ -2,24 +2,26 @@ import codecs
 import importlib
 import json
 import urllib.parse
-from collections.abc import Callable
+from datetime import datetime
 from io import StringIO
-from typing import Any
+from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar, cast
 from urllib.parse import quote
 
 from django.conf import settings
-from django.db import models
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import render as django_render
 from django.utils.encoding import smart_str
 from django.utils.http import MAX_URL_LENGTH
 
+from acl.models import ACLBase
 from airone.lib.acl import ACLObjType
 from airone.lib.types import AttrType, AttrTypeValue
 from entity import models as entity_models
 from entry import models as entry_models
 from job.models import JobOperation, JobStatus
 from user.models import History, User
+
+_ACLBaseT = TypeVar("_ACLBaseT", bound=ACLBase)
 
 
 class HttpResponseSeeOther(HttpResponseRedirect):
@@ -49,14 +51,16 @@ def http_get(func: Callable[..., HttpResponse]) -> Callable[..., HttpResponse]:
 
 
 def get_obj_with_check_perm(
-    user: User, model: type[models.Model], object_id: int, permission_level: int
-) -> tuple[Any | None, HttpResponse | None]:
-    target_obj = model.objects.filter(id=object_id).first()  # type: ignore[attr-defined]
+    user: User, model: type[_ACLBaseT], object_id: int, permission_level: int
+) -> Tuple[Optional[_ACLBaseT], Optional[HttpResponse]]:
+    target_obj = model.objects.filter(id=object_id).first()
     if not target_obj:
         return (None, HttpResponse("Failed to get entity of specified id", status=400))
 
     # only requests that have correct permission are executed
-    airone_instance = target_obj.get_subclass_object()
+    # get_subclass_object() returns an ACLBase subclass instance; we trust the caller
+    # invoked us with the correct concrete model, so downcast to _ACLBaseT.
+    airone_instance = cast(_ACLBaseT, target_obj.get_subclass_object())
     if not user.has_permission(airone_instance, permission_level):
         return (
             None,
@@ -82,7 +86,7 @@ def check_superuser(func: Callable[..., HttpResponse]) -> Callable[..., HttpResp
 
 
 def http_post(
-    validator: list[dict[str, Any]] = [],
+    validator: List[Dict[str, Any]] = [],
 ) -> Callable[[Callable[..., HttpResponse]], Callable[..., HttpResponse]]:
     def _decorator(func: Callable[..., HttpResponse]) -> Callable[..., HttpResponse]:
         def http_post_handler(*args: Any, **kwargs: Any) -> HttpResponse:
@@ -110,19 +114,18 @@ def http_post(
 
 
 def http_file_upload(func: Callable[..., HttpResponse]) -> Callable[..., HttpResponse]:
-    def get_uploaded_file_content(request: HttpRequest) -> str | None:
+    def get_uploaded_file_content(request: HttpRequest) -> Optional[str]:
         """This returns uploaded file context whatever encoding type"""
 
         fp = request.FILES.get("file")
+        if fp is None:
+            return None
         for encoding in ["UTF-8", "Shift-JIS", "ISO-2022-JP", "EUC-JP"]:
             try:
-                if fp is None:
-                    return None
                 return codecs.getreader(encoding)(fp).read()
 
             except UnicodeDecodeError:
-                if fp is not None:
-                    fp.seek(0)
+                fp.seek(0)
 
             except Exception:
                 return None
@@ -135,6 +138,9 @@ def http_file_upload(func: Callable[..., HttpResponse]) -> Callable[..., HttpRes
         if request.method != "POST":
             return HttpResponse("Invalid HTTP method is specified", status=400)
 
+        if not request.user.is_authenticated:
+            return HttpResponse("You have to login to execute this operation", status=401)
+
         kwargs["context"] = get_uploaded_file_content(request)
         if not kwargs["context"]:
             return HttpResponse("Uploaded file is invalid", status=400)
@@ -144,7 +150,7 @@ def http_file_upload(func: Callable[..., HttpResponse]) -> Callable[..., HttpRes
     return wrapper
 
 
-def render(request: HttpRequest, template: str, context: dict[str, Any] = {}) -> HttpResponse:
+def render(request: HttpRequest, template: str, context: Dict[str, Any] = {}) -> HttpResponse:
     # added default parameters for navigate
     entity_objects = entity_models.Entity.objects.order_by("name").filter(is_active=True)
     context["navigator"] = {
@@ -228,12 +234,13 @@ def get_download_response(io_stream: StringIO, fname: str, encode: str = "utf-8"
         io_stream.getvalue().encode(encode, errors="replace"),
         content_type="application/force-download",
     )
-    fname_encoded = urllib.parse.quote(smart_str(fname))
-    response["Content-Disposition"] = f'attachment; filename="{fname_encoded}"'
+    response["Content-Disposition"] = 'attachment; filename="{fn}"'.format(
+        fn=urllib.parse.quote(smart_str(fname))
+    )
     return response
 
 
-def _is_valid(params: dict[str, Any], meta_info: list[dict[str, Any]]) -> bool:
+def _is_valid(params: Dict[str, Any], meta_info: List[Dict[str, Any]]) -> bool:
     # These are existance checks of each parameters except for ones which has omittable parameter
     if not all([x["name"] in params for x in meta_info if "omittable" not in x]):
         return False
@@ -268,3 +275,9 @@ def _is_valid(params: dict[str, Any], meta_info: list[dict[str, Any]]) -> bool:
                 return False
 
     return True
+
+
+def timestamped_filename(name: str) -> str:
+    timestamp = datetime.now().strftime("%Y_%m_%d_%H_%M")
+    stem, extension = name.rsplit(".", 1)
+    return f"{stem}_{timestamp}.{extension}"

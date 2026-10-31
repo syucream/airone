@@ -8,10 +8,9 @@ Changed to ID-based registration with parameter support.
 """
 
 import logging
-from collections.abc import Callable
 from dataclasses import dataclass, field
-from enum import Enum
-from typing import TYPE_CHECKING, Any, Optional, Protocol
+from enum import StrEnum
+from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Protocol
 
 from pydantic import BaseModel
 
@@ -28,7 +27,7 @@ class PluginRegistryProtocol(Protocol):
 logger = logging.getLogger(__name__)
 
 
-class OperationType(Enum):
+class OperationType(StrEnum):
     """Supported entry operation types that can be overridden."""
 
     CREATE = "create"
@@ -48,7 +47,7 @@ class OperationType(Enum):
             )
 
 
-@dataclass
+@dataclass(slots=True)
 class OverrideRegistration:
     """Registration information for an override handler."""
 
@@ -56,7 +55,7 @@ class OverrideRegistration:
     operation: OperationType
     handler: Callable[..., Any]
     plugin_id: str
-    params: dict[str, Any] = field(default_factory=dict)
+    params: Dict[str, Any] = field(default_factory=dict)
 
     def __repr__(self) -> str:
         return (
@@ -86,7 +85,7 @@ class OverrideConflictError(Exception):
         )
 
 
-@dataclass
+@dataclass(slots=True)
 class OverrideRegistry:
     """Registry for plugin entry operation overrides.
 
@@ -111,7 +110,7 @@ class OverrideRegistry:
             return registration.handler(context)
     """
 
-    _handlers: dict[int, dict[OperationType, OverrideRegistration]] = field(default_factory=dict)
+    _handlers: Dict[int, Dict[OperationType, OverrideRegistration]] = field(default_factory=dict)
     _initialized: bool = field(default=False)
 
     def register(
@@ -120,7 +119,7 @@ class OverrideRegistry:
         operation: OperationType,
         handler: Callable[..., Any],
         plugin_id: str,
-        params: dict[str, Any] | BaseModel | None = None,
+        params: Optional[Dict[str, Any] | BaseModel] = None,
     ) -> None:
         """Register an override handler for an entity operation.
 
@@ -152,7 +151,7 @@ class OverrideRegistry:
         # validated Pydantic model. Normalize to a plain dict so handlers can
         # always treat OverrideContext.params as a mapping.
         if params is None:
-            param_dict: dict[str, Any] = {}
+            param_dict: Dict[str, Any] = {}
         elif isinstance(params, BaseModel):
             param_dict = params.model_dump()
         else:
@@ -177,7 +176,7 @@ class OverrideRegistry:
         self,
         entity_id: int,
         operation: OperationType,
-    ) -> OverrideRegistration | None:
+    ) -> Optional[OverrideRegistration]:
         """Get the full registration info for an entity operation.
 
         Args:
@@ -199,7 +198,7 @@ class OverrideRegistry:
 
     def load_from_settings(
         self,
-        settings_config: dict[str, dict[str, Any]],
+        settings_config: Dict[str, Dict[str, Any]],
         plugin_registry: PluginRegistryProtocol,
     ) -> None:
         """Load override registrations from settings configuration.

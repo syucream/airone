@@ -21,6 +21,7 @@ from airone.lib.types import (
 from entry import tasks as entry_tasks
 from entry.models import Entry
 from group.models import Group
+from job.models import Job, JobStatus
 from role.models import Role
 from user.api_v2.views import UserActivityAPI
 from user.models import User
@@ -74,6 +75,142 @@ class ViewTest(AironeViewTest):
         co_user = self._create_user("co_user", "co@example.com", parent_user=login_user)
         resp = self.client.get("/user/api/v2/%s/" % co_user.id)
         self.assertEqual(resp.status_code, 200)
+
+    def test_update_co_user_token_lifetime_by_parent_user(self):
+        parent_user = self.guest_login()
+        co_user = self._create_user("co_user", parent_user=parent_user)
+        Token.objects.create(user=co_user)
+
+        resp = self.client.put(
+            "/user/api/v2/%d/" % co_user.id,
+            json.dumps(
+                {
+                    "username": co_user.username,
+                    "email": co_user.email,
+                    "is_superuser": co_user.is_superuser,
+                    "token_lifetime": 3600,
+                }
+            ),
+            "application/json",
+        )
+
+        self.assertEqual(resp.status_code, 200)
+        co_user.refresh_from_db()
+        self.assertEqual(co_user.token_lifetime, 3600)
+
+    def test_update_other_user_by_guest_is_forbidden(self):
+        self.guest_login()
+        other_user = self._create_user("other")
+
+        resp = self.client.put(
+            "/user/api/v2/%d/" % other_user.id,
+            json.dumps(
+                {
+                    "username": other_user.username,
+                    "email": other_user.email,
+                    "is_superuser": other_user.is_superuser,
+                    "token_lifetime": 3600,
+                }
+            ),
+            "application/json",
+        )
+
+        self.assertEqual(resp.status_code, 403)
+
+    def test_get_user_includes_created_readonly_users(self):
+        parent_user = self.guest_login()
+        co_user = self._create_user("co_user", parent_user=parent_user)
+
+        resp = self.client.get("/user/api/v2/%d/" % parent_user.id)
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(
+            resp.json()["co_users"],
+            [{"id": co_user.id, "username": co_user.username}],
+        )
+
+    def test_get_user_groups_and_roles(self):
+        login_user = self.guest_login()
+
+        parent_group = self._create_group("parent_group")
+        child_group = Group.objects.create(name="child_group", parent_group=parent_group)
+        login_user.groups.add(child_group)
+
+        direct_role = Role.objects.create(name="direct_role")
+        direct_role.users.add(login_user)
+        group_role = Role.objects.create(name="group_role")
+        group_role.groups.add(child_group)
+        admin_role = Role.objects.create(name="admin_role")
+        admin_role.admin_groups.add(parent_group)
+
+        resp = self.client.get("/user/api/v2/%s/" % login_user.id)
+        self.assertEqual(resp.status_code, 200)
+
+        body = resp.json()
+        self.assertEqual(
+            body["groups"],
+            [
+                {"id": child_group.id, "name": "child_group", "is_direct": True},
+                {"id": parent_group.id, "name": "parent_group", "is_direct": False},
+            ],
+        )
+        self.assertEqual(
+            body["roles"],
+            [
+                {
+                    "id": admin_role.id,
+                    "name": "admin_role",
+                    "is_direct": False,
+                    "is_admin": True,
+                    "via_groups": [{"id": parent_group.id, "name": "parent_group"}],
+                },
+                {
+                    "id": direct_role.id,
+                    "name": "direct_role",
+                    "is_direct": True,
+                    "is_admin": False,
+                    "via_groups": [],
+                },
+                {
+                    "id": group_role.id,
+                    "name": "group_role",
+                    "is_direct": False,
+                    "is_admin": False,
+                    "via_groups": [{"id": child_group.id, "name": "child_group"}],
+                },
+            ],
+        )
+
+    def test_get_user_groups_and_roles_when_user_belongs_to_nothing(self):
+        login_user = self.guest_login()
+
+        resp = self.client.get("/user/api/v2/%s/" % login_user.id)
+        self.assertEqual(resp.status_code, 200)
+
+        body = resp.json()
+        self.assertEqual(body["groups"], [])
+        self.assertEqual(body["roles"], [])
+
+    def test_get_user_excludes_deleted_groups_and_roles(self):
+        login_user = self.guest_login()
+
+        active_group = self._create_group("active_group")
+        deleted_group = self._create_group("deleted_group")
+        login_user.groups.add(active_group, deleted_group)
+        deleted_group.is_active = False
+        deleted_group.save(update_fields=["is_active"])
+
+        active_role = Role.objects.create(name="active_role")
+        active_role.users.add(login_user)
+        deleted_role = Role.objects.create(name="deleted_role", is_active=False)
+        deleted_role.users.add(login_user)
+
+        resp = self.client.get("/user/api/v2/%s/" % login_user.id)
+        self.assertEqual(resp.status_code, 200)
+
+        body = resp.json()
+        self.assertEqual([g["name"] for g in body["groups"]], ["active_group"])
+        self.assertEqual([r["name"] for r in body["roles"]], ["active_role"])
 
     def test_get_me(self):
         login_user = self.guest_login()
@@ -310,6 +447,29 @@ class ViewTest(AironeViewTest):
         self.assertEqual(user1.email, "user1@example.com")
         self.assertEqual(user1.groups.count(), 2)
 
+    def test_import_by_non_superuser_is_forbidden(self):
+        admin = User.objects.create(username="admin", email="admin@example.com", is_superuser=True)
+        group = self._create_group("Group1")
+        self.guest_login()
+
+        body = yaml.dump(
+            [
+                {
+                    "id": admin.id,
+                    "username": "admin",
+                    "email": "attacker@example.com",
+                    "groups": "",
+                },
+                {"username": "guest", "email": "guest@example.com", "groups": "Group1"},
+            ]
+        )
+        resp = self.client.post("/user/api/v2/import/", body, content_type="application/yaml")
+
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+        admin.refresh_from_db()
+        self.assertEqual(admin.email, "admin@example.com")
+        self.assertFalse(group.user_set.exists())
+
     def test_export(self):
         self.admin_login()
 
@@ -323,8 +483,21 @@ class ViewTest(AironeViewTest):
         user2 = self._create_user("user2")
         user2.groups.add(group1)
 
-        resp = self.client.get("/user/api/v2/export/")
+        with patch.object(Job, "run") as enqueue:
+            resp = self.client.get("/user/api/v2/export/")
+        enqueue.assert_called_once_with()
+        self.assertEqual(resp.status_code, 202)
+        self.assertNotIn("Content-Disposition", resp)
+        job = Job.objects.get(id=resp.json()["id"])
+        job.run(will_delay=False)
+        job.refresh_from_db()
+        self.assertEqual(job.status, JobStatus.DONE)
+        resp = self.client.get(f"/job/api/v2/{job.id}/download")
         self.assertEqual(resp.status_code, 200)
+        self.assertRegex(
+            resp["Content-Disposition"],
+            r'^attachment; filename="user_\d{4}_\d{2}_\d{2}_\d{2}_\d{2}\.yaml"$',
+        )
 
         obj = yaml.load(resp.content, Loader=yaml.SafeLoader)
         self.assertTrue(isinstance(obj, list))

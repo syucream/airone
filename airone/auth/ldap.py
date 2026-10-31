@@ -1,3 +1,4 @@
+from typing import Optional
 
 import ldap
 from django.conf import settings
@@ -7,11 +8,14 @@ from airone.lib.log import Logger
 from user.models import User
 
 
-class LDAPBackend:
+class LDAPBackend(object):
     # This method is called by Django to authenticate user by specified username and password.
     def authenticate(
-        self, request: HttpRequest, username: str | None = None, password: str | None = None
-    ) -> User | None:
+        self,
+        request: Optional[HttpRequest],
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+    ) -> Optional[User]:
         # Return None if username or password is None
         if username is None or password is None:
             return None
@@ -64,7 +68,7 @@ class LDAPBackend:
             return None
 
     # This method is necessary because this called by Django to identify user object from id.
-    def get_user(self, user_id: int) -> User | None:
+    def get_user(self, user_id: int) -> Optional[User]:
         return User.objects.filter(pk=user_id).first()
 
     @classmethod

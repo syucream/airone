@@ -1,19 +1,31 @@
+from typing import cast
+
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from role.models import Role
+from user.models import User
 
 
 class RoleAPI(APIView):
+    @extend_schema(
+        responses={
+            204: OpenApiTypes.STR,
+            401: OpenApiTypes.STR,
+            404: OpenApiTypes.STR,
+        },
+    )
     def delete(self, request: Request, role_id: int, format: str | None = None) -> Response:
         try:
             role = Role.objects.get(pk=role_id)
         except Role.DoesNotExist:
             return Response("Role not found(id:%s)" % role_id, status=status.HTTP_404_NOT_FOUND)
 
-        user = request.user
+        user = cast(User, request.user)
         if not role.is_editable(user):
             return Response(
                 "Permission error to delete the Role(%s)" % role.name,

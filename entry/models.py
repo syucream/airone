@@ -10,6 +10,7 @@ from django.db import models
 from django.db.models import Prefetch, Q, QuerySet
 from elasticsearch import NotFoundError
 from simple_history.models import HistoricalRecords
+from typing_extensions import TypedDict
 
 from acl.models import ACLBase
 from airone.lib import auto_complement
@@ -19,7 +20,9 @@ from airone.lib.elasticsearch import (
     ESS,
     AttributeDocument,
     EntryDocument,
+    ReferringEntrySearchResponse,
 )
+from airone.lib.log import Logger
 from airone.lib.types import (
     AttrDefaultValue,
     AttrType,
@@ -31,6 +34,11 @@ from role.models import Role
 from user.models import User
 
 from .settings import CONFIG
+
+
+class ReferringEntryInfo(TypedDict):
+    dst_entry_id: int
+    entry_name: str
 
 
 class AttributeValue(models.Model):
@@ -133,6 +141,27 @@ class AttributeValue(models.Model):
 
         return cloned_value
 
+    # Label surfaced when an AttributeValue references a choice that is no
+    # longer present in EntityAttr.choices (e.g. type-changed schema, legacy
+    # fixture). Keeps the internal value intact while preventing raw UUID hex
+    # from surfacing in the UI / CSV / ES.
+    DELETED_CHOICE_LABEL = "(deleted choice)"
+
+    def _resolve_choice(self, raw_value: str) -> dict[str, str] | None:
+        """Resolves a raw choice value into {"value", "label"} using EntityAttr.choices.
+
+        Falls back to a tombstone label when the choice no longer exists in the
+        schema so the UI never displays raw choice ids (e.g. UUID hex) as if
+        they were human-readable labels. Returns None for empty input.
+        """
+        if not raw_value:
+            return None
+        choices = self.parent_attr.schema.choices or []
+        for c in choices:
+            if isinstance(c, dict) and c.get("value") == raw_value:
+                return {"value": str(c.get("value")), "label": str(c.get("label", raw_value))}
+        return {"value": raw_value, "label": self.DELETED_CHOICE_LABEL}
+
     def get_value(
         self,
         with_metainfo: bool = False,
@@ -144,13 +173,17 @@ class AttributeValue(models.Model):
         This returns registered value according to the type of Attribute
         """
 
-        def _get_named_value(attrv: "AttributeValue", is_active: bool = True) -> dict[str, Any]:
+        def _get_named_value(
+            attrv: "AttributeValue", is_active: bool = True, is_boolean: bool = False
+        ) -> dict[str, Any]:
+            boolean_info = {"boolean": attrv.boolean} if is_boolean else {}
             if attrv.referral and (attrv.referral.is_active or not is_active):
                 if with_metainfo:
                     return {
                         attrv.value: {
                             "id": attrv.referral.id,
                             "name": attrv.referral.name,
+                            **boolean_info,
                         }
                     }
                 elif with_entity:
@@ -161,12 +194,16 @@ class AttributeValue(models.Model):
                         attrv.value: {
                             "name": attrv.referral.name,
                             "entity": referral_entry.schema.name,
+                            **boolean_info,
                         }
                     }
                 else:
-                    return {attrv.value: attrv.referral.name}
+                    return {
+                        attrv.value: attrv.referral.name,
+                        **boolean_info,
+                    }
             else:
-                return {attrv.value: None}
+                return {attrv.value: None, **boolean_info}
 
         def _get_object_value(attrv: "AttributeValue", is_active: bool = True) -> Any:
             if attrv.referral and (attrv.referral.is_active or not is_active):
@@ -223,6 +260,9 @@ class AttributeValue(models.Model):
             case AttrType.NAMED_OBJECT:
                 value = _get_named_value(self, is_active)
 
+            case AttrType.NAMED_OBJECT_BOOLEAN:
+                value = _get_named_value(self, is_active, is_boolean=True)
+
             case AttrType.GROUP if self.group:
                 value = _get_model_value(self)
 
@@ -238,18 +278,35 @@ class AttributeValue(models.Model):
                 else:
                     value = self.datetime
 
-            case AttrType.ARRAY_NAMED_OBJECT | AttrType.ARRAY_NAMED_OBJECT_BOOLEAN:
+            case AttrType.ARRAY_NAMED_OBJECT:
                 value = [_get_named_value(x, is_active) for x in self.data_array.all()]
+
+            case AttrType.ARRAY_NAMED_OBJECT_BOOLEAN:
+                value = [
+                    _get_named_value(x, is_active, is_boolean=True) for x in self.data_array.all()
+                ]
 
             case AttrType.ARRAY_STRING:
                 value = [x.value for x in self.data_array.all()]
+
+            case AttrType.SELECT:
+                value = self._resolve_choice(self.value)
+
+            case AttrType.MULTI_SELECT:
+                # Preserve insertion order (matches ARRAY_STRING / ARRAY_NUMBER)
+                # so the user's chosen ordering survives round-trips.
+                value = [
+                    c for c in (self._resolve_choice(x.value) for x in self.data_array.all()) if c
+                ]
 
             case AttrType.ARRAY_NUMBER:
                 value = [coerce_number(x.value) for x in self.data_array.all()]
 
             case AttrType.ARRAY_OBJECT:
                 value = [
-                    _get_object_value(x, is_active) for x in self.data_array.all() if x.referral
+                    _get_object_value(x, is_active)
+                    for x in self.data_array.order_by("id")
+                    if x.referral
                 ]
             case AttrType.ARRAY_GROUP:
                 value = [
@@ -275,12 +332,18 @@ class AttributeValue(models.Model):
 
     def format_for_history(self) -> Any:
         match self.data_type:
+            case AttrType.SELECT:
+                return self._resolve_choice(self.value)
+            case AttrType.MULTI_SELECT:
+                return [
+                    c for c in (self._resolve_choice(x.value) for x in self.data_array.all()) if c
+                ]
             case AttrType.ARRAY_STRING:
                 return [x.value for x in self.data_array.all()]
             case AttrType.ARRAY_NUMBER:
                 return [coerce_number(x.value) for x in self.data_array.all()]
             case AttrType.ARRAY_OBJECT:
-                return [x.referral for x in self.data_array.all()]
+                return [x.referral for x in self.data_array.order_by("id")]
             case AttrType.OBJECT:
                 return self.referral
             case AttrType.BOOLEAN:
@@ -346,7 +409,7 @@ class AttributeValue(models.Model):
                 {
                     "type": entry.__class__.__name__,
                     "object": entry,
-                    "hint": "attribute '%s' has '%s'" % (attr.name, obj.value),
+                    "hint": f"attribute '{attr.name}' has '{obj.value}'",
                 }
             )
 
@@ -374,11 +437,11 @@ class AttributeValue(models.Model):
                 obj = instance
             case str():
                 if val.isdigit():
-                    obj = model.objects.filter(id=val, is_active=True).first()  # type: ignore[misc, assignment]
+                    obj = model.objects.filter(id=val, is_active=True).first()
                 else:
-                    obj = model.objects.filter(name=val, is_active=True).first()  # type: ignore[misc, assignment]
+                    obj = model.objects.filter(name=val, is_active=True).first()
             case int():
-                obj = model.objects.filter(id=val, is_active=True).first()  # type: ignore[misc, assignment]
+                obj = model.objects.filter(id=val, is_active=True).first()
 
         # when value is invalid value (e.g. False, empty string) set 0
         # not to cause ValueError exception at other retrieval processing.
@@ -442,6 +505,28 @@ class AttributeValue(models.Model):
                 case AttrType.STRING | AttrType.TEXT:
                     return _is_validate_attr_str(value)
 
+                case AttrType.SELECT:
+                    if not isinstance(value, str):
+                        if value is None:
+                            if is_mandatory:
+                                return False
+                            return True
+                        raise Exception("value(%s) is not str" % value)
+                    if is_mandatory and value == "":
+                        return False
+                    if value and entity_attr is not None:
+                        allowed = {
+                            c.get("value")
+                            for c in (entity_attr.choices or [])
+                            if isinstance(c, dict)
+                        }
+                        if allowed and value not in allowed:
+                            raise Exception(
+                                "value(%s) is not in choices of EntityAttr(%s)"
+                                % (value, entity_attr.name)
+                            )
+                    return True
+
                 case AttrType.NUMBER:
                     if value is None or value == "":
                         if is_mandatory:
@@ -490,7 +575,7 @@ class AttributeValue(models.Model):
                             value
                             and not Group.objects.filter(
                                 id=value,
-                                is_active=True,  # type: ignore[misc]
+                                is_active=True,
                             ).exists()
                         ):
                             raise Exception("value(%s) is not group id" % value)
@@ -657,6 +742,47 @@ class Attribute(ACLBase):
                     if not last_value.data_array.filter(value=value).exists():
                         return True
 
+            case AttrType.SELECT:
+
+                def _normalize_select(v: Any) -> str:
+                    # Callers may pass either the raw choice value (str) or the
+                    # {value, label} dict shape used by the API. Normalize so
+                    # str(dict) repr never sneaks into comparison.
+                    if v is None:
+                        return ""
+                    if isinstance(v, dict):
+                        return str(v.get("value", "") or "")
+                    return str(v)
+
+                stored = last_value.value or ""
+                incoming = _normalize_select(recv_value)
+                return stored != incoming
+
+            case AttrType.MULTI_SELECT:
+
+                def _normalize_multi_select_item(v: Any) -> str | None:
+                    if v is None or v == "":
+                        return None
+                    if isinstance(v, dict):
+                        raw = v.get("value")
+                        return str(raw) if raw else None
+                    return str(v)
+
+                if not recv_value:
+                    return last_value.data_array.count() > 0
+                # Order matters: get_value / add_value preserve insertion order,
+                # so a reorder of the same choices must register as an update.
+                stored_list = [x.value for x in last_value.data_array.all()]
+                incoming_list = [
+                    norm
+                    for norm in (_normalize_multi_select_item(v) for v in recv_value)
+                    if norm is not None
+                ]
+                # add_value dedupes incoming preserving order before persisting; mirror
+                # that here so callers sending duplicates don't trigger spurious updates.
+                incoming_list = list(dict.fromkeys(incoming_list))
+                return stored_list != incoming_list
+
             case AttrType.ARRAY_NUMBER:
                 # the case that specified value is empty or invalid
                 if not recv_value:
@@ -691,27 +817,22 @@ class Attribute(ACLBase):
                     # in the latest AttributeValue
                     return last_value.data_array.count() > 0
 
-                # the case of changing value
-                if last_value.data_array.count() != len(recv_value):
-                    return True
+                stored_ids = list(
+                    last_value.data_array.order_by("id").values_list("referral_id", flat=True)
+                )
 
-                # the case of appending or deleting
-                for value in recv_value:
-                    # formalize value type
+                def _entry_id(value: Any) -> int | None:
+                    if isinstance(value, Entry):
+                        return value.id
+                    if not value:
+                        return None
                     try:
-                        if isinstance(value, Entry):
-                            entry_id = value.id
-                        elif not value:
-                            entry_id = 0
-                        else:
-                            entry_id = int(value)
+                        return int(value)
+                    except (TypeError, ValueError):
+                        return None
 
-                    except ValueError:
-                        # When user specify an invalid value (e.g. ""), ValueError will be occcured
-                        entry_id = 0
-
-                    if not last_value.data_array.filter(referral__id=entry_id).exists():
-                        return True
+                incoming_ids = [_entry_id(value) for value in recv_value]
+                return stored_ids != incoming_ids
 
             case AttrType.BOOLEAN:
                 return last_value.boolean != bool(recv_value)
@@ -760,7 +881,7 @@ class Attribute(ACLBase):
 
                 return bool(last_value.datetime != recv_value)
 
-            case AttrType.NAMED_OBJECT:
+            case AttrType.NAMED_OBJECT | AttrType.NAMED_OBJECT_BOOLEAN:
                 # the case that specified value is empty or invalid
                 if not recv_value:
                     # Value would be changed as empty when there is valid value
@@ -771,6 +892,12 @@ class Attribute(ACLBase):
 
                 if last_value.value != recv_value["name"]:
                     return True
+
+                # NAMED_OBJECT_BOOLEAN holds a boolean flag beside the referral, so a
+                # change of the flag alone is an update as well.
+                if self.schema.type == AttrType.NAMED_OBJECT_BOOLEAN:
+                    if last_value.boolean != bool(recv_value.get("boolean", False)):
+                        return True
 
                 # formalize recv_value['id'] type
                 if isinstance(recv_value["id"], Entry):
@@ -786,7 +913,7 @@ class Attribute(ACLBase):
                 ):
                     return True
 
-            case AttrType.ARRAY_NAMED_OBJECT:
+            case AttrType.ARRAY_NAMED_OBJECT | AttrType.ARRAY_NAMED_OBJECT_BOOLEAN:
 
                 def get_entry_id(value: int | str | Entry | None) -> int | None:
                     if not value:
@@ -1027,11 +1154,21 @@ class Attribute(ACLBase):
                         return False
                 return False
 
-            case AttrType.NAMED_OBJECT:
+            case AttrType.NAMED_OBJECT | AttrType.NAMED_OBJECT_BOOLEAN:
                 return isinstance(value, dict)
 
             case AttrType.STRING | AttrType.TEXT:
                 return True
+
+            case AttrType.SELECT:
+                if value is None or value == "":
+                    return True
+                if not isinstance(value, str):
+                    return False
+                allowed = {
+                    c.get("value") for c in (self.schema.choices or []) if isinstance(c, dict)
+                }
+                return value in allowed
 
             case AttrType.OBJECT:
                 return isinstance(value, str | int | Entry) or value is None
@@ -1084,7 +1221,7 @@ class Attribute(ACLBase):
                     return True
 
                 match self.schema.type:
-                    case AttrType.ARRAY_NAMED_OBJECT:
+                    case AttrType.ARRAY_NAMED_OBJECT | AttrType.ARRAY_NAMED_OBJECT_BOOLEAN:
                         return all(
                             isinstance(x, dict) or isinstance(x, type({}.values())) for x in value
                         )
@@ -1094,6 +1231,16 @@ class Attribute(ACLBase):
 
                     case AttrType.ARRAY_STRING:
                         return True
+
+                    case AttrType.MULTI_SELECT:
+                        if not all(isinstance(x, str) for x in value):
+                            return False
+                        allowed = {
+                            c.get("value")
+                            for c in (self.schema.choices or [])
+                            if isinstance(c, dict)
+                        }
+                        return all(x == "" or x in allowed for x in value)
 
                     case AttrType.ARRAY_NUMBER:
                         return (
@@ -1133,6 +1280,12 @@ class Attribute(ACLBase):
                     if not attrv.value:  # if empty string or None coerced to ""
                         return None  # For STRING, empty means no AttributeValue
 
+                case AttrType.SELECT:
+                    attrv.boolean = boolean
+                    attrv.value = "" if val is None else str(val)
+                    if not attrv.value:
+                        return None
+
                 case AttrType.NUMBER:
                     if val is None or val == "":
                         attrv.value = ""
@@ -1164,9 +1317,9 @@ class Attribute(ACLBase):
                         case Group() if val.is_active:
                             group_ref = val
                         case int():
-                            group_ref = Group.objects.filter(id=val, is_active=True).first()  # type: ignore[misc, assignment]
+                            group_ref = Group.objects.filter(id=val, is_active=True).first()
                         case str() if val.isdigit():
-                            group_ref = Group.objects.filter(id=val, is_active=True).first()  # type: ignore[misc, assignment]
+                            group_ref = Group.objects.filter(id=val, is_active=True).first()
                         case _:
                             return None
                     if group_ref:
@@ -1222,7 +1375,7 @@ class Attribute(ACLBase):
 
                     attrv.boolean = boolean
 
-                case AttrType.NAMED_OBJECT:
+                case AttrType.NAMED_OBJECT | AttrType.NAMED_OBJECT_BOOLEAN:
                     attrv.value = val["name"] if "name" in val else ""
                     if "boolean" in val:
                         attrv.boolean = val["boolean"]
@@ -1277,6 +1430,12 @@ class Attribute(ACLBase):
             attr_value.set_status(AttributeValue.STATUS_DATA_ARRAY_PARENT)
 
             if value and isinstance(value, Iterable):
+                # MULTI_SELECT must hold a deduplicated set of choice values.
+                # Preserve insertion order so the resulting AttributeValues remain stable
+                # against unchanged input even if the caller passes duplicates.
+                if self.schema.type == AttrType.MULTI_SELECT and isinstance(value, list):
+                    value = list(dict.fromkeys(v for v in value if isinstance(v, str) and v))
+
                 co_attrv_params = {
                     "created_user": user,
                     "parent_attr": self,
@@ -1353,9 +1512,31 @@ class Attribute(ACLBase):
 
             return ret_value
 
+        def _resolve_choice_value(raw: Any) -> str | None:
+            """Map a raw input (value or label) to an EntityAttr.choices value.
+
+            Imports may carry either the internal `value` or the human-facing
+            `label`. Try value first (the immutable identifier), then label.
+            """
+            if raw is None:
+                return None
+            if not isinstance(raw, str):
+                return None
+            choices = self.schema.choices or []
+            for c in choices:
+                if isinstance(c, dict) and c.get("value") == raw:
+                    return raw
+            for c in choices:
+                if isinstance(c, dict) and c.get("label") == raw:
+                    return str(c.get("value"))
+            return raw  # Fallback: pass through unknown values to surface in validation
+
         match self.schema.type:
             case AttrType.STRING | AttrType.TEXT:
                 return value
+
+            case AttrType.SELECT:
+                return _resolve_choice_value(value)
 
             case AttrType.OBJECT:
                 if isinstance(value, ACLBase):
@@ -1422,6 +1603,10 @@ class Attribute(ACLBase):
 
                     case AttrType.ARRAY_STRING:
                         return value
+
+                    case AttrType.MULTI_SELECT:
+                        resolved = [_resolve_choice_value(x) for x in value]
+                        return list(dict.fromkeys(v for v in resolved if v))
 
                     case AttrType.ARRAY_NUMBER:
                         return [
@@ -1732,6 +1917,10 @@ class Entry(ACLBase):
 
     history = HistoricalRecords(excluded_fields=["status", "updated_time"])
 
+    # HistoricalRecords sets `_history_user` dynamically to pick up the acting user
+    # for each save; declare it here so callers can assign without a type: ignore.
+    _history_user: User | None
+
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.objtype = ACLObjType.Entry
@@ -1758,9 +1947,13 @@ class Entry(ACLBase):
 
                 # NUMBER type returns float; represent whole numbers without decimal point
                 str_value = (
-                    str(int(value))
-                    if isinstance(value, float) and value.is_integer()
-                    else str(value)
+                    value.strftime("%Y-%m-%d")
+                    if attr.schema.type == AttrType.DATE
+                    else (
+                        str(int(value))
+                        if isinstance(value, float) and value.is_integer()
+                        else str(value)
+                    )
                 )
                 username += attr.schema.name_prefix + str_value + attr.schema.name_postfix
 
@@ -1780,11 +1973,7 @@ class Entry(ACLBase):
                 schema=self.schema, name=autoname, is_active=True
             ).first()
             if duplicated_item:
-                self.name = "%s -- duplicate of ID:%s -- %s" % (
-                    autoname,
-                    str(duplicated_item.id),
-                    str(uuid.uuid4()),
-                )
+                self.name = f"{autoname} -- duplicate of ID:{duplicated_item.id} -- {uuid.uuid4()}"
             else:
                 self.name = autoname
 
@@ -2168,12 +2357,16 @@ class Entry(ACLBase):
             self.unregister_es()
 
     # implementation for Entry
-    def check_duplication_entry_at_restoring(self, entry_chain: list["Entry"] = []) -> bool:
+    def check_duplication_entry_at_restoring(
+        self, entry_chain: list["Entry"] | None = None
+    ) -> bool:
         """This method returns true when this Entry has referral that is
            same name with other entry at restoring Entry.
         - case True: there is an Entry(at least) that is same name with same Entity.
         - case False: there is no Entry that is same name with same Entity.
         """
+        if entry_chain is None:
+            entry_chain = []
         for attr in self.attrs.filter(is_active=False):
             if attr.check_duplication_entry_at_restoring(entry_chain):
                 return True
@@ -2220,7 +2413,7 @@ class Entry(ACLBase):
         cloned_entry = Entry(**params)
 
         # for history record
-        cloned_entry._history_user = user  # type: ignore[attr-defined]
+        cloned_entry._history_user = user
 
         cloned_entry.save()
 
@@ -2320,13 +2513,16 @@ class Entry(ACLBase):
                 "value": "",
                 "date_value": None,
                 "referral_id": "",
+                "boolean": False,
                 "is_readable": True
                 if (not attr or attr.is_public or attr.default_permission >= ACLType.Readable)
                 else False,
             }
 
-            # default value for boolean attributes is False.
-            if entity_attr.type & AttrType.BOOLEAN:
+            # default value for boolean attributes is False. _NAMED types (e.g.
+            # NAMED_OBJECT_BOOLEAN) also carry the BOOLEAN bit, but their boolean
+            # flag is stored separately in attrinfo["boolean"], so exclude them here.
+            if entity_attr.type & AttrType.BOOLEAN and not entity_attr.type & AttrType._NAMED:
                 attrinfo["value"] = False
 
             # Convert data format for mapping of Elasticsearch according to the data type
@@ -2337,7 +2533,7 @@ class Entry(ACLBase):
             elif entity_attr.type & AttrType.STRING or entity_attr.type & AttrType.TEXT:
                 attrinfo["value"] = truncate(attrv.value)
 
-            elif entity_attr.type & AttrType.BOOLEAN:
+            elif entity_attr.type & AttrType.BOOLEAN and not entity_attr.type & AttrType._NAMED:
                 attrinfo["value"] = attrv.boolean
 
             elif entity_attr.type & AttrType.DATE:
@@ -2348,6 +2544,7 @@ class Entry(ACLBase):
 
             elif entity_attr.type & AttrType._NAMED:
                 attrinfo["key"] = attrv.value
+                attrinfo["boolean"] = attrv.boolean
 
                 if attrv.referral and attrv.referral.is_active:
                     attrinfo["value"] = truncate(attrv.referral.name)
@@ -2382,6 +2579,23 @@ class Entry(ACLBase):
                 # Convert string value to number, preserving int when possible
                 coerced = coerce_number(attrv.value)
                 attrinfo["value"] = "" if coerced is None else coerced
+
+            elif entity_attr.type & AttrType.SELECT:
+                # Store value(internal id) as key and label as value,
+                # so regexp/keyword search on label works automatically.
+                raw = attrv.value
+                choices = entity_attr.choices or []
+                label: str | None = None
+                for c in choices:
+                    if isinstance(c, dict) and c.get("value") == raw:
+                        label = str(c.get("label", raw))
+                        break
+                if label is None and raw:
+                    # Mirror AttributeValue._resolve_choice's tombstone so the
+                    # UI / CSV export never see raw UUID hex as a label.
+                    label = AttributeValue.DELETED_CHOICE_LABEL
+                attrinfo["key"] = raw
+                attrinfo["value"] = truncate(label) if label else ""
 
             # Basically register attribute information whatever value doesn't exist
             if not (entity_attr.type & AttrType._ARRAY and not is_recursive):
@@ -2464,26 +2678,29 @@ class Entry(ACLBase):
         if not es:
             es = ESS()
 
-        es.index(id=self.id, body=self.get_es_document())
-        es.refresh()
+        es.index_entry(self.id, self.get_es_document())
+        es.refresh_index()
 
         if recursive_call_stack:
             return
 
         # It's also needed to update es-document for Entries that this Entry refers to
-        search_result = es.search(
-            body={
-                "query": {
-                    "nested": {
-                        "path": "referrals",
-                        "query": {"term": {"referrals.id": self.id}},
-                        "inner_hits": {},
+        search_result = cast(
+            ReferringEntrySearchResponse,
+            es.search_entries(
+                {
+                    "query": {
+                        "nested": {
+                            "path": "referrals",
+                            "query": {"term": {"referrals.id": self.id}},
+                            "inner_hits": {},
+                        }
                     }
                 }
-            }
+            ),
         )
 
-        refers_from_es = [
+        refers_from_es: list[ReferringEntryInfo] = [
             {
                 "dst_entry_id": int(x["_id"]),
                 "entry_name": x["inner_hits"]["referrals"]["hits"]["hits"][0]["_source"]["name"],
@@ -2491,7 +2708,7 @@ class Entry(ACLBase):
             for x in search_result["hits"]["hits"]
         ]
 
-        refers_from_db = [
+        refers_from_db: list[ReferringEntryInfo] = [
             {"dst_entry_id": e.id, "entry_name": self.name}
             for e in self.get_refers_objects()
             if e.id != self.id
@@ -2509,7 +2726,7 @@ class Entry(ACLBase):
         # db: esixts
         for refer in refers_from_db:
             if refer["dst_entry_id"] not in [x["dst_entry_id"] for x in refers_from_es]:
-                entry = Entry.objects.get(id=cast("int", refer["dst_entry_id"]))
+                entry = Entry.objects.get(id=refer["dst_entry_id"])
                 entry.register_es(es, recursive_call_stack + [self])
 
     def unregister_es(self, es: ESS | None = None) -> None:
@@ -2517,10 +2734,10 @@ class Entry(ACLBase):
             es = ESS()
 
         try:
-            es.delete(id=self.id)
+            es.delete_entry(self.id)
         except NotFoundError:
             pass
-        es.refresh()
+        es.refresh_index()
 
     def get_value_history(
         self, user: User, count: int = CONFIG.MAX_HISTORY_COUNT, index: int = 0
@@ -2794,7 +3011,9 @@ class AdvancedSearchAttributeIndex(models.Model):
                     value = [coerce_number(v.value) for v in attrv.data_array.all()]
                     key = ",".join([str(v) if v is not None else "" for v in value])
                 case _:
-                    print("TODO implement it")
+                    Logger.warning(
+                        "Unsupported AttrType for advanced search index: %s", entity_attr.type
+                    )
 
         return AdvancedSearchAttributeIndex(
             entity=entry.schema,
@@ -2829,7 +3048,7 @@ class AdvancedSearchAttributeIndex(models.Model):
             ):
                 return self.raw_value
             case _:
-                print("TODO implement it")
+                Logger.warning("Unsupported AttrType for advanced search index: %s", self.type)
 
 
 class AliasEntry(models.Model):

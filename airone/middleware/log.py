@@ -35,9 +35,7 @@ class LoggingRequestMiddleware:
 
         return response
 
-    def process_exception(
-        self, request: HttpRequest, exception: Exception
-    ) -> HttpResponse | None:
+    def process_exception(self, request: HttpRequest, exception: Exception) -> HttpResponse | None:
         traceback_msg = traceback.format_exc()
         subject = "ERROR Django Request " + request.path
         message = f"""
@@ -53,7 +51,7 @@ full traceback:
 """
 
         # Print for DEBUG because email is not sent in dev environment
-        print(message)
+        print(message)  # noqa: T201
 
         # Send an email so that admins can receive errors
         mail_admins(subject, message)

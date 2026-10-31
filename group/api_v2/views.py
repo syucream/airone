@@ -1,5 +1,9 @@
+import unicodedata
+from typing import Any, cast
+
+from django.db.models import Prefetch
 from django_filters.rest_framework import DjangoFilterBackend
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import filters, generics, serializers, status, viewsets
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import BasePermission, IsAuthenticated
@@ -7,40 +11,69 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from airone.lib.drf import YAMLParser, YAMLRenderer
+from airone.lib.configuration_export import ConfigurationExportAPI
+from airone.lib.drf import IsSuperuser, YAMLParser
 from group.api_v2.serializers import (
     GroupCreateUpdateSerializer,
-    GroupExportSerializer,
     GroupImportSerializer,
     GroupSerializer,
-    GroupTreeSerializer,
+    GroupTreeV2Serializer,
 )
 from group.models import Group
 from user.models import User
 
 
 class UserPermission(BasePermission):
+    def has_permission(self, request: Request, view: APIView) -> bool:
+        # create has no object, so has_object_permission() never runs for it
+        if getattr(view, "action", "") == "create":
+            return cast(User, request.user).is_superuser
+        return True
+
     def has_object_permission(self, request: Request, view: APIView, obj: User) -> bool:
-        current_user: User = request.user
+        current_user = cast(User, request.user)
         permisson = {
             "retrieve": True,
             "destroy": current_user.is_superuser,
             "create": current_user.is_superuser,
             "update": current_user.is_superuser,
         }
-        return permisson.get(view.action, False)
+        return permisson.get(getattr(view, "action", ""), False)
 
 
-class GroupAPI(viewsets.ModelViewSet):
-    queryset = Group.objects.filter(is_active=True)
+class GroupSearchFilter(filters.SearchFilter):
+    def filter_queryset(self, request: Request, queryset: Any, view: APIView) -> Any:
+        terms = self.get_search_terms(request)
+        if not terms:
+            return queryset
+
+        normalized_terms = [unicodedata.normalize("NFKC", term).casefold() for term in terms]
+        return [
+            group
+            for group in queryset
+            if all(
+                term in unicodedata.normalize("NFKC", group.name).casefold()
+                for term in normalized_terms
+            )
+        ]
+
+
+class GroupAPI(viewsets.ModelViewSet[Group]):
+    queryset = Group.objects.filter(is_active=True).prefetch_related(
+        Prefetch(
+            "user_set",
+            queryset=User.objects.filter(is_active=True).order_by("username"),
+            to_attr="active_members",
+        )
+    )
     permission_classes = [IsAuthenticated & UserPermission]
     pagination_class = PageNumberPagination
-    filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter, GroupSearchFilter]
     ordering = ["name"]
     search_fields = ["name"]
 
-    def get_serializer_class(self) -> type[serializers.Serializer]:
-        serializer = {
+    def get_serializer_class(self) -> type[serializers.Serializer[Any]]:
+        serializer: dict[str, type[serializers.Serializer[Any]]] = {
             "create": GroupCreateUpdateSerializer,
             "update": GroupCreateUpdateSerializer,
             "destroy": serializers.Serializer,
@@ -48,21 +81,22 @@ class GroupAPI(viewsets.ModelViewSet):
         return serializer.get(self.action, GroupSerializer)
 
 
-class GroupTreeAPI(viewsets.ReadOnlyModelViewSet):
+class GroupTreeAPI(viewsets.ReadOnlyModelViewSet[Group]):
     queryset = Group.objects.filter(parent_group__isnull=True, is_active=True)
-    serializer_class = GroupTreeSerializer
-    filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
+    serializer_class = GroupTreeV2Serializer
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter, GroupSearchFilter]
     ordering = ["name"]
     search_fields = ["name"]
 
 
-class GroupImportAPI(generics.GenericAPIView):
+class GroupImportAPI(generics.GenericAPIView[Any]):
     parser_classes = [YAMLParser]
     serializer_class = GroupImportSerializer
+    permission_classes = [IsAuthenticated & IsSuperuser]
 
     @extend_schema(responses={200: None})
     def post(self, request: Request) -> Response:
-        import_datas = request.data
+        import_datas: list[dict[str, Any]] = cast(list[dict[str, Any]], request.data)
         serializer = GroupImportSerializer(data=import_datas, many=True)
         serializer.is_valid(raise_exception=True)
 
@@ -70,7 +104,7 @@ class GroupImportAPI(generics.GenericAPIView):
         for group_data in import_datas:
             if "id" in group_data:
                 # update group by id
-                group: Group | None = Group.objects.filter(id=group_data["id"]).first()
+                group = Group.objects.filter(id=group_data["id"]).first()
                 if not group:
                     return Response(
                         "Specified id group does not exist(id:%s, group:%s)"
@@ -101,7 +135,6 @@ class GroupImportAPI(generics.GenericAPIView):
         return Response(status=status.HTTP_200_OK)
 
 
-class GroupExportAPI(generics.ListAPIView):
-    queryset = Group.objects.filter(is_active=True)
-    serializer_class = GroupExportSerializer
-    renderer_classes = [YAMLRenderer]
+@extend_schema_view(get=extend_schema(operation_id="group_api_v2_groups_export_list"))
+class GroupExportAPI(ConfigurationExportAPI):
+    export_kind = "group"

@@ -21,8 +21,20 @@ urlpatterns = [
         ),
     ),
     path(
-        "<int:pk>/rerun",
-        views.JobRerunAPI.as_view(),
+        "<int:pk>/preview",
+        views.JobAPI.as_view(
+            {
+                "get": "preview",
+            }
+        ),
+    ),
+    path(
+        "<int:pk>/preview/download",
+        views.JobAPI.as_view(
+            {
+                "get": "preview_download",
+            }
+        ),
     ),
     path("jobs", views.JobListAPI.as_view({"get": "list"})),
 ]

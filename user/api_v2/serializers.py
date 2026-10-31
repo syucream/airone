@@ -15,7 +15,14 @@ from airone.auth.ldap import LDAPBackend
 from user.models import User
 
 
-class UserRetrieveTokenSerializer(serializers.Serializer):
+class UserActivitySerializer(serializers.Serializer[Any]):
+    action_type = serializers.CharField()
+    target_type = serializers.CharField()
+    target = serializers.DictField(child=serializers.JSONField())
+    timestamp = serializers.DateTimeField()
+
+
+class UserRetrieveTokenSerializer(serializers.Serializer[Any]):
     value = serializers.CharField()
     lifetime = serializers.IntegerField()
     expire = serializers.CharField()
@@ -28,7 +35,7 @@ class UserRetrieveTokenSerializer(serializers.Serializer):
         created: str
 
 
-class UserTokenSerializer(serializers.ModelSerializer):
+class UserTokenSerializer(serializers.ModelSerializer[Token]):
     class Meta:
         model = Token
         fields = [
@@ -37,7 +44,48 @@ class UserTokenSerializer(serializers.ModelSerializer):
         read_only_fields = ["key"]
 
 
-class UserBaseSerializer(serializers.ModelSerializer):
+class UserGroupType(TypedDict):
+    id: int
+    name: str
+    is_direct: bool
+
+
+class UserGroupSerializer(serializers.Serializer[UserGroupType]):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    # False when this user belongs to the group only through its subordinates
+    is_direct = serializers.BooleanField()
+
+
+class UserRoleGroupType(TypedDict):
+    id: int
+    name: str
+
+
+class UserRoleGroupSerializer(serializers.Serializer[UserRoleGroupType]):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+
+
+class UserRoleType(TypedDict):
+    id: int
+    name: str
+    is_direct: bool
+    is_admin: bool
+    via_groups: list[UserRoleGroupType]
+
+
+class UserRoleSerializer(serializers.Serializer[UserRoleType]):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    # True when this user is registered to the role itself (not through a group)
+    is_direct = serializers.BooleanField()
+    # True when this user has administrative privilege of the role
+    is_admin = serializers.BooleanField()
+    via_groups = UserRoleGroupSerializer(many=True)
+
+
+class UserBaseSerializer(serializers.ModelSerializer[User]):
     date_joined = serializers.SerializerMethodField(method_name="get_date_joined")
 
     class Meta:
@@ -69,7 +117,7 @@ class UserCreateSerializer(UserBaseSerializer):
         # check specified username has already been used at co-users of login user
         request_user = self.context["request"].user
         if not request_user.is_superuser:
-            candidate_name = "%s-%s" % (request_user.username, username)
+            candidate_name = f"{request_user.username}-{username}"
 
             if User.objects.filter(username=candidate_name).exists():
                 raise ValidationError("A user with that username already exists.")
@@ -121,6 +169,9 @@ class UserRetrieveSerializer(UserBaseSerializer):
 
     token = serializers.SerializerMethodField()
     authenticate_type = AuthenticateTypeField()
+    groups = serializers.SerializerMethodField()
+    roles = serializers.SerializerMethodField()
+    co_users = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -133,6 +184,9 @@ class UserRetrieveSerializer(UserBaseSerializer):
             "token",
             "authenticate_type",
             "parent_user",
+            "groups",
+            "roles",
+            "co_users",
         ]
 
     @extend_schema_field(UserRetrieveTokenSerializer(required=False))
@@ -154,6 +208,36 @@ class UserRetrieveSerializer(UserBaseSerializer):
         else:
             return None
 
+    @extend_schema_field(UserGroupSerializer(many=True))
+    def get_groups(self, obj: User) -> list[UserGroupType]:
+        direct_group_ids = {g.id for g in obj.airone_groups}
+        return [
+            {"id": g.id, "name": g.name, "is_direct": g.id in direct_group_ids}
+            for g in sorted(obj.belonging_groups(), key=lambda x: x.name)
+        ]
+
+    def get_co_users(self, obj: User) -> list[dict[str, Any]]:
+        return [
+            {"id": co_user.id, "username": co_user.username}
+            for co_user in obj.co_users.filter(is_active=True).order_by("username")
+        ]
+
+    @extend_schema_field(UserRoleSerializer(many=True))
+    def get_roles(self, obj: User) -> list[UserRoleType]:
+        return [
+            {
+                "id": belonging.role.id,
+                "name": belonging.role.name,
+                "is_direct": belonging.is_direct,
+                "is_admin": belonging.is_admin,
+                "via_groups": [
+                    {"id": g.id, "name": g.name}
+                    for g in sorted(belonging.via_groups, key=lambda x: x.name)
+                ],
+            }
+            for belonging in sorted(obj.belonging_roles(), key=lambda x: x.role.name)
+        ]
+
 
 class UserListSerializer(UserBaseSerializer):
     class Meta:
@@ -169,7 +253,7 @@ class UserListSerializer(UserBaseSerializer):
         ]
 
 
-class CoUserSerializer(serializers.ModelSerializer):
+class CoUserSerializer(serializers.ModelSerializer[User]):
     user_id = serializers.IntegerField(source="id")
 
     class Meta:
@@ -177,7 +261,7 @@ class CoUserSerializer(serializers.ModelSerializer):
         fields = ["user_id", "username", "email"]
 
 
-class UserMeSerializer(serializers.ModelSerializer):
+class UserMeSerializer(serializers.ModelSerializer[User]):
     user_id = serializers.IntegerField(source="id")
     co_users = CoUserSerializer(many=True)
 
@@ -186,7 +270,7 @@ class UserMeSerializer(serializers.ModelSerializer):
         fields = ["user_id", "username", "email", "co_users"]
 
 
-class UserImportChildSerializer(serializers.ModelSerializer):
+class UserImportChildSerializer(serializers.ModelSerializer[User]):
     username = serializers.CharField()
     groups = serializers.CharField(required=True, allow_blank=True, write_only=True)
 
@@ -201,11 +285,11 @@ class UserImportChildSerializer(serializers.ModelSerializer):
         ]
 
 
-class UserImportSerializer(serializers.ListSerializer):
+class UserImportSerializer(serializers.ListSerializer[User]):
     child = UserImportChildSerializer()
 
 
-class UserExportSerializer(serializers.ModelSerializer):
+class UserExportSerializer(serializers.ModelSerializer[User]):
     groups = serializers.SerializerMethodField()
 
     class Meta:
@@ -221,7 +305,7 @@ class UserExportSerializer(serializers.ModelSerializer):
         return ",".join(list(map(lambda x: x.name, obj.groups.filter(group__is_active=True))))
 
 
-class UserPasswordSerializer(serializers.Serializer):
+class UserPasswordSerializer(serializers.Serializer[Any]):
     old_passwd = serializers.CharField()
     new_passwd = serializers.CharField()
     chk_passwd = serializers.CharField()
@@ -262,7 +346,7 @@ class UserPasswordSerializer(serializers.Serializer):
         user.save(update_fields=["password"])
 
 
-class UserPasswordBySuperuserSerializer(serializers.Serializer):
+class UserPasswordBySuperuserSerializer(serializers.Serializer[Any]):
     new_passwd = serializers.CharField()
     chk_passwd = serializers.CharField()
 
@@ -284,11 +368,11 @@ class UserPasswordBySuperuserSerializer(serializers.Serializer):
         user.save(update_fields=["password"])
 
 
-class PasswordResetSerializer(serializers.Serializer):
+class PasswordResetSerializer(serializers.Serializer[Any]):
     username = serializers.CharField(required=True)
 
 
-class PasswordResetConfirmSerializer(serializers.Serializer):
+class PasswordResetConfirmSerializer(serializers.Serializer[Any]):
     uidb64 = serializers.CharField()
     token = serializers.CharField()
     password1 = serializers.CharField()
@@ -322,6 +406,9 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
         if password1 != password2:
             raise ValidationError("passwords do not match")
 
+        if password1 is None:
+            raise ValidationError("password is required")
+
         try:
             password_validation.validate_password(password1)
         except DjangoCoreValidationError as e:
@@ -341,7 +428,7 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
         return validated_data
 
 
-class UserAuthSerializer(serializers.Serializer):
+class UserAuthSerializer(serializers.Serializer[Any]):
     ldap_password = serializers.CharField(required=True, allow_blank=False)
 
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:

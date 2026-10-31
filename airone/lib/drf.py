@@ -1,16 +1,19 @@
 from collections import OrderedDict
 from collections.abc import Mapping
-from typing import IO, Any, cast
+from typing import IO, Any
 
 import yaml
 from django.conf import settings
+from pydantic import ValidationError as PydanticValidationError
 from rest_framework import serializers
-from rest_framework.exceptions import APIException, ParseError, ValidationError
+from rest_framework.exceptions import APIException, ErrorDetail, ParseError, ValidationError
 from rest_framework.parsers import BaseParser
+from rest_framework.permissions import BasePermission
 from rest_framework.renderers import BaseRenderer
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.utils.serializer_helpers import ReturnDict, ReturnList
-from rest_framework.views import exception_handler
+from rest_framework.views import APIView, exception_handler
 from yaml import SafeDumper
 
 from airone.lib.log import Logger
@@ -32,17 +35,18 @@ class YAMLParser(BaseParser):
         self,
         stream: IO[bytes],
         media_type: str | None = None,
-        parser_context: Mapping[str, Any] | None = None,
+        parser_context: "Mapping[str, Any] | None" = None,
     ) -> dict[str, object]:
         """
         Parses the incoming bytestream as YAML and returns the resulting data.
         """
-        context = dict(parser_context) if parser_context else {}
-        encoding = context.get("encoding", settings.DEFAULT_CHARSET)
+        parser_context = parser_context or {}
+        encoding = parser_context.get("encoding", settings.DEFAULT_CHARSET)
 
         try:
             data = stream.read().decode(encoding)
-            return cast("dict[str, object]", yaml.safe_load(data))
+            loaded: dict[str, object] = yaml.safe_load(data)
+            return loaded
         except (ValueError, yaml.parser.ParserError, yaml.scanner.ScannerError) as exc:
             raise ParseError("YAML parse error - %s" % str(exc))
 
@@ -60,7 +64,7 @@ class YAMLRenderer(BaseRenderer):
         self,
         data: object,
         accepted_media_type: str | None = None,
-        renderer_context: Mapping[str, Any] | None = None,
+        renderer_context: "Mapping[str, Any] | None" = None,
     ) -> str:
         return yaml.dump(
             data, Dumper=SafeDumper, stream=None, default_flow_style=False, allow_unicode=True
@@ -111,7 +115,38 @@ class FileIsNotExistsError(ValidationError):
     default_code = "AE-280000"
 
 
+class InvalidJobParameterError(ValidationError):
+    """A job payload did not satisfy its operation parameter contract."""
+
+    default_code = "AE-121000"
+
+
+def _as_drf_validation_error(exc: PydanticValidationError) -> InvalidJobParameterError:
+    """Translate pydantic field errors into the AirOne API error shape.
+
+    Job parameter contracts (``job/params.py``) raise pydantic errors that the
+    default DRF handler does not understand, which would turn a bad request
+    into an HTTP 500.  Surface them as a 400 with the offending field path and
+    an AirOne error code instead.
+    """
+
+    details: dict[str, list[ErrorDetail]] = {}
+    for error in exc.errors():
+        location = ".".join(str(part) for part in error.get("loc", ())) or "__root__"
+        # A missing field keeps the "required parameter" code; every other
+        # contract violation is reported as an incorrect type or value.
+        code = "AE-113000" if error.get("type") == "missing" else "AE-121000"
+        details.setdefault(location, []).append(
+            ErrorDetail(error.get("msg", "Invalid value"), code=code)
+        )
+    return InvalidJobParameterError(details)
+
+
 def custom_exception_handler(exc: Exception, context: dict[str, Any]) -> Response | None:
+    # Pydantic contract violations are client errors, not server errors.
+    if isinstance(exc, PydanticValidationError):
+        exc = _as_drf_validation_error(exc)
+
     def _convert_error_code(detail: Any) -> Any:
         if isinstance(detail, list):
             return [_convert_error_code(item) for item in detail]
@@ -167,6 +202,16 @@ def custom_exception_handler(exc: Exception, context: dict[str, Any]) -> Respons
     return response
 
 
+class IsSuperuser(BasePermission):
+    """
+    Lets only superusers through. It is for operations that can rewrite any user,
+    group or role, such as importing them.
+    """
+
+    def has_permission(self, request: Request, view: APIView) -> bool:
+        return bool(request.user.is_authenticated and request.user.is_superuser)
+
+
 class AironeUserDefault(serializers.CurrentUserDefault):
     """
     It enables to get user from the custom field in the context.
@@ -176,6 +221,21 @@ class AironeUserDefault(serializers.CurrentUserDefault):
 
     def __call__(self, serializer_field: serializers.Field[Any, Any, Any, Any]) -> User:
         if "_user" in serializer_field.context:
-            return cast("User", serializer_field.context["_user"])
+            user: User = serializer_field.context["_user"]
+            return user
 
-        return cast("User", super().__call__(serializer_field))
+        result: User = super().__call__(serializer_field)
+        return result
+
+
+def get_bound_parent(
+    field: serializers.Field[Any, Any, Any, Any],
+) -> "serializers.BaseSerializer[Any] | None":
+    """Return the serializer ``field`` is bound to, or None before bind().
+
+    DRF assigns ``Field.parent = None`` in ``__init__`` and only sets the real parent
+    in ``bind()``, but the stubs declare the attribute as always present. Reading it
+    through this helper keeps the "not bound yet" case visible to the type checker.
+    """
+    parent: serializers.BaseSerializer[Any] | None = getattr(field, "parent", None)
+    return parent

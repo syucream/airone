@@ -1,10 +1,14 @@
 import json
+from unittest.mock import patch
 
 import yaml
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 from rest_framework import status
 
 from airone.lib.test import AironeViewTest
 from group.models import Group
+from job.models import Job, JobStatus
 from user.models import User
 
 
@@ -19,16 +23,55 @@ class ViewTest(AironeViewTest):
         self.admin_login()
 
         user = self._create_user("fuga")
+        first_user = self._create_user("alpha")
+        inactive_user = self._create_user("inactive")
+        inactive_user.is_active = False
+        inactive_user.save(update_fields=["is_active"])
         group = self._create_group("hoge")
         user.groups.add(group)
+        first_user.groups.add(group)
+        inactive_user.groups.add(group)
 
         resp = self.client.get("/group/api/v2/groups")
         self.assertEqual(resp.status_code, 200)
         body = resp.json()
         self.assertEqual(len(body["results"]), 1)
         self.assertEqual(body["results"][0]["id"], group.id)
-        self.assertEqual(len(body["results"][0]["members"]), 1)
-        self.assertEqual(body["results"][0]["members"][0]["id"], user.id)
+        self.assertEqual(
+            [member["id"] for member in body["results"][0]["members"]],
+            [first_user.id, user.id],
+        )
+
+    def test_list_many_groups(self):
+        self.admin_login()
+
+        def create_groups(start: int, end: int) -> None:
+            groups = [self._create_group(f"group-{index:02}") for index in range(start, end)]
+            for index, group in enumerate(groups, start=start):
+                user = self._create_user(f"user-{index:02}")
+                user.groups.add(group)
+
+        create_groups(0, 3)
+        with CaptureQueriesContext(connection) as few_queries:
+            resp = self.client.get("/group/api/v2/groups")
+            self.assertEqual(resp.status_code, 200)
+
+        create_groups(3, 12)
+        with CaptureQueriesContext(connection) as many_queries:
+            resp = self.client.get("/group/api/v2/groups")
+
+        self.assertEqual(resp.status_code, 200)
+        body = resp.json()
+        self.assertEqual(len(body["results"]), 12)
+        self.assertTrue(all(len(group["members"]) == 1 for group in body["results"]))
+        self.assertLessEqual(
+            len(many_queries) - len(few_queries),
+            2,
+            msg=(
+                f"query count scales with groups: 3 groups => {len(few_queries)}, "
+                f"12 groups => {len(many_queries)}"
+            ),
+        )
 
     def test_retrieve(self):
         self.admin_login()
@@ -80,14 +123,84 @@ class ViewTest(AironeViewTest):
         self.assertEqual(Group.objects.filter(name="Group1").count(), 1)
         self.assertEqual(Group.objects.filter(name="Group2").count(), 1)
 
+    def test_create_group(self):
+        self.admin_login()
+
+        params = {"name": "hoge", "parent_group": None, "members": []}
+        resp = self.client.post("/group/api/v2/groups", json.dumps(params), "application/json")
+
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(Group.objects.filter(name="hoge").exists())
+
+    def test_create_group_by_non_superuser_is_forbidden(self):
+        # a child group inherits the roles of its parent group
+        parent = self._create_group("privileged")
+        self.guest_login()
+
+        params = {"name": "hoge", "parent_group": parent.id, "members": []}
+        resp = self.client.post("/group/api/v2/groups", json.dumps(params), "application/json")
+
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertFalse(Group.objects.filter(name="hoge").exists())
+
+    def test_import_by_non_superuser_is_forbidden(self):
+        group = self._create_group("Group1")
+        self.guest_login()
+
+        body = yaml.dump([{"id": group.id, "name": "renamed"}, {"name": "Group2"}])
+        resp = self.client.post(
+            "/group/api/v2/groups/import", body, content_type="application/yaml"
+        )
+
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+        group.refresh_from_db()
+        self.assertEqual(group.name, "Group1")
+        self.assertFalse(Group.objects.filter(name="Group2").exists())
+
+    def test_import_with_invalid_item_returns_list_errors(self):
+        self.admin_login()
+
+        body = yaml.dump([{"name": "Group1"}, {"id": "invalid"}])
+        resp = self.client.post(
+            "/group/api/v2/groups/import", body, content_type="application/yaml"
+        )
+
+        # ListSerializer errors keep the positional list shape (one entry per
+        # item, empty for valid ones) rather than DRF 3.18's index-keyed dict.
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(
+            resp.json(),
+            [
+                {},
+                {
+                    "id": [{"message": "A valid integer is required.", "code": "AE-121000"}],
+                    "name": [{"message": "This field is required.", "code": "AE-113000"}],
+                },
+            ],
+        )
+        self.assertFalse(Group.objects.filter(name="Group1").exists())
+
     def test_export(self):
         self.admin_login()
 
         self._create_group("group1")
         self._create_group("group2")
 
-        resp = self.client.get("/group/api/v2/groups/export")
+        with patch.object(Job, "run") as enqueue:
+            resp = self.client.get("/group/api/v2/groups/export")
+        enqueue.assert_called_once_with()
+        self.assertEqual(resp.status_code, 202)
+        self.assertNotIn("Content-Disposition", resp)
+        job = Job.objects.get(id=resp.json()["id"])
+        job.run(will_delay=False)
+        job.refresh_from_db()
+        self.assertEqual(job.status, JobStatus.DONE)
+        resp = self.client.get(f"/job/api/v2/{job.id}/download")
         self.assertEqual(resp.status_code, 200)
+        self.assertRegex(
+            resp["Content-Disposition"],
+            r'^attachment; filename="group_\d{4}_\d{2}_\d{2}_\d{2}_\d{2}\.yaml"$',
+        )
 
         obj = yaml.load(resp.content, Loader=yaml.SafeLoader)
         self.assertTrue(isinstance(obj, list))

@@ -1,5 +1,4 @@
 /**
- * @jest-environment jsdom
  */
 
 import { act, render, screen, waitFor } from "@testing-library/react";
@@ -61,7 +60,12 @@ describe("DashboardPage", () => {
     Object.defineProperty(window, "django_context", {
       value: {
         user: {
-          is_superuser: false,
+          id: 1,
+          username: "user1",
+          isSuperuser: false,
+          isReadonly: false,
+          parentUser: null,
+          email: "user1@example.com",
         },
       },
       writable: true,

@@ -1,5 +1,4 @@
 /**
- * @jest-environment jsdom
  */
 
 import { PaginatedUserListList } from "@dmm-com/airone-apiclient-typescript-fetch";
@@ -8,27 +7,30 @@ import { createMemoryRouter, RouterProvider } from "react-router";
 
 import { UserList } from "./UserList";
 
+import type { Mock } from "vitest";
+
 import { TestWrapper, TestWrapperWithoutRoutes } from "TestWrapper";
+import i18n from "i18n/config";
 import { aironeApiClient } from "repository/AironeApiClient";
 import { ServerContext } from "services/ServerContext";
 
 // Mock ServerContext
-jest.mock("services/ServerContext", () => ({
+vi.mock("services/ServerContext", () => ({
   ServerContext: {
-    getInstance: jest.fn(),
+    getInstance: vi.fn(),
   },
 }));
 
 // Mock API
-jest.mock("repository/AironeApiClient", () => ({
+vi.mock("repository/AironeApiClient", () => ({
   aironeApiClient: {
-    getUsers: jest.fn(),
-    destroyUser: jest.fn(),
+    getUsers: vi.fn(),
+    destroyUser: vi.fn(),
   },
 }));
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe("UserList", () => {
@@ -55,11 +57,11 @@ describe("UserList", () => {
   };
 
   beforeEach(() => {
-    (aironeApiClient.getUsers as jest.Mock).mockResolvedValue(mockUsers);
+    (aironeApiClient.getUsers as Mock).mockResolvedValue(mockUsers);
   });
 
   test("should render users", async () => {
-    (ServerContext.getInstance as jest.Mock).mockReturnValue({
+    (ServerContext.getInstance as Mock).mockReturnValue({
       user: { username: "user1", isSuperuser: false },
     });
 
@@ -72,7 +74,7 @@ describe("UserList", () => {
   });
 
   test("superuser sees menu for all users", async () => {
-    (ServerContext.getInstance as jest.Mock).mockReturnValue({
+    (ServerContext.getInstance as Mock).mockReturnValue({
       user: { username: "admin", isSuperuser: true },
     });
 
@@ -85,7 +87,7 @@ describe("UserList", () => {
   });
 
   test("normal user sees menu only for themselves", async () => {
-    (ServerContext.getInstance as jest.Mock).mockReturnValue({
+    (ServerContext.getInstance as Mock).mockReturnValue({
       user: { username: "user1", isSuperuser: false },
     });
 
@@ -98,7 +100,7 @@ describe("UserList", () => {
   });
 
   test("normal user can use readonly user creation button", async () => {
-    (ServerContext.getInstance as jest.Mock).mockReturnValue({
+    (ServerContext.getInstance as Mock).mockReturnValue({
       user: { username: "user1", isSuperuser: false },
     });
 
@@ -113,7 +115,7 @@ describe("UserList", () => {
   });
 
   test("superuser can use register button", async () => {
-    (ServerContext.getInstance as jest.Mock).mockReturnValue({
+    (ServerContext.getInstance as Mock).mockReturnValue({
       user: { username: "admin", isSuperuser: true },
     });
 
@@ -128,7 +130,7 @@ describe("UserList", () => {
   });
 
   test("should navigate to create page", async () => {
-    (ServerContext.getInstance as jest.Mock).mockReturnValue({
+    (ServerContext.getInstance as Mock).mockReturnValue({
       user: { username: "admin", isSuperuser: true },
     });
 
@@ -153,7 +155,7 @@ describe("UserList", () => {
   });
 
   test("should navigate to user detail page", async () => {
-    (ServerContext.getInstance as jest.Mock).mockReturnValue({
+    (ServerContext.getInstance as Mock).mockReturnValue({
       user: { username: "admin", isSuperuser: true },
     });
 
@@ -175,5 +177,23 @@ describe("UserList", () => {
     });
 
     expect(router.state.location.pathname).toBe("/ui/users/1");
+  });
+
+  test("renders in English", async () => {
+    (ServerContext.getInstance as Mock).mockReturnValue({
+      user: { username: "admin", isSuperuser: true },
+    });
+
+    await act(async () => {
+      await i18n.changeLanguage("en");
+    });
+
+    await act(async () => {
+      render(<UserList />, { wrapper: TestWrapper });
+    });
+
+    expect(
+      screen.getByRole("link", { name: /Register a new user/i }),
+    ).toBeInTheDocument();
   });
 });

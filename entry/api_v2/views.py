@@ -4,11 +4,12 @@ import re
 from collections import Counter
 from copy import deepcopy
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
-from django.db.models import Q, QuerySet
+from django.db.models import OuterRef, Prefetch, Q, QuerySet, Subquery
+from drf_spectacular.helpers import forced_singular_serializer
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import OpenApiParameter, extend_schema
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import generics, status, viewsets
 from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.pagination import LimitOffsetPagination
@@ -24,18 +25,24 @@ from airone.lib.drf import (
     DuplicatedObjectExistsError,
     FrequentImportError,
     IncorrectTypeError,
+    InvalidValueError,
     ObjectNotExistsError,
     RequiredParameterError,
     YAMLParser,
 )
 from airone.lib.elasticsearch import (
     ENTRY_NAME_SORT_TARGET,
+    AdvancedSearchResultRecord,
+    AdvancedSearchResultRecordAttr,
+    AdvancedSearchResults,
     AttrHint,
     EntryHint,
     FilterKey,
 )
+from airone.lib.http import timestamped_filename
 from airone.lib.multidb import db_readonly
 from airone.lib.plugin_dispatch import PluginOverrideMixin
+from airone.lib.text import normalize_search_text
 from airone.lib.types import AttrType, is_sortable_attr_type
 from api_v1.entry.serializer import EntrySearchChainSerializer
 from entity.models import Entity, EntityAttr
@@ -53,20 +60,24 @@ from entry.api_v2.serializers import (
     EntryExportSerializer,
     EntryHistoryAttributeValueSerializer,
     EntryImportSerializer,
+    EntryNetworkSearchResponseSerializer,
     EntryRetrieveSerializer,
     EntrySearchSerializer,
     EntrySelfHistoryRestoreSerializer,
     EntrySelfHistorySerializer,
     EntryUpdateSerializer,
     ExportTaskParams,
+    GetEntryAttrReferralListSerializer,
     GetEntryAttrReferralSerializer,
     ItemRollbackSerializer,
+    _make_display_attr_prefetch,
 )
 from entry.models import AliasEntry, Attribute, AttributeValue, Entry
 from entry.services import AdvancedSearchService
 from entry.settings import CONFIG
 from entry.settings import CONFIG as ENTRY_CONFIG
 from group.models import Group
+from job.api_v2.serializers import ImportPreviewJobsSerializer
 from job.models import Job, JobOperation, JobStatus
 from role.models import Role
 
@@ -78,7 +89,7 @@ logger = logging.getLogger(__name__)
 
 class EntryPermission(BasePermission):
     def has_object_permission(self, request: Request, view: Any, obj: Any) -> bool:
-        user: User = request.user
+        user = cast("User", request.user)
 
         permisson = {
             "retrieve": ACLType.Readable,
@@ -98,7 +109,7 @@ class EntryPermission(BasePermission):
         return True
 
 
-class EntryAPI(PluginOverrideMixin, viewsets.ModelViewSet):
+class EntryAPI(PluginOverrideMixin, viewsets.ModelViewSet[Entry]):
     """Entry API ViewSet with plugin override support.
 
     Plugin overrides are automatically handled by PluginOverrideMixin.
@@ -109,8 +120,8 @@ class EntryAPI(PluginOverrideMixin, viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated & EntryPermission]
     pagination_class = LimitOffsetPagination
 
-    def get_serializer_class(self) -> type[BaseSerializer]:
-        serializer = {
+    def get_serializer_class(self) -> type[BaseSerializer[Any]]:
+        serializer: dict[str, type[BaseSerializer[Any]]] = {
             "retrieve": EntryRetrieveSerializer,
             "update": EntryUpdateSerializer,
             "copy": EntryCopySerializer,
@@ -139,13 +150,17 @@ class EntryAPI(PluginOverrideMixin, viewsets.ModelViewSet):
         if response is not None:
             return response
 
-        user: User = request.user
+        user = cast("User", request.user)
 
         serializer = EntryUpdateSerializer(
             instance=entry, data=request.data, context={"_user": user}
         )
         serializer.is_valid(raise_exception=True)
 
+        # Mark the entry as being edited before dispatching the async job.
+        # This keeps the ongoing-changes indicator visible while the worker
+        # is unavailable or the job is waiting in the queue.
+        entry.set_status(Entry.STATUS_EDITING)
         job = Job.new_edit_entry_v2(user, entry, params=request.data)
         job.run()
 
@@ -160,7 +175,7 @@ class EntryAPI(PluginOverrideMixin, viewsets.ModelViewSet):
         if not entry.is_active:
             raise ObjectNotExistsError("specified entry has already been deleted")
 
-        user: User = request.user
+        user = cast("User", request.user)
 
         if custom_view.is_custom("before_delete_entry_v2", entry.schema.name):
             custom_view.call_custom("before_delete_entry_v2", entry.schema.name, user, entry)
@@ -186,7 +201,7 @@ class EntryAPI(PluginOverrideMixin, viewsets.ModelViewSet):
         if not entry.schema.is_available(re.sub(r"_deleted_[0-9_]*$", "", entry.name)):
             raise DuplicatedObjectExistsError("specified entry has already exist alias")
 
-        user: User = request.user
+        user = cast("User", request.user)
 
         if custom_view.is_custom("before_restore_entry_v2", entry.schema.name):
             custom_view.call_custom("before_restore_entry_v2", entry.schema.name, user, entry)
@@ -210,6 +225,7 @@ class EntryAPI(PluginOverrideMixin, viewsets.ModelViewSet):
 
     def copy(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         src_entry: Entry = self.get_object()
+        user = cast("User", request.user)
 
         if not src_entry.is_active:
             raise ObjectNotExistsError("specified entry is not active")
@@ -225,7 +241,7 @@ class EntryAPI(PluginOverrideMixin, viewsets.ModelViewSet):
         }
 
         # run copy job
-        job = Job.new_copy(request.user, src_entry, text="Preparing to copy entry", params=params)
+        job = Job.new_copy(user, src_entry, text="Preparing to copy entry", params=params)
         job.run()
 
         return Response({}, status=status.HTTP_200_OK)
@@ -234,13 +250,15 @@ class EntryAPI(PluginOverrideMixin, viewsets.ModelViewSet):
     def list_alias(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         entry: Entry = self.get_object()
 
-        self.queryset = AliasEntry.objects.filter(entry=entry, entry__is_active=True)
+        self.queryset = AliasEntry.objects.filter(  # type: ignore[assignment]
+            entry=entry, entry__is_active=True
+        )
 
         return super().list(request, *args, **kwargs)
 
     @extend_schema(responses=EntryHistoryAttributeValueSerializer(many=True))
     def list_histories(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        user: User = self.request.user
+        user = cast("User", self.request.user)
         entry: Entry = self.get_object()
 
         # check permission for attribute
@@ -249,8 +267,20 @@ class EntryAPI(PluginOverrideMixin, viewsets.ModelViewSet):
             if user.has_permission(attr, ACLType.Readable):
                 target_attrs.append(attr)
 
+        # If any of the currently-visible attrs has a display_attr configured,
+        # extend the prefetch chain so `_resolve_display_label` never falls
+        # through to per-row DB queries in the history serializer.
+        display_attr_names: set[str] = {
+            a.schema.display_attr for a in target_attrs if a.schema.display_attr
+        }
+        display_prefetches: list[Prefetch[Any]] = []
+        data_array_extra: list[Prefetch[Any]] = []
+        if display_attr_names:
+            display_prefetches.append(_make_display_attr_prefetch(display_attr_names))
+            data_array_extra.append(_make_display_attr_prefetch(display_attr_names))
+
         self.queryset = (
-            AttributeValue.objects.filter(
+            AttributeValue.objects.filter(  # type: ignore[assignment]
                 parent_attr__in=target_attrs,
                 parent_attrv__isnull=True,
             )
@@ -258,7 +288,15 @@ class EntryAPI(PluginOverrideMixin, viewsets.ModelViewSet):
             .select_related(
                 "parent_attr__schema", "created_user", "referral", "referral__entry__schema"
             )
-            .prefetch_related("data_array__referral__entry__schema")
+            .prefetch_related(
+                Prefetch(
+                    "data_array",
+                    queryset=AttributeValue.objects.select_related(
+                        "referral__entry__schema"
+                    ).prefetch_related(*data_array_extra),
+                ),
+                *display_prefetches,
+            )
         )
 
         return super().list(request, *args, **kwargs)
@@ -268,8 +306,26 @@ class EntryAPI(PluginOverrideMixin, viewsets.ModelViewSet):
         """List entry self history records"""
         entry: Entry = self.get_object()
 
-        # Get historical records for the entry
-        self.queryset = entry.history.all().order_by("-history_date").select_related("history_user")
+        # Keep the initial/baseline row and display later rows only when the
+        # entry name differs from the immediately preceding state. The initial
+        # row has no preceding history row, so filtering out NULL previous_name
+        # would incorrectly hide it.
+        history_model = entry.history.model
+        previous_name = (
+            history_model.objects.filter(
+                id=OuterRef("id"),
+                history_date__lt=OuterRef("history_date"),
+            )
+            .order_by("-history_date", "-history_id")
+            .values("name")[:1]
+        )
+        self.queryset = (
+            entry.history.all()
+            .annotate(previous_name=Subquery(previous_name))
+            .filter(Q(previous_name__isnull=True) | ~Q(name=Subquery(previous_name)))
+            .order_by("-history_date")
+            .select_related("history_user")
+        )
 
         return super().list(request, *args, **kwargs)
 
@@ -323,26 +379,124 @@ class EntryAPI(PluginOverrideMixin, viewsets.ModelViewSet):
 @extend_schema(
     parameters=[
         OpenApiParameter("query", OpenApiTypes.STR, OpenApiParameter.QUERY),
+        OpenApiParameter("limit", OpenApiTypes.INT, OpenApiParameter.QUERY),
+        OpenApiParameter("offset", OpenApiTypes.INT, OpenApiParameter.QUERY),
     ],
 )
-class searchAPI(viewsets.ReadOnlyModelViewSet):
+class searchAPI(viewsets.ReadOnlyModelViewSet[Any]):
     serializer_class = EntrySearchSerializer
 
-    def get_queryset(self) -> list[Any]:
+    def get_queryset(self) -> list[Any]:  # type: ignore[override]  # ES results, not a QuerySet
         queryset: list[Any] = []
         query = self.request.query_params.get("query", None)
 
         if not query:
             return queryset
 
+        try:
+            offset = max(int(self.request.query_params.get("offset", "0")), 0)
+        except ValueError:
+            offset = 0
+        try:
+            requested_limit = int(
+                self.request.query_params.get("limit", str(ENTRY_CONFIG.MAX_SEARCH_ENTRIES))
+            )
+        except ValueError:
+            requested_limit = ENTRY_CONFIG.MAX_SEARCH_ENTRIES
+        limit = min(max(requested_limit, 1), ENTRY_CONFIG.MAX_SEARCH_ENTRIES + 1)
         results = AdvancedSearchService.search_entries_for_simple(
-            query, limit=ENTRY_CONFIG.MAX_SEARCH_ENTRIES
+            query,
+            limit=limit,
+            offset=offset,
         )
         return list(results["ret_values"])
 
 
+class EntryNetworkSearchAPI(generics.GenericAPIView[Any]):
+    serializer_class = EntryNetworkSearchResponseSerializer
+
+    @extend_schema(
+        operation_id="entry_api_v2_search_attribute_matches_list",
+        parameters=[
+            OpenApiParameter("query", OpenApiTypes.STR, OpenApiParameter.QUERY, required=True),
+            OpenApiParameter("limit", OpenApiTypes.INT, OpenApiParameter.QUERY),
+            OpenApiParameter("offset", OpenApiTypes.INT, OpenApiParameter.QUERY),
+        ],
+        responses=EntryNetworkSearchResponseSerializer,
+    )
+    def get(self, request: Request) -> Response:
+        query = request.query_params.get("query", "")
+        try:
+            offset = max(int(request.query_params.get("offset", "0")), 0)
+        except ValueError:
+            offset = 0
+        try:
+            page_size = int(request.query_params.get("limit", str(ENTRY_CONFIG.MAX_SEARCH_ENTRIES)))
+        except ValueError:
+            page_size = ENTRY_CONFIG.MAX_SEARCH_ENTRIES
+        page_size = min(max(page_size, 1), ENTRY_CONFIG.MAX_SEARCH_ENTRIES)
+
+        results = (
+            AdvancedSearchService.search_entries_for_simple(
+                query,
+                limit=page_size + 1,
+                offset=offset,
+                include_matches=True,
+            )
+            if query
+            else {"ret_count": 0, "ret_values": []}
+        )
+
+        total_hits = results["ret_count"]
+        has_more = len(results["ret_values"]) > page_size
+        entries_to_check = results["ret_values"][:page_size]
+        user = cast("User", request.user)
+
+        # Elasticsearch does not store the requesting user's ACL. Check both
+        # entry and attribute permissions before returning matched values.
+        entries = {
+            entry.id: entry
+            for entry in Entry.objects.filter(
+                id__in=[int(result["id"]) for result in entries_to_check],
+                is_active=True,
+                schema__is_active=True,
+            ).select_related("schema")
+        }
+        attrs = {
+            (attr.parent_entry_id, attr.schema.name): attr
+            for attr in Attribute.objects.filter(
+                parent_entry_id__in=entries,
+                is_active=True,
+                schema__is_active=True,
+            ).select_related("schema")
+        }
+        readable_results = []
+        for result in entries_to_check:
+            entry = entries.get(int(result["id"]))
+            if entry is None or not (
+                user.has_permission(entry.schema, ACLType.Readable)
+                and user.has_permission(entry, ACLType.Readable)
+            ):
+                continue
+            result["matches"] = [
+                match
+                for match in result.get("matches", [])
+                if (attr := attrs.get((entry.id, match["name"]))) is not None
+                and user.has_permission(attr.schema, ACLType.Readable)
+                and user.has_permission(attr, ACLType.Readable)
+            ]
+            readable_results.append(result)
+
+        response_data = {
+            "results": readable_results,
+            "has_more": has_more,
+            "total_hits": total_hits,
+        }
+        return Response(self.get_serializer(response_data).data)
+
+
 @db_readonly
-class AdvancedSearchAPI(generics.GenericAPIView):
+class AdvancedSearchAPI(generics.GenericAPIView[Any]):
     serializer_class = AdvancedSearchSerializer
     """
     NOTE for now it's just copied from /api/v1/entry/search, but it should be
@@ -361,6 +515,7 @@ class AdvancedSearchAPI(generics.GenericAPIView):
     def post(self, request: Request) -> Response:
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        user = cast("User", request.user)
 
         hint_entry = serializer.validated_data.get("hint_entry")
         if hint_entry and (hint_entry.get("filter_key") is not None or hint_entry.get("keyword")):
@@ -420,8 +575,10 @@ class AdvancedSearchAPI(generics.GenericAPIView):
                 else:
                     entity = Entity.objects.filter(name=hint_entity, is_active=True).first()
 
-            if entity and request.user.has_permission(entity, ACLType.Readable):
+            if entity and user.has_permission(entity, ACLType.Readable):
                 hint_entity_ids.append(entity.id)
+
+        search_entity_ids = [str(entity_id) for entity_id in hint_entity_ids]
 
         # Validate sort parameter.
         sort_input = serializer.validated_data.get("sort")
@@ -453,109 +610,163 @@ class AdvancedSearchAPI(generics.GenericAPIView):
                     return Response("sort target attribute type is not sortable", status=400)
                 sort_target_attr_type = attr_type
 
-        resp = AdvancedSearchService.search_entries(
-            request.user,
-            hint_entity_ids,
-            hint_attrs,
-            entry_limit,
-            None,  # don't use in APIv2
-            hint_referral,
-            is_output_all,
-            offset=entry_offset,
-            hint_entry=hint_entry,
-            allow_missing_attributes=True,  # For APIv2, allow entries missing attributes
-            exclude_referrals=exclude_referrals,
-            include_referrals=include_referrals,
-            sort_target_attrname=sort_target_attrname,
-            sort_order=sort_order,
-            sort_target_attr_type=sort_target_attr_type,
-        )
+        if not join_attrs:
+            resp = AdvancedSearchService.search_entries(
+                user,
+                search_entity_ids,
+                hint_attrs,
+                entry_limit,
+                None,  # don't use in APIv2
+                hint_referral,
+                is_output_all,
+                offset=entry_offset,
+                hint_entry=hint_entry,
+                allow_missing_attributes=True,
+                exclude_referrals=exclude_referrals,
+                include_referrals=include_referrals,
+                sort_target_attrname=sort_target_attrname,
+                sort_order=sort_order,
+                sort_target_attr_type=sort_target_attr_type,
+            )
+            total_count = deepcopy(resp.ret_count)
+            resp = AdvancedSearchService.apply_join_attrs(
+                user, resp, join_attrs, expand_arrays=False
+            )
+        else:
+            # Join filters are applied after the initial ES search. Continue
+            # scanning candidates until the requested page is full.
+            joined_values: list[AdvancedSearchResultRecord] = []
+            candidate_offset = 0
+            target_end = entry_offset + entry_limit
+            total_count = 0
+            exhausted = False
+            while len(joined_values) < target_end:
+                candidate_resp = AdvancedSearchService.search_entries(
+                    user,
+                    search_entity_ids,
+                    hint_attrs,
+                    entry_limit,
+                    None,
+                    hint_referral,
+                    is_output_all,
+                    offset=candidate_offset,
+                    hint_entry=hint_entry,
+                    allow_missing_attributes=True,
+                    exclude_referrals=exclude_referrals,
+                    include_referrals=include_referrals,
+                    sort_target_attrname=sort_target_attrname,
+                    sort_order=sort_order,
+                    sort_target_attr_type=sort_target_attr_type,
+                )
+                total_count = candidate_resp.ret_count
+                if not candidate_resp.ret_values:
+                    exhausted = True
+                    break
+                joined_resp = AdvancedSearchService.apply_join_attrs(
+                    user, candidate_resp, join_attrs, expand_arrays=False
+                )
+                joined_values.extend(joined_resp.ret_values)
+                candidate_count = len(candidate_resp.ret_values)
+                candidate_offset += candidate_count
+                if candidate_count < entry_limit:
+                    exhausted = True
+                    break
 
-        # save total population number
-        total_count = deepcopy(resp.ret_count)
-
-        resp = AdvancedSearchService.apply_join_attrs(
-            request.user,
-            resp,
-            join_attrs,
-        )
+            if exhausted:
+                total_count = len(joined_values)
+            page_values = joined_values[entry_offset : entry_offset + entry_limit]
+            resp = AdvancedSearchResults(
+                ret_count=len(page_values),
+                ret_values=page_values,
+            )
 
         # convert field values to fit entry retrieve API data type, as a workaround.
         # FIXME should be replaced with DRF serializer etc
-        for entry in resp.ret_values:
-            for name, attr in entry.attrs.items():
-
-                def _get_typed_value(type: int) -> str:
-                    if type & AttrType._ARRAY:
-                        if type & AttrType.STRING:
-                            return "as_array_string"
-                        elif type & AttrType._NAMED:
-                            return "as_array_named_object"
-                        elif type & AttrType.OBJECT:
-                            return "as_array_object"
-                        elif type & AttrType.GROUP:
-                            return "as_array_group"
-                        elif type & AttrType.ROLE:
-                            return "as_array_role"
-                        elif type & AttrType.NUMBER:
-                            return "as_array_number"
-                    elif type & AttrType.STRING or type & AttrType.TEXT:
-                        return "as_string"
-                    elif type & AttrType.NUMBER:
-                        return "as_number"
+        def convert_attr(attr: AdvancedSearchResultRecordAttr) -> AdvancedSearchResultRecordAttr:
+            def _get_typed_value(type: int) -> str:
+                if type & AttrType._ARRAY:
+                    if type & AttrType.STRING:
+                        return "as_array_string"
                     elif type & AttrType._NAMED:
-                        return "as_named_object"
+                        return "as_array_named_object"
                     elif type & AttrType.OBJECT:
-                        return "as_object"
-                    elif type & AttrType.BOOLEAN:
-                        return "as_boolean"
-                    elif type & AttrType.DATE:
-                        return "as_string"
+                        return "as_array_object"
                     elif type & AttrType.GROUP:
-                        return "as_group"
+                        return "as_array_group"
                     elif type & AttrType.ROLE:
-                        return "as_role"
-                    elif type & AttrType.DATETIME:
-                        return "as_string"
-                    raise IncorrectTypeError(f"unexpected type: {type}")
+                        return "as_array_role"
+                    elif type & AttrType.NUMBER:
+                        return "as_array_number"
+                    elif type & AttrType.SELECT:
+                        return "as_multi_select"
+                elif type & AttrType.STRING or type & AttrType.TEXT:
+                    return "as_string"
+                elif type & AttrType.NUMBER:
+                    return "as_number"
+                elif type & AttrType._NAMED:
+                    return "as_named_object"
+                elif type & AttrType.OBJECT:
+                    return "as_object"
+                elif type & AttrType.BOOLEAN:
+                    return "as_boolean"
+                elif type & AttrType.DATE:
+                    return "as_string"
+                elif type & AttrType.GROUP:
+                    return "as_group"
+                elif type & AttrType.ROLE:
+                    return "as_role"
+                elif type & AttrType.DATETIME:
+                    return "as_string"
+                elif type & AttrType.SELECT:
+                    return "as_select"
+                raise IncorrectTypeError(f"unexpected type: {type}")
 
-                entry.attrs[name] = {
-                    "is_readable": attr["is_readable"],
-                    "type": attr["type"],
-                    "value": {
-                        _get_typed_value(attr["type"]): attr.get("value", ""),
-                    },
+            converted: AdvancedSearchResultRecordAttr = {
+                "is_readable": attr["is_readable"],
+                "type": attr["type"],
+                "value": {
+                    _get_typed_value(attr["type"]): attr.get("value", ""),
+                },
+            }
+
+            # "asString" is a string type and does not allow None
+            if (
+                _get_typed_value(attr["type"]) == "as_string"
+                and converted["value"]["as_string"] is None
+            ):
+                converted["value"]["as_string"] = ""
+
+            # "asNamedObject", "as_array_named_object" converts types
+            if _get_typed_value(attr["type"]) == "as_named_object":
+                value = converted["value"]["as_named_object"]
+                converted["value"]["as_named_object"] = {
+                    "name": list(value.keys())[0],
+                    "object": list(value.values())[0],
                 }
 
-                # "asString" is a string type and does not allow None
-                if (
-                    _get_typed_value(attr["type"]) == "as_string"
-                    and entry.attrs[name]["value"]["as_string"] is None
-                ):
-                    entry.attrs[name]["value"]["as_string"] = ""
-
-                # "asNamedObject", "as_array_named_object" converts types
-                if _get_typed_value(attr["type"]) == "as_named_object":
-                    value = entry.attrs[name]["value"]["as_named_object"]
-                    entry.attrs[name]["value"]["as_named_object"] = {
+            if _get_typed_value(attr["type"]) == "as_array_named_object":
+                values = converted["value"]["as_array_named_object"]
+                converted["value"]["as_array_named_object"] = [
+                    {
                         "name": list(value.keys())[0],
                         "object": list(value.values())[0],
                     }
+                    for value in values
+                ]
 
-                if _get_typed_value(attr["type"]) == "as_array_named_object":
-                    values = entry.attrs[name]["value"]["as_array_named_object"]
-                    entry.attrs[name]["value"]["as_array_named_object"] = [
-                        {
-                            "name": list(value.keys())[0],
-                            "object": list(value.values())[0],
-                        }
-                        for value in values
-                    ]
+            return converted
+
+        for entry in resp.ret_values:
+            entry.attrs = {name: convert_attr(attr) for name, attr in entry.attrs.items()}
+            entry.joined_attrs = {
+                name: {"values": [convert_attr(attr) for attr in attrs["values"]]}
+                for name, attrs in entry.joined_attrs.items()
+            }
 
         serializer = AdvancedSearchResultSerializer(
             data={
                 "count": resp.ret_count,
-                "values": [x.dict() for x in resp.ret_values],
+                "values": [x.model_dump() for x in resp.ret_values],
                 "total_count": total_count,
             }
         )
@@ -569,7 +780,7 @@ class AdvancedSearchAPI(generics.GenericAPIView):
 
 
 @db_readonly
-class AdvancedSearchChainAPI(generics.GenericAPIView):
+class AdvancedSearchChainAPI(generics.GenericAPIView[Any]):
     serializer_class = EntrySearchChainSerializer
     """
     NOTE For now, it's just copied from /api/v1/entry/search_chain.
@@ -601,7 +812,7 @@ class AdvancedSearchChainAPI(generics.GenericAPIView):
         return Response(EntryBaseSerializer(entries, many=True).data)
 
 
-class AdvancedSearchResultAPI(generics.GenericAPIView):
+class AdvancedSearchResultAPI(generics.GenericAPIView[Any]):
     serializer_class = AdvancedSearchResultExportSerializer
 
     def post(self, request: Request) -> Response:
@@ -616,17 +827,17 @@ class AdvancedSearchResultAPI(generics.GenericAPIView):
         OpenApiParameter("keyword", OpenApiTypes.STR, OpenApiParameter.QUERY),
     ],
 )
-class EntryReferralAPI(viewsets.ReadOnlyModelViewSet):
+class EntryReferralAPI(viewsets.ReadOnlyModelViewSet[Entry]):
     serializer_class = EntryBaseSerializer
     pagination_class = EntryReferralPagination
 
-    def get_queryset(self) -> QuerySet[Entry] | list[Entry]:
+    def get_queryset(self) -> QuerySet[Entry, Entry]:
         entry_id = self.kwargs["pk"]
         keyword = self.request.query_params.get("keyword", None)
 
         entry = Entry.objects.filter(pk=entry_id).first()
         if not entry:
-            return []
+            return Entry.objects.none()
 
         ids = AttributeValue.objects.filter(
             Q(referral=entry, is_latest=True) | Q(referral=entry, parent_attrv__is_latest=True)
@@ -640,10 +851,12 @@ class EntryReferralAPI(viewsets.ReadOnlyModelViewSet):
         return Entry.objects.filter(query).select_related("schema")
 
 
-class EntryExportAPI(generics.GenericAPIView):
+class EntryExportAPI(generics.GenericAPIView[Any]):
     serializer_class = EntryExportSerializer
 
     def post(self, request: Request, entity_id: int) -> Response:
+        user = cast("User", request.user)
+
         if not Entity.objects.filter(id=entity_id).exists():
             return Response(
                 "Failed to get entity of specified id", status=status.HTTP_400_BAD_REQUEST
@@ -664,7 +877,11 @@ class EntryExportAPI(generics.GenericAPIView):
         # check whether same job is sent
         job_status_not_finished = [JobStatus.PREPARING, JobStatus.PROCESSING]
         if (
-            Job.get_job_with_params(request.user, job_params.dict())
+            Job.get_job_with_params(
+                user,
+                JobOperation.EXPORT_ENTRY_V2,
+                job_params.model_dump(mode="json"),
+            )
             .filter(status__in=job_status_not_finished)
             .exists()
         ):
@@ -673,19 +890,17 @@ class EntryExportAPI(generics.GenericAPIView):
             )
 
         entity = Entity.objects.get(id=entity_id)
-        if not request.user.has_permission(entity, ACLType.Readable):
+        if not user.has_permission(entity, ACLType.Readable):
             return Response(
                 'Permission denied to _value "%s"' % entity.name, status=status.HTTP_400_BAD_REQUEST
             )
 
         # create a job to export search result and run it
         job = Job.new_export_v2(
-            request.user,
-            **{
-                "text": "entry_%s.%s" % (entity.name, str(job_params.export_format)),
-                "target": entity,
-                "params": job_params.dict(),
-            },
+            user,
+            target=entity,
+            text=timestamped_filename("entry_%s.%s" % (entity.name, str(job_params.export_format))),
+            params=job_params.model_dump(mode="json"),
         )
         job.run()
 
@@ -695,74 +910,189 @@ class EntryExportAPI(generics.GenericAPIView):
         )
 
 
-@extend_schema(
-    parameters=[
-        OpenApiParameter("keyword", OpenApiTypes.STR, OpenApiParameter.QUERY),
-    ],
-)
-class EntryAttrReferralsAPI(viewsets.ReadOnlyModelViewSet):
+class EntryAttrReferralsAPI(viewsets.ReadOnlyModelViewSet[Any]):
     serializer_class = GetEntryAttrReferralSerializer
 
-    def get_queryset(self) -> QuerySet[Entry] | QuerySet[Group] | QuerySet[Role]:
+    def _resolve_entity_attr(self) -> EntityAttr:
+        # DRF calls both get_serializer_context() and get_queryset() per
+        # request; cache the resolved EntityAttr on self to avoid a duplicate
+        # Attribute + EntityAttr lookup on every autocomplete keystroke.
+        cached: EntityAttr | None = getattr(self, "_entity_attr_cache", None)
+        if cached is not None:
+            return cached
         attr_id = self.kwargs["attr_id"]
-        keyword = self.request.query_params.get("keyword", None)
-
         attr = Attribute.objects.filter(id=attr_id).first()
+        entity_attr: EntityAttr | None
         if attr:
             entity_attr = attr.schema
         else:
             entity_attr = EntityAttr.objects.filter(id=attr_id).first()
         if not entity_attr:
             raise NotFound(f"not found matched attribute or entity attr: {attr_id}")
+        self._entity_attr_cache = entity_attr
+        return entity_attr
+
+    def get_serializer_context(self) -> dict[str, Any]:
+        context = dict(super().get_serializer_context())
+        # Skip resolution for actions like get_schema where kwargs is empty.
+        if "attr_id" in self.kwargs:
+            entity_attr = self._resolve_entity_attr()
+            if entity_attr.type & AttrType.OBJECT:
+                context["display_attr_name"] = entity_attr.display_attr
+        return context
+
+    def get_queryset(self) -> QuerySet[Any]:
+        keyword = self.request.query_params.get("keyword", None)
+        entity_attr = self._resolve_entity_attr()
 
         conditions = {"is_active": True}
+        conditions_q = Q()
+        normalized_keyword: str | None = None
         if keyword:
-            conditions["name__icontains"] = keyword
+            normalized_keyword = normalize_search_text(keyword)
+            conditions_q = Q()
 
         # TODO support natural sort?
         if entity_attr.type & AttrType.OBJECT:
             from isolation.models import IsolationParent
 
-            qs = Entry.objects.filter(**conditions, schema__in=entity_attr.referral.all()).order_by(
-                "name"
-            )
+            user = cast("User", self.request.user)
+            referral_models = list(entity_attr.referral.all())
+            readable_model_ids = {
+                model.id
+                for model in referral_models
+                if user.has_permission(model, ACLType.Readable)
+            }
+            self._has_restricted_items = len(readable_model_ids) != len(referral_models)
+            qs = Entry.objects.filter(
+                conditions_q, **conditions, schema_id__in=readable_model_ids
+            ).order_by("name")
             isolated_ids = IsolationParent.get_isolated_entry_ids(qs, entity_attr.parent_entity)
-            return qs.exclude(id__in=isolated_ids)[0 : CONFIG.MAX_LIST_REFERRALS]
+            qs = qs.exclude(id__in=isolated_ids)
+            # Bounded prefetch to resolve display_label without N+1 when
+            # display_attr is configured on the caller-side EntityAttr.
+            if entity_attr.display_attr:
+                display_attrv_prefetch = Prefetch(
+                    "values",
+                    queryset=AttributeValue.objects.filter(is_latest=True).select_related(
+                        "referral"
+                    ),
+                    to_attr="_display_attrv_list",
+                )
+                display_attr_prefetch = Prefetch(
+                    "attrs",
+                    queryset=Attribute.objects.filter(
+                        is_active=True, schema__name=entity_attr.display_attr
+                    )
+                    .select_related("schema")
+                    .prefetch_related(display_attrv_prefetch),
+                    to_attr="_display_attr_list",
+                )
+                qs = qs.prefetch_related(display_attr_prefetch)
+            entries: list[Entry] = list(qs)
+            if keyword:
+                assert normalized_keyword is not None
+                entries = [
+                    entry
+                    for entry in entries
+                    if normalized_keyword in normalize_search_text(entry.name)
+                ]
+            return cast(QuerySet[Any], self._filter_readable(entries, Entry))
         elif entity_attr.type & AttrType.GROUP:
-            return Group.objects.filter(**conditions).order_by("name")[
-                0 : CONFIG.MAX_LIST_REFERRALS
-            ]
+            groups: list[Group] = cast(
+                list[Group], list(Group.objects.filter(**conditions).order_by("name"))
+            )
+            if keyword:
+                assert normalized_keyword is not None
+                groups = [
+                    group
+                    for group in groups
+                    if normalized_keyword in normalize_search_text(group.name)
+                ]
+            return cast(QuerySet[Any], self._filter_readable(groups, Group))
         elif entity_attr.type & AttrType.ROLE:
-            return Role.objects.filter(**conditions).order_by("name")[0 : CONFIG.MAX_LIST_REFERRALS]
+            roles = list(Role.objects.filter(**conditions).order_by("name"))
+            if keyword:
+                assert normalized_keyword is not None
+                roles = [
+                    role for role in roles if normalized_keyword in normalize_search_text(role.name)
+                ]
+            return cast(QuerySet[Any], self._filter_readable(roles, Role))
         else:
             raise IncorrectTypeError(f"unsupported attr type: {entity_attr.type}")
 
+    def _filter_readable(self, objects: list[Any], model: type[Any]) -> list[Any]:
+        if model is not Entry:
+            self._has_restricted_items = getattr(self, "_has_restricted_items", False)
+            return objects[: CONFIG.MAX_LIST_REFERRALS]
+        user = cast("User", self.request.user)
+        readable = [obj for obj in objects if user.has_permission(obj, ACLType.Readable)]
+        item_restricted = len(readable) != len(objects)
+        self._has_restricted_items = (
+            getattr(self, "_has_restricted_items", False) or item_restricted
+        )
+        return readable[: CONFIG.MAX_LIST_REFERRALS]
 
-class EntryImportAPI(generics.GenericAPIView):
+    @extend_schema(
+        methods=["GET"],
+        parameters=[
+            OpenApiParameter("keyword", OpenApiTypes.STR, OpenApiParameter.QUERY),
+        ],
+        responses={
+            200: OpenApiResponse(
+                response=forced_singular_serializer(  # type: ignore[no-untyped-call]
+                    GetEntryAttrReferralListSerializer
+                ),
+            ),
+        },
+    )
+    def list(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        queryset = self.filter_queryset(self.get_queryset())
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(
+            {
+                "has_restricted_items": getattr(self, "_has_restricted_items", False),
+                "results": serializer.data,
+            }
+        )
+
+
+class EntryImportAPI(generics.GenericAPIView[Entity]):
     parser_classes = [YAMLParser]
     serializer_class = EntryImportSerializer
 
     def get_queryset(self) -> QuerySet[Entity]:
-        import_data = self.request.data
+        import_data = cast("list[dict[str, Any]]", self.request.data)
         entity_names = [d["entity"] for d in import_data]
         return Entity.objects.filter(name__in=entity_names, is_active=True)
 
     @extend_schema(
         parameters=[
             OpenApiParameter("force", OpenApiTypes.BOOL, OpenApiParameter.QUERY, default=False),
+            OpenApiParameter(
+                "preview_job_id",
+                OpenApiTypes.INT,
+                OpenApiParameter.QUERY,
+                description=(
+                    "The preview this import was approved from. Items changed by "
+                    "someone else since then are left alone and reported."
+                ),
+            ),
         ],
         responses={
             200: None,
         },
     )
     def post(self, request: Request) -> Response:
-        if request.user.is_readonly:
+        user = cast("User", request.user)
+        if user.is_readonly:
             return Response(status=status.HTTP_403_FORBIDDEN)
 
         import_datas = request.data
-        user: User = request.user
+        preview_job_id = _preview_job_id_param(request)
         serializer = EntryImportSerializer(data=import_datas)
         serializer.is_valid(raise_exception=True)
+        import_datas = serializer.validated_data
         entities = self.get_queryset()
 
         # limit import job to deny accidental frequent import for same entity
@@ -796,7 +1126,14 @@ class EntryImportAPI(generics.GenericAPIView):
                 continue
 
             job = Job.new_import_v2(
-                user, entity, text="Preparing to import data", params=import_data
+                user,
+                entity,
+                text="Preparing to import data",
+                params=(
+                    {**import_data, "preview_job_id": preview_job_id}
+                    if preview_job_id is not None
+                    else import_data
+                ),
             )
             job.run()
             job_ids.append(job.id)
@@ -806,28 +1143,107 @@ class EntryImportAPI(generics.GenericAPIView):
         )
 
 
-class EntryAttributeValueRestoreAPI(generics.UpdateAPIView):
+def _preview_job_id_param(request: Request) -> int | None:
+    """Read the approved preview's job id, or None when the import has no preview.
+
+    A query parameter is whatever the client sent, so it is checked here rather
+    than handed to int() where a typo would surface as a server error.
+    """
+    raw = request.query_params.get("preview_job_id")
+    if not raw:
+        return None
+    try:
+        return int(raw)
+    except ValueError:
+        raise InvalidValueError("'preview_job_id' must be an integer")
+
+
+class EntryImportPreviewAPI(generics.GenericAPIView[Any]):
+    """Start a job that reports what an item import file would change.
+
+    Nothing is written: applying an item import also reindexes Elasticsearch and
+    queues webhook and trigger jobs, so the preview runs the import's decisions
+    (the same serializers, the same change detection) and stops before the write.
+
+    One job is started per model in the file, mirroring the import itself. The
+    preview is optional -- posting to ``EntryImportAPI`` imports straight away.
+    """
+
+    parser_classes = [YAMLParser]
+    serializer_class = ImportPreviewJobsSerializer
+
+    @extend_schema(
+        request=EntryImportSerializer,
+        responses={202: ImportPreviewJobsSerializer},
+    )
+    def post(self, request: Request) -> Response:
+        user = cast("User", request.user)
+        if user.is_readonly:
+            return Response(status=status.HTTP_403_FORBIDDEN)
+
+        import_datas = cast("list[dict[str, Any]]", request.data)
+        serializer = EntryImportSerializer(data=import_datas)
+        serializer.is_valid(raise_exception=True)
+
+        entities = Entity.objects.filter(
+            name__in=[d["entity"] for d in import_datas], is_active=True
+        )
+
+        jobs: list[dict[str, Any]] = []
+        error_list: list[str] = []
+        for import_data in import_datas:
+            entity = next((e for e in entities if e.name == import_data["entity"]), None)
+            if not entity:
+                error_list.append("%s: Entity does not exists." % import_data["entity"])
+                continue
+
+            if not user.has_permission(entity, ACLType.Writable):
+                error_list.append("%s: Entity is permission denied." % import_data["entity"])
+                continue
+
+            job = Job.new_import_entry_preview(user, entity, params=import_data)
+            job.run()
+            jobs.append({"entity": entity.name, "job_id": job.id})
+
+        return Response(
+            {"result": {"jobs": jobs, "error": error_list}}, status=status.HTTP_202_ACCEPTED
+        )
+
+
+class EntryAttributeValueRestoreAPI(generics.UpdateAPIView[AttributeValue]):
     queryset = AttributeValue.objects.all()
     serializer_class = EntryAttributeValueRestoreSerializer
 
     def update(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        if request.user.is_readonly:
+        user = cast("User", request.user)
+        if user.is_readonly:
             return Response(status=status.HTTP_403_FORBIDDEN)
         return super().update(request, *args, **kwargs)
 
 
-class EntryBulkUpdateAPI(generics.UpdateAPIView):
+class EntryBulkUpdateAPI(generics.UpdateAPIView[Any]):
     serializer_class = EntryBulkUpdateSerializer
 
     def update(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        user: User = request.user
+        user = cast("User", request.user)
 
         serializer = EntryBulkUpdateSerializer(data=request.data, context={"_user": user})
         serializer.is_valid(raise_exception=True)
 
-        model = Entity.objects.filter(id=request.data.get("modelid"), is_active=True).first()
+        modelid = cast("str | int | None", request.data.get("modelid"))
+        model = (
+            Entity.objects.filter(id=modelid, is_active=True).first()
+            if modelid is not None
+            else None
+        )
         if not model:
             return Response("There is no model that is specified by modelid.", status=400)
+
+        target_attr = model.attrs.filter(id=serializer.validated_data["value"]["id"]).first()
+        if target_attr is None:
+            return Response("The attribute does not belong to the specified model.", status=400)
+        if target_attr.type & AttrType._ARRAY:
+            return Response("Array attributes cannot be bulk updated.", status=400)
 
         job = Job.new_bulk_edit_entry_v2(user, model, params=request.data)
         job.run()
@@ -835,12 +1251,12 @@ class EntryBulkUpdateAPI(generics.UpdateAPIView):
         return Response({}, status=status.HTTP_202_ACCEPTED)
 
 
-class ItemRollbackAPI(generics.GenericAPIView):
+class ItemRollbackAPI(generics.GenericAPIView[Any]):
     serializer_class = ItemRollbackSerializer
 
     @extend_schema(request=ItemRollbackSerializer)
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        user: User = request.user
+        user = cast("User", request.user)
         if user.is_readonly:
             return Response(status=status.HTTP_403_FORBIDDEN)
 
@@ -921,7 +1337,7 @@ class ItemRollbackAPI(generics.GenericAPIView):
                             "name": v_before.value or "",
                             "id": v_before.referral.id if v_before.referral else None,
                         }
-                    case AttrType.ARRAY_STRING | AttrType.ARRAY_NUMBER:
+                    case AttrType.ARRAY_STRING | AttrType.ARRAY_NUMBER | AttrType.MULTI_SELECT:
                         value = [item.value for item in v_before.data_array.all()]
                     case AttrType.ARRAY_OBJECT:
                         value = [
@@ -960,7 +1376,7 @@ class ItemRollbackAPI(generics.GenericAPIView):
         OpenApiParameter("attrinfo", OpenApiTypes.STR, OpenApiParameter.QUERY),
     ],
 )
-class EntryBulkDeleteAPI(generics.DestroyAPIView):
+class EntryBulkDeleteAPI(generics.DestroyAPIView[Any]):
     # (Execuse)
     # Specifying serializer_class is necessary for passing processing
     # of npm run generate
@@ -977,9 +1393,9 @@ class EntryBulkDeleteAPI(generics.DestroyAPIView):
                 if not FilterKey.isin(int(info["filterKey"])):
                     raise RequiredParameterError("(01)Invalid attrinfo was specified")
         except Exception as e:
-            raise RequiredParameterError(e)
+            raise RequiredParameterError(str(e))
 
-        return json_loaded_value
+        return cast("list[dict[str, Any]]", json_loaded_value)
 
     def delete(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         # validate "attrinfo" parameter and save it before deleting item processing
@@ -993,12 +1409,13 @@ class EntryBulkDeleteAPI(generics.DestroyAPIView):
         if len(ids) != entries.count():
             raise NotFound("some specified entries don't exist")
 
-        user: User = request.user
+        user = cast("User", request.user)
         if not all([user.has_permission(e, ACLType.Writable) for e in entries]):
             raise PermissionDenied("deleting some entries is not allowed")
 
         # Run jobs that delete user specified Items
-        target_model = entries.first().schema if entries.first() else None
+        first_entry = entries.first()
+        target_model = first_entry.schema if first_entry else None
         for entry in entries:
             job: Job = Job.new_delete_entry_v2(user, entry)
             job.run()
@@ -1010,8 +1427,8 @@ class EntryBulkDeleteAPI(generics.DestroyAPIView):
 
         if isAll and target_model is not None:
             results = AdvancedSearchService.search_entries(
-                request.user,
-                hint_entity_ids=list(set([e.schema.id for e in entries])),
+                user,
+                hint_entity_ids=list(set([str(e.schema.id) for e in entries])),
                 hint_attrs=[
                     AttrHint(
                         **{
@@ -1037,14 +1454,15 @@ class EntryBulkDeleteAPI(generics.DestroyAPIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class EntryAliasAPI(viewsets.ModelViewSet):
+class EntryAliasAPI(viewsets.ModelViewSet[AliasEntry]):
     pagination_class = LimitOffsetPagination
     serializer_class = EntryAliasSerializer
     queryset = AliasEntry.objects.filter(entry__is_active=True)
 
     def bulk_create(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         # refuse input that has duplicated name
-        counter = Counter([x["name"] for x in request.data])
+        bulk_data = cast("list[dict[str, Any]]", request.data)
+        counter = Counter([x["name"] for x in bulk_data])
         if any([c > 1 for c in counter.values()]):
             raise DuplicatedObjectExistsError(
                 "Duplicated names(%s) were specified"

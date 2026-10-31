@@ -2,6 +2,9 @@ export const basePath = "/ui/";
 
 export const loginPath = () => "/auth/login/";
 export const topPath = () => basePath;
+export const networkPath = () => basePath + "network/";
+export const iframePath = () => basePath + "iframe/";
+export const iframeLoginCompletePath = () => iframePath() + "login-complete/";
 export const advancedSearchPath = () => basePath + "advanced_search";
 export const advancedSearchResultPath = () =>
   basePath + "advanced_search_result";
@@ -41,6 +44,8 @@ export const showEntryHistoryPath = (
 // entities
 export const entityHistoryPath = (entityId: number | string) =>
   basePath + `entities/${entityId}/history`;
+export const entityDifferencePath = (entityId: number | string) =>
+  basePath + `entities/${entityId}/difference`;
 export const listAliasPath = (entityId: number | string) =>
   basePath + `entities/${entityId}/alias`;
 export const newEntityPath = () => basePath + "entities/new";

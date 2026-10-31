@@ -1,12 +1,12 @@
 /**
- * @jest-environment jsdom
  */
 
-import { render } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 
 import { SearchResultControlMenuForReferral } from "./SearchResultControlMenuForReferral";
 
 import { TestWrapper } from "TestWrapper";
+import i18n from "i18n/config";
 
 describe("SearchResultControlMenuForReferral", () => {
   const defaultProps = {
@@ -14,16 +14,16 @@ describe("SearchResultControlMenuForReferral", () => {
     referralIncludeModelIds: [],
     referralExcludeModelIds: [],
     anchorElem: null,
-    handleClose: jest.fn(),
-    referralFilterDispatcher: jest.fn(),
-    referralIncludeModelIdsDispatcher: jest.fn(),
-    referralExcludeModelIdsDispatcher: jest.fn(),
-    handleSelectFilterConditions: jest.fn(),
-    handleClear: jest.fn(),
+    handleClose: vi.fn(),
+    referralFilterDispatcher: vi.fn(),
+    referralIncludeModelIdsDispatcher: vi.fn(),
+    referralExcludeModelIdsDispatcher: vi.fn(),
+    handleSelectFilterConditions: vi.fn(),
+    handleClear: vi.fn(),
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test("should render menu when anchorElem is provided", () => {
@@ -39,6 +39,22 @@ describe("SearchResultControlMenuForReferral", () => {
     expect(container).toBeInTheDocument();
   });
 
+  test("should show distinct placeholders for included and excluded models", () => {
+    const anchorElem = document.createElement("button");
+    render(
+      <SearchResultControlMenuForReferral
+        {...defaultProps}
+        anchorElem={anchorElem}
+      />,
+      { wrapper: TestWrapper },
+    );
+
+    expect(screen.getByPlaceholderText("次のモデルを含む")).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText("次のモデルを含まない"),
+    ).toBeInTheDocument();
+  });
+
   test("should not render menu when anchorElem is null", () => {
     const { container } = render(
       <SearchResultControlMenuForReferral
@@ -49,5 +65,21 @@ describe("SearchResultControlMenuForReferral", () => {
     );
 
     expect(container).toBeInTheDocument();
+  });
+
+  test("renders in English", async () => {
+    await act(async () => {
+      await i18n.changeLanguage("en");
+    });
+    const anchorElem = document.createElement("button");
+    render(
+      <SearchResultControlMenuForReferral
+        {...defaultProps}
+        anchorElem={anchorElem}
+      />,
+      { wrapper: TestWrapper },
+    );
+
+    expect(screen.getByText("Clear")).toBeInTheDocument();
   });
 });

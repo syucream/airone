@@ -1,5 +1,4 @@
 /**
- * @jest-environment jsdom
  */
 
 import { PaginatedEntityListList } from "@dmm-com/airone-apiclient-typescript-fetch";
@@ -7,6 +6,7 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 
 import { TestWrapper } from "TestWrapper";
 import { EntityList } from "components/entity/EntityList";
+import i18n from "i18n/config";
 import { ACLType } from "services/ACLUtil";
 
 describe("EntityList", () => {
@@ -38,8 +38,8 @@ describe("EntityList", () => {
   };
 
   test("should render entities", () => {
-    const changePage = jest.fn();
-    const handleChangeQuery = jest.fn();
+    const changePage = vi.fn();
+    const handleChangeQuery = vi.fn();
 
     render(
       <EntityList
@@ -70,6 +70,29 @@ describe("EntityList", () => {
     expect(screen.getByPlaceholderText("モデルを絞り込む")).toHaveValue(
       "entity",
     );
-    expect(handleChangeQuery).toBeCalled();
+    expect(handleChangeQuery).toHaveBeenCalled();
+  });
+
+  test("should render in English", async () => {
+    await act(async () => {
+      await i18n.changeLanguage("en");
+    });
+
+    const changePage = vi.fn();
+    const handleChangeQuery = vi.fn();
+
+    render(
+      <EntityList
+        entities={entities}
+        page={1}
+        query=""
+        changePage={changePage}
+        handleChangeQuery={handleChangeQuery}
+      />,
+      { wrapper: TestWrapper },
+    );
+
+    expect(screen.getByText("Create entity")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Filter entities")).toBeInTheDocument();
   });
 });

@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Box } from "@mui/material";
-import { FC, useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { FC, useEffect } from "react";
+import { useForm, useWatch } from "react-hook-form";
 import { useNavigate } from "react-router";
 
 import { Loading } from "components/common/Loading";
@@ -15,10 +15,11 @@ import {
 } from "components/entry/EntryForm";
 import { Schema, schema } from "components/entry/entryForm/EntryFormSchema";
 import { useFormNotification } from "hooks/useFormNotification";
+import { useIdParams } from "hooks/useIdParams";
 import { usePageTitle } from "hooks/usePageTitle";
 import { usePagodaSWR } from "hooks/usePagodaSWR";
 import { usePrompt } from "hooks/usePrompt";
-import { useTypedParams } from "hooks/useTypedParams";
+import { useTranslation } from "hooks/useTranslation";
 import { aironeApiClient } from "repository/AironeApiClient";
 import { entityEntriesPath, entryDetailsPath } from "routes/Routes";
 import { TITLE_TEMPLATES } from "services";
@@ -42,22 +43,25 @@ export const EntryEditPage: FC<Props> = ({
   EntryForm = DefaultEntryForm,
   useUUID = false,
 }) => {
-  const { entityId, entryId } = useTypedParams<{
-    entityId: number;
-    entryId: number;
-  }>();
+  const { entityId, entryId } = useIdParams({
+    required: ["entityId"],
+    optional: ["entryId"],
+  });
 
   const willCreate = entryId == null;
 
+  const { t } = useTranslation();
   const navigate = useNavigate();
-  const { enqueueSubmitResult } = useFormNotification("アイテム", willCreate);
-
-  const [initialized, setInitialized] = useState(false);
+  const { enqueueSubmitResult } = useFormNotification(
+    t("common.target.entry"),
+    willCreate,
+  );
 
   const {
     formState: { isValid, isDirty, isSubmitting, isSubmitSuccessful },
     handleSubmit,
     reset,
+    getValues,
     setError,
     setValue,
     control,
@@ -69,34 +73,56 @@ export const EntryEditPage: FC<Props> = ({
 
   usePrompt(
     isDirty && !isSubmitSuccessful,
-    "編集した内容は失われてしまいますが、このページを離れてもよろしいですか？",
+    t("entryForm.editPage.leaveConfirm"),
   );
 
   const { data: entity, isLoading: entityLoading } = usePagodaSWR(
     ["entity", entityId],
     () => aironeApiClient.getEntity(entityId),
+    { refreshInterval: 15_000 },
   );
 
   const { data: entry, isLoading: entryLoading } = usePagodaSWR(
     entryId != undefined ? ["entry", entryId] : null,
-    () => aironeApiClient.getEntry(entryId!),
+    entryId != undefined ? () => aironeApiClient.getEntry(entryId) : null,
+    { refreshInterval: 15_000 },
   );
 
+  // Whether the entity/entry needed to build the form have been loaded.
+  const initialized = willCreate
+    ? !entityLoading && entity != null
+    : !entityLoading && entity != null && !entryLoading && entry != null;
+
+  // Whether the loaded entity/entry have been applied to the form. `schema` is
+  // only set by `reset` (no field registers it), so it tells a form that has
+  // received the loaded data apart from an empty one. The form fields are not
+  // rendered before that: array fields would otherwise add placeholder rows,
+  // marking the form dirty with values the first reset must not keep.
+  const isFormLoaded = useWatch({ control, name: "schema" }) != null;
+
   useEffect(() => {
-    if (willCreate) {
-      if (!entityLoading && entity != null) {
-        const entryInfo = formalizeEntryInfo(undefined, entity, excludeAttrs);
-        entryInfo.name = useUUID ? crypto.randomUUID() : "";
-        reset(entryInfo);
-        setInitialized(true);
-      }
-    } else {
-      if (!entityLoading && entity != null && !entryLoading && entry != null) {
-        const entryInfo = formalizeEntryInfo(entry, entity, excludeAttrs);
-        reset(entryInfo);
-        setInitialized(true);
-      }
+    if (!initialized || entity == null) {
+      return;
     }
+    const entryInfo = formalizeEntryInfo(
+      willCreate ? undefined : entry,
+      entity,
+      excludeAttrs,
+    );
+    // Read the form state instead of tracking the first load in a ref, so
+    // that StrictMode running this effect twice gives the same result.
+    if (getValues("schema") == null) {
+      if (willCreate) {
+        entryInfo.name = useUUID ? crypto.randomUUID() : "";
+      }
+      reset(entryInfo);
+      return;
+    }
+    // Background refreshes keep the user's local edits.
+    if (willCreate) {
+      entryInfo.name = getValues("name");
+    }
+    reset(entryInfo, { keepDirtyValues: true });
   }, [willCreate, entity, entry]);
 
   useEffect(() => {
@@ -107,21 +133,23 @@ export const EntryEditPage: FC<Props> = ({
         navigate(entryDetailsPath(entityId, entryId), { replace: true });
       }
     }
-  }, [isSubmitSuccessful]);
+  }, [isSubmitSuccessful, willCreate, entityId, entryId, navigate]);
 
   // Show the first validation feedback
   useEffect(() => {
-    if (initialized) {
+    if (isFormLoaded) {
       trigger();
     }
-  }, [initialized]);
+  }, [isFormLoaded, trigger]);
 
   usePageTitle(
     entityLoading || (entryId && entryLoading)
-      ? "読み込み中..."
+      ? t("entryForm.editPage.loading")
       : TITLE_TEMPLATES.entryEdit,
     {
-      prefix: entry?.name ?? (entryId == null ? "新規作成" : undefined),
+      prefix:
+        entry?.name ??
+        (entryId == null ? t("entryForm.editPage.newEntry") : undefined),
     },
   );
 
@@ -140,7 +168,11 @@ export const EntryEditPage: FC<Props> = ({
       if (e instanceof Error && isResponseError(e)) {
         await extractAPIException<Schema>(
           e,
-          (message) => enqueueSubmitResult(false, `詳細: "${message}"`),
+          (message) =>
+            enqueueSubmitResult(
+              false,
+              t("entryForm.editPage.errorDetail", { message }),
+            ),
           (name, message) => {
             setError(name, { type: "custom", message: message });
             enqueueSubmitResult(false);
@@ -182,17 +214,32 @@ export const EntryEditPage: FC<Props> = ({
   return (
     <Box>
       {entry ? (
-        <EntryBreadcrumbs entry={entry} title="編集" />
+        <EntryBreadcrumbs
+          entry={entry}
+          title={t("entryForm.editPage.editBreadcrumb")}
+        />
       ) : (
-        <EntityBreadcrumbs entity={entity} title="作成" />
+        <EntityBreadcrumbs
+          entity={entity}
+          title={t("entryForm.editPage.createBreadcrumb")}
+        />
       )}
 
       <PageHeader
-        title={entry != null ? entry.name : "新規アイテムの作成"}
-        description={entry != null ? "アイテム編集" : undefined}
+        title={
+          entry != null ? entry.name : t("entryForm.editPage.newEntryTitle")
+        }
+        description={
+          entry != null ? t("entryForm.editPage.editDescription") : undefined
+        }
+        targetId={entryId ?? entityId}
+        targetKind={entryId != null ? "item" : "model"}
+        hasOngoingProcess={
+          entry?.hasOngoingChanges ?? (willCreate && entity?.hasOngoingChanges)
+        }
       >
         <SubmitButton
-          name="保存"
+          name={t("common.save")}
           disabled={!isDirty || !isValid || isSubmitting || isSubmitSuccessful}
           isSubmitting={isSubmitting}
           handleSubmit={handleSubmit(handleSubmitOnValid, (errors) => {
@@ -202,7 +249,7 @@ export const EntryEditPage: FC<Props> = ({
         />
       </PageHeader>
 
-      {initialized && entity != null && (
+      {isFormLoaded && entity != null && (
         <EntryForm
           entity={{
             ...entity,

@@ -1,18 +1,25 @@
 /**
- * @jest-environment jsdom
  */
 
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import {
+  act,
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+} from "@testing-library/react";
 
 import { TestWrapper } from "TestWrapper";
 import { EntryControlMenu } from "components/entry/EntryControlMenu";
+import i18n from "i18n/config";
 import { aironeApiClient } from "repository/AironeApiClient";
 import { ACLType } from "services/ACLUtil";
 
 // Mock API client
-jest.mock("repository/AironeApiClient", () => ({
+vi.mock("repository/AironeApiClient", () => ({
   aironeApiClient: {
-    destroyEntry: jest.fn(() => Promise.resolve()),
+    destroyEntry: vi.fn(() => Promise.resolve()),
+    getEntryReferral: vi.fn(() => Promise.resolve({ count: 0, results: [] })),
   },
 }));
 
@@ -23,11 +30,11 @@ describe("EntryControlMenu", () => {
     entityId: 1,
     entryId: 1,
     anchorElem: createAnchorElem(),
-    handleClose: jest.fn(),
+    handleClose: vi.fn(),
   };
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe("rendering", () => {
@@ -58,6 +65,22 @@ describe("EntryControlMenu", () => {
       expect(screen.getByText("変更履歴")).toBeInTheDocument();
       expect(screen.getByText("ACL 変更履歴")).toBeInTheDocument();
       expect(screen.getByText("削除")).toBeInTheDocument();
+    });
+
+    test("renders in English", async () => {
+      await act(async () => {
+        await i18n.changeLanguage("en");
+      });
+
+      render(<EntryControlMenu {...defaultProps} />, { wrapper: TestWrapper });
+
+      expect(screen.getByText("Details")).toBeInTheDocument();
+      expect(screen.getByText("Edit")).toBeInTheDocument();
+      expect(screen.getByText("Copy")).toBeInTheDocument();
+      expect(screen.getByText("ACL settings")).toBeInTheDocument();
+      expect(screen.getByText("Change History")).toBeInTheDocument();
+      expect(screen.getByText("ACL change history")).toBeInTheDocument();
+      expect(screen.getByText("Delete")).toBeInTheDocument();
     });
 
     test("anchorElem is null, menu is closed", () => {
@@ -174,7 +197,7 @@ describe("EntryControlMenu", () => {
 
   describe("menu close", () => {
     test("should call handleClose when menu item is clicked", () => {
-      const mockHandleClose = jest.fn();
+      const mockHandleClose = vi.fn();
       render(
         <EntryControlMenu {...defaultProps} handleClose={mockHandleClose} />,
         { wrapper: TestWrapper },
@@ -190,6 +213,67 @@ describe("EntryControlMenu", () => {
   });
 
   describe("delete action", () => {
+    test("cancelling the reference warning leaves the item intact", async () => {
+      vi.mocked(aironeApiClient.getEntryReferral).mockResolvedValueOnce({
+        count: 1,
+        results: [
+          {
+            id: 2,
+            name: "referencing-item",
+            schema: { id: 10, name: "OtherModel" },
+          },
+        ],
+      } as Awaited<ReturnType<typeof aironeApiClient.getEntryReferral>>);
+      render(<EntryControlMenu {...defaultProps} />, { wrapper: TestWrapper });
+      fireEvent.click(screen.getByText("削除"));
+      await screen.findByRole("link", {
+        name: "OtherModel / referencing-item",
+      });
+      expect(
+        screen.queryByText("本当に削除しますか？"),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: /yes/i }),
+      ).not.toBeInTheDocument();
+      expect(aironeApiClient.destroyEntry).not.toHaveBeenCalled();
+      fireEvent.click(screen.getByRole("button", { name: "キャンセル" }));
+      await waitFor(() =>
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+      );
+      expect(aironeApiClient.destroyEntry).not.toHaveBeenCalled();
+    });
+
+    test("requires reference-warning approval before deleting", async () => {
+      vi.mocked(aironeApiClient.getEntryReferral).mockResolvedValueOnce({
+        count: 1,
+        results: [
+          {
+            id: 2,
+            name: "referencing-item",
+            schema: { id: 10, name: "OtherModel" },
+          },
+        ],
+      } as Awaited<ReturnType<typeof aironeApiClient.getEntryReferral>>);
+      render(<EntryControlMenu {...defaultProps} />, { wrapper: TestWrapper });
+      fireEvent.click(screen.getByText("削除"));
+      await screen.findByRole("link", {
+        name: "OtherModel / referencing-item",
+      });
+      expect(
+        screen.queryByText("本当に削除しますか？"),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: /yes/i }),
+      ).not.toBeInTheDocument();
+      expect(aironeApiClient.destroyEntry).not.toHaveBeenCalled();
+      fireEvent.click(
+        screen.getByRole("button", { name: "影響を理解して削除" }),
+      );
+      await waitFor(() =>
+        expect(aironeApiClient.destroyEntry).toHaveBeenCalledWith(1),
+      );
+    });
+
     test("should show delete button", () => {
       render(<EntryControlMenu {...defaultProps} />, { wrapper: TestWrapper });
 

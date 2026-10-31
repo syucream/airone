@@ -1,19 +1,19 @@
 /**
- * @jest-environment jsdom
  */
 
 import { act, render, screen, within } from "@testing-library/react";
 
 import { TestWrapper } from "TestWrapper";
 import { EntrySelfHistoryList } from "components/entry/EntrySelfHistoryList";
+import i18n from "i18n/config";
 
 // Mock the API client
-jest.mock("repository/AironeApiClient");
+vi.mock("repository/AironeApiClient");
 
 // Mock the router navigate
-const mockNavigate = jest.fn();
-jest.mock("react-router", () => ({
-  ...jest.requireActual("react-router"),
+const mockNavigate = vi.fn();
+vi.mock("react-router", async () => ({
+  ...((await vi.importActual("react-router")) as object),
   useNavigate: () => mockNavigate,
 }));
 
@@ -53,11 +53,11 @@ describe("EntrySelfHistoryList", () => {
     entryId: 2,
     histories: mockHistories,
     page: 1,
-    changePage: jest.fn(),
+    changePage: vi.fn(),
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test("should render entry self histories correctly", async () => {
@@ -180,5 +180,26 @@ describe("EntrySelfHistoryList", () => {
 
     // Should render PaginationFooter
     expect(screen.getByRole("navigation")).toBeInTheDocument();
+  });
+
+  test("renders in English", async () => {
+    await act(async () => {
+      await i18n.changeLanguage("en");
+    });
+
+    await act(async () => {
+      render(<EntrySelfHistoryList {...mockProps} />, {
+        wrapper: TestWrapper,
+      });
+    });
+
+    expect(screen.getByText("Operation")).toBeInTheDocument();
+    expect(screen.getByText("Entry name before change")).toBeInTheDocument();
+    expect(screen.getByText("Entry name after change")).toBeInTheDocument();
+    expect(screen.getByText("Executed at")).toBeInTheDocument();
+    expect(screen.getByText("Executed by")).toBeInTheDocument();
+    expect(screen.getByText("Restore")).toBeInTheDocument();
+    expect(screen.getAllByText("Update")).toHaveLength(2);
+    expect(screen.getByText("Create")).toBeInTheDocument();
   });
 });

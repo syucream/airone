@@ -1,16 +1,18 @@
 /**
- * @jest-environment jsdom
  */
 
 import {
   UserRetrieve,
   UserRetrieveAuthenticateTypeEnum,
 } from "@dmm-com/airone-apiclient-typescript-fetch";
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 
 import { TestWrapper } from "../../TestWrapper";
 
 import { ChangeUserAuthModal } from "./ChangeUserAuthModal";
+
+import i18n from "i18n/config";
+import { aironeApiClient } from "repository/AironeApiClient";
 
 describe("ChangeUserAuthModal", () => {
   const user: UserRetrieve = {
@@ -26,10 +28,13 @@ describe("ChangeUserAuthModal", () => {
       created: "",
     },
     authenticateType: UserRetrieveAuthenticateTypeEnum.AUTH_TYPE_LOCAL,
+    groups: [],
+    roles: [],
+    coUsers: [],
   };
 
   test("should render a component essentially", async () => {
-    const closeModal = jest.fn();
+    const closeModal = vi.fn();
 
     render(
       <ChangeUserAuthModal
@@ -54,21 +59,10 @@ describe("ChangeUserAuthModal", () => {
   });
 
   test("should handle a success on updating auth method", async () => {
-    /* eslint-disable */
-    jest
-      .spyOn(
-        require("repository/AironeApiClient").aironeApiClient,
-        "updateUserAuth",
-      )
-      .mockResolvedValue(Promise.resolve());
-    /* eslint-enable */
+    vi.spyOn(aironeApiClient, "updateUserAuth").mockResolvedValue(undefined);
 
     render(
-      <ChangeUserAuthModal
-        user={user}
-        openModal={true}
-        closeModal={jest.fn()}
-      />,
+      <ChangeUserAuthModal user={user} openModal={true} closeModal={vi.fn()} />,
       {
         wrapper: TestWrapper,
       },
@@ -86,21 +80,10 @@ describe("ChangeUserAuthModal", () => {
   });
 
   test("should handle a failure on updating auth method", async () => {
-    /* eslint-disable */
-    jest
-      .spyOn(
-        require("repository/AironeApiClient").aironeApiClient,
-        "updateUserAuth",
-      )
-      .mockResolvedValue(Promise.reject());
-    /* eslint-enable */
+    vi.spyOn(aironeApiClient, "updateUserAuth").mockRejectedValue(new Error());
 
     render(
-      <ChangeUserAuthModal
-        user={user}
-        openModal={true}
-        closeModal={jest.fn()}
-      />,
+      <ChangeUserAuthModal user={user} openModal={true} closeModal={vi.fn()} />,
       {
         wrapper: TestWrapper,
       },
@@ -115,5 +98,24 @@ describe("ChangeUserAuthModal", () => {
         screen.queryByText("認証方法の変更に失敗しました"),
       ).not.toBeInTheDocument();
     });
+  });
+
+  test("renders in English", async () => {
+    await act(async () => {
+      await i18n.changeLanguage("en");
+    });
+
+    render(
+      <ChangeUserAuthModal user={user} openModal={true} closeModal={vi.fn()} />,
+      {
+        wrapper: TestWrapper,
+      },
+    );
+
+    expect(
+      screen.getByText("Change authentication method to LDAP"),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Submit" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Cancel" })).toBeInTheDocument();
   });
 });

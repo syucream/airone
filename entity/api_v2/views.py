@@ -1,29 +1,35 @@
-import builtins
+import copy
 import logging
-from typing import Any
+from typing import Any, List, cast
 
-from django.db.models import F, QuerySet
+from django.db.models import F, OuterRef, Prefetch, QuerySet, Subquery
+from django.db.models.functions import Lower
 from django.http import Http404, HttpRequest
 from django.http.response import HttpResponse, JsonResponse
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import filters, generics, serializers, status, viewsets
-from rest_framework.exceptions import NotFound, ValidationError
+from rest_framework.exceptions import NotFound
 from rest_framework.pagination import LimitOffsetPagination, PageNumberPagination
 from rest_framework.permissions import BasePermission, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from airone.lib.acl import ACLType, get_permitted_objects
-from airone.lib.drf import ObjectNotExistsError, YAMLParser, YAMLRenderer
+from airone.lib.acl import ACLType
+from airone.lib.configuration_export import ConfigurationExportAPI
+from airone.lib.drf import EntryIsNotEmptyError, ObjectNotExistsError, YAMLParser
 from airone.lib.http import http_get
 from airone.lib.plugin_dispatch import PluginOverrideMixin
+from airone.lib.text import normalize_search_text
+from airone.lib.types import AttrType
 from entity.api_v2.serializers import (
     EntityAttrNameSerializer,
     EntityCreateSerializer,
     EntityDetailSerializer,
+    EntityDiffQuerySerializer,
+    EntityDiffSerializer,
     EntityHistorySerializer,
     EntityImportExportRootSerializer,
     EntityListSerializer,
@@ -31,7 +37,8 @@ from entity.api_v2.serializers import (
 )
 from entity.models import Entity, EntityAttr
 from entry.api_v2.serializers import EntryBaseSerializer, EntryCreateSerializer
-from entry.models import Entry
+from entry.models import Attribute, AttributeValue, Entry
+from job.api_v2.serializers import ImportPreviewJobSerializer
 from job.models import Job
 from user.models import History, User
 
@@ -101,26 +108,34 @@ class EntityPermission(BasePermission):
             "create": ACLType.Writable,
         }
 
-        permission = permissions.get(view.action)
+        # Only ViewSets expose the resolved action name. When plain APIViews
+        # (which have no action) reach this permission check, fall through.
+        action = getattr(view, "action", None)
+        permission = permissions.get(action) if action is not None else None
         if not permission:
             return True
 
-        if request.user.is_readonly and permission > ACLType.Readable:
+        # IsAuthenticated is combined ahead of us so we only see authenticated Users.
+        user = cast(User, request.user)
+        if user.is_readonly and permission > ACLType.Readable:
             return False
 
         entity_id = view.kwargs.get("pk") or view.kwargs.get("entity_id")
         if not entity_id:
             return True
 
+        # Stash the fetched entity on the view for the object-permission phase to
+        # avoid a second DB round-trip. django-stubs cannot see this dynamic attr,
+        # so opt out at the two access sites with narrow ignores.
         if not hasattr(view, "_pagoda_context"):
-            view._pagoda_context = {}
+            view._pagoda_context = {}  # type: ignore[attr-defined]
 
-        entity: Entity | None = view._pagoda_context.get("entity")
+        entity: Entity | None = view._pagoda_context.get("entity")  # type: ignore[attr-defined]
         if not entity or entity.id != entity_id:
             entity = Entity.objects.filter(id=entity_id, is_active=True).first()
-            view._pagoda_context["entity"] = entity
+            view._pagoda_context["entity"] = entity  # type: ignore[attr-defined]
 
-        if entity and not request.user.has_permission(entity, permission):
+        if entity and not user.has_permission(entity, permission):
             return False
 
         return True
@@ -132,14 +147,36 @@ class EntityPermission(BasePermission):
             "destroy": ACLType.Full,
         }
 
-        permission = permissions.get(view.action)
+        action = getattr(view, "action", None)
+        permission = permissions.get(action) if action is not None else None
         if not permission:
             return True
 
-        if not request.user.has_permission(obj, permission):
+        user = cast(User, request.user)
+        if not user.has_permission(obj, permission):
             return False
 
         return True
+
+
+class NameCaseInsensitiveSearchFilter(filters.SearchFilter):
+    def get_search_fields(self, view: APIView, request: Request) -> list[str]:
+        return ["name_lower"]
+
+    def get_search_terms(self, request: Request) -> list[str]:
+        return [term.lower() for term in super().get_search_terms(request)]
+
+    def filter_queryset(self, request: Request, queryset: Any, view: APIView) -> Any:
+        terms = self.get_search_terms(request)
+        if not terms:
+            return queryset
+
+        normalized_terms = [normalize_search_text(term) for term in terms]
+        return [
+            entity
+            for entity in queryset
+            if all(term in normalize_search_text(entity.name) for term in normalized_terms)
+        ]
 
 
 @extend_schema(
@@ -147,15 +184,15 @@ class EntityPermission(BasePermission):
         OpenApiParameter("is_toplevel", OpenApiTypes.BOOL, OpenApiParameter.QUERY),
     ],
 )
-class EntityAPI(viewsets.ModelViewSet):
+class EntityAPI(viewsets.ModelViewSet[Entity]):
     pagination_class = LimitOffsetPagination
     permission_classes = [IsAuthenticated & EntityPermission]
-    filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter, NameCaseInsensitiveSearchFilter]
     search_fields = ["name"]
     ordering = ["name"]
 
-    def get_serializer_class(self) -> type[serializers.Serializer]:
-        serializer = {
+    def get_serializer_class(self) -> type[serializers.Serializer[Any]]:
+        serializer: dict[str, type[serializers.Serializer[Any]]] = {
             "list": EntityListSerializer,
             "create": EntityCreateSerializer,
             "update": EntityUpdateSerializer,
@@ -165,8 +202,8 @@ class EntityAPI(viewsets.ModelViewSet):
     def get_queryset(self) -> QuerySet[Entity]:
         is_toplevel = self.request.query_params.get("is_toplevel", None)
 
-        filter_condition = {"is_active": True}
-        exclude_condition = {}
+        filter_condition: dict[str, Any] = {"is_active": True}
+        exclude_condition: dict[str, Any] = {}
 
         if is_toplevel is not None:
             if strtobool(is_toplevel):
@@ -174,46 +211,53 @@ class EntityAPI(viewsets.ModelViewSet):
             else:
                 exclude_condition["status"] = F("status").bitor(Entity.STATUS_TOP_LEVEL)
 
-        return Entity.objects.filter(**filter_condition).exclude(**exclude_condition)
+        return (
+            Entity.objects.filter(**filter_condition)
+            .exclude(**exclude_condition)
+            .annotate(name_lower=Lower("name"))
+        )
 
     @extend_schema(request=EntityCreateSerializer, responses={202: None})
     def create(self, request: Request, *args: object, **kwargs: object) -> Response:
-        user: User = request.user
+        # IsAuthenticated permission is enforced upstream, so request.user is a User.
+        user = cast(User, request.user)
 
         serializer = EntityCreateSerializer(data=request.data, context={"_user": user})
         serializer.is_valid(raise_exception=True)
+        job_params = copy.deepcopy(serializer.validated_data)
         entity = serializer.create(serializer.validated_data)
 
-        job = Job.new_create_entity_v2(user, entity, params=request.data)
+        job = Job.new_create_entity_v2(user, entity, params=job_params)
         job.run()
 
         return Response(status=status.HTTP_202_ACCEPTED)
 
     @extend_schema(request=EntityUpdateSerializer, responses={202: None})
     def update(self, request: Request, *args: object, **kwargs: object) -> Response:
-        user: User = request.user
+        user = cast(User, request.user)
         entity: Entity = self.get_object()
 
         serializer = EntityUpdateSerializer(
             instance=entity, data=request.data, context={"_user": user}
         )
         serializer.is_valid(raise_exception=True)
+        job_params = copy.deepcopy(serializer.validated_data)
         serializer.update(entity, serializer.validated_data)
 
-        job = Job.new_edit_entity_v2(user, entity, params=request.data)
+        job = Job.new_edit_entity_v2(user, entity, params=job_params)
         job.run()
 
         return Response(status=status.HTTP_202_ACCEPTED)
 
     def destroy(self, request: Request, *args: object, **kwargs: object) -> Response:
-        user: User = request.user
+        user = cast(User, request.user)
         entity: Entity = self.get_object()
 
         if not entity.is_active:
             raise ObjectNotExistsError("specified entity has already been deleted")
 
         if Entry.objects.filter(schema=entity, is_active=True).exists():
-            raise ValidationError(
+            raise EntryIsNotEmptyError(
                 "cannot delete Entity because one or more Entries are not deleted"
             )
 
@@ -225,15 +269,40 @@ class EntityAPI(viewsets.ModelViewSet):
 
 class AliasSearchFilter(filters.SearchFilter):
     def get_search_fields(self, view: APIView, request: Request) -> list[str]:
-        original_fields = super().get_search_fields(view, request)
+        original_fields: list[str] = ["name_lower"]
 
         # update search_fields when "with_alias" parameter was specified
         # to consier aliases that are related with target item
         # filtered by specified "search" parameter
         if request.query_params.get("with_alias"):
-            return original_fields + ["aliases__name"]
+            return original_fields + ["aliases_name_lower"]
         else:
             return original_fields
+
+    def get_search_terms(self, request: Request) -> list[str]:
+        return [term.lower() for term in super().get_search_terms(request)]
+
+    def filter_queryset(self, request: Request, queryset: Any, view: APIView) -> Any:
+        terms = self.get_search_terms(request)
+        if not terms:
+            return queryset
+
+        normalized_terms = [normalize_search_text(term) for term in terms]
+        with_alias = bool(request.query_params.get("with_alias"))
+        return [
+            entry
+            for entry in queryset
+            if all(
+                any(
+                    term in normalize_search_text(value)
+                    for value in (
+                        [entry.name]
+                        + ([alias.name for alias in entry.aliases.all()] if with_alias else [])
+                    )
+                )
+                for term in normalized_terms
+            )
+        ]
 
 
 @extend_schema(
@@ -241,7 +310,7 @@ class AliasSearchFilter(filters.SearchFilter):
         OpenApiParameter("with_alias", OpenApiTypes.STR, OpenApiParameter.QUERY),
     ],
 )
-class EntityEntryAPI(PluginOverrideMixin, viewsets.ModelViewSet):
+class EntityEntryAPI(PluginOverrideMixin, viewsets.ModelViewSet[Entry]):
     """Entity Entry API ViewSet with plugin override support.
 
     Plugin overrides are automatically handled by PluginOverrideMixin.
@@ -256,19 +325,27 @@ class EntityEntryAPI(PluginOverrideMixin, viewsets.ModelViewSet):
     ordering_fields = ["name", "updated_time"]
     search_fields = ["name"]
 
-    def get_serializer_class(self) -> type[serializers.Serializer]:
-        serializer = {
+    def get_serializer_class(self) -> type[serializers.Serializer[Any]]:
+        serializer: dict[str, type[serializers.Serializer[Any]]] = {
             "create": EntryCreateSerializer,
         }
         return serializer.get(self.action, EntryBaseSerializer)
 
     def get_queryset(self) -> QuerySet[Entry]:
-        entity = Entity.objects.filter(id=self.kwargs.get("entity_id"), is_active=True).first()
+        entity_id = self.kwargs.get("entity_id")
+        if entity_id is None:
+            raise Http404
+        entity = Entity.objects.filter(id=entity_id, is_active=True).first()
         if not entity:
             raise Http404
-        return (
+        qs = (
             self.queryset.filter(schema=entity).select_related("schema").prefetch_related("aliases")
         )
+        if self.request.query_params.get("with_alias"):
+            qs = qs.annotate(name_lower=Lower("name"), aliases_name_lower=Lower("aliases__name"))
+        else:
+            qs = qs.annotate(name_lower=Lower("name"))
+        return qs
 
     @extend_schema(request=EntryCreateSerializer, responses={202: None})
     def create(self, request: Request, entity_id: int) -> Response:
@@ -278,7 +355,7 @@ class EntityEntryAPI(PluginOverrideMixin, viewsets.ModelViewSet):
             if response is not None:
                 return response
 
-        user: User = request.user
+        user = cast(User, request.user)
 
         # Set schema to entity_id and let the serializer validate it
         # This allows proper validation error response for non-existent entities
@@ -293,15 +370,16 @@ class EntityEntryAPI(PluginOverrideMixin, viewsets.ModelViewSet):
         return Response(status=status.HTTP_202_ACCEPTED)
 
 
-class EntityHistoryAPI(viewsets.ReadOnlyModelViewSet):
+class EntityHistoryAPI(viewsets.ReadOnlyModelViewSet[History]):
     serializer_class = EntityHistorySerializer
     permission_classes = [IsAuthenticated & EntityPermission]
     pagination_class = LimitOffsetPagination
 
     def get_queryset(self) -> QuerySet[History]:
-        entity = Entity.objects.get(id=self.kwargs.get("entity_id"))
-        if not entity:
+        entity_id = self.kwargs.get("entity_id")
+        if entity_id is None:
             raise Http404
+        entity = Entity.objects.get(id=entity_id)
 
         attrs = entity.attrs.all()
 
@@ -332,6 +410,8 @@ class EntityHistoryAPI(viewsets.ReadOnlyModelViewSet):
 
         # Build simple-history caches for diff calculation
         entity_id = self.kwargs.get("entity_id")
+        if entity_id is None:
+            raise Http404
         entity = Entity.objects.get(id=entity_id)
         historical_cache = self._build_historical_cache(entity, cached_histories)
 
@@ -341,7 +421,9 @@ class EntityHistoryAPI(viewsets.ReadOnlyModelViewSet):
             "historical_cache": historical_cache,
         }
 
-        page = self.paginate_queryset(cached_histories)
+        # paginate_queryset accepts pre-fetched sequences too; drf-stubs annotates it
+        # tighter than the runtime accepts.
+        page = self.paginate_queryset(cached_histories)  # type: ignore[arg-type]
         if page is not None:
             serializer = self.get_serializer(page, many=True, context=serializer_context)
             return self.get_paginated_response(serializer.data)
@@ -350,8 +432,8 @@ class EntityHistoryAPI(viewsets.ReadOnlyModelViewSet):
         return Response(serializer.data)
 
     def _build_historical_cache(
-        self, entity: Entity, histories: builtins.list[History]
-    ) -> dict[str, builtins.list[Any]]:
+        self, entity: Entity, histories: List[History]
+    ) -> dict[str, List[Any]]:
         """
         Build cache for simple-history records to avoid N+1 queries.
 
@@ -394,13 +476,16 @@ class EntityHistoryAPI(viewsets.ReadOnlyModelViewSet):
         return historical_cache
 
 
-class EntityImportAPI(generics.GenericAPIView):
+class EntityImportAPI(generics.GenericAPIView[Entity]):
     parser_classes = [YAMLParser]
-    serializer_class = EntityImportExportRootSerializer
+    # EntityImportExportRootSerializer is Serializer[dict], not Serializer[Entity],
+    # so the tighter drf-stubs annotation on serializer_class does not fit here.
+    serializer_class = EntityImportExportRootSerializer  # type: ignore[assignment]
 
     @extend_schema(responses={200: None})
     def post(self, request: Request) -> Response:
-        if request.user.is_readonly:
+        user = cast(User, request.user)
+        if user.is_readonly:
             return Response(status=status.HTTP_403_FORBIDDEN)
 
         import_datas = request.data
@@ -413,19 +498,43 @@ class EntityImportAPI(generics.GenericAPIView):
         return Response()
 
 
-class EntityExportAPI(generics.RetrieveAPIView):
-    serializer_class = EntityImportExportRootSerializer
-    renderer_classes = [YAMLRenderer]
+class EntityImportPreviewAPI(generics.GenericAPIView[Entity]):
+    """Start a job that reports what an import file would change.
 
-    def get_object(self) -> dict[str, Any]:
-        user: User = self.request.user
-        entities = get_permitted_objects(user, Entity, ACLType.Readable)
-        attrs = get_permitted_objects(user, EntityAttr, ACLType.Readable)
+    Previewing walks the same rows the import walks, so it costs the same: it is
+    handed to a worker and this endpoint returns the job to poll, rather than
+    holding a request open for as long as the import would take. That also means
+    a preview has no row limit -- a file too big to preview in a request is
+    exactly the file whose preview is worth waiting for.
 
-        return {
-            "Entity": entities,
-            "EntityAttr": attrs,
-        }
+    The preview stays optional: clients may post straight to ``EntityImportAPI``.
+    """
+
+    parser_classes = [YAMLParser]
+    serializer_class = ImportPreviewJobSerializer  # type: ignore[assignment]
+
+    @extend_schema(
+        request=EntityImportExportRootSerializer,
+        responses={202: ImportPreviewJobSerializer},
+    )
+    def post(self, request: Request) -> Response:
+        user = cast(User, request.user)
+        if user.is_readonly:
+            return Response(status=status.HTTP_403_FORBIDDEN)
+
+        serializer = EntityImportExportRootSerializer(
+            data=request.data, context={"request": self.request}
+        )
+        serializer.is_valid(raise_exception=True)
+
+        job = Job.new_import_entity_preview(user, serializer.validated_data)
+        job.run()
+
+        return Response({"job_id": job.id}, status=status.HTTP_202_ACCEPTED)
+
+
+class EntityExportAPI(ConfigurationExportAPI):
+    export_kind = "entity"
 
 
 @extend_schema(
@@ -434,10 +543,12 @@ class EntityExportAPI(generics.RetrieveAPIView):
         OpenApiParameter("referral_attr", OpenApiTypes.STR, OpenApiParameter.QUERY),
     ],
 )
-class EntityAttrNameAPI(generics.GenericAPIView):
-    serializer_class = EntityAttrNameSerializer
+class EntityAttrNameAPI(generics.GenericAPIView[EntityAttr]):
+    # EntityAttrNameSerializer is a ListSerializer producing plain dicts, not
+    # EntityAttr instances, so the tighter serializer_class annotation does not fit.
+    serializer_class = EntityAttrNameSerializer  # type: ignore[assignment]
 
-    def get_queryset(self) -> list[dict[str, int | str]]:
+    def get_queryset(self) -> list[dict[str, int | str]]:  # type: ignore[override]
         entity_ids = list(filter(None, self.request.query_params.get("entity_ids", "").split(",")))
         referral_attr = self.request.query_params.get("referral_attr")
 
@@ -486,5 +597,124 @@ class EntityAttrNameAPI(generics.GenericAPIView):
 
     def get(self, request: Request) -> Response:
         queryset = self.get_queryset()
-        serializer: serializers.Serializer = self.get_serializer(queryset)
+        serializer = self.get_serializer(queryset)
         return Response(serializer.data)
+
+
+class EntityDiffAPI(generics.GenericAPIView[Entity]):
+    """Report entries whose attribute value differs between two points in time."""
+
+    serializer_class = EntityDiffQuerySerializer
+
+    @staticmethod
+    def _value_of(attrv: AttributeValue | None) -> Any:
+        if attrv is None:
+            return None
+        # with_metainfo wraps the value as {"type": ..., "value": ...}; keep only the value
+        value = attrv.get_value(with_metainfo=True, serialize=True)["value"]
+
+        # An unset value is represented differently per type; normalize it to None so that
+        # it compares equal to "no value" (e.g. an attribute that has never been set).
+        data_type = attrv.data_type
+        if data_type & AttrType._ARRAY:
+            # array_* and multi-select
+            is_empty = value == [] or [x for x in value if x is not None] == []
+        elif data_type in (AttrType.NAMED_OBJECT, AttrType.NAMED_OBJECT_BOOLEAN):
+            is_empty = value == {"": None}
+        elif data_type == AttrType.DATE:
+            is_empty = value is None or value == "None"
+        else:
+            is_empty = False
+
+        return None if is_empty else value
+
+    @extend_schema(
+        parameters=[EntityDiffQuerySerializer],
+        responses=EntityDiffSerializer,
+    )
+    def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        user = cast("User", request.user)
+        query = EntityDiffQuerySerializer(data=request.query_params)
+        query.is_valid(raise_exception=True)
+        model = query.validated_data["model"]
+        attr_names = list(dict.fromkeys(query.validated_data["attr"]))
+        t0 = query.validated_data["t0"]
+        t1 = query.validated_data["t1"]
+
+        entity = Entity.objects.filter(name=model, is_active=True).first()
+        if entity is None or not user.has_permission(entity, ACLType.Readable):
+            raise NotFound("Target Entity doesn't exist")
+        entity_attrs = {
+            ea.name: ea
+            for ea in EntityAttr.objects.filter(
+                parent_entity=entity, name__in=attr_names, is_active=True
+            )
+        }
+        if any(name not in entity_attrs for name in attr_names):
+            raise NotFound("Target attribute doesn't exist in the Entity")
+
+        # AttributeValue accumulates a row per update, so never load the history. The id of
+        # the value in effect at t0/t1 is resolved by index-backed subqueries (one row each).
+        def latest_value_id(at: Any) -> Subquery:
+            return Subquery(
+                AttributeValue.objects.filter(
+                    parent_attr=OuterRef("pk"), parent_attrv__isnull=True, created_time__lte=at
+                )
+                .order_by("-created_time", "-id")
+                .values("id")[:1]
+            )
+
+        attrs = (
+            Attribute.objects.filter(
+                schema__in=entity_attrs.values(), parent_entry__is_active=True, is_active=True
+            )
+            .select_related("parent_entry", "schema")
+            .annotate(attrv_id_t0=latest_value_id(t0), attrv_id_t1=latest_value_id(t1))
+        )
+        attr_order = {name: i for i, name in enumerate(attr_names)}
+
+        # Drop attributes whose value did not change (same row at both points, or none at all)
+        # and the ones the user may not read, before loading any value.
+        targets = []
+        for attr in sorted(attrs, key=lambda a: (attr_order[a.schema.name], a.id)):
+            id_t0: int | None = attr.attrv_id_t0
+            id_t1: int | None = attr.attrv_id_t1
+            if id_t0 == id_t1:
+                continue
+            if not user.has_permission(
+                attr.parent_entry, ACLType.Readable
+            ) or not user.has_permission(attr, ACLType.Readable):
+                continue
+            targets.append((attr, id_t0, id_t1))
+
+        attrvs = (
+            AttributeValue.objects.select_related("referral", "group", "role")
+            .prefetch_related(
+                Prefetch(
+                    "data_array",
+                    queryset=AttributeValue.objects.select_related("referral", "group", "role"),
+                )
+            )
+            .in_bulk({i for _, id_t0, id_t1 in targets for i in (id_t0, id_t1) if i is not None})
+        )
+
+        # entry id -> item, so that every entry appears once with all of its differing attrs
+        items: dict[int, dict[str, Any]] = {}
+        for attr, id_t0, id_t1 in targets:
+            value_t0 = self._value_of(attrvs.get(id_t0) if id_t0 is not None else None)
+            value_t1 = self._value_of(attrvs.get(id_t1) if id_t1 is not None else None)
+            if value_t0 == value_t1:
+                continue
+            entry = attr.parent_entry
+            item = items.setdefault(entry.id, {"id": entry.id, "name": entry.name, "attrs": []})
+            item["attrs"].append(
+                {
+                    "id": attr.id,
+                    "name": attr.schema.name,
+                    "type": attr.schema.type,
+                    "value_t0": value_t0,
+                    "value_t1": value_t1,
+                }
+            )
+
+        return Response({"count": len(items), "items": list(items.values())})

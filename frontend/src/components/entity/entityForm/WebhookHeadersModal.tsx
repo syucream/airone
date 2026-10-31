@@ -12,12 +12,14 @@ import {
   Typography,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { FC, useEffect, useState } from "react";
+import { FC, useEffect, useRef } from "react";
 import { Control, Controller, useFieldArray, useWatch } from "react-hook-form";
 
 import { AironeModal } from "../../common/AironeModal";
 
 import { Schema } from "./EntityFormSchema";
+
+import { useTranslation } from "hooks/useTranslation";
 
 const StyledTable = styled(Table)(({}) => ({
   "& td": {
@@ -39,6 +41,7 @@ export const WebhookHeadersModal: FC<Props> = ({
   handleCloseModal,
   control,
 }) => {
+  const { t } = useTranslation();
   const { fields, insert, remove, replace } = useFieldArray({
     control,
     name: `webhooks.${webhookIndex}.headers`,
@@ -46,7 +49,8 @@ export const WebhookHeadersModal: FC<Props> = ({
 
   // NOTE initialize headers values manually with useWatch()
   // the useFieldArray() call in this component cannot resolve the initial value, so it does such thing...
-  const [initialized, setInitialized] = useState(false);
+  // The initialization has to happen once per webhook, so it is tracked with a ref.
+  const initializedWebhookIndex = useRef<number | null>(null);
 
   const headers = useWatch({
     control,
@@ -55,16 +59,14 @@ export const WebhookHeadersModal: FC<Props> = ({
 
   useEffect(() => {
     // get only valid headers. useWatch will get incomplete values.
-    if (!initialized && Array.isArray(headers)) {
+    if (
+      initializedWebhookIndex.current !== webhookIndex &&
+      Array.isArray(headers)
+    ) {
       replace(headers);
-      setInitialized(true);
+      initializedWebhookIndex.current = webhookIndex;
     }
-  }, [headers, initialized, replace]);
-
-  // enable to re-initialize on changing a webhook
-  useEffect(() => {
-    setInitialized(false);
-  }, [webhookIndex]);
+  }, [headers, webhookIndex, replace]);
 
   const handleAppendWebhookAdditionalHeader = (nextTo: number) => {
     insert(nextTo, {
@@ -80,9 +82,7 @@ export const WebhookHeadersModal: FC<Props> = ({
   return (
     <AironeModal
       title={"AdditionalHeader (Optional)"}
-      caption={
-        "指定した endpoint URL に送るリクエストに付加するヘッダ情報を入力してください。"
-      }
+      caption={t("entity.form.webhookHeadersCaption")}
       open={webhookIndex >= 0}
       onClose={handleCloseModal}
     >
@@ -181,7 +181,7 @@ export const WebhookHeadersModal: FC<Props> = ({
 
       <Box sx={{ width: "92%" }}>
         <Button onClick={handleCloseModal}>
-          <Typography align="right">閉じる</Typography>
+          <Typography align="right">{t("common.close")}</Typography>
         </Button>
       </Box>
     </AironeModal>

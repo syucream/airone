@@ -6,14 +6,17 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { FC, useEffect, useState } from "react";
+import { FC, useState } from "react";
 import { Control, Controller } from "react-hook-form";
-import { UseFormSetValue } from "react-hook-form/dist/types/form";
+import { UseFormSetValue } from "react-hook-form";
 
+import { usePagodaSWR } from "../../../hooks/usePagodaSWR";
 import { aironeApiClient } from "../../../repository/AironeApiClient";
 
 import { Schema } from "./EntryFormSchema";
 
+import { useTranslation } from "hooks/useTranslation";
+import { fuzzyMatch } from "services/StringUtil";
 import { getStagedErrorStyle } from "utils/styleUtils";
 
 const StyledTypography = styled(Typography)(() => ({
@@ -42,24 +45,32 @@ export const RoleAttributeValueField: FC<Props> = ({
   setValue,
   isDisabled = false,
 }) => {
-  const [options, setOptions] = useState<RoleOption[]>([]);
+  const { t } = useTranslation();
   const [inputValue, setInputValue] = useState("");
-  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const fetchRoles = async () => {
-      setLoading(true);
-      try {
-        const roles = await aironeApiClient.getRoles(inputValue);
-        setOptions(roles.map((r) => ({ id: r.id, name: r.name })));
-      } finally {
-        setLoading(false);
+  const { data: options = [], isLoading: loading } = usePagodaSWR(
+    ["roleOptions", inputValue],
+    async () => {
+      const roles = await aironeApiClient.getRoles(inputValue);
+      if (roles.length === 0 && inputValue) {
+        return (await aironeApiClient.getRoles()).map((r) => ({
+          id: r.id,
+          name: r.name,
+        }));
       }
-    };
-    fetchRoles();
-  }, [inputValue]);
+      return roles.map((r) => ({ id: r.id, name: r.name }));
+    },
+    // revalidateOnFocus is disabled so a transient failure of a background
+    // refetch cannot crash the entry form the user is editing.
+    { keepPreviousData: true, revalidateOnFocus: false },
+  );
 
   const handleChange = (value: RoleOption | RoleOption[] | null) => {
+    if (!multiple && value != null && !Array.isArray(value)) {
+      setInputValue(value.name);
+    } else if (multiple) {
+      setInputValue("");
+    }
     if (multiple) {
       setValue(
         `attrs.${attrId}.value.asArrayRole`,
@@ -79,7 +90,9 @@ export const RoleAttributeValueField: FC<Props> = ({
 
   return (
     <Box>
-      <StyledTypography variant="caption">ロールを選択</StyledTypography>
+      <StyledTypography variant="caption">
+        {t("entryForm.roleField.selectRole")}
+      </StyledTypography>
       <StyledBox>
         <Controller
           name={
@@ -92,13 +105,30 @@ export const RoleAttributeValueField: FC<Props> = ({
             <Autocomplete<RoleOption, boolean>
               fullWidth
               multiple={multiple}
+              selectOnFocus
+              clearOnBlur={false}
               loading={loading}
               options={options}
+              filterOptions={(options, state) =>
+                options.filter((option) =>
+                  fuzzyMatch(option.name, state.inputValue),
+                )
+              }
               value={field.value ?? (multiple ? [] : null)}
+              inputValue={
+                inputValue ||
+                (!multiple && field.value != null && !Array.isArray(field.value)
+                  ? field.value.name
+                  : "")
+              }
               getOptionLabel={(option) => option.name}
               isOptionEqualToValue={(option, value) => option.id === value.id}
               onChange={(_, value) => handleChange(value)}
-              onInputChange={(_, value) => setInputValue(value)}
+              onInputChange={(_, value, reason) => {
+                if (reason === "input" || reason === "clear") {
+                  setInputValue(value);
+                }
+              }}
               renderInput={(params) => (
                 <TextField
                   {...params}

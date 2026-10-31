@@ -1,6 +1,6 @@
 import AddIcon from "@mui/icons-material/Add";
 import { Box, Button, Container, Typography } from "@mui/material";
-import { FC, useCallback, useState } from "react";
+import { FC, useState } from "react";
 import { Link } from "react-router";
 
 import { RoleImportModal } from "../components/role/RoleImportModal";
@@ -8,20 +8,20 @@ import { RoleList } from "../components/role/RoleList";
 
 import { AironeLink } from "components";
 import { AironeBreadcrumbs } from "components/common/AironeBreadcrumbs";
+import { ExportButton } from "components/common/ExportButton";
 import { PageHeader } from "components/common/PageHeader";
 import { usePageTitle } from "hooks/usePageTitle";
+import { useTranslation } from "hooks/useTranslation";
 import { aironeApiClient } from "repository/AironeApiClient";
 import { newRolePath, topPath } from "routes/Routes";
 import { ServerContext, TITLE_TEMPLATES } from "services";
 
 export const RoleListPage: FC = () => {
+  const { t } = useTranslation();
   const [openImportModal, setOpenImportModal] = useState(false);
 
+  const isSuperuser = ServerContext.getInstance()?.user?.isSuperuser ?? false;
   const isReadonly = ServerContext.getInstance()?.user?.isReadonly ?? false;
-
-  const handleExport = useCallback(async () => {
-    await aironeApiClient.exportRoles("role.yaml");
-  }, []);
 
   usePageTitle(TITLE_TEMPLATES.roleList);
 
@@ -31,26 +31,21 @@ export const RoleListPage: FC = () => {
         <Typography component={AironeLink} to={topPath()}>
           Top
         </Typography>
-        <Typography color="textPrimary">ロール管理</Typography>
+        <Typography color="textPrimary">
+          {t("role.listPage.pageTitle")}
+        </Typography>
       </AironeBreadcrumbs>
 
-      <PageHeader title="ロール管理">
-        <Button
-          variant="contained"
-          color="info"
-          sx={{ margin: "0 4px" }}
-          onClick={handleExport}
-        >
-          エクスポート
-        </Button>
+      <PageHeader title={t("role.listPage.pageTitle")}>
+        <ExportButton onExport={() => aironeApiClient.exportRoles()} />
         <Button
           variant="contained"
           color="info"
           sx={{ margin: "0 4px" }}
           onClick={() => setOpenImportModal(true)}
-          disabled={isReadonly}
+          disabled={!isSuperuser || isReadonly}
         >
-          インポート
+          {t("common.import")}
         </Button>
         <RoleImportModal
           openImportModal={openImportModal}
@@ -64,7 +59,7 @@ export const RoleListPage: FC = () => {
           sx={{ height: "48px", borderRadius: "24px", ml: "16px" }}
           disabled={isReadonly}
         >
-          <AddIcon /> 新規ロールを作成
+          <AddIcon /> {t("role.listPage.createNew")}
         </Button>
       </PageHeader>
 

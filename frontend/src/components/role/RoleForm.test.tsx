@@ -1,8 +1,7 @@
 /**
- * @jest-environment jsdom
  */
 
-import { zodResolver } from "@hookform/resolvers/zod/dist/zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   act,
   fireEvent,
@@ -13,13 +12,15 @@ import {
 import { useForm } from "react-hook-form";
 
 import { TestWrapper } from "../../TestWrapper";
-import { schema } from "../entry/entryForm/EntryFormSchema";
 
 import { RoleForm } from "./RoleForm";
-import { Schema } from "./roleForm/RoleFormSchema";
+import { Schema, schema } from "./roleForm/RoleFormSchema";
+
+import i18n from "i18n/config";
+import { aironeApiClient } from "repository/AironeApiClient";
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe("RoleForm", () => {
@@ -47,14 +48,14 @@ describe("RoleForm", () => {
       }),
     );
 
-    /* eslint-disable */
-    jest
-      .spyOn(require("repository/AironeApiClient").aironeApiClient, "getUsers")
-      .mockResolvedValue(Promise.resolve([]));
-    jest
-      .spyOn(require("repository/AironeApiClient").aironeApiClient, "getGroups")
-      .mockResolvedValue(Promise.resolve([]));
-    /* eslint-enable */
+    vi.spyOn(aironeApiClient, "getUsers").mockResolvedValue({
+      count: 0,
+      results: [],
+    });
+    vi.spyOn(aironeApiClient, "getGroups").mockResolvedValue({
+      count: 0,
+      results: [],
+    });
 
     await act(async () => {
       render(<RoleForm control={control} setValue={setValue} />, {
@@ -73,5 +74,41 @@ describe("RoleForm", () => {
 
     expect(screen.getByPlaceholderText("ロール名")).toHaveValue("new role");
     expect(screen.getByPlaceholderText("備考")).toHaveValue("new description");
+  });
+
+  test("renders in English", async () => {
+    await act(async () => {
+      await i18n.changeLanguage("en");
+    });
+
+    const {
+      result: {
+        current: { control, setValue },
+      },
+    } = renderHook(() =>
+      useForm<Schema>({
+        resolver: zodResolver(schema),
+        mode: "onBlur",
+        defaultValues,
+      }),
+    );
+
+    vi.spyOn(aironeApiClient, "getUsers").mockResolvedValue({
+      count: 0,
+      results: [],
+    });
+    vi.spyOn(aironeApiClient, "getGroups").mockResolvedValue({
+      count: 0,
+      results: [],
+    });
+
+    await act(async () => {
+      render(<RoleForm control={control} setValue={setValue} />, {
+        wrapper: TestWrapper,
+      });
+    });
+
+    expect(screen.getByPlaceholderText("Role name")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Notes")).toBeInTheDocument();
   });
 });

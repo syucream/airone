@@ -1,5 +1,4 @@
 /**
- * @jest-environment jsdom
  */
 
 import { act, render, screen } from "@testing-library/react";
@@ -7,9 +6,10 @@ import { act, render, screen } from "@testing-library/react";
 import { PaginationFooter } from "./PaginationFooter";
 
 import { TestWrapper } from "TestWrapper";
+import i18n from "i18n/config";
 
 describe("PaginationFooter", () => {
-  const changePage = jest.fn();
+  const changePage = vi.fn();
 
   const cases: Array<{
     count: number;
@@ -111,5 +111,29 @@ describe("PaginationFooter", () => {
     expect(
       screen.getByRole("button", { name: "Go to page 34" }),
     ).toBeInTheDocument();
+  });
+
+  describe("English", () => {
+    afterEach(async () => {
+      await i18n.changeLanguage("ja");
+    });
+
+    test("renders the range text in English", async () => {
+      await act(async () => {
+        await i18n.changeLanguage("en");
+      });
+
+      render(
+        <PaginationFooter
+          count={70}
+          maxRowCount={30}
+          page={1}
+          changePage={changePage}
+        />,
+        { wrapper: TestWrapper },
+      );
+
+      expect(screen.getByText("1 - 30 of 70")).toBeInTheDocument();
+    });
   });
 });

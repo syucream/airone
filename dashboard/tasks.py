@@ -1,6 +1,5 @@
 import csv
 import io
-import json
 from typing import Any
 
 import yaml
@@ -13,6 +12,7 @@ from airone.lib.job import may_schedule_until_job_is_ready, register_job_task
 from airone.lib.types import AttrType
 from entry.services import AdvancedSearchService
 from job.models import Job, JobOperation
+from job.params import SearchExportParams
 
 
 def _csv_export(
@@ -55,11 +55,11 @@ def _csv_export(
             value = entry_info.attrs[attrinfo["name"]]
 
             vtype = None
-            if (value is not None) and ("type" in value):
+            if "type" in value:
                 vtype = value["type"]
 
             vval: Any = None
-            if (value is not None) and ("value" in value):
+            if "value" in value:
                 vval = value["value"]
 
             if not value or "value" not in value or value["value"] is None:
@@ -80,9 +80,11 @@ def _csv_export(
                 case AttrType.OBJECT | AttrType.GROUP | AttrType.ROLE:
                     line_data.append(str(vval["name"]))
 
-                case AttrType.NAMED_OBJECT:
+                case AttrType.NAMED_OBJECT | AttrType.NAMED_OBJECT_BOOLEAN:
                     [(k, v)] = vval.items()
-                    line_data.append("%s: %s" % (k, v["name"]))
+                    line_data.append(
+                        "%s: %s" % (k, v["name"]) if isinstance(v, dict) else "%s: " % k
+                    )
 
                 case AttrType.ARRAY_STRING:
                     line_data.append("\n".join(natsorted(vval)))
@@ -95,13 +97,20 @@ def _csv_export(
                 case AttrType.ARRAY_OBJECT | AttrType.ARRAY_GROUP | AttrType.ARRAY_ROLE:
                     line_data.append("\n".join(natsorted([x["name"] for x in vval])))
 
-                case AttrType.ARRAY_NAMED_OBJECT:
+                case AttrType.ARRAY_NAMED_OBJECT | AttrType.ARRAY_NAMED_OBJECT_BOOLEAN:
                     items = []
                     for vset in vval:
                         [(k, v)] = vset.items()
-                        items.append("%s: %s" % (k, v["name"]))
+                        items.append(
+                            "%s: %s" % (k, v["name"]) if isinstance(v, dict) else "%s: " % k
+                        )
 
                     line_data.append("\n".join(natsorted(items)))
+
+                case _:
+                    # Types without a dedicated formatter (e.g. SELECT / MULTI_SELECT)
+                    # still need a cell, otherwise the following columns get shifted.
+                    line_data.append("")
 
         if has_referral is not False:
             line_data.append(
@@ -184,7 +193,8 @@ def _yaml_export(
 @may_schedule_until_job_is_ready
 def export_search_result(self: Any, job: Job) -> None:
     user = job.user
-    recv_data = json.loads(job.params)
+    params = job.get_typed_params(SearchExportParams)
+    recv_data = params.model_dump(mode="json", by_alias=True, exclude_unset=True)
 
     # Do not care whether the "has_referral" value is
     has_referral: bool = recv_data.get("has_referral", False)

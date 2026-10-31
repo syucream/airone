@@ -35,6 +35,18 @@ parse_argv() {
   done
 }
 
+get_mysql_ssl_disabled_opt() {
+  mysql_help=$("$@" --help 2>/dev/null || true)
+
+  if echo "${mysql_help}" | grep -q -- "--skip-ssl"
+  then
+    echo "--skip-ssl"
+  elif echo "${mysql_help}" | grep -q -- "--ssl-mode"
+  then
+    echo "--ssl-mode=DISABLED"
+  fi
+}
+
 main() {
   parse_argv $*
 
@@ -45,19 +57,41 @@ main() {
   done
 
   db_name=$(uv run python -c "from airone import settings; print(settings.DATABASES['default']['NAME'])")
-  if [ ${IS_BAREMETAL} = "true" ]
-  then
-    db_host=$(uv run python -c "from airone import settings; print(settings.DATABASES['default']['HOST'])")
-    db_user=$(uv run python -c "from airone import settings; print(settings.DATABASES['default']['USER'])")
-    db_pass=$(uv run python -c "from airone import settings; print(settings.DATABASES['default']['PASSWORD'])")
+  db_host=$(uv run python -c "from airone import settings; print(settings.DATABASES['default']['HOST'])")
+  db_user=$(uv run python -c "from airone import settings; print(settings.DATABASES['default']['USER'])")
+  db_pass=$(uv run python -c "from airone import settings; print(settings.DATABASES['default']['PASSWORD'])")
 
-    MYSQL_COMMAND="mysql -u${db_user} -p${db_pass} -h${db_host}"
-  else
-    MYSQL_COMMAND="sudo docker exec -it mysql mysql -uroot"
+  # The root account of the local MySQL has no password by default. Set the
+  # MYSQL_ROOT_PASSWORD environment variable when it is protected.
+  root_pass_opt=""
+  if [ -n "${MYSQL_ROOT_PASSWORD:-}" ]
+  then
+    root_pass_opt="-p${MYSQL_ROOT_PASSWORD}"
   fi
 
+  if [ ${IS_BAREMETAL} = "true" ]
+  then
+    MYSQL_SSL_OPT=$(get_mysql_ssl_disabled_opt mysql)
+    MYSQL_COMMAND="mysql ${MYSQL_SSL_OPT} -u${db_user} -p${db_pass} -h${db_host}"
+    MYSQL_ROOT_COMMAND="mysql ${MYSQL_SSL_OPT} -uroot ${root_pass_opt} -h${db_host}"
+  else
+    MYSQL_SSL_OPT=$(get_mysql_ssl_disabled_opt sudo docker exec mysql mysql)
+    MYSQL_COMMAND="sudo docker exec -i mysql mysql ${MYSQL_SSL_OPT} -uroot ${root_pass_opt}"
+    MYSQL_ROOT_COMMAND="${MYSQL_COMMAND}"
+  fi
+
+  # create the database user that is configured in the settings, because the
+  # following operations fail when it doesn't exist yet (e.g. a fresh MySQL
+  # container that only has the root account)
+  ${MYSQL_ROOT_COMMAND} <<EOS
+CREATE USER IF NOT EXISTS '${db_user}'@'%' IDENTIFIED BY '${db_pass}';
+ALTER USER '${db_user}'@'%' IDENTIFIED BY '${db_pass}';
+GRANT ALL PRIVILEGES ON *.* TO '${db_user}'@'%' WITH GRANT OPTION;
+FLUSH PRIVILEGES;
+EOS
+
   # recreate MySQL databse
-  ${MYSQL_COMMAND} -e "drop database ${db_name}"
+  ${MYSQL_COMMAND} -e "drop database if exists ${db_name}"
   ${MYSQL_COMMAND} -e "create database ${db_name}"
 
   # re-construct database

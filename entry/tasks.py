@@ -1,9 +1,9 @@
+from __future__ import annotations
+
 import csv
 import io
-import json
-from collections.abc import Callable
 from datetime import date, datetime
-from typing import Any
+from typing import Any, Callable, List, TypeAlias, cast
 
 import yaml
 from celery import Task
@@ -47,13 +47,28 @@ from entry.api_v2.serializers import (
     ExportedEntryAttributePrimitiveValue,
     ExportedEntryAttributeValue,
     ExportedEntryAttributeValueObject,
-    ExportTaskParams,
     ReferralEntry,
 )
 from entry.models import Attribute, Entry
-from entry.services import AdvancedSearchService
+from entry.services import AdvancedSearchService, EntryImportPreviewService
 from group.models import Group
 from job.models import Job, JobOperation, JobStatus, JobTarget
+from job.params import (
+    BulkEditParams,
+    CopyEntryParams,
+    CreateEntryV2Params,
+    DoCopyEntryParams,
+    EmptyParams,
+    EntryV2Params,
+    ExportEntryParams,
+    ImportEntryParams,
+    LegacyCreateEntryParams,
+    LegacyEditEntryParams,
+    LegacyImportEntryParams,
+    ReferralParams,
+    SearchExportParams,
+    UpdateDocumentParams,
+)
 from role.models import Role
 from trigger.models import TriggerCondition
 from user.models import User
@@ -61,7 +76,7 @@ from user.models import User
 # A single pre-serialization attribute value handed to the YAML exporter: an
 # object/named-object dict, a scalar, or None. Array values are unwrapped one
 # level up (in _get_attr_value) before reaching the primitive helper.
-type ExportPrimitiveInput = dict[str, Any] | str | int | float | date | datetime | bool | None
+ExportPrimitiveInput: TypeAlias = dict[str, Any] | str | int | float | date | datetime | bool | None
 
 
 def _merge_referrals_by_index(
@@ -150,9 +165,14 @@ def _convert_data_value(attr: Attribute, info: dict[str, Any]) -> Any:
 
 
 def _do_import_entries(job: Job) -> None:
+    if job.target is None:
+        return
     user: User = job.user
     entity: Entity = Entity.objects.get(id=job.target.id)
-    import_data = json.loads(job.params)
+    import_data = [
+        entry.model_dump(mode="json", by_alias=True, exclude_unset=True)
+        for entry in job.get_typed_params(LegacyImportEntryParams).root
+    ]
 
     # get custom_view method to prevent executing check method in every loop processing
     custom_view_handler = None
@@ -175,7 +195,7 @@ def _do_import_entries(job: Job) -> None:
         if job.is_canceled():
             return
 
-        entry: Entry = Entry.objects.filter(name=entry_data["name"], schema=entity).first()
+        entry: Entry | None = Entry.objects.filter(name=entry_data["name"], schema=entity).first()
         if not entry:
             # skip to create Item when another duplicated Alias exists
             if not entity.is_available(entry_data["name"]):
@@ -222,7 +242,9 @@ def _do_import_entries(job: Job) -> None:
                 )
                 break
 
-            attr: Attribute = attr_query.last()
+            attr: Attribute | None = attr_query.last()
+            if attr is None:
+                continue
             if not user.has_permission(attr.schema, ACLType.Writable) or not user.has_permission(
                 attr, ACLType.Writable
             ):
@@ -230,7 +252,18 @@ def _do_import_entries(job: Job) -> None:
 
             input_value = attr.convert_value_to_register(value)
             if user.has_permission(attr.schema, ACLType.Writable) and attr.is_updated(input_value):
-                attr.add_value(user, input_value)
+                try:
+                    attr.add_value(user, input_value)
+                except TypeError as e:
+                    # add_value raises TypeError when the value fails attr-specific
+                    # validation (e.g. SELECT choice not in EntityAttr.choices).
+                    # Skip this single attribute and continue importing the rest of
+                    # the row / file instead of aborting the whole job.
+                    Logger.warning(
+                        "[task.import_entry] Skipped attr '%s' on entry '%s': %s"
+                        % (attr_name, entry.name, e)
+                    )
+                    continue
                 is_update = True
 
             # call custom-view processing corresponding to import entry
@@ -265,12 +298,21 @@ def _yaml_export_v2(
         atype: int, value: ExportPrimitiveInput
     ) -> ExportedEntryAttributePrimitiveValue:
         match atype:
-            case AttrType.NAMED_OBJECT:
+            case AttrType.NAMED_OBJECT | AttrType.NAMED_OBJECT_BOOLEAN:
                 assert isinstance(value, dict)
                 [(key, val)] = value.items()
+                # NAMED_OBJECT_BOOLEAN carries its boolean flag beside the referral
+                # info, so export it too in order to keep the value round-trippable.
+                boolean_info = (
+                    {"boolean": val["boolean"]}
+                    if atype == AttrType.NAMED_OBJECT_BOOLEAN
+                    and isinstance(val, dict)
+                    and "boolean" in val
+                    else {}
+                )
                 entry: Entry | None = (
                     Entry.objects.filter(id=val["id"]).first()
-                    if isinstance(val.get("id"), int)
+                    if isinstance(val, dict) and isinstance(val.get("id"), int)
                     else None
                 )
                 if entry:
@@ -278,6 +320,7 @@ def _yaml_export_v2(
                         key: ExportedEntryAttributeValueObject(
                             entity=entry.schema.name,
                             name=val["name"],
+                            **boolean_info,
                         )
                     }
                 elif len(key) > 0:
@@ -308,7 +351,7 @@ def _yaml_export_v2(
                     isinstance(value.get("id"), int)
                     and Group.objects.filter(id=value["id"]).exists()
                 ):
-                    return value["name"]
+                    return cast(str, value["name"])
                 else:
                     return None
 
@@ -318,9 +361,17 @@ def _yaml_export_v2(
                     isinstance(value.get("id"), int)
                     and Role.objects.filter(id=value["id"]).exists()
                 ):
-                    return value["name"]
+                    return cast(str, value["name"])
                 else:
                     return None
+
+            case AttrType.SELECT:
+                # SELECT value comes as {"value": ..., "label": ...}.
+                # Export the immutable `value` (not the label) so re-import is
+                # safe across schema label edits.
+                if isinstance(value, dict):
+                    return value.get("value")
+                return value
 
             case _:
                 assert not isinstance(value, dict)
@@ -337,7 +388,7 @@ def _yaml_export_v2(
                 assert not isinstance(value, list)
                 return _get_attr_primitive_value(atype, value)
 
-    resp_data: list[ExportedEntityEntries] = []
+    resp_data: List[ExportedEntityEntries] = []
     for index, entry_info in enumerate(values):
         data = ExportedEntry(
             id=entry_info.entry["id"],
@@ -385,7 +436,7 @@ def _yaml_export_v2(
     output = io.StringIO()
     output.write(
         yaml.dump(
-            [x.dict(exclude_unset=True) for x in resp_data],
+            [x.model_dump(exclude_unset=True) for x in resp_data],
             default_flow_style=False,
             allow_unicode=True,
         )
@@ -394,33 +445,36 @@ def _yaml_export_v2(
     return output
 
 
+def _delete_uncommitted_created_entry(job: Job) -> None:
+    if job.target is None:
+        return
+    entry = Entry.objects.filter(id=job.target.id, is_active=True).first()
+    if entry is not None:
+        entry.delete()
+
+
 @register_job_task(JobOperation.CREATE_ENTRY)
 @app.task(bind=True)
-@may_schedule_until_job_is_ready_with_handlers(
-    on_cancelled=lambda job: (
-        Entry.objects.filter(id=job.target.id, is_active=True).first().delete()
-        if Entry.objects.filter(id=job.target.id, is_active=True).exists()
-        else None
-    )
-)
-def create_entry_attrs(self: Task, job: Job) -> JobStatus | None:
+@may_schedule_until_job_is_ready_with_handlers(on_cancelled=_delete_uncommitted_created_entry)
+def create_entry_attrs(self: Task[Any, Any], job: Job) -> JobStatus | None:
+    if job.target is None:
+        return JobStatus.CANCELED
     user = User.objects.filter(id=job.user.id).first()
     entry = Entry.objects.filter(id=job.target.id, is_active=True).first()
-
-    # for history record
-    entry._history_user = user
 
     if not entry or not user:
         # Abort when specified entry doesn't exist
         return JobStatus.CANCELED
 
-    recv_data = json.loads(job.params)
+    # for history record
+    entry._history_user = user
+
+    params = job.get_typed_params(LegacyCreateEntryParams)
+    recv_data = params.model_dump(mode="json", by_alias=True, exclude_unset=True)
     # Create new Attributes objects based on the specified value
     for entity_attr in entry.schema.attrs.filter(is_active=True):
-        # This creates Attibute object that contains AttributeValues.
-        # But the add_attribute_from_base may return None when target Attribute instance
-        # has already been created or is creating by other process. In that case, this job
-        # do nothing about that Attribute instance.
+        # This creates Attibute object that contains AttributeValues. When the target Attribute
+        # has already been created by another process, add_attribute_from_base returns it.
         attr = entry.add_attribute_from_base(entity_attr, user)
 
         # skip for unpermitted attributes
@@ -435,7 +489,7 @@ def create_entry_attrs(self: Task, job: Job) -> JobStatus | None:
         # make an initial AttributeValue object if the initial value is specified
         attr_data = [x for x in recv_data["attrs"] if int(x["id"]) == entity_attr.id]
 
-        if not attr or not attr_data:
+        if not attr_data:
             continue
 
         # register new AttributeValue to the "attr"
@@ -448,7 +502,9 @@ def create_entry_attrs(self: Task, job: Job) -> JobStatus | None:
     for entity_attr in entry.schema.attrs.filter(is_active=True):
         if entry.attrs.filter(schema=entity_attr, is_active=True).count() > 1:
             query = entry.attrs.filter(schema=entity_attr, is_active=True)
-            query.exclude(id=query.first().id).delete()
+            first_dup = query.first()
+            assert first_dup is not None  # count() > 1 above guarantees at least one row
+            query.exclude(id=first_dup.id).delete()
 
     if custom_view.is_custom("after_create_entry", entry.schema.name):
         custom_view.call_custom("after_create_entry", entry.schema.name, recv_data, user, entry)
@@ -471,23 +527,29 @@ def create_entry_attrs(self: Task, job: Job) -> JobStatus | None:
 @register_job_task(JobOperation.EDIT_ENTRY)
 @app.task(bind=True)
 @may_schedule_until_job_is_ready
-def edit_entry_attrs(self: Task, job: Job) -> JobStatus:
+def edit_entry_attrs(self: Task[Any, Any], job: Job) -> JobStatus:
+    if job.target is None:
+        return JobStatus.ERROR
     user = User.objects.get(id=job.user.id)
     entry = Entry.objects.get(id=job.target.id)
 
     # for history record
     entry._history_user = user
 
-    recv_data = json.loads(job.params)
+    params = job.get_typed_params(LegacyEditEntryParams)
+    recv_data = params.model_dump(mode="json", by_alias=True, exclude_unset=True)
 
     for info in recv_data["attrs"]:
+        attr: Attribute
         if info["id"]:
             attr = Attribute.objects.get(id=info["id"])
         else:
             entity_attr = EntityAttr.objects.get(id=info["entity_attr_id"])
-            attr = entry.attrs.filter(schema=entity_attr, is_active=True).first()
-            if not attr:
+            existing_attr = entry.attrs.filter(schema=entity_attr, is_active=True).first()
+            if existing_attr is None:
                 attr = entry.add_attribute_from_base(entity_attr, user)
+            else:
+                attr = existing_attr
 
         # check permission of EntityAttr
         if not user.has_permission(attr, ACLType.Writable):
@@ -525,7 +587,10 @@ def edit_entry_attrs(self: Task, job: Job) -> JobStatus:
 @register_job_task(JobOperation.DELETE_ENTRY)
 @app.task(bind=True)
 @may_schedule_until_job_is_ready
-def delete_entry(self: Task, job: Job) -> JobStatus:
+def delete_entry(self: Task[Any, Any], job: Job) -> JobStatus:
+    job.get_typed_params(EmptyParams)
+    if job.target is None:
+        return JobStatus.ERROR
     entry = Entry.objects.get(id=job.target.id)
 
     # for history record
@@ -546,7 +611,10 @@ def delete_entry(self: Task, job: Job) -> JobStatus:
 @register_job_task(JobOperation.RESTORE_ENTRY)
 @app.task(bind=True)
 @may_schedule_until_job_is_ready
-def restore_entry(self: Task, job: Job) -> JobStatus:
+def restore_entry(self: Task[Any, Any], job: Job) -> JobStatus:
+    job.get_typed_params(EmptyParams)
+    if job.target is None:
+        return JobStatus.ERROR
     entry = Entry.objects.get(id=job.target.id)
 
     # for history record
@@ -571,12 +639,14 @@ def restore_entry(self: Task, job: Job) -> JobStatus:
 @register_job_task(JobOperation.COPY_ENTRY)
 @app.task(bind=True)
 @may_schedule_until_job_is_ready
-def copy_entry(self: Task, job: Job) -> tuple[JobStatus, str, None] | None:
+def copy_entry(self: Task[Any, Any], job: Job) -> tuple[JobStatus, str, None] | None:
+    if job.target is None:
+        return None
     src_entry = Entry.objects.get(id=job.target.id)
 
-    params = json.loads(job.params)
-    total_count = len(params["new_name_list"])
-    for index, new_name in enumerate(params["new_name_list"]):
+    params = job.get_typed_params(CopyEntryParams)
+    total_count = len(params.new_name_list)
+    for index, new_name in enumerate(params.new_name_list):
         # abort processing when job is canceled
         if job.is_canceled():
             job.text = "Copy completed [%5d/%5d]" % (index, total_count)
@@ -586,8 +656,11 @@ def copy_entry(self: Task, job: Job) -> tuple[JobStatus, str, None] | None:
         job.text = "Now copying... (progress: [%5d/%5d])" % (index + 1, total_count)
         job.save(update_fields=["text"])
 
-        params["new_name"] = new_name
-        job_do_copy_entry = Job.new_do_copy(job.user, src_entry, new_name, params)
+        do_copy_params = {
+            **params.model_dump(mode="json", by_alias=True, exclude_unset=True),
+            "new_name": new_name,
+        }
+        job_do_copy_entry = Job.new_do_copy(job.user, src_entry, new_name, do_copy_params)
         job_do_copy_entry.run(will_delay=False)
 
     # update job status and save it
@@ -597,21 +670,24 @@ def copy_entry(self: Task, job: Job) -> tuple[JobStatus, str, None] | None:
 @register_job_task(JobOperation.DO_COPY_ENTRY)
 @app.task(bind=True)
 @may_schedule_until_job_is_ready
-def do_copy_entry(self: Task, job: Job) -> tuple[JobStatus, str, None]:
+def do_copy_entry(self: Task[Any, Any], job: Job) -> tuple[JobStatus, str, Entry | None]:
+    if job.target is None:
+        return JobStatus.ERROR, "Failed to get job.target", None
     src_entry = Entry.objects.get(id=job.target.id)
-    params = json.loads(job.params)
+    params = job.get_typed_params(DoCopyEntryParams)
 
     # abort this job when there is duplicated Alias exists
-    if not src_entry.schema.is_available(params["new_name"]):
+    if not src_entry.schema.is_available(params.new_name):
         return (
             JobStatus.ERROR,
-            "Duplicated Alias(name=%s) exists in this model" % params["new_name"],
+            "Duplicated Alias(name=%s) exists in this model" % params.new_name,
             src_entry,
         )
 
-    dest_entry = Entry.objects.filter(schema=src_entry.schema, name=params["new_name"]).first()
+    dest_entry = Entry.objects.filter(schema=src_entry.schema, name=params.new_name).first()
     if not dest_entry:
-        dest_entry = src_entry.clone(job.user, name=params["new_name"])
+        dest_entry = src_entry.clone(job.user, name=params.new_name)
+        assert dest_entry is not None
 
         # for updating its name from attribute values
         dest_entry.save_autoname()
@@ -626,7 +702,7 @@ def do_copy_entry(self: Task, job: Job) -> tuple[JobStatus, str, None]:
             job.user,
             src_entry,
             dest_entry,
-            params["post_data"],
+            params.post_data,
         )
 
     # create and run event notification job
@@ -639,7 +715,7 @@ def do_copy_entry(self: Task, job: Job) -> tuple[JobStatus, str, None]:
 @register_job_task(JobOperation.IMPORT_ENTRY)
 @app.task(bind=True)
 @may_schedule_until_job_is_ready
-def import_entries(self: Task, job: Job) -> tuple[JobStatus, str, None] | None:
+def import_entries(self: Task[Any, Any], job: Job) -> tuple[JobStatus, str, None] | None:
     try:
         _do_import_entries(job)
     except Exception as e:
@@ -648,18 +724,37 @@ def import_entries(self: Task, job: Job) -> tuple[JobStatus, str, None] | None:
     return None
 
 
+def _get_validation_error_messages(detail: Any) -> list[str]:
+    if isinstance(detail, dict):
+        return [
+            message
+            for value in detail.values()
+            for message in _get_validation_error_messages(value)
+        ]
+    if isinstance(detail, (list, tuple)):
+        return [message for value in detail for message in _get_validation_error_messages(value)]
+    return [str(detail)]
+
+
 @register_job_task(JobOperation.IMPORT_ENTRY_V2)
 @app.task(bind=True)
 @may_schedule_until_job_is_ready
-def import_entries_v2(self: Task, job: Job) -> tuple[JobStatus, str, None] | None:
+def import_entries_v2(self: Task[Any, Any], job: Job) -> tuple[JobStatus, str, None] | None:
     user: User = job.user
+    if job.target is None:
+        return JobStatus.ERROR, "Failed to get job.target", None
     entity = Entity.objects.get(id=job.target.id)
-    import_serializer = EntryImportEntitySerializer(data=json.loads(job.params))
-    import_serializer.is_valid()
+    params = job.get_typed_params(ImportEntryParams)
+    import_serializer = EntryImportEntitySerializer(
+        data=params.model_dump(mode="json", by_alias=True, exclude_unset=True)
+    )
+    import_serializer.is_valid(raise_exception=True)
     context = {"request": DRFRequest(user)}
 
     total_count = len(import_serializer.validated_data["entries"])
     err_msg: list[str] = []
+    stale: list[str] = []
+    baselines = EntryImportPreviewService.load_baselines(job)
     for index, entry_data in enumerate(import_serializer.validated_data["entries"]):
         job.text = "Now importing... (progress: [%5d/%5d])" % (index + 1, total_count)
         job.save(update_fields=["text"])
@@ -682,6 +777,13 @@ def import_entries_v2(self: Task, job: Job) -> tuple[JobStatus, str, None] | Non
                 name=entry_data["name"], schema=entity, is_active=True
             ).first()
 
+        if entry and EntryImportPreviewService.is_stale(entry, entry_data, baselines):
+            # Someone changed this item after the preview was built, so the
+            # preview the user approved no longer describes what would happen.
+            stale.append(entry_data["name"])
+            continue
+
+        serializer: EntryUpdateSerializer | EntryCreateSerializer
         if entry:
             serializer = EntryUpdateSerializer(instance=entry, data=entry_data, context=context)
         else:
@@ -690,29 +792,38 @@ def import_entries_v2(self: Task, job: Job) -> tuple[JobStatus, str, None] | Non
             serializer.is_valid(raise_exception=True)
             serializer.save()
         except ValidationError as e:
-            err_msg.append(entry_data["name"])
+            messages = _get_validation_error_messages(e.detail)
+            err_msg.append("{}: {}".format(entry_data["name"], "; ".join(messages)))
             Logger.warning(
                 "failed to validate on entry import v2: entry=%s, error=%s"
                 % (entry_data["name"], e)
             )
 
-    if err_msg:
+    success_count = total_count - len(err_msg) - len(stale)
+    if err_msg or stale:
+        messages = [
+            f"Successfully imported: {success_count}, Requested: {total_count}",
+            *(f"Failed import Entry: [{message}]" for message in err_msg),
+            *(f"Skipped stale Entry: [{name}]" for name in stale),
+        ]
+        return (JobStatus.WARNING, chr(10).join(messages[:6]), None)
+    else:
         return (
-            JobStatus.WARNING,
-            "Imported Entry count: %d, Failed import Entry: %s" % (total_count, err_msg),
+            JobStatus.DONE,
+            f"Successfully imported: {success_count}, Requested: {total_count}",
             None,
         )
-    else:
-        return JobStatus.DONE, "Imported Entry count: %d" % total_count, None
 
 
 @register_job_task(JobOperation.EXPORT_ENTRY)
 @app.task(bind=True)
 @may_schedule_until_job_is_ready
-def export_entries(self: Task, job: Job) -> None:
+def export_entries(self: Task[Any, Any], job: Job) -> None:
     user = job.user
+    if job.target is None:
+        return
     entity = Entity.objects.get(id=job.target.id)
-    params = json.loads(job.params)
+    params = job.get_typed_params(ExportEntryParams)
 
     exported_data = []
 
@@ -737,7 +848,7 @@ def export_entries(self: Task, job: Job) -> None:
         export_item_counter += 1
 
     output = None
-    if params["export_format"] == "csv":
+    if params.export_format == "csv":
         # newline is blank because csv module performs universal newlines
         # https://docs.python.org/ja/3/library/csv.html#id3
         output = io.StringIO(newline="")
@@ -768,17 +879,19 @@ def export_entries(self: Task, job: Job) -> None:
             )
         )
 
-    if output:
+    if output is not None:
         job.set_cache(output.getvalue())
 
 
 @register_job_task(JobOperation.EXPORT_ENTRY_V2)
 @app.task(bind=True)
 @may_schedule_until_job_is_ready
-def export_entries_v2(self: Task, job: Job) -> None:
+def export_entries_v2(self: Task[Any, Any], job: Job) -> None:
     user = job.user
+    if job.target is None:
+        return
     entity = Entity.objects.get(id=job.target.id)
-    params = ExportTaskParams.model_validate_json(job.params)
+    params = job.get_typed_params(ExportEntryParams)
     with_entity = params.export_format != "csv"
 
     exported_entity: list[ExportedEntityEntries] = []
@@ -799,7 +912,9 @@ def export_entries_v2(self: Task, job: Job) -> None:
             return
 
         if user.has_permission(entry, ACLType.Readable):
-            exported_entries.append(entry.export_v2(user, with_entity=with_entity))
+            exported_entries.append(
+                ExportedEntry.model_validate(entry.export_v2(user, with_entity=with_entity))
+            )
 
         # increment loop counter
         export_item_counter += 1
@@ -832,13 +947,13 @@ def export_entries_v2(self: Task, job: Job) -> None:
         output = io.StringIO()
         output.write(
             yaml.dump(
-                [x.dict(exclude_unset=True) for x in exported_entity],
+                [x.model_dump(exclude_unset=True) for x in exported_entity],
                 default_flow_style=False,
                 allow_unicode=True,
             )
         )
 
-    if output:
+    if output is not None:
         job.set_cache(output.getvalue())
 
 
@@ -877,9 +992,13 @@ def _csv_export_v2(
                 return str(vval)
             case AttrType.OBJECT | AttrType.GROUP | AttrType.ROLE:
                 return str(vval["name"])
-            case AttrType.NAMED_OBJECT:
+            case AttrType.NAMED_OBJECT | AttrType.NAMED_OBJECT_BOOLEAN:
                 [(k, v)] = vval.items()
-                return "%s: %s" % (k, v["name"])
+                return f"{k}: {v['name']}" if isinstance(v, dict) else f"{k}: "
+            case AttrType.SELECT:
+                if isinstance(vval, dict):
+                    return str(vval.get("label", ""))
+                return ""
             case AttrType.ARRAY_STRING:
                 from natsort import natsorted
 
@@ -888,17 +1007,22 @@ def _csv_export_v2(
                 from natsort import natsorted
 
                 return "\n".join(natsorted([str(x) if x is not None else "" for x in vval]))
+            case AttrType.MULTI_SELECT:
+                from natsort import natsorted
+
+                labels = [str(x.get("label", "")) for x in vval if isinstance(x, dict)]
+                return "\n".join(natsorted(labels))
             case AttrType.ARRAY_OBJECT | AttrType.ARRAY_GROUP | AttrType.ARRAY_ROLE:
                 from natsort import natsorted
 
                 return "\n".join(natsorted([x["name"] for x in vval]))
-            case AttrType.ARRAY_NAMED_OBJECT:
+            case AttrType.ARRAY_NAMED_OBJECT | AttrType.ARRAY_NAMED_OBJECT_BOOLEAN:
                 from natsort import natsorted
 
                 items = []
                 for vset in vval:
                     [(k, v)] = vset.items()
-                    items.append("%s: %s" % (k, v["name"]))
+                    items.append(f"{k}: {v['name']}" if isinstance(v, dict) else f"{k}: ")
                 return "\n".join(natsorted(items))
         return ""
 
@@ -928,7 +1052,10 @@ def _csv_export_v2(
 @may_schedule_until_job_is_ready
 def export_search_result_v2(self: Any, job: Job) -> tuple[JobStatus, str, ACLBase | None] | None:
     user = job.user
-    serializer = AdvancedSearchResultExportSerializer(data=json.loads(job.params))
+    typed_params = job.get_typed_params(SearchExportParams)
+    serializer = AdvancedSearchResultExportSerializer(
+        data=typed_params.model_dump(mode="json", by_alias=True, exclude_unset=True)
+    )
     serializer.is_valid(raise_exception=True)
     params: dict[str, Any] = serializer.validated_data
     join_attrs = params.get("join_attrs", [])
@@ -968,6 +1095,8 @@ def export_search_result_v2(self: Any, job: Job) -> tuple[JobStatus, str, ACLBas
         hint_referral_entity_id=None,
         offset=0,
         hint_entry=hint_entry,
+        exclude_referrals=params.get("exclude_referrals", []),
+        include_referrals=params.get("include_referrals", []),
     )
 
     # Apply join_attrs in the same way as AdvancedSearchAPI.post() in views.py
@@ -999,7 +1128,10 @@ def export_search_result_v2(self: Any, job: Job) -> tuple[JobStatus, str, ACLBas
 @register_job_task(JobOperation.REGISTER_REFERRALS)
 @app.task(bind=True)
 @may_schedule_until_job_is_ready
-def register_referrals(self: Task, job: Job) -> None:
+def register_referrals(self: Task[Any, Any], job: Job) -> None:
+    job.get_typed_params(ReferralParams)
+    if job.target is None:
+        return
     # register entries data which refer target entry to elasticsearch
     entry = Entry.objects.filter(id=job.target.id, is_active=True).first()
     if entry:
@@ -1024,11 +1156,13 @@ def _notify_event(
 @register_job_task(JobOperation.UPDATE_DOCUMENT)
 @app.task(bind=True)
 @may_schedule_until_job_is_ready
-def update_es_documents(self: Task, job: Job) -> JobStatus:
-    params = json.loads(job.params)
+def update_es_documents(self: Task[Any, Any], job: Job) -> JobStatus:
+    params = job.get_typed_params(UpdateDocumentParams)
 
+    if job.target is None:
+        return JobStatus.ERROR
     entity = Entity.objects.get(id=job.target.id)
-    AdvancedSearchService.update_documents(entity, params.get("is_update", False))
+    AdvancedSearchService.update_documents(entity, params.is_update)
 
     return JobStatus.DONE
 
@@ -1036,29 +1170,42 @@ def update_es_documents(self: Task, job: Job) -> JobStatus:
 @register_job_task(JobOperation.NOTIFY_CREATE_ENTRY)
 @app.task(bind=True)
 @may_schedule_until_job_is_ready
-def notify_create_entry(self: Task, job: Job) -> tuple[JobStatus, str, None] | None:
+def notify_create_entry(self: Task[Any, Any], job: Job) -> tuple[JobStatus, str, None] | None:
+    job.get_typed_params(EmptyParams)
+    if job.target is None:
+        return JobStatus.ERROR, "Failed to get job.target (None)", None
     return _notify_event(notify_entry_create, job.target.id, job.user)
 
 
 @register_job_task(JobOperation.NOTIFY_UPDATE_ENTRY)
 @app.task(bind=True)
 @may_schedule_until_job_is_ready
-def notify_update_entry(self: Task, job: Job) -> tuple[JobStatus, str, None] | None:
+def notify_update_entry(self: Task[Any, Any], job: Job) -> tuple[JobStatus, str, None] | None:
+    job.get_typed_params(EmptyParams)
+    if job.target is None:
+        return JobStatus.ERROR, "Failed to get job.target (None)", None
     return _notify_event(notify_entry_update, job.target.id, job.user)
 
 
 @register_job_task(JobOperation.NOTIFY_DELETE_ENTRY)
 @app.task(bind=True)
 @may_schedule_until_job_is_ready
-def notify_delete_entry(self: Task, job: Job) -> tuple[JobStatus, str, None] | None:
+def notify_delete_entry(self: Task[Any, Any], job: Job) -> tuple[JobStatus, str, None] | None:
+    job.get_typed_params(EmptyParams)
+    if job.target is None:
+        return JobStatus.ERROR, "Failed to get job.target (None)", None
     return _notify_event(notify_entry_delete, job.target.id, job.user)
 
 
 @register_job_task(JobOperation.CREATE_ENTRY_V2)
 @app.task(bind=True)
 @may_schedule_until_job_is_ready
-def create_entry_v2(self: Task, job: Job) -> JobStatus:
-    serializer = EntryCreateSerializer(data=json.loads(job.params), context={"_user": job.user})
+def create_entry_v2(self: Task[Any, Any], job: Job) -> JobStatus:
+    params = job.get_typed_params(CreateEntryV2Params)
+    serializer = EntryCreateSerializer(
+        data=params.model_dump(mode="json", by_alias=True, exclude_unset=True),
+        context={"_user": job.user},
+    )
     if not serializer.is_valid():
         return JobStatus.ERROR
 
@@ -1078,13 +1225,18 @@ def create_entry_v2(self: Task, job: Job) -> JobStatus:
 @register_job_task(JobOperation.EDIT_ENTRY_V2)
 @app.task(bind=True)
 @may_schedule_until_job_is_ready
-def edit_entry_v2(self: Task, job: Job) -> JobStatus:
+def edit_entry_v2(self: Task[Any, Any], job: Job) -> JobStatus:
+    if job.target is None:
+        return JobStatus.ERROR
     entry: Entry | None = Entry.objects.filter(id=job.target.id, is_active=True).first()
     if not entry:
         return JobStatus.ERROR
 
+    params = job.get_typed_params(EntryV2Params)
     serializer = EntryUpdateSerializer(
-        instance=entry, data=json.loads(job.params), context={"_user": job.user}
+        instance=entry,
+        data=params.model_dump(mode="json", by_alias=True, exclude_unset=True),
+        context={"_user": job.user},
     )
     if not serializer.is_valid():
         return JobStatus.ERROR
@@ -1097,7 +1249,10 @@ def edit_entry_v2(self: Task, job: Job) -> JobStatus:
 @register_job_task(JobOperation.DELETE_ENTRY_V2)
 @app.task(bind=True)
 @may_schedule_until_job_is_ready
-def delete_entry_v2(self: Task, job: Job) -> JobStatus:
+def delete_entry_v2(self: Task[Any, Any], job: Job) -> JobStatus:
+    job.get_typed_params(EmptyParams)
+    if job.target is None:
+        return JobStatus.ERROR
     entry: Entry | None = Entry.objects.filter(id=job.target.id, is_active=True).first()
     if not entry:
         return JobStatus.ERROR
@@ -1126,24 +1281,45 @@ def delete_entry_v2(self: Task, job: Job) -> JobStatus:
 def bulk_update_entries(
     self: Any, job: Job
 ) -> JobStatus | tuple[JobStatus, str, ACLBase | None] | None:
-    job_params = json.loads(job.params)
+    params = job.get_typed_params(BulkEditParams)
+    job_params = params.model_dump(mode="json", by_alias=True, exclude_unset=True)
 
-    # get target items from ES by job_params.attr_info parameter
+    target_attr = EntityAttr.objects.filter(
+        id=job_params["value"]["id"], parent_entity_id=job_params["modelid"]
+    ).first()
+    if target_attr is None:
+        return JobStatus.ERROR, "The attribute does not belong to the specified model.", None
+    if target_attr.type & AttrType._ARRAY:
+        return JobStatus.ERROR, "Array attributes cannot be bulk updated.", None
+
+    # Selected items are constrained to the user's searchable items in this model.
+    # Without an explicit selection, retain the existing filter-based bulk edit.
     resp = AdvancedSearchService.search_entries(
         user=job.user,
         hint_entity_ids=[job_params["modelid"]],
-        hint_attrs=[AttrHint(**x) for x in job_params.get("attrinfo", [])],
+        hint_attrs=[AttrHint(**x) for x in job_params.get("attrinfo", [])]
+        if job_params.get("entry_ids") is None
+        else [],
         hint_entry=EntryHint(**job_params.get("hint_entry"))
-        if job_params.get("hint_entry")
+        if job_params.get("hint_entry") and job_params.get("entry_ids") is None
         else None,
-        hint_referral=job_params.get("referral_name"),
+        hint_referral=job_params.get("referral_name")
+        if job_params.get("entry_ids") is None
+        else None,
+        entry_ids=job_params.get("entry_ids"),
         retrieve_all=True,
     )
 
     # update each items in accordance with job_params.value parameter
     context = {"request": DRFRequest(job.user)}
-    total_count = resp.ret_count
-    for index, record in enumerate(resp.ret_values):
+    selected_ids = set(job_params["entry_ids"]) if job_params.get("entry_ids") else None
+    records = [
+        record
+        for record in resp.ret_values
+        if selected_ids is None or record.entry["id"] in selected_ids
+    ]
+    total_count = len(records)
+    for index, record in enumerate(records):
         job.text = "Now updating... (progress: [%5d/%5d])" % (index + 1, total_count)
         job.save(update_fields=["text"])
 
@@ -1175,4 +1351,38 @@ def bulk_update_entries(
 
     job.text = "Bulk update completed [%5d/%5d]" % (total_count, total_count)
     job.save(update_fields=["text"])
+    return JobStatus.DONE
+
+
+@register_job_task(JobOperation.IMPORT_ENTRY_PREVIEW)
+@app.task(bind=True)
+@may_schedule_until_job_is_ready
+def import_entries_preview_v2(self: Task[Any, Any], job: Job) -> JobStatus:
+    """Report what importing this file would do to the items of one model.
+
+    It touches no item and no value; the only thing it writes is its own
+    progress, onto the job row it runs as. See EntryImportPreviewService.
+    """
+    if job.target is None:
+        return JobStatus.ERROR
+    entity = Entity.objects.get(id=job.target.id)
+    params = job.get_typed_params(ImportEntryParams)
+    raw_data = params.model_dump(mode="json", by_alias=True, exclude_unset=True)
+
+    import_serializer = EntryImportEntitySerializer(data=raw_data)
+    if not import_serializer.is_valid():
+        return JobStatus.ERROR
+
+    payload = EntryImportPreviewService.build(
+        job,
+        job.user,
+        entity,
+        import_serializer.validated_data["entries"],
+        raw_data.get("entries", []),
+    )
+    if payload is None:
+        return JobStatus.CANCELED
+
+    job.set_cache(payload)
+
     return JobStatus.DONE

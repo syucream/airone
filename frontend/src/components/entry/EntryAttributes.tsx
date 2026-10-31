@@ -2,7 +2,9 @@ import {
   EntryAttributeType,
   TriggerParent,
 } from "@dmm-com/airone-apiclient-typescript-fetch";
+import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import {
+  Box,
   Link,
   Paper,
   Table,
@@ -18,11 +20,14 @@ import { styled } from "@mui/material/styles";
 import { FC, useMemo } from "react";
 
 import { AttributeValue } from "components/entry/AttributeValue";
+import { useTranslation } from "hooks/useTranslation";
 import { triggersPath } from "routes/Routes";
 
 interface Props {
   attributes: Array<EntryAttributeType>;
   triggers?: TriggerParent[];
+  /** Description of each attribute (EntityAttr.note), keyed by EntityAttr id */
+  attrNotes?: Record<number, string>;
 }
 
 const StyledTableRow = styled(TableRow)<{ highlighted?: boolean }>(
@@ -58,7 +63,27 @@ const AttrValueTableCell = styled(TableCell)(() => ({
   wordBreak: "break-word",
 }));
 
-export const EntryAttributes: FC<Props> = ({ attributes, triggers }) => {
+const AttrNameBox = styled(Box)(() => ({
+  display: "flex",
+  alignItems: "center",
+  gap: "4px",
+}));
+
+const AttrNoteIcon = styled(HelpOutlineIcon)(({ theme }) => ({
+  fontSize: "16px",
+  color: theme.palette.text.disabled,
+  cursor: "help",
+  "&:hover": {
+    color: theme.palette.text.secondary,
+  },
+}));
+
+export const EntryAttributes: FC<Props> = ({
+  attributes,
+  triggers,
+  attrNotes = {},
+}) => {
+  const { t } = useTranslation();
   const triggeredAttrIds = useMemo(
     () =>
       new Set(triggers?.flatMap((t) => t.actions.map((a) => a.attr.id)) ?? []),
@@ -70,8 +95,8 @@ export const EntryAttributes: FC<Props> = ({ attributes, triggers }) => {
       <Table>
         <TableHead sx={{ backgroundColor: "primary.dark" }}>
           <TableRow>
-            <HeaderTableCell>項目</HeaderTableCell>
-            <HeaderTableCell>内容</HeaderTableCell>
+            <HeaderTableCell>{t("entry.common.itemHeader")}</HeaderTableCell>
+            <HeaderTableCell>{t("entry.common.valueHeader")}</HeaderTableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -81,16 +106,32 @@ export const EntryAttributes: FC<Props> = ({ attributes, triggers }) => {
               highlighted={triggeredAttrIds.has(attr.schema.id)}
             >
               <AttrNameTableCell>
-                {triggeredAttrIds.has(attr.schema.id) ? (
-                  <Tooltip
-                    title="この属性には Trigger が設定されています"
-                    placement="top"
-                  >
-                    <Link href={triggersPath()}>{attr.schema.name}</Link>
-                  </Tooltip>
-                ) : (
-                  attr.schema.name
-                )}
+                <AttrNameBox>
+                  {triggeredAttrIds.has(attr.schema.id) ? (
+                    <Tooltip
+                      title={t("entry.attributes.triggerTooltip")}
+                      placement="top"
+                    >
+                      <Link href={triggersPath()}>{attr.schema.name}</Link>
+                    </Tooltip>
+                  ) : (
+                    attr.schema.name
+                  )}
+                  {attrNotes[attr.schema.id] && (
+                    <Tooltip
+                      title={attrNotes[attr.schema.id]}
+                      placement="top"
+                      arrow
+                      enterTouchDelay={0}
+                    >
+                      <AttrNoteIcon
+                        aria-label={t("entry.attributes.noteAriaLabel", {
+                          name: attr.schema.name,
+                        })}
+                      />
+                    </Tooltip>
+                  )}
+                </AttrNameBox>
               </AttrNameTableCell>
               <AttrValueTableCell>
                 {attr.isReadable ? (

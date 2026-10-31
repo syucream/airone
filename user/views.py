@@ -3,6 +3,7 @@ from datetime import timedelta
 from typing import Any, cast
 
 from django.contrib.auth import views as auth_views
+from django.contrib.auth.forms import PasswordResetForm
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.http.response import JsonResponse
@@ -162,7 +163,7 @@ def edit_passwd(request: HttpRequest, user_id: int) -> HttpResponse:
     user_grade = ""
     if request.user.is_superuser:
         user_grade = "super"
-    elif int(request.user.id) == int(user_id):
+    elif int(cast("int", request.user.id)) == int(user_id):
         user_grade = "self"
     else:
         return HttpResponse("You don't have permission to access this object", status=400)
@@ -204,7 +205,7 @@ def do_edit_passwd(request: HttpRequest, user_id: int, recv_data: dict[str, Any]
         return HttpResponse("Target user is not found", status=404)
 
     # Identification
-    if int(request.user.id) != int(user_id):
+    if int(cast("int", request.user.id)) != int(user_id):
         return HttpResponse("You don't have permission to access this object", status=400)
 
     # When not have a password, don't check old password.
@@ -301,7 +302,7 @@ def change_ldap_auth(request: HttpRequest, recv_data: dict[str, Any]) -> HttpRes
         return HttpResponse("Succeeded")
     else:
         return HttpResponse(
-            "LDAP authentication was Failed of user %s" % request.user.username,
+            "LDAP authentication was Failed of user %s" % current_user.username,
             status=400,
         )
 
@@ -310,9 +311,9 @@ class PasswordReset(auth_views.PasswordResetView):
     email_template_name = "password_reset_email.html"
     success_url = reverse_lazy("user:password_reset_done")
     template_name = "password_reset_form.html"
-    form_class = UsernameBasedPasswordResetForm
+    form_class = UsernameBasedPasswordResetForm  # type: ignore[assignment]
 
-    def form_valid(self, form: UsernameBasedPasswordResetForm) -> HttpResponse:
+    def form_valid(self, form: PasswordResetForm) -> HttpResponse:
         # additionally validate if the user can reset its password
         username = form.cleaned_data["username"]
         user = User.objects.filter(username=username).first()
@@ -328,6 +329,9 @@ class PasswordReset(auth_views.PasswordResetView):
         # Build the reset link from the configured canonical base URL instead
         # of the client-controlled Host header (reset-link poisoning, CWE-640).
         url_parts = get_canonical_url_parts(self.request, use_https=self.request.is_secure())
+        extra_email_context: dict[str, str] | None = (
+            dict(self.extra_email_context) if self.extra_email_context is not None else None
+        )
         form.save(
             domain_override=url_parts["domain"],
             use_https=url_parts["protocol"] == "https",
@@ -337,7 +341,7 @@ class PasswordReset(auth_views.PasswordResetView):
             subject_template_name=self.subject_template_name,
             request=self.request,
             html_email_template_name=self.html_email_template_name,
-            extra_email_context=self.extra_email_context,
+            extra_email_context=extra_email_context,
         )
         return HttpResponseRedirect(self.get_success_url())
 

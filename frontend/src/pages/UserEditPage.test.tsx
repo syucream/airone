@@ -1,14 +1,22 @@
 /**
- * @jest-environment jsdom
  */
 
-import { render, screen, act, waitFor } from "@testing-library/react";
+import {
+  render,
+  screen,
+  act,
+  fireEvent,
+  waitFor,
+} from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
 import { createMemoryRouter, RouterProvider } from "react-router";
+import { vi } from "vitest";
 
 import { TestWrapperWithoutRoutes } from "TestWrapper";
+import i18n from "i18n/config";
 import { UserEditPage } from "pages/UserEditPage";
+import { aironeApiClient } from "repository/AironeApiClient";
 
 const server = setupServer(
   // getUser
@@ -32,7 +40,12 @@ describe("EditUserPage", () => {
   Object.defineProperty(window, "django_context", {
     value: {
       user: {
-        is_superuser: false,
+        id: 1,
+        username: "user1",
+        isSuperuser: false,
+        isReadonly: false,
+        parentUser: null,
+        email: "user1@example.com",
       },
     },
     writable: false,
@@ -55,5 +68,115 @@ describe("EditUserPage", () => {
     });
 
     expect(result).toMatchSnapshot();
+  });
+
+  test("should allow saving a second change without leaving the edit page", async () => {
+    const user = {
+      id: 1,
+      username: "user1",
+      email: "user1@example.com",
+      isSuperuser: false,
+      dateJoined: "",
+      parentUser: undefined,
+      token: { value: "token", lifetime: 86400, expire: "", created: "" },
+      authenticateType: 1,
+      groups: [],
+      roles: [],
+    } as never;
+    vi.spyOn(aironeApiClient, "getUser").mockResolvedValue(user);
+    const updateUser = vi
+      .spyOn(aironeApiClient, "updateUser")
+      .mockResolvedValue({} as never);
+
+    const router = createMemoryRouter(
+      [{ path: "/users/:userId", element: <UserEditPage /> }],
+      { initialEntries: ["/users/1"] },
+    );
+    render(<RouterProvider router={router} />, {
+      wrapper: TestWrapperWithoutRoutes,
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByTestId("loading")).not.toBeInTheDocument();
+    });
+
+    const lifetime = screen
+      .getByTestId("token-lifetime")
+      .querySelector("input");
+    expect(lifetime).not.toBeNull();
+    fireEvent.change(lifetime!, { target: { value: "3600" } });
+    fireEvent.blur(lifetime!);
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "保存" })).toBeEnabled(),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
+
+    await waitFor(() => expect(updateUser).toHaveBeenCalledTimes(1));
+    expect(router.state.location.pathname).toBe("/users/1");
+
+    fireEvent.change(lifetime!, { target: { value: "7200" } });
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "保存" })).toBeEnabled(),
+    );
+  });
+
+  test("should navigate to the user list without a leave confirmation after creating a user", async () => {
+    const createUser = vi
+      .spyOn(aironeApiClient, "createUser")
+      .mockResolvedValue({} as never);
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    const router = createMemoryRouter(
+      [
+        { path: "/ui/users/new", element: <UserEditPage /> },
+        { path: "/ui/users", element: <div /> },
+      ],
+      { initialEntries: ["/ui/users/new"] },
+    );
+    render(<RouterProvider router={router} />, {
+      wrapper: TestWrapperWithoutRoutes,
+    });
+
+    const username = await screen.findByPlaceholderText(
+      "ユーザ名を入力してください",
+    );
+    const password = screen.getByPlaceholderText(
+      "パスワードを入力してください",
+    );
+    fireEvent.change(username, { target: { value: "new-user" } });
+    fireEvent.blur(username);
+    fireEvent.change(password, { target: { value: "password" } });
+    fireEvent.blur(password);
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "保存" })).toBeEnabled(),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
+
+    await waitFor(() => expect(createUser).toHaveBeenCalledTimes(1));
+    expect(confirm).not.toHaveBeenCalled();
+    expect(router.state.location.pathname).toBe("/ui/users");
+    confirm.mockRestore();
+  });
+
+  test("renders in English", async () => {
+    await act(async () => {
+      await i18n.changeLanguage("en");
+    });
+
+    const router = createMemoryRouter([
+      {
+        path: "/",
+        element: <UserEditPage />,
+      },
+    ]);
+    await act(async () => {
+      render(<RouterProvider router={router} />, {
+        wrapper: TestWrapperWithoutRoutes,
+      });
+    });
+    await waitFor(() => {
+      expect(screen.queryByTestId("loading")).not.toBeInTheDocument();
+    });
+
+    expect(screen.getByText("User settings")).toBeInTheDocument();
   });
 });

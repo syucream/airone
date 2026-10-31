@@ -28,24 +28,9 @@ urlpatterns = [
     re_path(r"^auth/sso/", include("social_django.urls", namespace="social")),
     re_path(
         r"^auth/login/",
-        auth_view.PagodaLoginView.as_view(
-            redirect_authenticated_user=True,
-            extra_context={
-                "title": settings.AIRONE["TITLE"],
-                "subtitle": settings.AIRONE["SUBTITLE"],
-                "note_desc": settings.AIRONE["NOTE_DESC"],
-                "note_link": settings.AIRONE["NOTE_LINK"],
-                "sso_desc": settings.AIRONE["SSO_DESC"],
-                "idp": (
-                    next(iter(getattr(settings, "SOCIAL_AUTH_SAML_ENABLED_IDPS", {}).keys()), None)
-                    if hasattr(settings, "SOCIAL_AUTH_SAML_ENABLED_IDPS")
-                    else None
-                ),
-                "password_reset_disabled": settings.AIRONE["PASSWORD_RESET_DISABLED"],
-                "check_term_service": settings.AIRONE["CHECK_TERM_SERVICE"],
-                "terms_of_service_url": settings.AIRONE["TERMS_OF_SERVICE_URL"],
-            },
-        ),
+        # Login-page context is built per request in PagodaLoginView so that
+        # settings are not frozen into the URLconf at import time
+        auth_view.PagodaLoginView.as_view(redirect_authenticated_user=True),
         name="login",
     ),
     re_path(r"^auth/logout/", auth_view.logout, name="logout"),
@@ -60,7 +45,7 @@ if "debug_toolbar" in settings.INSTALLED_APPS:
 
 for extension in settings.AIRONE["EXTENSIONS"]:
     urlpatterns.append(
-        re_path(r"^extension/%s" % extension, include(("%s.urls" % extension, extension)))
+        re_path(r"^extension/%s/" % extension, include(("%s.urls" % extension, extension)))
     )
 
 # Conditionally add plugin URL patterns

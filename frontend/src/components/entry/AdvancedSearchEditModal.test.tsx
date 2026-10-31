@@ -1,19 +1,19 @@
 /**
- * @jest-environment jsdom
  */
 import { EntryAttributeTypeTypeEnum } from "@dmm-com/airone-apiclient-typescript-fetch";
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 
 import { AdvancedSearchEditModal } from "./AdvancedSearchEditModal";
 
 import { TestWrapper } from "TestWrapper";
+import i18n from "i18n/config";
 
-jest.mock("hooks/usePagodaSWR", () => ({
+vi.mock("hooks/usePagodaSWR", () => ({
   usePagodaSWR: () => ({ data: ["attrA", "attrB", "attrC"] }),
 }));
-jest.mock("react-router", () => ({
-  ...jest.requireActual("react-router"),
-  useNavigate: () => jest.fn(),
+vi.mock("react-router", async () => ({
+  ...((await vi.importActual("react-router")) as object),
+  useNavigate: () => vi.fn(),
 }));
 
 describe("AdvancedSearchEditModal", () => {
@@ -35,5 +35,28 @@ describe("AdvancedSearchEditModal", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("更新")).toBeInTheDocument();
     expect(screen.getByText("キャンセル")).toBeInTheDocument();
+  });
+
+  test("renders in English", async () => {
+    await act(async () => {
+      await i18n.changeLanguage("en");
+    });
+    render(
+      <AdvancedSearchEditModal
+        openModal={true}
+        handleClose={() => {}}
+        modelIds={[1]}
+        attrsFilter={{}}
+        targetAttrID={10}
+        targetAttrname={"attrA"}
+        targetAttrtype={EntryAttributeTypeTypeEnum.STRING}
+      />,
+      { wrapper: TestWrapper },
+    );
+    expect(
+      screen.getByText("Update to the (changed) value for bulk update"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Update")).toBeInTheDocument();
+    expect(screen.getByText("Cancel")).toBeInTheDocument();
   });
 });

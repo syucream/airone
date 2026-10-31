@@ -1,7 +1,7 @@
 import { RoleCreateUpdate } from "@dmm-com/airone-apiclient-typescript-fetch";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Box, Container, Typography } from "@mui/material";
-import { FC, useCallback, useEffect } from "react";
+import { FC, useCallback, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router";
 
@@ -13,10 +13,12 @@ import { SubmitButton } from "components/common/SubmitButton";
 import { RoleForm } from "components/role/RoleForm";
 import { Schema, schema } from "components/role/roleForm/RoleFormSchema";
 import { useFormNotification } from "hooks/useFormNotification";
+import { useIdParams } from "hooks/useIdParams";
 import { usePageTitle } from "hooks/usePageTitle";
 import { usePagodaSWR } from "hooks/usePagodaSWR";
 import { usePrompt } from "hooks/usePrompt";
-import { useTypedParams } from "hooks/useTypedParams";
+import { useTranslation } from "hooks/useTranslation";
+import { translate } from "i18n/config";
 import { aironeApiClient } from "repository/AironeApiClient";
 import { rolesPath, topPath } from "routes/Routes";
 import { TITLE_TEMPLATES } from "services";
@@ -27,33 +29,44 @@ import {
 import { ForbiddenError } from "services/Exceptions";
 
 export const RoleEditPage: FC = () => {
-  const { roleId } = useTypedParams<{ roleId?: number }>({ allowEmpty: true });
+  const { roleId } = useIdParams({ optional: ["roleId"] });
   const willCreate = roleId == null;
 
   const navigate = useNavigate();
-  const { enqueueSubmitResult } = useFormNotification("ロール", willCreate);
+  const { t } = useTranslation();
+  const { enqueueSubmitResult } = useFormNotification(
+    t("common.target.role"),
+    willCreate,
+  );
+
+  const { data: role, isLoading: roleLoading } = usePagodaSWR(
+    roleId != null ? ["role", roleId] : null,
+    roleId != null ? () => aironeApiClient.getRole(roleId) : null,
+  );
+
+  // Fill schema-required defaults for optional API fields.
+  const initialValues: Schema | undefined = useMemo(
+    () =>
+      role != null ? { ...role, isActive: role.isActive ?? true } : undefined,
+    [role],
+  );
 
   const {
     formState: { isValid, isDirty, isSubmitting, isSubmitSuccessful },
     handleSubmit,
-    reset,
     setError,
     setValue,
     control,
   } = useForm<Schema>({
     resolver: zodResolver(schema),
     mode: "onBlur",
+    // Sync form values when the fetched role arrives. Dirty fields are
+    // kept so a background revalidation does not clobber user edits.
+    values: initialValues,
+    resetOptions: { keepDirtyValues: true },
   });
 
-  usePrompt(
-    isDirty && !isSubmitSuccessful,
-    "編集した内容は失われてしまいますが、このページを離れてもよろしいですか？",
-  );
-
-  const { data: role, isLoading: roleLoading } = usePagodaSWR(
-    roleId != null ? ["role", roleId] : null,
-    () => aironeApiClient.getRole(roleId!),
-  );
+  usePrompt(isDirty && !isSubmitSuccessful, t("role.edit.confirmLeave"));
 
   useEffect(() => {
     if (!roleLoading && role && !role.isEditable) {
@@ -62,16 +75,16 @@ export const RoleEditPage: FC = () => {
   }, [role, roleLoading]);
 
   useEffect(() => {
-    !roleLoading && role != null && reset(role);
-  }, [role, roleLoading, reset]);
-
-  useEffect(() => {
     isSubmitSuccessful && navigate(rolesPath());
   }, [isSubmitSuccessful, navigate]);
 
-  usePageTitle(roleLoading ? "読み込み中..." : TITLE_TEMPLATES.roleEdit, {
-    prefix: role?.name ?? (willCreate ? "新規作成" : undefined),
-  });
+  usePageTitle(
+    roleLoading ? t("role.edit.loading") : TITLE_TEMPLATES.roleEdit,
+    {
+      prefix:
+        role?.name ?? (willCreate ? t("role.edit.newRolePrefix") : undefined),
+    },
+  );
 
   const handleSubmitOnValid = useCallback(
     async (role: Schema) => {
@@ -94,7 +107,11 @@ export const RoleEditPage: FC = () => {
         if (e instanceof Error && isResponseError(e)) {
           await extractAPIException<Schema>(
             e,
-            (message) => enqueueSubmitResult(false, `詳細: "${message}"`),
+            (message) =>
+              enqueueSubmitResult(
+                false,
+                translate("role.edit.submitFailureDetail", { message }),
+              ),
             (name, message) => {
               setError(name, { type: "custom", message: message });
               enqueueSubmitResult(false);
@@ -123,17 +140,17 @@ export const RoleEditPage: FC = () => {
           Top
         </Typography>
         <Typography component={AironeLink} to={rolesPath()}>
-          ロール管理
+          {t("role.listPage.pageTitle")}
         </Typography>
-        <Typography color="textPrimary">ロール編集</Typography>
+        <Typography color="textPrimary">{t("role.edit.breadcrumb")}</Typography>
       </AironeBreadcrumbs>
 
       <PageHeader
-        title={role != null ? role.name : "新規ロールの作成"}
-        description={role != null ? "ロール編集" : undefined}
+        title={role != null ? role.name : t("role.edit.pageTitleNew")}
+        description={role != null ? t("role.edit.description") : undefined}
       >
         <SubmitButton
-          name="保存"
+          name={t("common.save")}
           disabled={
             !isDirty ||
             !isValid ||
@@ -148,7 +165,11 @@ export const RoleEditPage: FC = () => {
       </PageHeader>
 
       <Container>
-        <RoleForm control={control} setValue={setValue} />
+        <RoleForm
+          control={control}
+          setValue={setValue}
+          permissions={role?.permissions}
+        />
       </Container>
     </Box>
   );

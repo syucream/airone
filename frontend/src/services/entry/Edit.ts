@@ -51,13 +51,19 @@ export function formalizeEntryInfo(
           attrDetail: EntityDetail["attrs"][0],
         ): EditableEntryAttrValue {
           if (!value) {
-            // Use defaultValue from EntityAttr if available
-            // Backend returns raw primitive values (string, boolean, null)
-            // Auto-generated types show it as object but it's actually scalar values
-            const defaultValue = attrDetail.defaultValue;
+            // Use defaultValue from EntityAttr only when creating a new entry
+            // (i.e. the caller passed no entry). When editing an existing
+            // entry, an attribute without any stored value must stay empty:
+            // prefilling the default here would re-materialize it as a real
+            // value on every save, and an explicitly emptied value could
+            // never stick. Backend returns raw primitive values (string,
+            // boolean, null). Auto-generated types show it as object but it's
+            // actually scalar values.
+            const defaultValue =
+              entry === undefined ? attrDetail.defaultValue : null;
 
             // Default values for when no default is specified
-            const defaults = {
+            const defaults: EditableEntryAttrValue = {
               asString: "",
               asBoolean: false,
               asArrayString: [{ value: "" }],
@@ -71,9 +77,13 @@ export function formalizeEntryInfo(
               asNamedObject: { name: "", object: null },
               asNumber: null as number | null,
               asArrayNumber: [{ value: null }],
+              asSelect: null as { value: string; label: string } | null,
+              asMultiSelect: [] as Array<{ value: string; label: string }>,
             };
 
-            // Apply defaultValue for supported types (backend returns raw primitive values)
+            // Apply defaultValue for supported types (backend returns raw primitive values).
+            // defaultValue is already null when editing an existing entry, so
+            // the create-only condition is covered by the null check alone.
             if (defaultValue !== null && defaultValue !== undefined) {
               switch (attrType) {
                 case EntryAttributeTypeTypeEnum.STRING:
@@ -117,6 +127,31 @@ export function formalizeEntryInfo(
                     defaults.asNumber = (
                       defaultValue as { asNumber: number }
                     ).asNumber;
+                  }
+                  break;
+                case EntryAttributeTypeTypeEnum.OBJECT:
+                  if (
+                    typeof defaultValue === "number" &&
+                    Number.isInteger(defaultValue) &&
+                    defaultValue > 0
+                  ) {
+                    defaults.asObject = { id: defaultValue, name: "" };
+                  }
+                  break;
+                case EntryAttributeTypeTypeEnum.ARRAY_OBJECT:
+                  if (
+                    Array.isArray(defaultValue) &&
+                    defaultValue.every(
+                      (item) =>
+                        typeof item === "number" &&
+                        Number.isInteger(item) &&
+                        item > 0,
+                    )
+                  ) {
+                    defaults.asArrayObject = defaultValue.map((id) => ({
+                      id,
+                      name: "",
+                    }));
                   }
                   break;
               }
@@ -201,6 +236,14 @@ export function formalizeEntryInfo(
 
               if (value.asNumber !== undefined) {
                 result.asNumber = value.asNumber;
+              }
+
+              if (value.asSelect !== undefined) {
+                result.asSelect = value.asSelect;
+              }
+
+              if (value.asMultiSelect !== undefined) {
+                result.asMultiSelect = value.asMultiSelect;
               }
 
               return result;
@@ -309,6 +352,12 @@ export function convertAttrsFormatCtoS(
                 boolean: x._boolean,
               };
             });
+
+        case EntryAttributeTypeTypeEnum.SELECT:
+          return attrValue.asSelect?.value ?? null;
+
+        case EntryAttributeTypeTypeEnum.MULTI_SELECT:
+          return attrValue.asMultiSelect?.map((x) => x.value) ?? [];
 
         default:
           throw new Error(`unknown attribute type ${attrType}`);

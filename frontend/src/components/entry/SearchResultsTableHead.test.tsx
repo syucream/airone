@@ -1,5 +1,4 @@
 /**
- * @jest-environment jsdom
  */
 
 import {
@@ -7,51 +6,54 @@ import {
   EntryAttributeTypeTypeEnum,
 } from "@dmm-com/airone-apiclient-typescript-fetch";
 import { Table, TableContainer } from "@mui/material";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { useLocation, useNavigate } from "react-router";
 
 import { SearchResultsTableHead } from "./SearchResultsTableHead";
 
+import type { Mock } from "vitest";
+
 import { TestWrapper } from "TestWrapper";
+import i18n from "i18n/config";
 
 // Mock react-router hooks
-jest.mock("react-router", () => ({
-  ...jest.requireActual("react-router"),
-  useLocation: jest.fn(),
-  useNavigate: jest.fn(),
+vi.mock("react-router", async () => ({
+  ...((await vi.importActual("react-router")) as object),
+  useLocation: vi.fn(),
+  useNavigate: vi.fn(),
 }));
 
 // Mock getIsFiltered function
-jest.mock("pages/AdvancedSearchResultsPage", () => ({
-  getIsFiltered: jest.fn(() => false),
+vi.mock("pages/AdvancedSearchResultsPage", () => ({
+  getIsFiltered: vi.fn(() => false),
 }));
 
 // Mock the child components
-jest.mock("./SearchResultControlMenu", () => ({
+vi.mock("./SearchResultControlMenu", () => ({
   SearchResultControlMenu: () => (
     <div data-testid="search-result-control-menu" />
   ),
 }));
 
-jest.mock("./SearchResultControlMenuForEntry", () => ({
+vi.mock("./SearchResultControlMenuForEntry", () => ({
   SearchResultControlMenuForEntry: () => (
     <div data-testid="search-result-control-menu-for-entry" />
   ),
 }));
 
-jest.mock("./SearchResultControlMenuForReferral", () => ({
+vi.mock("./SearchResultControlMenuForReferral", () => ({
   SearchResultControlMenuForReferral: () => (
     <div data-testid="search-result-control-menu-for-referral" />
   ),
 }));
 
-jest.mock("./AdvancedSearchJoinModal", () => ({
+vi.mock("./AdvancedSearchJoinModal", () => ({
   AdvancedSearchJoinModal: () => (
     <div data-testid="advanced-search-join-modal" />
   ),
 }));
 
-const mockNavigate = jest.fn();
+const mockNavigate = vi.fn();
 const mockLocation = {
   pathname: "/test",
   search: "?entity=1&entity=2",
@@ -69,7 +71,7 @@ describe("SearchResultsTableHead", () => {
     entityIds: stableEntityIds,
     searchAllEntities: false,
     joinAttrs: stableJoinAttrs,
-    handleChangeAllBulkOperationEntryIds: jest.fn(),
+    handleChangeAllBulkOperationEntryIds: vi.fn(),
     entityAttrs: [],
     totalCount: 0,
   };
@@ -92,9 +94,9 @@ describe("SearchResultsTableHead", () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    (useNavigate as jest.Mock).mockReturnValue(mockNavigate);
-    (useLocation as jest.Mock).mockReturnValue(mockLocation);
+    vi.clearAllMocks();
+    (useNavigate as Mock).mockReturnValue(mockNavigate);
+    (useLocation as Mock).mockReturnValue(mockLocation);
   });
 
   test("should render without crashing", () => {
@@ -129,6 +131,19 @@ describe("SearchResultsTableHead", () => {
     renderSearchResultsTableHead({ hasReferral: true });
     expect(screen.getByText("参照アイテム")).toBeInTheDocument();
     expect(screen.getByLabelText("参照アイテムでフィルタ")).toBeInTheDocument();
+  });
+
+  test("renders in English", async () => {
+    await act(async () => {
+      await i18n.changeLanguage("en");
+    });
+    renderSearchResultsTableHead({ hasReferral: true });
+    expect(screen.getByText("Item name")).toBeInTheDocument();
+    expect(screen.getByLabelText("Filter by item name")).toBeInTheDocument();
+    expect(screen.getByText("Referral item")).toBeInTheDocument();
+    expect(
+      screen.getByLabelText("Filter by referral item"),
+    ).toBeInTheDocument();
   });
 
   test("should hide filter controls in readonly mode", () => {

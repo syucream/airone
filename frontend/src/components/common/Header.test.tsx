@@ -1,8 +1,13 @@
 /**
- * @jest-environment jsdom
  */
 
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  within,
+} from "@testing-library/react";
 
 import { Header } from "./Header";
 
@@ -23,14 +28,14 @@ const defaultServerContext = {
 
 let mockServerContext = { ...defaultServerContext };
 
-jest.mock("../../services/ServerContext", () => ({
+vi.mock("../../services/ServerContext", () => ({
   ServerContext: {
     getInstance: () => mockServerContext,
   },
 }));
 
 // Mock useTranslation
-jest.mock("../../hooks/useTranslation", () => ({
+vi.mock("../../hooks/useTranslation", () => ({
   useTranslation: () => ({
     t: (key: string) => {
       const translations: Record<string, string> = {
@@ -48,6 +53,7 @@ jest.mock("../../hooks/useTranslation", () => ({
         logout: "Logout",
         noRunningJobs: "No running jobs",
         jobs: "Jobs",
+        "header.openNavigationMenu": "Open navigation menu",
       };
       return translations[key] || key;
     },
@@ -57,25 +63,27 @@ jest.mock("../../hooks/useTranslation", () => ({
 }));
 
 // Mock useSimpleSearch
-jest.mock("../../hooks/useSimpleSearch", () => ({
-  useSimpleSearch: () => [undefined, jest.fn()],
+const { mockSubmitQuery } = vi.hoisted(() => ({ mockSubmitQuery: vi.fn() }));
+vi.mock("../../hooks/useSimpleSearch", () => ({
+  useSimpleSearch: () => [undefined, 1, mockSubmitQuery, vi.fn()],
 }));
 
 // Mock aironeApiClient
-jest.mock("../../repository/AironeApiClient", () => ({
+vi.mock("../../repository/AironeApiClient", () => ({
   aironeApiClient: {
-    getRecentJobs: jest.fn().mockResolvedValue([]),
+    getRecentJobs: vi.fn().mockResolvedValue([]),
   },
 }));
 
 // Mock useInterval
-jest.mock("../../hooks/useInterval", () => ({
-  useInterval: jest.fn(),
+vi.mock("../../hooks/useInterval", () => ({
+  useInterval: vi.fn(),
 }));
 
 describe("Header", () => {
   beforeEach(() => {
     mockServerContext = { ...defaultServerContext, extendedHeaderMenus: [] };
+    mockSubmitQuery.mockClear();
   });
 
   describe("rendering", () => {
@@ -306,6 +314,86 @@ describe("Header", () => {
       expect(advancedSearchLink.closest("a")?.getAttribute("href")).toContain(
         "advanced_search",
       );
+    });
+  });
+
+  // The drawer replaces the inline navigation on narrow screens. Which of the
+  // two is shown is decided by CSS media queries, which jsdom does not apply,
+  // so these tests only cover the drawer's own behavior.
+  describe("navigation drawer", () => {
+    const openDrawer = async () => {
+      fireEvent.click(
+        screen.getByRole("button", { name: "Open navigation menu" }),
+      );
+      return await screen.findByRole("navigation");
+    };
+
+    test("should not render the drawer until it is opened", () => {
+      render(<Header />, { wrapper: TestWrapper });
+
+      expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "Open navigation menu" }),
+      ).toHaveAttribute("aria-expanded", "false");
+    });
+
+    test("should offer every header destination", async () => {
+      mockServerContext = {
+        ...defaultServerContext,
+        legacyUiDisabled: false,
+        extendedHeaderMenus: [
+          {
+            name: "External Tools",
+            children: [{ name: "Tool A", url: "https://tool-a.example.com" }],
+          },
+        ],
+      };
+      render(<Header />, { wrapper: TestWrapper });
+
+      const drawer = within(await openDrawer());
+      for (const [name, href] of [
+        ["Categories", "categories"],
+        ["Entities", "entities"],
+        ["Advanced Search", "advanced_search"],
+        ["Users", "users"],
+        ["Groups", "groups"],
+        ["Roles", "roles"],
+        ["Triggers", "triggers"],
+        ["Tool A", "https://tool-a.example.com"],
+        ["Previous Version", "/dashboard/"],
+      ]) {
+        expect(drawer.getByRole("link", { name })).toHaveAttribute(
+          "href",
+          expect.stringContaining(href),
+        );
+      }
+      expect(drawer.getByText("Management")).toBeInTheDocument();
+      expect(drawer.getByText("External Tools")).toBeInTheDocument();
+    });
+
+    test("should close after choosing a destination", async () => {
+      render(<Header />, { wrapper: TestWrapper });
+
+      const drawer = within(await openDrawer());
+      fireEvent.click(drawer.getByRole("link", { name: "Entities" }));
+
+      await waitFor(() => {
+        expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
+      });
+    });
+
+    test("should submit a search and close", async () => {
+      render(<Header />, { wrapper: TestWrapper });
+
+      const drawer = within(await openDrawer());
+      const input = drawer.getByPlaceholderText("Search");
+      fireEvent.change(input, { target: { value: "web" } });
+      fireEvent.keyDown(input, { key: "Enter" });
+
+      expect(mockSubmitQuery).toHaveBeenCalledWith("web");
+      await waitFor(() => {
+        expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
+      });
     });
   });
 });
