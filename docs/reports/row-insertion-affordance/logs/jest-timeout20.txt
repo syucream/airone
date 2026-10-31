@@ -1,0 +1,441 @@
+
+ RUN  v5.0.0 /Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit
+
+Error: Not implemented: navigation (except hash changes)
+    at module.exports (/Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at navigateFetch (/Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit/node_modules/jsdom/lib/jsdom/living/window/navigation.js:77:3)
+    at exports.navigate (/Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit/node_modules/jsdom/lib/jsdom/living/window/navigation.js:55:3)
+    at LocationImpl.reload (/Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit/node_modules/jsdom/lib/jsdom/living/window/Location-impl.js:225:5)
+    at Location.reload (/Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit/node_modules/jsdom/lib/jsdom/living/generated/Location.js:102:36)
+    at onImport (/Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit/frontend/src/components/common/ImportForm.tsx:214:23) undefined
+Error: Not implemented: navigation (except hash changes)
+    at module.exports (/Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at navigateFetch (/Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit/node_modules/jsdom/lib/jsdom/living/window/navigation.js:77:3)
+    at exports.navigate (/Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit/node_modules/jsdom/lib/jsdom/living/window/navigation.js:55:3)
+    at LocationImpl.reload (/Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit/node_modules/jsdom/lib/jsdom/living/window/Location-impl.js:225:5)
+    at Location.reload (/Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit/node_modules/jsdom/lib/jsdom/living/generated/Location.js:102:36)
+    at onImport (/Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit/frontend/src/components/common/ImportForm.tsx:214:23) undefined
+ ❯ frontend/src/components/common/CommonImportModal.test.tsx (8 tests | 1 failed) 5687ms
+   ❯ CommonImportModal (8)
+     × shows the server's reason when a preview cannot be started 1440ms
+Error: Not implemented: navigation (except hash changes)
+    at module.exports (/Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at navigateFetch (/Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit/node_modules/jsdom/lib/jsdom/living/window/navigation.js:77:3)
+    at exports.navigate (/Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit/node_modules/jsdom/lib/jsdom/living/window/navigation.js:55:3)
+    at LocationImpl.reload (/Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit/node_modules/jsdom/lib/jsdom/living/window/Location-impl.js:225:5)
+    at Location.reload (/Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit/node_modules/jsdom/lib/jsdom/living/generated/Location.js:102:36)
+    at onImport (/Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit/frontend/src/components/common/ImportForm.tsx:214:23) undefined
+Error: Not implemented: navigation (except hash changes)
+    at module.exports (/Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at navigateFetch (/Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit/node_modules/jsdom/lib/jsdom/living/window/navigation.js:77:3)
+    at exports.navigate (/Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit/node_modules/jsdom/lib/jsdom/living/window/navigation.js:55:3)
+    at LocationImpl.reload (/Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit/node_modules/jsdom/lib/jsdom/living/window/Location-impl.js:225:5)
+    at Location.reload (/Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit/node_modules/jsdom/lib/jsdom/living/generated/Location.js:102:36)
+    at onImport (/Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit/frontend/src/components/common/ImportForm.tsx:214:23) undefined
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  frontend/src/components/common/CommonImportModal.test.tsx > CommonImportModal > shows the server's reason when a preview cannot be started
+TestingLibraryElementError: Found multiple elements with the text: unknown model: Foo
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"go946087465"[39m
+  [33mid[39m=[32m"notistack-snackbar"[39m
+[36m>[39m
+  [36m<svg[39m
+    [33mfocusable[39m=[32m"false"[39m
+    [33mstyle[39m=[32m"font-size: 20px; margin-inline-end: 8px; user-select: none; width: 1em; height: 1em; display: inline-block; fill: currentColor; flex-shrink: 0;"[39m
+    [33mviewBox[39m=[32m"0 0 24 24"[39m
+  [36m>[39m
+    [36m<path[39m
+      [33md[39m=[32m"M12,2C17.53,2 22,6.47 22,12C22,17.53 17.53,22 12,22C6.47,22 2,17.53 2,12C2,
+        6.47 6.47,2 12,2M15.59,7L12,10.59L8.41,7L7,8.41L10.59,12L7,15.59L8.41,17L12,
+        13.41L15.59,17L17,15.59L13.41,12L17,8.41L15.59,7Z"[39m
+    [36m/>[39m
+  [36m</svg>[39m
+  [0munknown model: Foo[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<span[39m
+  [33mclass[39m=[32m"MuiTypography-root MuiTypography-caption css-1hldsye-MuiTypography-root"[39m
+[36m>[39m
+  [0munknown model: Foo[0m
+[36m</span>[39m
+
+(If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+Ignored nodes: comments, script, style
+[36m<body[39m
+  [33mstyle[39m=[32m"padding-right: 1024px; overflow: hidden;"[39m
+[36m>[39m
+  [36m<div[39m
+    [33maria-hidden[39m=[32m"true"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"notistack-SnackbarContainer go1453831412 go4027089540 go1141946668"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"go1475592160 go1671063245"[39m
+        [33mstyle[39m=[32m"pointer-events: all; overflow: visible; min-height: 0px; transition: height 300ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"notistack-CollapseWrapper"[39m
+          [33mstyle[39m=[32m"display: flex; width: 100%;"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"notistack-Snackbar go3963613292"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33maria-describedby[39m=[32m"notistack-snackbar"[39m
+              [33mclass[39m=[32m"go1888806478 notistack-MuiContent notistack-MuiContent-error go167266335 go3651055292 go3162094071"[39m
+              [33mrole[39m=[32m"alert"[39m
+              [33mstyle[39m=[32m"-webkit-transform: translateX(-NaNpx); transform: translateX(-NaNpx); visibility: hidden;"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"go946087465"[39m
+                [33mid[39m=[32m"notistack-snackbar"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33mfocusable[39m=[32m"false"[39m
+                  [33mstyle[39m=[32m"font-size: 20px; margin-inline-end: 8px; user-select: none; width: 1em; height: 1em; display: inline-block; fill: currentColor; flex-shrink: 0;"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M12,2C17.53,2 22,6.47 22,12C22,17.53 17.53,22 12,22C6.47,22 2,17.53 2,12C2,
+        6.47 6.47,2 12,2M15.59,7L12,10.59L8.41,7L7,8.41L10.59,12L7,15.59L8.41,17L12,
+        13.41L15.59,17L17,15.59L13.41,12L17,8.41L15.59,7Z"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+                [0munknown model: Foo[0m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"MuiModal-root css-17c7dpr-MuiModal-root"[39m
+    [33mrole[39m=[32m"presentation"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33maria-hidden[39m=[32m"true"[39m
+      [33mclass[39m=[32m"MuiBackdrop-root MuiModal-backdrop css-4nmryk-MuiBackdrop-root-MuiModal-backdrop"[39m
+      [33mstyle[39m=[32m"opacity: 1; transition: opacity 225ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;"[39m
+    [36m/>[39m
+    [36m<div[39m
+      [33mdata-testid[39m=[32m"sentinelStart"[39m
+      [33mtabindex[39m=[32m"0"[39m
+    [36m/>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"MuiBox-root css-1lq9fou"[39m
+      [33mid[39m=[32m"modal"[39m
+      [33mtabindex[39m=[32m"-1"[39m
+    [36m>[39m
+      [36m<h6[39m
+        [33mclass[39m=[32m"MuiTypography-root MuiTypography-h6 css-omruic-MuiTypography-root"[39m
+      [36m>[39m
+        [0mデータのインポート[0m
+      [36m</h6>[39m
+      [36m<p[39m
+        [33mclass[39m=[32m"MuiTypography-root MuiTypography-body2 css-1bcbce4-MuiTypography-root"[39m
+      [36m>[39m
+        [0mインポートするファイルを選択してください。[0m
+      [36m</p>[39m
+      [36m<span[39m
+        [33mclass[39m=[32m"MuiTypography-root MuiTypography-caption css-1ji8k07-MuiTypography-root"[39m
+      [36m>[39m
+        [0m※モデル・アイテム・ユーザ他、いずれのインポートファイルも受け付けます。CSV形式のファイルは選択できません。[0m
+      [36m</span>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"MuiBox-root css-9nporz"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"MuiBox-root css-70qvj9"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"MuiButtonBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium PrivateSwitchBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium css-imrjgg-MuiButtonBase-root-MuiCheckbox-root"[39m
+          [36m>[39m
+            [36m<input[39m
+              [33mclass[39m=[32m"PrivateSwitchBase-input css-j8yymo"[39m
+              [33mdata-indeterminate[39m=[32m"false"[39m
+              [33mdata-testid[39m=[32m"force-import"[39m
+              [33mtype[39m=[32m"checkbox"[39m
+            [36m/>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-1umw9bq-MuiSvgIcon-root"[39m
+              [33mdata-testid[39m=[32m"CheckBoxOutlineBlankIcon"[39m
+              [33mfocusable[39m=[32m"false"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+          [36m</span>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"MuiTypography-root MuiTypography-body2 css-7ctihp-MuiTypography-root"[39m
+          [36m>[39m
+            [0m強制的にインポートする(短期間にインポートを繰り返したい場合に使用してください)[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"MuiBox-root css-1xlzx9v"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"MuiBox-root css-j7qwjs"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"MuiInputBase-root MuiInput-root MuiInput-underline MuiInputBase-colorPrimary css-1cmet5c-MuiInputBase-root-MuiInput-root"[39m
+              [33mdata-testid[39m=[32m"upload-import-file"[39m
+            [36m>[39m
+              [36m<input[39m
+                [33mclass[39m=[32m"MuiInputBase-input MuiInput-input css-1yrc8ca-MuiInputBase-input-MuiInput-input"[39m
+                [33mtype[39m=[32m"file"[39m
+              [36m/>[39m
+            [36m</div>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"MuiTypography-root MuiTypography-caption css-1hldsye-MuiTypography-root"[39m
+            [36m>[39m
+              [0munknown model: Foo[0m
+            [36m</span>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"MuiBox-root css-1bvc4cc"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mclass[39m=[32m"MuiButtonBase-root MuiButton-root MuiButton-outlined MuiButton-outlinedSecondary MuiButton-sizeMedium MuiButton-outlinedSizeMedium MuiButton-colorSecondary MuiButton-root MuiButton-outlined MuiButton-outlinedSecondary MuiButton-sizeMedium MuiButton-outlinedSizeMedium MuiButton-colorSecondary css-1v28anf-MuiButtonBase-root-MuiButton-root"[39m
+                [33mdata-testid[39m=[32m"preview-import-file"[39m
+                [33mtabindex[39m=[32m"0"[39m
+                [33mtype[39m=[32m"button"[39m
+              [36m>[39m
+                [0m変更内容を確認[0m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mclass[39m=[32m"MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedSecondary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorSecondary MuiButton-root MuiButton-contained MuiButton-containedSecondary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorSecondary css-18gm3am-MuiButtonBase-root-MuiButton-root"[39m
+                [33mtabindex[39m=[32m"0"[39m
+                [33mtype[39m=[32m"submit"[39m
+              [36m>[39m
+                [0mインポート[0m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mclass[39m=[32m"MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo css-h3xgk8-MuiButtonBase-root-MuiButton-root"[39m
+                [33mtabindex[39m=[32m"0"[39m
+                [33mtype[39m=[32m"button"[39m
+              [36m>[39m
+                [0mキャンセル[0m
+              [36m</button>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+    [36m<div[39m
+      [33mdata-testid[39m=[32m"sentinelEnd"[39m
+      [33mtabindex[39m=[32m"0"[39m
+    [36m/>[39m
+  [36m</div>[39m
+[36m</body>[39m
+
+Ignored nodes: comments, script, style
+[36m<body[39m
+  [33mstyle[39m=[32m"padding-right: 1024px; overflow: hidden;"[39m
+[36m>[39m
+  [36m<div[39m
+    [33maria-hidden[39m=[32m"true"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"notistack-SnackbarContainer go1453831412 go4027089540 go1141946668"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"go1475592160 go1671063245"[39m
+        [33mstyle[39m=[32m"pointer-events: all; overflow: visible; min-height: 0px; transition: height 300ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"notistack-CollapseWrapper"[39m
+          [33mstyle[39m=[32m"display: flex; width: 100%;"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"notistack-Snackbar go3963613292"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33maria-describedby[39m=[32m"notistack-snackbar"[39m
+              [33mclass[39m=[32m"go1888806478 notistack-MuiContent notistack-MuiContent-error go167266335 go3651055292 go3162094071"[39m
+              [33mrole[39m=[32m"alert"[39m
+              [33mstyle[39m=[32m"-webkit-transform: translateX(-NaNpx); transform: translateX(-NaNpx); visibility: hidden;"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"go946087465"[39m
+                [33mid[39m=[32m"notistack-snackbar"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33mfocusable[39m=[32m"false"[39m
+                  [33mstyle[39m=[32m"font-size: 20px; margin-inline-end: 8px; user-select: none; width: 1em; height: 1em; display: inline-block; fill: currentColor; flex-shrink: 0;"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M12,2C17.53,2 22,6.47 22,12C22,17.53 17.53,22 12,22C6.47,22 2,17.53 2,12C2,
+        6.47 6.47,2 12,2M15.59,7L12,10.59L8.41,7L7,8.41L10.59,12L7,15.59L8.41,17L12,
+        13.41L15.59,17L17,15.59L13.41,12L17,8.41L15.59,7Z"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+                [0munknown model: Foo[0m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"MuiModal-root css-17c7dpr-MuiModal-root"[39m
+    [33mrole[39m=[32m"presentation"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33maria-hidden[39m=[32m"true"[39m
+      [33mclass[39m=[32m"MuiBackdrop-root MuiModal-backdrop css-4nmryk-MuiBackdrop-root-MuiModal-backdrop"[39m
+      [33mstyle[39m=[32m"opacity: 1; transition: opacity 225ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;"[39m
+    [36m/>[39m
+    [36m<div[39m
+      [33mdata-testid[39m=[32m"sentinelStart"[39m
+      [33mtabindex[39m=[32m"0"[39m
+    [36m/>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"MuiBox-root css-1lq9fou"[39m
+      [33mid[39m=[32m"modal"[39m
+      [33mtabindex[39m=[32m"-1"[39m
+    [36m>[39m
+      [36m<h6[39m
+        [33mclass[39m=[32m"MuiTypography-root MuiTypography-h6 css-omruic-MuiTypography-root"[39m
+      [36m>[39m
+        [0mデータのインポート[0m
+      [36m</h6>[39m
+      [36m<p[39m
+        [33mclass[39m=[32m"MuiTypography-root MuiTypography-body2 css-1bcbce4-MuiTypography-root"[39m
+      [36m>[39m
+        [0mインポートするファイルを選択してください。[0m
+      [36m</p>[39m
+      [36m<span[39m
+        [33mclass[39m=[32m"MuiTypography-root MuiTypography-caption css-1ji8k07-MuiTypography-root"[39m
+      [36m>[39m
+        [0m※モデル・アイテム・ユーザ他、いずれのインポートファイルも受け付けます。CSV形式のファイルは選択できません。[0m
+      [36m</span>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"MuiBox-root css-9nporz"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"MuiBox-root css-70qvj9"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"MuiButtonBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium PrivateSwitchBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium css-imrjgg-MuiButtonBase-root-MuiCheckbox-root"[39m
+          [36m>[39m
+            [36m<input[39m
+              [33mclass[39m=[32m"PrivateSwitchBase-input css-j8yymo"[39m
+              [33mdata-indeterminate[39m=[32m"false"[39m
+              [33mdata-testid[39m=[32m"force-import"[39m
+              [33mtype[39m=[32m"checkbox"[39m
+            [36m/>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-1umw9bq-MuiSvgIcon-root"[39m
+              [33mdata-testid[39m=[32m"CheckBoxOutlineBlankIcon"[39m
+              [33mfocusable[39m=[32m"false"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+          [36m</span>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"MuiTypography-root MuiTypography-body2 css-7ctihp-MuiTypography-root"[39m
+          [36m>[39m
+            [0m強制的にインポートする(短期間にインポートを繰り返したい場合に使用してください)[0m
+          [36m</p>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"MuiBox-root css-1xlzx9v"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"MuiBox-root css-j7qwjs"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"MuiInputBase-root MuiInput-root MuiInput-underline MuiInputBase-colorPrimary css-1cmet5c-MuiInputBase-root-MuiInput-root"[39m
+              [33mdata-testid[39m=[32m"upload-import-file"[39m
+            [36m>[39m
+              [36m<input[39m
+                [33mclass[39m=[32m"MuiInputBase-input MuiInput-input css-1yrc8ca-MuiInputBase-input-MuiInput-input"[39m
+                [33mtype[39m=[32m"file"[39m
+              [36m/>[39m
+            [36m</div>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"MuiTypography-root MuiTypography-caption css-1hldsye-MuiTypography-root"[39m
+            [36m>[39m
+              [0munknown model: Foo[0m
+            [36m</span>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"MuiBox-root css-1bvc4cc"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mclass[39m=[32m"MuiButtonBase-root MuiButton-root MuiButton-outlined MuiButton-outlinedSecondary MuiButton-sizeMedium MuiButton-outlinedSizeMedium MuiButton-colorSecondary MuiButton-root MuiButton-outlined MuiButton-outlinedSecondary MuiButton-sizeMedium MuiButton-outlinedSizeMedium MuiButton-colorSecondary css-1v28anf-MuiButtonBase-root-MuiButton-root"[39m
+                [33mdata-testid[39m=[32m"preview-import-file"[39m
+                [33mtabindex[39m=[32m"0"[39m
+                [33mtype[39m=[32m"button"[39m
+              [36m>[39m
+                [0m変更内容を確認[0m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mclass[39m=[32m"MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedSecondary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorSecondary MuiButton-root MuiButton-contained MuiButton-containedSecondary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorSecondary css-18gm3am-MuiButtonBase-root-MuiButton-root"[39m
+                [33mtabindex[39m=[32m"0"[39m
+                [33mtype[39m=[32m"submit"[39m
+              [36m>[39m
+                [0mインポート[0m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mclass[39m=[32m"MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo MuiButton-root MuiButton-contained MuiButton-containedInfo MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorInfo css-h3xgk8-MuiButtonBase-root-MuiButton-root"[39m
+                [33mtabindex[39m=[32m"0"[39m
+                [33mtype[39m=[32m"button"[39m
+              [36m>[39m
+                [0mキャンセル[0m
+              [36m</button>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+    [36m<div[39m
+      [33mdata-testid[39m=[32m"sentinelEnd"[39m
+      [33mtabindex[39m=[32m"0"[39m
+    [36m/>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ waitForWrapper node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ frontend/src/components/common/CommonImportModal.test.tsx:100:25
+     98|     fireEvent.click(screen.getByRole("button", { name: "変更内容を確認" }));
+     99|
+    100|     expect(await screen.findByText("unknown model: Foo")).toBeInTheDoc…
+       |                         ^
+    101|     expect(aironeApiClient.startCommonImportPreview).toHaveBeenCalledT…
+    102|     expect(aironeApiClient.importCommon).not.toHaveBeenCalled();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+  Snapshots  1 obsolete
+             ↳ frontend/src/pages/CategoryEditPage.test.tsx
+               · renders in English 1
+
+ Test Files  1 failed | 160 passed (161)
+      Tests  1 failed | 1115 passed | 2 skipped (1118)
+   Start at  06:07:31
+   Duration  222.45s (import 41%, tests 28%, environment 19%, setup 7%, transform 5%)
+
+     Import  646 modules were evaluated 22698 times · 909.98s total, 41% of tracked time
+             ~66.46s faster with isolate: false — shared modules are evaluated once per worker instead of once per file
+             learn more: https://vitest.dev/guide/improving-performance#test-isolation
+
