@@ -1,0 +1,16 @@
+
+> @dmm-com/pagoda-core@4.1.1 build
+> npm run build:development
+
+
+> @dmm-com/pagoda-core@4.1.1 build:development
+> webpack build --entry ./frontend/src/App.tsx --mode development
+
+asset ui.js 9.63 MiB [emitted] (name: main)
+orphan modules 784 KiB [orphan] 521 modules
+runtime modules 1.25 KiB 6 modules
+javascript modules 6.1 MiB
+  modules by path ./node_modules/ 4.72 MiB 882 modules
+  modules by path ./frontend/src/ 1.38 MiB 405 modules
+./node_modules/encoding-japanese/package.json 1.45 KiB [built] [code generated]
+webpack 5.105.0 compiled successfully in 12231 ms

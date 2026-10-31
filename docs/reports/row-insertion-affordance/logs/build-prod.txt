@@ -1,0 +1,36 @@
+
+> @dmm-com/pagoda-core@4.1.1 build:production
+> webpack build --entry ./frontend/src/App.tsx --mode production
+
+asset ui.js 1.91 MiB [emitted] [minimized] [big] (name: main) 1 related asset
+orphan modules 3.42 MiB [orphan] 1391 modules
+runtime modules 2.28 KiB 6 modules
+cacheable modules 5.42 MiB
+  modules by path ./node_modules/ 3.65 MiB 293 modules
+  modules by path ./frontend/src/ 1.77 MiB
+    modules by path ./frontend/src/components/ 321 KiB 47 modules
+    modules by path ./frontend/src/pages/*.tsx 542 KiB 33 modules
+    modules by path ./frontend/src/services/ 45.9 KiB 15 modules
+    modules by path ./frontend/src/hooks/ 14 KiB 12 modules
+    modules by path ./frontend/src/*.tsx 52.5 KiB 4 modules
+    modules by path ./frontend/src/routes/ 97.1 KiB 3 modules
+    modules by path ./frontend/src/repository/*.ts 37.8 KiB
+      ./frontend/src/repository/AironeApiClient.ts 37.3 KiB [built] [code generated]
+      + 2 modules
+    + 5 modules
+
+WARNING in asset size limit: The following asset(s) exceed the recommended size limit (244 KiB).
+This can impact web performance.
+Assets: 
+  ui.js (1.91 MiB)
+
+WARNING in entrypoint size limit: The following entrypoint(s) combined asset size exceeds the recommended limit (244 KiB). This can impact web performance.
+Entrypoints:
+  main (1.91 MiB)
+      ui.js
+
+WARNING in webpack performance recommendations: 
+You can limit the size of your bundles by using import() or require.ensure to lazy load some parts of your application.
+For more info visit https://webpack.js.org/guides/code-splitting/
+
+webpack 5.105.0 compiled with 3 warnings in 18680 ms
