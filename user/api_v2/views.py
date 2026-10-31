@@ -703,6 +703,17 @@ class UserAuthAPI(generics.UpdateAPIView[User]):
         )
 
     def patch(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        target: User = self.get_object()
+
+        # Switching the authentication type of another account hands that account
+        # over whenever the caller knows an LDAP password bound to the same
+        # username, so it is limited to the owner or a superuser.
+        if target.id != request.user.id and not request.user.is_superuser:
+            return Response(
+                "You don't have permission to change the authentication type of this user",
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         serializer: BaseSerializer[Any] = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()

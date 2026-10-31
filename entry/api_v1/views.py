@@ -349,6 +349,17 @@ def create_entry_attr(
             "There is no EntityAttr which is specified by entity_attr_id", status=400
         )
 
+    # Creating an attribute mutates the Entry, so it requires write permission on
+    # it. The schema also has to belong to the Entry's Entity; otherwise a foreign
+    # attribute structure could be planted on somebody else's Entry.
+    if not user.has_permission(entry, ACLType.Writable):
+        return HttpResponse("You don't have permission to access this object", status=400)
+
+    if entity_attr.parent_entity_id != entry.schema_id:
+        return HttpResponse(
+            "Specified EntityAttr is not belonging to the Entry's Entity", status=400
+        )
+
     attr = entry.attrs.filter(schema=entity_attr, is_active=True).first()
     if not attr:
         attr = entry.add_attribute_from_base(entity_attr, user)

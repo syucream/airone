@@ -155,6 +155,30 @@ class UserUpdateSerializer(UserBaseSerializer):
         model = User
         fields = ["username", "email", "is_superuser", "token_lifetime"]
 
+    def _is_superuser_request(self) -> bool:
+        request = self.context.get("request")
+        return bool(request and request.user.is_superuser)
+
+    def validate_is_superuser(self, is_superuser: bool) -> bool:
+        # Granting the superuser privilege is an administrative operation, so a
+        # user must not be able to grant it to themselves (or to anybody else).
+        if is_superuser and not self._is_superuser_request():
+            raise PermissionDenied("Only superusers are allowed to grant the superuser privilege")
+
+        return is_superuser
+
+    def validate_username(self, username: str) -> str:
+        # Renaming an account is administrative: it could impersonate another
+        # user in logs, histories and webhook payloads.
+        if (
+            self.instance
+            and self.instance.username != username
+            and not self._is_superuser_request()
+        ):
+            raise PermissionDenied("Only superusers are allowed to rename an account")
+
+        return username
+
 
 class UserRetrieveSerializer(UserBaseSerializer):
     @extend_schema_field(

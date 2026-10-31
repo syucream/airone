@@ -111,6 +111,11 @@ class JobAPI(APIView):
                 "Failed to find Job(id=%s)" % job_id, status=status.HTTP_400_BAD_REQUEST
             )
 
+        # Do not let a user cancel somebody else's job; that aborts (and can
+        # roll back) work the caller has no permission on.
+        if job.user != request.user and not request.user.is_superuser:
+            return Response("Cannot cancel another user's job", status=status.HTTP_403_FORBIDDEN)
+
         if job.status == JobStatus.DONE:
             return Response("Target job has already been done")
 

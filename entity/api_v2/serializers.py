@@ -748,6 +748,21 @@ class IsolationParentCreateUpdateSerializer(serializers.Serializer[dict[str, Any
     conditions = IsolationConditionCreateUpdateSerializer(many=True, default=[])
     action = IsolationActionCreateUpdateSerializer(default={})
 
+    def validate_id(self, id: int | None) -> int | None:
+        # An isolation rule id has to belong to the Entity being edited. Without
+        # this check the update path could clear and rewrite the rules of another
+        # Entity, since it resolves the id with get_or_create(id=...).
+        parent = get_bound_parent(self)
+        grandparent = get_bound_parent(parent) if parent is not None else None
+        entity = getattr(grandparent, "instance", None)
+
+        if id is not None and (
+            not isinstance(entity, Entity) or not entity.isolation_rules.filter(id=id).exists()
+        ):
+            raise ObjectNotExistsError("Invalid id(%s) object does not exist" % id)
+
+        return id
+
 
 class EntityCreateData(TypedDict, total=False):
     name: str
