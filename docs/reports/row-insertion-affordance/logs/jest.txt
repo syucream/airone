@@ -1,0 +1,218 @@
+
+> @dmm-com/pagoda-core@1.1.0 test
+> TZ=UTC vitest run --coverage
+
+
+ RUN  v5.0.0 /Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit
+      Coverage enabled with v8
+
+Error: Not implemented: navigation (except hash changes)
+    at module.exports (/Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at navigateFetch (/Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit/node_modules/jsdom/lib/jsdom/living/window/navigation.js:77:3)
+    at exports.navigate (/Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit/node_modules/jsdom/lib/jsdom/living/window/navigation.js:55:3)
+    at LocationImpl.reload (/Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit/node_modules/jsdom/lib/jsdom/living/window/Location-impl.js:225:5)
+    at Location.reload (/Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit/node_modules/jsdom/lib/jsdom/living/generated/Location.js:102:36)
+    at onImport (/Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit/frontend/src/components/common/ImportForm.tsx:214:23) undefined
+Error: Not implemented: navigation (except hash changes)
+    at module.exports (/Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at navigateFetch (/Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit/node_modules/jsdom/lib/jsdom/living/window/navigation.js:77:3)
+    at exports.navigate (/Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit/node_modules/jsdom/lib/jsdom/living/window/navigation.js:55:3)
+    at LocationImpl.reload (/Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit/node_modules/jsdom/lib/jsdom/living/window/Location-impl.js:225:5)
+    at Location.reload (/Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit/node_modules/jsdom/lib/jsdom/living/generated/Location.js:102:36)
+    at onImport (/Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit/frontend/src/components/common/ImportForm.tsx:214:23) undefined
+
+ Test Files  164 passed (164)
+      Tests  1086 passed | 2 skipped (1088)
+   Start at  10:08:27
+   Duration  106.55s (import 40%, tests 26%, environment 19%, setup 7%, transform 7%, worker 1%)
+
+     Import  640 modules were evaluated 22002 times · 391.52s total, 40% of tracked time
+             ~28.82s faster with isolate: false — shared modules are evaluated once per worker instead of once per file
+             learn more: https://vitest.dev/guide/improving-performance#test-isolation
+
+[34m % [39m[2mCoverage report from [22m[33mv8[39m
+-------------------|---------|----------|---------|---------|-------------------
+File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+-------------------|---------|----------|---------|---------|-------------------
+All files          |   71.21 |    61.09 |   61.35 |   71.64 |                   
+ src               |   17.54 |        0 |       0 |   18.86 |                   
+  ...rProvider.tsx |      50 |      100 |       0 |      50 | 11                
+  App.tsx          |       0 |        0 |     100 |       0 | 9-14              
+  AppBase.tsx      |   16.66 |        0 |       0 |      20 | 27-35             
+  ErrorHandler.tsx |   16.27 |        0 |       0 |    17.5 | ...15,120-146,150 
+ ...components/acl |   93.33 |     37.5 |   94.11 |      92 |                   
+  ACLForm.tsx      |      95 |      100 |   91.66 |   93.75 | 90                
+  ...storyList.tsx |      90 |       25 |     100 |   88.88 | 87                
+ ...nents/category |   72.22 |    67.85 |    62.5 |   71.15 |                   
+  ...ntrolMenu.tsx |   46.66 |    81.81 |   28.57 |   46.66 | 45-57,66,98       
+  CategoryForm.tsx |   88.88 |      100 |   85.71 |    87.5 | 137-140           
+  CategoryList.tsx |      80 |       30 |    62.5 |      80 | 28,52,85          
+  ...istHeader.tsx |   66.66 |      100 |   33.33 |   66.66 | 42-50             
+ ...ponents/common |   85.68 |    72.95 |    85.1 |   86.01 |                   
+  ...lSelector.tsx |   91.11 |    78.26 |     100 |   92.68 | 44,102,150        
+  ...ngePicker.tsx |   93.54 |    89.79 |     100 |     100 | 47-48,70,77-85    
+  ...tusNotice.tsx |     100 |    91.17 |     100 |     100 | 55,70,80          
+  CheckTerms.tsx   |   16.66 |        0 |       0 |   16.66 | 7,11-21           
+  ...opyButton.tsx |   77.77 |      100 |      50 |    87.5 | 17                
+  Confirmable.tsx  |   77.77 |       25 |      75 |    87.5 | 31-32             
+  ...rPageBase.tsx |   83.33 |      100 |   66.66 |   83.33 | 18                
+  Header.tsx       |   82.05 |       50 |   72.72 |   78.46 | ...45,272,426-487 
+  ImportForm.tsx   |   73.33 |    63.15 |   83.33 |   73.86 | ...38,163,189,216 
+  ImportPreview.ts |      50 |    36.36 |   66.66 |      50 | 70-74,81-89       
+  ...iewResult.tsx |    90.9 |       65 |      80 |    90.9 | 90,160            
+  PageHeader.tsx   |     100 |       25 |     100 |     100 | 69                
+  RowInsertion.tsx |     100 |       95 |     100 |     100 | 50                
+ ...ponents/entity |   89.62 |    88.63 |   79.41 |      89 |                   
+  ...ntrolMenu.tsx |      84 |       95 |    62.5 |      84 | 74-78,111-168     
+  EntityForm.tsx   |     100 |    66.66 |     100 |     100 | 43-54             
+  ...storyList.tsx |   92.85 |    90.69 |     100 |   92.85 | 32,45,191         
+  ...portModal.tsx |   71.42 |      100 |   33.33 |   71.42 | 21,25             
+  EntityList.tsx   |     100 |       75 |     100 |     100 | 49-76             
+  ...yListCard.tsx |   88.88 |      100 |   77.77 |   84.61 | 95-109            
+ ...ity/entityForm |   78.03 |    53.96 |   68.61 |   78.59 |                   
+  ...nfigModal.tsx |   16.66 |        0 |       0 |   16.66 | 31-99             
+  ...buteField.tsx |   58.57 |    51.72 |   37.14 |    60.6 | ...78-497,543,571 
+  ...tesFields.tsx |   80.85 |    57.14 |   84.61 |   79.54 | 222-235           
+  BasicFields.tsx  |      64 |    42.85 |   55.55 |   65.21 | 49-52,221-231,243 
+  ...cesEditor.tsx |     100 |    81.81 |     100 |     100 | 39-45             
+  ...alueField.tsx |      90 |    80.95 |     100 |   89.79 | 43,62-63,80,98    
+  ...FormSchema.ts |   83.33 |    68.75 |    90.9 |    86.2 | 29,171,184-185    
+  ...lesFields.tsx |   87.35 |    85.71 |   77.27 |   88.46 | ...21,391-399,422 
+  ...ookFields.tsx |   84.37 |    44.44 |   83.33 |   85.71 | 71,114-116,169    
+  ...dersModal.tsx |    87.5 |      100 |   76.92 |   86.95 | 99-108,172        
+  ...FormValues.ts |      25 |    13.63 |   14.28 |   14.28 | 15-50             
+ ...mponents/entry |   70.59 |    58.64 |   56.83 |   71.38 |                   
+  ...EditModal.tsx |   34.09 |    33.33 |   16.66 |   38.46 | 70,78-88,94-161   
+  ...JoinModal.tsx |   91.66 |       75 |      80 |    91.3 | 47,105            
+  ...archModal.tsx |   63.63 |    33.33 |   54.54 |   66.66 | 52-79,86          
+  ...tatsModal.tsx |   96.05 |       75 |     100 |     100 | ...62-179,215-221 
+  ...buteValue.tsx |   92.06 |    62.16 |   90.47 |   91.66 | 158,312-332       
+  ...ttributes.tsx |      90 |    76.92 |   81.81 |     100 | 36-39,110         
+  ...ntrolMenu.tsx |   86.95 |    78.78 |      75 |    90.9 | 91,105            
+  ...storyList.tsx |   66.66 |    33.33 |   77.77 |      65 | 86-94,167         
+  ...portModal.tsx |   45.45 |        0 |      25 |   45.45 | 25-32,51-62       
+  EntryList.tsx    |   83.33 |     37.5 |   66.66 |   83.33 | 46,74             
+  ...yListCard.tsx |   83.33 |      100 |   66.66 |   77.77 | 68-77             
+  ...yReferral.tsx |      80 |    33.33 |   77.77 |   77.77 | 76-93             
+  ...storyList.tsx |   66.66 |     62.5 |   77.77 |    62.5 | 77-85,100-102,167 
+  ...irmDialog.tsx |   77.77 |      100 |      60 |   77.77 | 37-43             
+  ...EntryList.tsx |   57.69 |    16.66 |   34.61 |   60.46 | ...40-241,261-289 
+  ...ntrolMenu.tsx |   38.33 |    27.35 |   15.62 |   39.65 | ...90-547,649-659 
+  ...uForEntry.tsx |   38.46 |       20 |   16.66 |   38.46 | 43-44,51-106      
+  ...rReferral.tsx |   30.76 |    38.88 |   21.73 |      32 | ...17-179,195-204 
+  ...chResults.tsx |   83.67 |    82.69 |   80.95 |   86.66 | ...62,167-170,323 
+  ...TableHead.tsx |   62.63 |    62.85 |      35 |    61.9 | ...43-454,483-552 
+  ...RowHeights.ts |   94.73 |    83.33 |     100 |     100 | 14-29             
+ ...ntry/entryForm |   90.86 |       75 |    93.9 |   90.73 |                   
+  ...alueField.tsx |   81.81 |       68 |     100 |   81.81 | 79,209-231        
+  ...alueField.tsx |     100 |    66.66 |     100 |     100 | 32                
+  ...alueField.tsx |     100 |       60 |     100 |     100 | 53-56             
+  ...alueField.tsx |     100 |    71.42 |     100 |     100 | 53-57             
+  ...FormSchema.ts |   74.44 |    53.93 |      72 |   74.15 | ...52-361,395-411 
+  ...alueField.tsx |   93.75 |    76.59 |   93.33 |   92.85 | 56-57             
+  ...alueField.tsx |     100 |       80 |     100 |     100 | 37                
+  ...alueField.tsx |   91.93 |       80 |      96 |   90.74 | ...71,175,234,305 
+  ...ocomplete.tsx |   95.87 |     87.5 |     100 |   97.77 | 87,144            
+  ...alueField.tsx |   93.75 |    80.48 |   93.33 |   96.29 | 56                
+  ...alueField.tsx |     100 |    85.71 |     100 |     100 | 67,116            
+  ...alueField.tsx |   95.65 |    92.85 |     100 |   95.23 | 112               
+ ...mponents/group |   72.22 |    82.35 |   65.51 |   73.07 |                   
+  ...ntrolMenu.tsx |      50 |        0 |   66.66 |      50 | 35-43             
+  GroupForm.tsx    |   72.72 |       90 |      60 |   76.19 | ...16,122-124,157 
+  ...portModal.tsx |      80 |      100 |      50 |      80 | 20                
+  ...pTreeItem.tsx |     100 |     90.9 |     100 |     100 | 30                
+  ...pTreeRoot.tsx |      75 |    81.81 |      60 |   71.42 | 56-70             
+ ...components/job |   86.27 |    88.46 |   68.42 |   86.04 |                   
+  JobList.tsx      |   86.27 |    88.46 |   68.42 |   86.04 | ...52-158,301-324 
+ ...omponents/role |   49.15 |    45.45 |   34.61 |   50.45 |                   
+  RoleForm.tsx     |   36.25 |    38.29 |   26.22 |   38.15 | ...92-499,509-550 
+  ...portModal.tsx |      70 |       50 |   66.66 |      70 | 24-25,32          
+  RoleList.tsx     |   78.57 |      100 |   64.28 |      80 | 63,98-132         
+ ...onents/trigger |   81.88 |    89.47 |    72.3 |   80.17 |                   
+  Action.tsx       |   83.07 |    91.66 |   72.72 |   81.03 | ...49-354,380,441 
+  Actions.tsx      |      70 |      100 |      50 |      70 | 31-47,71          
+  Condition.tsx    |   85.36 |    85.71 |   79.16 |   83.78 | ...54,203,250-267 
+  Conditions.tsx   |      70 |      100 |      50 |      70 | 31-43,69          
+ ...omponents/user |   70.42 |    75.23 |   60.75 |   68.68 |                   
+  ...AuthModal.tsx |   93.75 |      100 |      80 |   92.85 | 68                
+  ...firmModal.tsx |      50 |      100 |      25 |      50 | 30-42,59-65       
+  ...esetModal.tsx |      50 |      100 |   33.33 |      50 | 22-29,45          
+  ...ntrolMenu.tsx |    37.5 |    71.42 |   33.33 |    37.5 | 40-51,61-77,96    
+  UserForm.tsx     |   80.51 |    83.33 |   71.87 |   80.28 | ...64-278,495-511 
+  ...portModal.tsx |      80 |      100 |      50 |      80 | 20                
+  UserList.tsx     |    75.6 |    80.95 |   58.82 |   73.68 | ...00-101,153-195 
+  ...FormModal.tsx |   59.37 |    41.17 |      60 |   53.57 | 59-82,107-141     
+ src/hooks         |   81.04 |    74.71 |   73.95 |   82.97 |                   
+  ...firmation.tsx |   92.15 |    87.17 |   92.85 |   97.82 | 97                
+  useError.ts      |       0 |      100 |       0 |       0 | 4-7               
+  useHoverMenus.ts |   60.97 |    15.38 |      70 |      60 | 15-17,33-47,69-79 
+  useInterval.ts   |       0 |        0 |       0 |       0 | 4-11              
+  ...ification.tsx |   91.17 |    93.93 |   68.75 |   90.47 | ...06,124,143,161 
+  usePage.tsx      |     100 |       90 |     100 |     100 | 25                
+  usePagodaSWR.ts  |     100 |       90 |     100 |     100 | 12                
+  ...inMappings.ts |    9.09 |        0 |       0 |      10 | 22-36             
+  usePrompt.tsx    |    62.5 |    33.33 |     100 |    62.5 | 12-15             
+  ...pleSearch.tsx |   83.33 |    83.33 |      80 |   83.33 | 45-47             
+  ...pedParams.tsx |   81.81 |       75 |     100 |      80 | 19,24             
+ src/i18n          |     100 |       75 |     100 |     100 |                   
+  config.ts        |     100 |       75 |     100 |     100 | 29                
+ src/pages         |   56.25 |    43.21 |   44.41 |   56.91 |                   
+  ACLEditPage.tsx  |   52.72 |    29.54 |   57.14 |    53.7 | ...76-189,197,204 
+  ...storyPage.tsx |   71.05 |     37.5 |   66.66 |   70.27 | ...90-111,124-134 
+  ...earchPage.tsx |   94.87 |      100 |   88.23 |   94.73 | 170,203           
+  ...sultsPage.tsx |   58.59 |       40 |   48.88 |   61.34 | ...06-441,492-567 
+  ...yListPage.tsx |      50 |        0 |   28.57 |      50 | ...21,142-162,200 
+  ...yEditPage.tsx |   59.37 |    42.85 |      50 |   59.37 | 79-102,110        
+  ...boardPage.tsx |   70.83 |    51.72 |   28.57 |   77.27 | 55,71,84-114      
+  ...rencePage.tsx |       0 |        0 |       0 |       0 | 34-429            
+  ...yEditPage.tsx |   35.38 |     40.9 |      20 |    37.7 | ...90-237,253-256 
+  ...storyPage.tsx |      85 |      100 |   66.66 |      85 | 54-79             
+  ...yListPage.tsx |      80 |      100 |   57.14 |      80 | 38,63,75          
+  ...yCopyPage.tsx |      95 |    73.33 |   91.66 |      95 | 84,94             
+  ...tailsPage.tsx |   83.33 |       55 |      75 |   80.55 | ...19,125,173-203 
+  ...yEditPage.tsx |   66.66 |    80.68 |   66.66 |   66.66 | ...89,205,211,246 
+  ...yListPage.tsx |   90.47 |       50 |   77.77 |   90.47 | 93-103            
+  ...yListPage.tsx |   78.57 |      100 |      50 |   78.57 | 56-82             
+  ...storePage.tsx |   76.92 |      100 |      50 |   76.92 | 41-55             
+  ...pEditPage.tsx |   55.88 |       75 |   33.33 |   55.88 | 63-91,110,114     
+  ...pListPage.tsx |    64.7 |     62.5 |   31.25 |   65.62 | ...08-130,160-172 
+  ...pletePage.tsx |       0 |      100 |       0 |       0 | 3-4               
+  IframePage.tsx   |       0 |      100 |       0 |       0 | 1                 
+  JobListPage.tsx  |   88.88 |       50 |   66.66 |   88.88 | 47,95             
+  ...EntryPage.tsx |   47.82 |        0 |    23.8 |   47.82 | ...06-122,143-199 
+  LoginPage.tsx    |   60.37 |    55.26 |   46.15 |   60.37 | ...20,150,190-221 
+  NetworkPage.tsx  |       0 |        0 |       0 |       0 | 24-115            
+  ...Agreement.tsx |   57.14 |      100 |   33.33 |   57.14 | 12-13,40          
+  ...ErrorPage.tsx |      80 |      100 |      50 |      80 | 10                
+  RoleEditPage.tsx |      50 |       40 |   30.76 |      50 | ...91-121,129,133 
+  RoleListPage.tsx |      70 |    83.33 |      25 |      70 | 40-52             
+  ...ErrorPage.tsx |      20 |        0 |       0 |      20 | 38-78             
+  ...rEditPage.tsx |    46.8 |    35.48 |   45.45 |   48.23 | ...71,302,357-362 
+  ...rListPage.tsx |    50.9 |     8.69 |      45 |   47.91 | ...35,292-303,324 
+  UserEditPage.tsx |   61.29 |    68.57 |   46.66 |   61.29 | ...88,225-232,250 
+  UserListPage.tsx |      70 |       50 |      25 |      70 | 36-48             
+ src/repository    |   40.24 |    48.68 |   32.67 |   39.75 |                   
+  ...eApiClient.ts |   38.75 |    48.68 |   31.31 |   38.21 | ...1464,1473-1485 
+ src/routes        |   50.45 |        6 |   34.86 |   54.65 |                   
+  AppRouter.tsx    |      33 |        0 |       0 |   47.82 | ...79,184,204-343 
+  ...wareRoute.tsx |    2.32 |        0 |       0 |    2.32 | 36-148            
+  Routes.ts        |   98.73 |       75 |   97.43 |     100 | 38                
+ src/services      |   92.24 |    91.33 |   92.59 |   92.43 |                   
+  ...IErrorUtil.ts |   79.71 |    86.53 |    91.3 |    80.3 | ...44-146,150,185 
+  Exceptions.ts    |   83.33 |      100 |      75 |   83.33 | 31-32             
+  ...PreviewJob.ts |   94.44 |    88.88 |   85.71 |   93.75 | 93-96             
+  JobUtil.ts       |     100 |    95.65 |     100 |     100 | 54,99             
+  StringUtil.ts    |   83.33 |      100 |      75 |   83.33 | 8                 
+ ...services/entry |   79.19 |    70.39 |   84.09 |   79.75 |                   
+  ...ncedSearch.ts |   80.28 |    72.72 |   72.22 |   83.58 | ...85-186,229-234 
+  Edit.ts          |   78.43 |    69.62 |    92.3 |   77.08 | ...46,340-349,363 
+ src/utils         |      75 |    66.66 |      50 |   66.66 |                   
+  styleUtils.ts    |      75 |    66.66 |      50 |   66.66 | 16                
+-------------------|---------|----------|---------|---------|-------------------
+
+=============================== Coverage summary ===============================
+Statements   : 71.21% ( 3817/5360 )
+Branches     : 61.09% ( 2173/3557 )
+Functions    : 61.35% ( 1281/2088 )
+Lines        : 71.64% ( 3557/4965 )
+================================================================================

@@ -1,0 +1,99 @@
+
+/Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit/frontend/src/components/common/AutocompleteWithAllSelector.tsx
+  76:9  warning  Avoid passing data to parents in an effect. Instead, let the parent fetch the data itself and pass it down to the child as a prop  react-you-might-not-need-an-effect/no-pass-data-to-parent
+  84:6  warning  React Hook useEffect has missing dependencies: 'onChange' and 'options'. Either include them or remove the dependency array        react-hooks/exhaustive-deps
+
+/Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit/frontend/src/components/entity/entityForm/ChoicesEditor.test.tsx
+  32:25  warning  Compilation Skipped: Use of incompatible library
+
+This API returns functions which cannot be memoized without leading to stale UI. To prevent this, by default React Compiler will skip memoizing this component/hook. However, you may see issues if values from this API are passed to other components/hooks that are memoized.
+
+/Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit/frontend/src/components/entity/entityForm/ChoicesEditor.test.tsx:32:25
+  30 |       <ChoicesEditor control={form.control} index={0} disabled={disabled} />
+  31 |       <output data-testid="choices">
+> 32 |         {JSON.stringify(form.watch("attrs.0.choices"))}
+     |                         ^^^^ React Hook Form's `useForm()` API returns a `watch()` function which cannot be memoized safely.
+  33 |       </output>
+  34 |     </>
+  35 |   );  react-hooks/incompatible-library
+
+/Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit/frontend/src/components/entity/entityForm/IsolationRulesFields.test.tsx
+  149:25  warning  Compilation Skipped: Use of incompatible library
+
+This API returns functions which cannot be memoized without leading to stale UI. To prevent this, by default React Compiler will skip memoizing this component/hook. However, you may see issues if values from this API are passed to other components/hooks that are memoized.
+
+/Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit/frontend/src/components/entity/entityForm/IsolationRulesFields.test.tsx:149:25
+  147 |       />
+  148 |       <output data-testid="rules">
+> 149 |         {JSON.stringify(form.watch("isolationRules"))}
+      |                         ^^^^ React Hook Form's `useForm()` API returns a `watch()` function which cannot be memoized safely.
+  150 |       </output>
+  151 |     </>
+  152 |   );  react-hooks/incompatible-library
+
+/Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit/frontend/src/components/entity/entityForm/WebhookHeadersModal.tsx
+  66:7  warning  Avoid passing data to parents in an effect. Instead, let the parent fetch the data itself and pass it down to the child as a prop  react-you-might-not-need-an-effect/no-pass-data-to-parent
+
+/Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit/frontend/src/components/entry/EntryForm.test.tsx
+  253:25  warning  Compilation Skipped: Use of incompatible library
+
+This API returns functions which cannot be memoized without leading to stale UI. To prevent this, by default React Compiler will skip memoizing this component/hook. However, you may see issues if values from this API are passed to other components/hooks that are memoized.
+
+/Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit/frontend/src/components/entry/EntryForm.test.tsx:253:25
+  251 |
+  252 |       // Test helper to verify form state
+> 253 |       const nameValue = watch("name");
+      |                         ^^^^^ React Hook Form's `useForm()` API returns a `watch()` function which cannot be memoized safely.
+  254 |       useEffect(() => {
+  255 |         if (nameValue === "updated entry name") {
+  256 |           // Mark successful update for test verification  react-hooks/incompatible-library
+
+/Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit/frontend/src/components/entry/entryForm/ReferralsAutocomplete.tsx
+   67:7  warning  Avoid passing data to parents in an effect. Instead, let the parent fetch the data itself and pass it down to the child as a prop                                                                                                                                react-you-might-not-need-an-effect/no-pass-data-to-parent
+   67:7  warning  Avoid storing derived state. Compute "inputValue" directly during render, optionally with `useMemo` if it's expensive                                                                                                                                            react-you-might-not-need-an-effect/no-derived-state
+  123:6  warning  React Hook useCallback has a missing dependency: 'onRestrictedItemsChange'. Either include it or remove the dependency array. If 'onRestrictedItemsChange' changes too often, find the parent component that defines it and wrap that definition in useCallback  react-hooks/exhaustive-deps
+  126:5  warning  Avoid adjusting state when a prop changes. Instead, adjust the state directly during render, or refactor your state to avoid this need entirely                                                                                                                  react-you-might-not-need-an-effect/no-adjust-state-on-prop-change
+  127:5  warning  Avoid adjusting state when a prop changes. Instead, adjust the state directly during render, or refactor your state to avoid this need entirely                                                                                                                  react-you-might-not-need-an-effect/no-adjust-state-on-prop-change
+  129:6  warning  React Hook useEffect has a missing dependency: 'onRestrictedItemsChange'. Either include it or remove the dependency array. If 'onRestrictedItemsChange' changes too often, find the parent component that defines it and wrap that definition in useCallback    react-hooks/exhaustive-deps
+  149:5  warning  React Hook useCallback has a missing dependency: 'onRestrictedItemsChange'. Either include it or remove the dependency array. If 'onRestrictedItemsChange' changes too often, find the parent component that defines it and wrap that definition in useCallback  react-hooks/exhaustive-deps
+
+/Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit/frontend/src/components/entry/entryForm/SelectAttributeValueField.test.tsx
+  67:25  warning  Compilation Skipped: Use of incompatible library
+
+This API returns functions which cannot be memoized without leading to stale UI. To prevent this, by default React Compiler will skip memoizing this component/hook. However, you may see issues if values from this API are passed to other components/hooks that are memoized.
+
+/Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit/frontend/src/components/entry/entryForm/SelectAttributeValueField.test.tsx:67:25
+  65 |       )}
+  66 |       <output data-testid="value">
+> 67 |         {JSON.stringify(form.watch("attrs.1.value"))}
+     |                         ^^^^ React Hook Form's `useForm()` API returns a `watch()` function which cannot be memoized safely.
+  68 |       </output>
+  69 |     </form>
+  70 |   );  react-hooks/incompatible-library
+
+/Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit/frontend/src/hooks/useJobCompletionNotification.tsx
+  180:37  warning  Avoid passing data to parents in an effect. Instead, let the parent fetch the data itself and pass it down to the child as a prop  react-you-might-not-need-an-effect/no-pass-data-to-parent
+  182:14  warning  Avoid passing data to parents in an effect. Instead, let the parent fetch the data itself and pass it down to the child as a prop  react-you-might-not-need-an-effect/no-pass-data-to-parent
+
+/Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit/frontend/src/hooks/usePrompt.tsx
+  13:9  warning  Avoid passing data to parents in an effect. Instead, let the parent fetch the data itself and pass it down to the child as a prop  react-you-might-not-need-an-effect/no-pass-data-to-parent
+  15:9  warning  Avoid passing data to parents in an effect. Instead, let the parent fetch the data itself and pass it down to the child as a prop  react-you-might-not-need-an-effect/no-pass-data-to-parent
+
+/Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit/frontend/src/pages/ACLEditPage.tsx
+  204:7  warning  Avoid passing data to parents in an effect. Instead, let the parent fetch the data itself and pass it down to the child as a prop  react-you-might-not-need-an-effect/no-pass-data-to-parent
+
+/Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit/frontend/src/pages/AdvancedSearchResultsPage.tsx
+  195:5  warning  Avoid chaining state changes. When possible, update all relevant state simultaneously                                                                                                                                                                                               react-you-might-not-need-an-effect/no-chain-state-updates
+  250:6  warning  React Hook useEffect has missing dependencies: 'attrInfo', 'entityIds', 'hasReferral', 'hintEntry', 'joinAttrs', 'page', 'referralExcludeModelIds', 'referralIncludeModelIds', 'referralName', 'searchAllEntities', and 'sort'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit/frontend/src/pages/EntryCopyPage.tsx
+  45:9  warning  Avoid using state and effects as an event handler. Instead, call the event handling code directly when the event occurs  react-you-might-not-need-an-effect/no-event-handler
+
+/Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit/frontend/src/pages/EntryEditPage.tsx
+  126:6  warning  React Hook useEffect has missing dependencies: 'excludeAttrs', 'getValues', 'initialized', 'reset', and 'useUUID'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/syucream/repos/syucream/airone/.pi/worktrees/sleepy-soaring-summit/frontend/src/pages/TriggerEditPage.tsx
+  284:9  warning  Avoid using state and effects as an event handler. Instead, call the event handling code directly when the event occurs  react-you-might-not-need-an-effect/no-event-handler
+
+✖ 24 problems (0 errors, 24 warnings)
+

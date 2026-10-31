@@ -1,0 +1,16 @@
+
+Running 11 tests using 1 worker
+
+  ✓   1 [chromium] › e2e/rowInsertionGate.spec.ts:93:5 › @gate1 entry array attribute appends at the end and focuses the new row (3.7s)
+  ✓   2 [chromium] › e2e/rowInsertionGate.spec.ts:123:5 › @gate1 insertion band inserts exactly on the boundary it is drawn on (2.9s)
+  ✓   3 [chromium] › e2e/rowInsertionGate.spec.ts:172:5 › @gate1 isolation rules render a visible append row when empty (3.7s)
+  ✓   4 [chromium] › e2e/rowInsertionGate.spec.ts:197:5 › @gate1 whole screens keep their hierarchy (4.5s)
+  ✓   5 [chromium] › e2e/rowInsertionGate.spec.ts:227:5 › @gate2 rows no longer expose a per-row plus button (2.4s)
+  ✓   6 [chromium] › e2e/rowInsertionGate.spec.ts:253:5 › @gate2 trigger conditions insert on the boundary (2.3s)
+  ✓   7 [chromium] › e2e/rowInsertionGate.spec.ts:284:5 › @gate2 entity attributes insert on the boundary (3.9s)
+  ✓   8 [chromium] › e2e/rowInsertionGate.spec.ts:315:5 › @gate2 every insertion control has an accessible name (2.3s)
+  ✓   9 [chromium] › e2e/rowInsertionGate.spec.ts:346:5 › @gate3 trigger action values append into their own action only (2.2s)
+  ✓  10 [chromium] › e2e/rowInsertionGate.spec.ts:380:5 › @gate3 insertion bands are keyboard operable (2.6s)
+  ✓  11 [chromium] › e2e/rowInsertionGate.spec.ts:397:5 › @gate3 narrow viewport does not widen the layout further (4.3s)
+
+  11 passed (37.4s)
