@@ -27,7 +27,14 @@ class CanonicalUrlPartsTest(SimpleTestCase):
         self.assertEqual(parts["protocol"], "https")
 
     def test_canonical_base_url_invalid_value(self):
-        for invalid in ("pagoda.example.com/path", "javascript://x", "://"):
+        for invalid in (
+            "pagoda.example.com/path",
+            "javascript://x",
+            "://",
+            "https://user:password@pagoda.example.com",
+            "https://pagoda.example.com?a=1",
+            "https://pagoda.example.com/#fragment",
+        ):
             with self.subTest(invalid=invalid), override_settings(CANONICAL_BASE_URL=invalid):
                 with self.assertRaises(ImproperlyConfigured):
                     get_canonical_url_parts(self.request)

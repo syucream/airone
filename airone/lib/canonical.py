@@ -22,7 +22,8 @@ from django.http import HttpRequest
 
 _CANONICAL_BASE_URL_ERROR = (
     "AIRONE_CANONICAL_BASE_URL must be an absolute base URL like "
-    "'https://pagoda.example.com' (scheme, host and no path)"
+    "'https://pagoda.example.com' (scheme and host only; no user info, "
+    "query string or fragment)"
 )
 _CANONICAL_BASE_URL_REQUIRED = (
     "AIRONE_CANONICAL_BASE_URL is not configured. Refusing to build an "
@@ -41,21 +42,24 @@ def get_canonical_url_parts(request: HttpRequest, use_https: bool = False) -> di
     - When it is not configured and CANONICAL_URL_FALLBACK is enabled
       (development only), the values fall back to get_current_site(request).
     - Otherwise, raise ImproperlyConfigured instead of trusting the
-      attacker-controlled Host header.
-    """
+      attacker-controlled Host header."""
     base_url = str(getattr(settings, "CANONICAL_BASE_URL", "") or "")
     if base_url:
         # Accept values without an explicit scheme by defaulting to https.
+        # Note: urlsplit() normalizes the scheme to lowercase, but keeps
+        # userinfo (user:pass@) inside netloc, so reject it explicitly.
         parts = urlsplit(base_url if "://" in base_url else f"https://{base_url}")
-        if (
-            parts.scheme not in ("http", "https")
-            or not parts.netloc
-            or parts.path
-            not in (
-                "",
-                "/",
-            )
-        ):
+        has_valid_path = parts.path in ("", "/")
+        has_no_extras = not (parts.query or parts.fragment)
+        has_no_userinfo = not (parts.username or parts.password)
+        valid = (
+            parts.scheme in ("http", "https")
+            and parts.netloc
+            and has_valid_path
+            and has_no_extras
+            and has_no_userinfo
+        )
+        if not valid:
             raise ImproperlyConfigured(_CANONICAL_BASE_URL_ERROR)
 
         return {
