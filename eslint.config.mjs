@@ -5,6 +5,9 @@ import reactYouMightNotNeedAnEffectPlugin from "eslint-plugin-react-you-might-no
 import unusedImportsPlugin from "eslint-plugin-unused-imports";
 import tseslint from "typescript-eslint";
 
+const unitTests = "frontend/src/**/*.{test,spec}.{ts,tsx}";
+const e2eTests = "e2e/**/*.ts";
+
 export default tseslint.config(
   {
     ignores: [
@@ -96,6 +99,40 @@ export default tseslint.config(
       "react-you-might-not-need-an-effect/no-initialize-state": "warn",
       "react-you-might-not-need-an-effect/no-chain-state-updates": "warn",
       "react-you-might-not-need-an-effect/no-derived-state": "warn",
+    },
+  },
+  {
+    files: ["frontend/src/**/*.{ts,tsx}", e2eTests],
+    languageOptions: {
+      parserOptions: {
+        project: [
+          "./tsconfig.json",
+          "./tsconfig.test.json",
+          "./tsconfig.e2e.json",
+        ],
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+    rules: {
+      "@typescript-eslint/await-thenable": "error",
+    },
+  },
+  {
+    files: [unitTests, e2eTests],
+    rules: {
+      // Explicitly discarding a Promise can still let a test finish too soon.
+      "@typescript-eslint/no-floating-promises": [
+        "error",
+        { ignoreVoid: false, checkThenables: true },
+      ],
+    },
+  },
+  {
+    files: ["frontend/src/**/*.{ts,tsx}"],
+    ignores: [unitTests],
+    rules: {
+      "@typescript-eslint/no-unsafe-call": "error",
+      "@typescript-eslint/no-unsafe-member-access": "error",
     },
   },
   {

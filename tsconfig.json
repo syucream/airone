@@ -12,11 +12,14 @@
     "esModuleInterop": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true,
+    "noUncheckedSideEffectImports": true,
     "noImplicitReturns": true
   },
   "include": ["./frontend/src/**/*"],
   "exclude": [
     "./frontend/src/**/*.test.ts",
-    "./frontend/src/**/*.test.tsx"
+    "./frontend/src/**/*.test.tsx",
+    "./frontend/src/**/*.spec.ts",
+    "./frontend/src/**/*.spec.tsx"
   ]
 }

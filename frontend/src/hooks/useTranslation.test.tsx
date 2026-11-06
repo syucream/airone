@@ -15,7 +15,7 @@ import { useTranslation } from "./useTranslation";
 const i18n = i18next.createInstance();
 
 // Initialize i18n for testing
-i18n.init({
+await i18n.init({
   lng: "ja",
   fallbackLng: "ja",
   resources: {

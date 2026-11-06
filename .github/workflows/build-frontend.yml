@@ -8,15 +8,25 @@ on:
     paths:
       - 'frontend/**/*.ts'
       - 'frontend/**/*.tsx'
+      - 'frontend/**/*.js'
+      - 'frontend/**/*.jsx'
+      - 'frontend/**/*.mjs'
+      - 'frontend/**/*.cjs'
+      - 'e2e/**'
       - '.github/workflows/build-frontend.yml'
       - 'package.json'
       - 'package-lock.json'
+      - 'biome.json'
+      - 'knip.jsonc'
       # Without these, a change that weakens the typecheck gate (relaxing a
       # compiler option, dropping the `typecheck` script) would not run the job
       # that enforces it.
       - 'tsconfig.json'
-      - 'tsconfig.lib.json'
-      - '*.config.{js,mjs,ts}'
+      - 'tsconfig.*.json'
+      - '*.config.js'
+      - '*.config.mjs'
+      - '*.config.ts'
+      - 'vitest.setup*.ts'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -44,8 +54,8 @@ jobs:
         run: npm run lint
       # `build:lib:types` also runs tsc, but tsconfig.lib.json excludes the test
       # files. Run tsc over tsconfig.json as an explicit step so type errors are
-      # reported as such (rather than as a library build failure) and so the
-      # test sources are type checked too.
+      # reported as such (rather than as a library build failure) and so
+      # Vitest and Playwright sources are type checked too.
       - name: typecheck
         run: npm run typecheck
   build:

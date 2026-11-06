@@ -4,6 +4,10 @@
     "types": ["vitest/globals", "@testing-library/jest-dom/vitest"],
     "noUncheckedIndexedAccess": false
   },
-  "include": ["./frontend/src/**/*", "./vitest.setup.ts"],
+  "include": [
+    "./frontend/src/**/*",
+    "./vitest.setup.ts",
+    "./vitest.setup.i18n.ts"
+  ],
   "exclude": []
 }

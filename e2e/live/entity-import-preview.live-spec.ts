@@ -1,3 +1,5 @@
+import assert from "node:assert/strict";
+
 import { expect, Page, test } from "@playwright/test";
 
 import {
@@ -33,7 +35,7 @@ const findModelId = async (page: Page, name: string): Promise<number> => {
     `/entity/api/v2/?search=${encodeURIComponent(name)}`,
   );
   const model = found.results.find((entity) => entity.name === name);
-  expect(model, `model ${name} should exist`).toBeDefined();
+  assert(model, `model ${name} should exist`);
   return model.id;
 };
 

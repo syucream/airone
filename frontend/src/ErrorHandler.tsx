@@ -93,7 +93,11 @@ const GenericError: FC<GenericErrorProps> = ({ children }) => {
   );
 };
 
-const ErrorFallback: FC<FallbackProps> = ({ error, resetErrorBoundary }) => {
+const ErrorFallback: FC<FallbackProps> = ({
+  error: caught,
+  resetErrorBoundary,
+}) => {
+  const error: unknown = caught;
   useEffect(() => {
     const handlePopState = () => {
       resetErrorBoundary();
@@ -104,16 +108,22 @@ const ErrorFallback: FC<FallbackProps> = ({ error, resetErrorBoundary }) => {
     };
   }, [resetErrorBoundary]);
 
-  switch (error.name) {
+  switch (error instanceof Error ? error.name : undefined) {
     case ForbiddenError.errorName:
       return <ForbiddenErrorPage />;
     case NotFoundError.errorName:
       return <NotFoundErrorPage />;
     case NonTermsServiceAgreement.errorName:
       return <NonTermsServiceAgreementPage />;
-    default:
-      return <GenericError>{error.toString()}</GenericError>;
   }
+
+  let detail = "";
+  try {
+    detail = String(error);
+  } catch {
+    // A thrown object may itself fail to convert to a string.
+  }
+  return <GenericError>{detail}</GenericError>;
 };
 
 const ErrorBridge: FC<{ children: ReactNode }> = ({ children }) => {
@@ -121,14 +131,15 @@ const ErrorBridge: FC<{ children: ReactNode }> = ({ children }) => {
 
   const handleUnhandledRejection = useCallback(
     (event: PromiseRejectionEvent) => {
-      if (event.reason instanceof Response) {
-        const httpError = toError(event.reason);
+      const reason: unknown = event.reason;
+      if (reason instanceof Response) {
+        const httpError = toError(reason);
         if (httpError != null) {
           dispatchError(httpError);
           return;
         }
       }
-      dispatchError(event.reason);
+      dispatchError(reason);
     },
     [dispatchError],
   );

@@ -83,10 +83,8 @@ describe("DashboardPage", () => {
   };
 
   test("should match snapshot", async () => {
-    const result = await act(() => {
-      return render(<DashboardPage />, {
-        wrapper: TestWrapper,
-      });
+    const result = render(<DashboardPage />, {
+      wrapper: TestWrapper,
     });
     await waitFor(() => {
       expect(screen.queryByTestId("loading")).not.toBeInTheDocument();

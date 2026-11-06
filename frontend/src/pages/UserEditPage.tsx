@@ -175,20 +175,22 @@ export const UserEditPage: FC = () => {
       }
       refreshUser();
     } catch (e) {
-      if (e instanceof Response) {
-        const json = await e.json();
-        const reason = json["code"];
-        enqueueSnackbar(
-          t("user.edit.tokenUpdateFailureWithReason", { reason }),
-          {
-            variant: "error",
-          },
-        );
-      } else {
-        enqueueSnackbar(t("user.edit.tokenUpdateFailure"), {
-          variant: "error",
-        });
-      }
+      const response =
+        e instanceof Error && isResponseError(e)
+          ? e.response
+          : e instanceof Response
+            ? e
+            : undefined;
+      const body: unknown = await response?.json().catch(() => undefined);
+      const reason =
+        body !== null && typeof body === "object" && "code" in body
+          ? body.code
+          : undefined;
+      const message =
+        typeof reason === "string"
+          ? t("user.edit.tokenUpdateFailureWithReason", { reason })
+          : t("user.edit.tokenUpdateFailure");
+      enqueueSnackbar(message, { variant: "error" });
     }
   };
 
