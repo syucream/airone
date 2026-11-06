@@ -48,7 +48,7 @@ const server = setupServer(
             updated_user: { id: 1, username: "user1" },
             attrs: [],
             referrals: [],
-            aliases: [],
+            aliases: [{ id: 10, name: "entry1 alias" }],
             is_public: true,
             status: 0,
           },
@@ -107,9 +107,12 @@ describe("AliasEntryListPage", () => {
       );
     });
 
-    // Verify page title is displayed
-    const titleElement = screen.getByRole("heading", { name: "Entity1" });
-    expect(titleElement).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Entity1" }),
+    ).toBeInTheDocument();
+    expect(await screen.findByText("entry1 alias")).toBeInTheDocument();
+    expect(screen.getByText("entry1")).toBeInTheDocument();
+    expect(screen.getByText("entry2")).toBeInTheDocument();
   });
 
   it("renders in English", async () => {
