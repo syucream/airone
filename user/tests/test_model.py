@@ -1,4 +1,3 @@
-from django.conf import settings
 from django.db import connection
 from django.test import TestCase
 from django.test.utils import CaptureQueriesContext
@@ -19,7 +18,6 @@ class ModelTest(TestCase):
         self.user = User(username="ほげ", email="hoge@example.com")
         self.user.set_password("fuga")
         self.user.save()
-        self.user_social_auth = UserSocialAuth.objects.create(user=self.user)
 
     def test_get_token(self):
         # if not have token
@@ -37,6 +35,7 @@ class ModelTest(TestCase):
         self.assertTrue(self.user.is_active)
 
     def test_delete_user(self):
+        UserSocialAuth.objects.create(user=self.user)
         self.user.delete()
 
         user = User.objects.get(id=self.user.id)
@@ -100,11 +99,14 @@ class ModelTest(TestCase):
         Entity.objects.create(name="test-entity", created_user=self.user)
         invalid_obj = InvalidType()
 
-        with self.assertRaises(TypeError):
-            self.user.seth_entity_add(invalid_obj)
-            self.user.seth_entity_mod(invalid_obj)
-            self.user.seth_entity_del(invalid_obj)
-            self.user.seth_entry_del(invalid_obj)
+        for operation in (
+            self.user.seth_entity_add,
+            self.user.seth_entity_mod,
+            self.user.seth_entity_del,
+            self.user.seth_entry_del,
+        ):
+            with self.subTest(operation=operation.__name__), self.assertRaises(TypeError):
+                operation(invalid_obj)
 
         self.assertEqual(History.objects.count(), 0)
 
@@ -294,10 +296,9 @@ class ModelTest(TestCase):
         User.objects.bulk_create([User(username=f"user-{i}") for i in range(max_users)])
 
         # if the limit exceeded, RuntimeError should be raised
-        settings.MAX_USERS = max_users
-        with self.assertRaises(RuntimeError):
+        with self.settings(MAX_USERS=max_users), self.assertRaises(RuntimeError):
             User.objects.create(username=f"user-{max_users}")
 
         # if the limit is not set, RuntimeError should not be raised
-        settings.MAX_USERS = None
-        User.objects.create(username=f"user-{max_users}")
+        with self.settings(MAX_USERS=None):
+            User.objects.create(username=f"user-{max_users}")
