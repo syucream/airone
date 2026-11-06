@@ -14,22 +14,16 @@ from job.models import Job, JobStatus
 from user.models import User
 
 
-class ViewTest(AironeViewTest):
-    def _create_user(self, name):
-        return User.objects.create(username=name)
-
-    def _create_group(self, name):
-        return Group.objects.create(name=name)
-
+class GroupReadAPITest(AironeViewTest):
     def test_list(self):
         self.admin_login()
 
-        user = self._create_user("fuga")
-        first_user = self._create_user("alpha")
-        inactive_user = self._create_user("inactive")
+        user = User.objects.create(username="fuga")
+        first_user = User.objects.create(username="alpha")
+        inactive_user = User.objects.create(username="inactive")
         inactive_user.is_active = False
         inactive_user.save(update_fields=["is_active"])
-        group = self._create_group("hoge")
+        group = Group.objects.create(name="hoge")
         user.groups.add(group)
         first_user.groups.add(group)
         inactive_user.groups.add(group)
@@ -48,9 +42,9 @@ class ViewTest(AironeViewTest):
         self.admin_login()
 
         def create_groups(start: int, end: int) -> None:
-            groups = [self._create_group(f"group-{index:02}") for index in range(start, end)]
+            groups = [Group.objects.create(name=f"group-{index:02}") for index in range(start, end)]
             for index, group in enumerate(groups, start=start):
-                user = self._create_user(f"user-{index:02}")
+                user = User.objects.create(username=f"user-{index:02}")
                 user.groups.add(group)
 
         create_groups(0, 3)
@@ -78,8 +72,8 @@ class ViewTest(AironeViewTest):
     def test_retrieve(self):
         self.admin_login()
 
-        user = self._create_user("fuga")
-        group = self._create_group("hoge")
+        user = User.objects.create(username="fuga")
+        group = Group.objects.create(name="hoge")
         user.groups.add(group)
 
         resp = self.client.get("/group/api/v2/groups/%s" % group.id)
@@ -90,11 +84,37 @@ class ViewTest(AironeViewTest):
         self.assertEqual(len(body["members"]), 1)
         self.assertEqual(body["members"][0]["id"], user.id)
 
+    def test_group_tree_parent_ordering(self):
+        self.admin_login()
+
+        Group.objects.create(name="group-b")
+        Group.objects.create(name="group-a")
+        Group.objects.create(name="group-c")
+
+        resp = self.client.get("/group/api/v2/groups/tree")
+        self.assertEqual(resp.status_code, 200)
+
+        body = resp.json()
+
+        self.assertEqual([g["name"] for g in body], ["group-a", "group-b", "group-c"])
+        self.assertEqual([g["display_name"] for g in body], ["", "", ""])
+
+
+class GroupWriteAPITest(AironeViewTest):
+    def test_create_group(self):
+        self.admin_login()
+
+        params = {"name": "hoge", "parent_group": None, "members": []}
+        resp = self.client.post("/group/api/v2/groups", json.dumps(params), "application/json")
+
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(Group.objects.filter(name="hoge").exists())
+
     def test_update_group(self):
         self.admin_login()
 
-        users = [self._create_user(x) for x in ["userA", "userB", "userC"]]
-        group = self._create_group("hoge")
+        users = [User.objects.create(username=x) for x in ["userA", "userB", "userC"]]
+        group = Group.objects.create(name="hoge")
         users[0].groups.add(group)
 
         update_params = {
@@ -114,28 +134,6 @@ class ViewTest(AironeViewTest):
         self.assertEqual([x.id for x in users[0].groups.all()], [])
         self.assertEqual([x.id for x in users[1].groups.all()], [group.id])
         self.assertEqual([x.id for x in users[2].groups.all()], [group.id])
-
-    def test_import(self):
-        self.admin_login()
-
-        fp = self.open_fixture_file("import_group.yaml")
-        resp = post_import(
-            self, "/group/api/v2/groups/import", fp.read(), content_type="application/yaml"
-        )
-
-        self.assertEqual(resp.status_code, 200)
-
-        self.assertEqual(Group.objects.filter(name="Group1").count(), 1)
-        self.assertEqual(Group.objects.filter(name="Group2").count(), 1)
-
-    def test_create_group(self):
-        self.admin_login()
-
-        params = {"name": "hoge", "parent_group": None, "members": []}
-        resp = self.client.post("/group/api/v2/groups", json.dumps(params), "application/json")
-
-        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
-        self.assertTrue(Group.objects.filter(name="hoge").exists())
 
     def test_display_name_is_optional_and_not_unique(self):
         self.admin_login()
@@ -169,7 +167,7 @@ class ViewTest(AironeViewTest):
 
     def test_create_group_by_non_superuser_is_forbidden(self):
         # a child group inherits the roles of its parent group
-        parent = self._create_group("privileged")
+        parent = Group.objects.create(name="privileged")
         self.guest_login()
 
         params = {"name": "hoge", "parent_group": parent.id, "members": []}
@@ -178,8 +176,23 @@ class ViewTest(AironeViewTest):
         self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
         self.assertFalse(Group.objects.filter(name="hoge").exists())
 
+
+class GroupImportExportAPITest(AironeViewTest):
+    def test_import(self):
+        self.admin_login()
+
+        fp = self.open_fixture_file("import_group.yaml")
+        resp = post_import(
+            self, "/group/api/v2/groups/import", fp.read(), content_type="application/yaml"
+        )
+
+        self.assertEqual(resp.status_code, 200)
+
+        self.assertEqual(Group.objects.filter(name="Group1").count(), 1)
+        self.assertEqual(Group.objects.filter(name="Group2").count(), 1)
+
     def test_import_by_non_superuser_is_forbidden(self):
-        group = self._create_group("Group1")
+        group = Group.objects.create(name="Group1")
         self.guest_login()
 
         body = yaml.dump([{"id": group.id, "name": "renamed"}, {"name": "Group2"}])
@@ -218,8 +231,8 @@ class ViewTest(AironeViewTest):
     def test_export(self):
         self.admin_login()
 
-        self._create_group("group1")
-        self._create_group("group2")
+        Group.objects.create(name="group1")
+        Group.objects.create(name="group2")
 
         with patch.object(Job, "run") as enqueue:
             resp = self.client.post("/group/api/v2/groups/export")
@@ -240,18 +253,3 @@ class ViewTest(AironeViewTest):
         obj = load_export_payload(resp.content, ImportType.GROUP)
         self.assertTrue(isinstance(obj, list))
         self.assertEqual(len(obj), 2)
-
-    def test_group_tree_parent_ordering(self):
-        self.admin_login()
-
-        self._create_group("group-b")
-        self._create_group("group-a")
-        self._create_group("group-c")
-
-        resp = self.client.get("/group/api/v2/groups/tree")
-        self.assertEqual(resp.status_code, 200)
-
-        body = resp.json()
-
-        self.assertEqual([g["name"] for g in body], ["group-a", "group-b", "group-c"])
-        self.assertEqual([g["display_name"] for g in body], ["", "", ""])
