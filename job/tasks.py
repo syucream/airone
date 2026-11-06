@@ -75,18 +75,23 @@ def export_configuration(self: Task[Any, Any], job: Job) -> None:
 @may_schedule_until_job_is_ready
 def import_general(self: Task[Any, Any], job: Job) -> tuple[JobStatus, str, None]:
     params = job.get_typed_params(GeneralImportParams)
+    data = params.data
 
     try:
-        if params.kind == "entity":
-            serializer = EntityImportExportRootSerializer(
-                data=params.data, context={"request": _JobRequest(job.user)}
-            )
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
-        elif params.kind == "user":
-            import_users(params.data)
-        else:
-            import_groups(params.data)
+        match params.kind:
+            case "entity":
+                serializer = EntityImportExportRootSerializer(
+                    data=data, context={"request": _JobRequest(job.user)}
+                )
+                serializer.is_valid(raise_exception=True)
+                serializer.save()
+            case "user" | "group":
+                if not isinstance(data, list):
+                    raise ImportDataError("Expected a list of records for %s import" % params.kind)
+                if params.kind == "user":
+                    import_users(data)
+                else:
+                    import_groups(data)
     except ImportDataError as e:
         return JobStatus.ERROR, str(e), None
 

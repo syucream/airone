@@ -1027,7 +1027,8 @@ def _csv_export_v2(
                     [(k, v)] = vset.items()
                     items.append(f"{k}: {v['name']}" if isinstance(v, dict) else f"{k}: ")
                 return "\n".join(natsorted(items))
-        return ""
+            case _:
+                return ""
 
     for index, entry_info in enumerate(values):
         if index % Job.STATUS_CHECK_FREQUENCY == 0 and job.is_canceled():
@@ -1111,7 +1112,7 @@ def export_search_result_v2(self: Any, job: Job) -> tuple[JobStatus, str, ACLBas
     )
 
     output: io.StringIO | None = None
-    match params["export_style"]:
+    match typed_params.export_style:
         case "yaml":
             output = _yaml_export_v2(job, resp.ret_values, params, has_referral)
         case "csv":
@@ -1286,10 +1287,10 @@ def bulk_update_entries(
 ) -> JobStatus | tuple[JobStatus, str, ACLBase | None] | None:
     params = job.get_typed_params(BulkEditParams)
     job_params = params.model_dump(mode="json", by_alias=True, exclude_unset=True)
+    value = job_params["value"]
+    hint_entry = job_params.get("hint_entry")
 
-    target_attr = EntityAttr.objects.filter(
-        id=job_params["value"]["id"], parent_entity_id=job_params["modelid"]
-    ).first()
+    target_attr = EntityAttr.objects.filter(id=value["id"], parent_entity_id=params.modelid).first()
     if target_attr is None:
         return JobStatus.ERROR, "The attribute does not belong to the specified model.", None
 
@@ -1297,12 +1298,12 @@ def bulk_update_entries(
     # Without an explicit selection, retain the existing filter-based bulk edit.
     resp = AdvancedSearchService.search_entries(
         user=job.user,
-        hint_entity_ids=[job_params["modelid"]],
+        hint_entity_ids=[params.modelid],
         hint_attrs=[AttrHint(**x) for x in job_params.get("attrinfo", [])]
         if job_params.get("entry_ids") is None
         else [],
-        hint_entry=EntryHint(**job_params.get("hint_entry"))
-        if job_params.get("hint_entry") and job_params.get("entry_ids") is None
+        hint_entry=EntryHint(**hint_entry)
+        if hint_entry and job_params.get("entry_ids") is None
         else None,
         hint_referral=job_params.get("referral_name")
         if job_params.get("entry_ids") is None
@@ -1332,11 +1333,11 @@ def bulk_update_entries(
 
         entry = Entry.objects.get(id=record.entry["id"])
         updating_data: dict[str, list[Any]] = {"attrs": []}
-        if job_params.get("value"):
+        if value:
             updating_data["attrs"].append(
                 {
-                    "id": job_params.get("value")["id"],
-                    "value": job_params.get("value")["value"],
+                    "id": value["id"],
+                    "value": value["value"],
                 }
             )
 

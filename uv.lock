@@ -100,7 +100,7 @@ requires-dist = [
     { name = "lxml", specifier = "==6.1.0" },
     { name = "lxml-html-clean", marker = "extra == 'dev'", specifier = ">=0.4.0" },
     { name = "markdown", specifier = ">=3.7" },
-    { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.15.0" },
+    { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.17.1" },
     { name = "mysqlclient", specifier = ">=2.2.8" },
     { name = "natsort", specifier = "==8.4.0" },
     { name = "pagoda-cross-entity-sample-plugin", marker = "extra == 'plugins'", editable = "plugin/examples/pagoda-cross-entity-plugin" },

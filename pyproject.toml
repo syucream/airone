@@ -27,12 +27,16 @@ local_partial_types = true
 # - redundant-expr / truthy-bool: conditions that are statically constant,
 #   which usually means an annotation that omits `None`.
 # - deprecated: calls to APIs marked with @deprecated.
+# - truthy-iterable: a generic iterable need not support an emptiness check.
+# - unused-awaitable: detect discarded awaitables, including tasks and futures.
 enable_error_code = [
     "ignore-without-code",
     "possibly-undefined",
     "redundant-expr",
     "truthy-bool",
     "deprecated",
+    "truthy-iterable",
+    "unused-awaitable",
 ]
 
 [tool.django-stubs]
@@ -46,6 +50,12 @@ ignore_errors = true
 [[tool.mypy.overrides]]
 module = ["*.migrations.*"]
 ignore_errors = true
+
+# Task dispatch often branches on validated job parameters. Require all cases
+# here so a new format or operation cannot silently fall through.
+[[tool.mypy.overrides]]
+module = ["*.tasks"]
+enable_error_code = ["exhaustive-match"]
 
 # Third-party packages that ship neither inline types nor stubs. Listing them
 # explicitly (instead of a global ignore_missing_imports) keeps a typo or a
@@ -167,7 +177,7 @@ dev = [
     "django-stubs[compatible-mypy]>=5.2.0",
     "djangorestframework-stubs[compatible-mypy]>=3.15.0",
     "flower==1.2.0",
-    "mypy>=1.15.0",
+    "mypy>=1.17.1",
     "requests-html==0.10.0",
     "types-requests>=2.31.0.6",
     "types-pyyaml>=6.0.12.20241230",

@@ -6,12 +6,13 @@ import time
 from datetime import date, datetime, timedelta
 from importlib import import_module
 from types import ModuleType
-from typing import Any, Callable, TypeAlias
+from typing import Any, Callable, TypeAlias, TypeVar, overload
 from zoneinfo import ZoneInfo
 
 from django.conf import settings
 from django.core.files.storage import default_storage
 from django.db import models
+from pydantic import BaseModel
 
 from acl.models import ACLBase
 from airone.lib import auto_complement
@@ -33,6 +34,7 @@ from user.models import User
 TaskReturnType: TypeAlias = "JobStatus | tuple[JobStatus, str, ACLBase | None] | None"
 
 TaskHandler: TypeAlias = Callable[[Any, "Job"], TaskReturnType]
+_ParamsModel = TypeVar("_ParamsModel", bound=BaseModel)
 
 # Free-form parameter payload carried by a Job (JSON-serialized for storage).
 JobParams: TypeAlias = dict[str, Any]
@@ -233,7 +235,13 @@ class Job(models.Model):
     # When this has another job, this job have to wait until it would be finished.
     dependent_job = models.ForeignKey("Job", null=True, on_delete=models.SET_NULL)
 
-    def get_typed_params(self, expected_type: type[Any] | None = None) -> Any:
+    @overload
+    def get_typed_params(self, expected_type: type[_ParamsModel]) -> _ParamsModel: ...
+
+    @overload
+    def get_typed_params(self, expected_type: None = None) -> Any: ...
+
+    def get_typed_params(self, expected_type: type[BaseModel] | None = None) -> Any:
         """Return validated job parameters, parsing persisted JSON only once."""
 
         try:

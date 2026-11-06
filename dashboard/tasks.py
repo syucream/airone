@@ -214,7 +214,7 @@ def export_search_result(self: Any, job: Job) -> None:
     )
 
     io_stream: io.StringIO | None = None
-    match recv_data["export_style"]:
+    match params.export_style:
         case "yaml":
             io_stream = _yaml_export(job, resp.ret_values, recv_data, has_referral)
         case "csv":

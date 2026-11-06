@@ -1,4 +1,5 @@
 import inspect
+import json
 from unittest import mock
 
 from django.test import TestCase
@@ -129,6 +130,24 @@ class JobParamsBoundaryTest(TestCase):
         parse.assert_called_once()
         with self.assertRaises(TypeError):
             job.get_typed_params(dict)
+
+    def test_legacy_user_and_group_imports_reject_mapping_data(self):
+        for kind in ("user", "group"):
+            with self.subTest(kind=kind):
+                job = Job.objects.create(
+                    user=self.user,
+                    target_type=JobTarget.UNKNOWN,
+                    status=JobStatus.PREPARING,
+                    operation=JobOperation.IMPORT_GENERAL_V2,
+                    text="",
+                    params=json.dumps({"kind": kind, "data": {}}),
+                )
+
+                job.run(will_delay=False)
+
+                job.refresh_from_db()
+                self.assertEqual(job.status, JobStatus.ERROR)
+                self.assertEqual(job.text, f"Expected a list of records for {kind} import")
 
     @mock.patch("airone.lib.job.mail_admins")
     def test_task_exception_saves_searchable_error_message(self, mail_admins: mock.Mock):
