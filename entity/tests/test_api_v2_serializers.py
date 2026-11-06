@@ -126,6 +126,38 @@ class EntityAttrSerializerTest(AironeViewTest):
         self.assertFalse(invalid_serializer.is_valid())
         self.assertIn("must be active and belong", str(invalid_serializer.errors))
 
+    def test_empty_array_object_default_is_cleared_on_create_and_update(self):
+        referred_entity = Entity.objects.create(name="referred", created_user=self.user)
+        referred_entry = Entry.objects.create(
+            name="first", schema=referred_entity, created_user=self.user
+        )
+        entity_attr = EntityAttr.objects.create(
+            name="array_object_attr",
+            type=AttrType.ARRAY_OBJECT,
+            parent_entity=self.entity,
+            created_user=self.user,
+            default_value=[referred_entry.id],
+        )
+        entity_attr.referral.add(referred_entity)
+
+        create = EntityAttrCreateSerializer(
+            data={
+                "name": "new_array_object_attr",
+                "type": AttrType.ARRAY_OBJECT,
+                "referral": [referred_entity.id],
+                "default_value": [],
+            },
+            context=self._get_serializer_context(),
+        )
+        update = EntityAttrUpdateSerializer(
+            data={"id": entity_attr.id, "default_value": []},
+            context=self._get_serializer_context(),
+        )
+        for serializer in (create, update):
+            with self.subTest(serializer=type(serializer).__name__):
+                self.assertTrue(serializer.is_valid(), serializer.errors)
+                self.assertIsNone(serializer.validated_data["default_value"])
+
     def test_array_object_default_rejects_invalid_shape_and_duplicates(self):
         referred_entity = Entity.objects.create(name="referred", created_user=self.user)
         referred_entry = Entry.objects.create(
