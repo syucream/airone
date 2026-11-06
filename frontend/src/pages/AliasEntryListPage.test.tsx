@@ -1,7 +1,7 @@
 /**
  */
 
-import { act, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
 import { createMemoryRouter, RouterProvider } from "react-router";
@@ -9,6 +9,7 @@ import { createMemoryRouter, RouterProvider } from "react-router";
 import { TestWrapperWithoutRoutes } from "TestWrapper";
 import i18n from "i18n/config";
 import { AliasEntryListPage } from "pages/AliasEntryListPage";
+import { listAliasPath } from "routes/Routes";
 
 const server = setupServer(
   // GET /entity/api/v2/:entityId/
@@ -48,7 +49,7 @@ const server = setupServer(
             updated_user: { id: 1, username: "user1" },
             attrs: [],
             referrals: [],
-            aliases: [],
+            aliases: [{ id: 101, name: "Existing alias", entry: 1 }],
             is_public: true,
             status: 0,
           },
@@ -83,33 +84,52 @@ beforeAll(() => server.listen());
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
+function renderAliasPage() {
+  const router = createMemoryRouter(
+    [{ path: listAliasPath(":entityId"), element: <AliasEntryListPage /> }],
+    { initialEntries: [listAliasPath(1)] },
+  );
+  return act(async () => {
+    render(<RouterProvider router={router} />, {
+      wrapper: TestWrapperWithoutRoutes,
+    });
+  });
+}
+
 describe("AliasEntryListPage", () => {
   it("renders the alias entry list", async () => {
-    // Create memory router
-    const router = createMemoryRouter(
-      [
-        {
-          path: "/ui/entities/:entityId/alias",
-          element: <AliasEntryListPage />,
-        },
-      ],
-      {
-        initialEntries: ["/ui/entities/1/alias"],
-      },
-    );
-
-    // Render component
-    await act(async () => {
-      render(
-        <TestWrapperWithoutRoutes>
-          <RouterProvider router={router} />
-        </TestWrapperWithoutRoutes>,
-      );
-    });
-
-    // Verify page title is displayed
+    await renderAliasPage();
     const titleElement = screen.getByRole("heading", { name: "Entity1" });
     expect(titleElement).toBeInTheDocument();
+    expect(await screen.findByText("Existing alias")).toBeInTheDocument();
+  });
+
+  it("adds an alias to the selected entry and clears the input", async () => {
+    const createAlias = vi.fn();
+    server.use(
+      http.post("http://localhost/entry/api/v2/alias/", async ({ request }) => {
+        createAlias(await request.json());
+        return HttpResponse.json(
+          { id: 201, name: "New alias", entry: 2 },
+          { status: 201 },
+        );
+      }),
+    );
+
+    await renderAliasPage();
+    const addButtons = await screen.findAllByTestId("AddIcon");
+    fireEvent.click(addButtons[1]);
+
+    const input = screen.getByPlaceholderText("エイリアスを追加");
+    fireEvent.change(input, { target: { value: "New alias" } });
+    fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
+
+    expect(await screen.findByText("New alias")).toBeInTheDocument();
+    expect(createAlias).toHaveBeenCalledExactlyOnceWith({
+      entry: 2,
+      name: "New alias",
+    });
+    expect(input).toHaveValue("");
   });
 
   it("renders in English", async () => {
@@ -117,25 +137,7 @@ describe("AliasEntryListPage", () => {
       await i18n.changeLanguage("en");
     });
 
-    const router = createMemoryRouter(
-      [
-        {
-          path: "/ui/entities/:entityId/alias",
-          element: <AliasEntryListPage />,
-        },
-      ],
-      {
-        initialEntries: ["/ui/entities/1/alias"],
-      },
-    );
-
-    await act(async () => {
-      render(
-        <TestWrapperWithoutRoutes>
-          <RouterProvider router={router} />
-        </TestWrapperWithoutRoutes>,
-      );
-    });
+    await renderAliasPage();
 
     expect(screen.getAllByText("Alias settings").length).toBeGreaterThan(0);
   });

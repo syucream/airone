@@ -10,7 +10,7 @@ export const entryMessages = defineMessages({
     // AliasEntryList
     "entry.alias.addPlaceholder": "エイリアスを追加",
 
-    // AliasEntryListPage / ListAliasEntryPage
+    // AliasEntryListPage
     "entry.alias.settingsTitle": "エイリアス設定",
     "entry.alias.deleteSuccess": "エイリアスの削除が完了しました。",
     "entry.alias.deleteFailure": "エイリアスの削除が失敗しました。",
@@ -113,7 +113,7 @@ export const entryMessages = defineMessages({
     // AliasEntryList
     "entry.alias.addPlaceholder": "Add alias",
 
-    // AliasEntryListPage / ListAliasEntryPage
+    // AliasEntryListPage
     "entry.alias.settingsTitle": "Alias settings",
     "entry.alias.deleteSuccess": "Successfully deleted the alias.",
     "entry.alias.deleteFailure": "Failed to delete the alias.",
