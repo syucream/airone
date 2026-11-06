@@ -101,6 +101,60 @@ class ChoiceItem(BaseModel):
         return self
 
 
+def _validate_default_value_for_type(attr_type: int, default_value: Any) -> Any:
+    """Validate and normalize a default value before saving an attribute."""
+    if default_value is None or attr_type not in EntityAttr.CUSTOM_DEFAULT_VALUE_TYPES:
+        return None
+
+    # String and Text types
+    if attr_type in [AttrType.STRING, AttrType.TEXT]:
+        if not isinstance(default_value, str):
+            raise ValueError(
+                f"Default value must be a string for this attribute type, "
+                f"got {type(default_value).__name__}"
+            )
+
+    # Boolean type
+    elif attr_type == AttrType.BOOLEAN:
+        if not isinstance(default_value, bool):
+            raise ValueError(
+                f"Default value must be a boolean for BOOLEAN type, "
+                f"got {type(default_value).__name__}"
+            )
+
+    # Number type
+    elif attr_type == AttrType.NUMBER:
+        if not isinstance(default_value, int | float) or isinstance(default_value, bool):
+            raise ValueError(
+                f"Default value must be a number for NUMBER type, "
+                f"got {type(default_value).__name__}"
+            )
+        if math.isnan(default_value) or math.isinf(default_value):
+            raise ValueError("Default value cannot be NaN or Infinity for NUMBER type")
+
+    elif attr_type == AttrType.OBJECT:
+        if (
+            not isinstance(default_value, int)
+            or isinstance(default_value, bool)
+            or default_value <= 0
+        ):
+            raise ValueError("Default value must be a positive entry ID for OBJECT type")
+
+    elif attr_type == AttrType.ARRAY_OBJECT:
+        if not isinstance(default_value, list) or not all(
+            isinstance(item, int) and not isinstance(item, bool) and item > 0
+            for item in default_value
+        ):
+            raise ValueError(
+                "Default value must be a list of positive entry IDs for ARRAY_OBJECT type"
+            )
+        if len(default_value) != len(set(default_value)):
+            raise ValueError("Default value entry IDs must be unique for ARRAY_OBJECT type")
+        return default_value or None
+
+    return default_value
+
+
 class EntityAttrCreateRequest(BaseModel):
     """Pydantic model for entity attribute creation with default_value validation."""
 
@@ -136,64 +190,7 @@ class EntityAttrCreateRequest(BaseModel):
 
     @model_validator(mode="after")
     def validate_default_value_for_type(self) -> Self:
-        """Validate that default_value is appropriate for the attribute type."""
-        if self.default_value is None:
-            return self
-
-        if self.type not in EntityAttr.CUSTOM_DEFAULT_VALUE_TYPES:
-            # Clear default_value for unsupported types
-            self.default_value = None
-            return self
-
-        # String and Text types
-        if self.type in [AttrType.STRING, AttrType.TEXT]:
-            if not isinstance(self.default_value, str):
-                raise ValueError(
-                    f"Default value must be a string for this attribute type, "
-                    f"got {type(self.default_value).__name__}"
-                )
-
-        # Boolean type
-        elif self.type == AttrType.BOOLEAN:
-            if not isinstance(self.default_value, bool):
-                raise ValueError(
-                    f"Default value must be a boolean for BOOLEAN type, "
-                    f"got {type(self.default_value).__name__}"
-                )
-
-        # Number type
-        elif self.type == AttrType.NUMBER:
-            if not isinstance(self.default_value, int | float) or isinstance(
-                self.default_value, bool
-            ):
-                raise ValueError(
-                    f"Default value must be a number for NUMBER type, "
-                    f"got {type(self.default_value).__name__}"
-                )
-            if math.isnan(self.default_value) or math.isinf(self.default_value):
-                raise ValueError("Default value cannot be NaN or Infinity for NUMBER type")
-
-        elif self.type == AttrType.OBJECT:
-            if (
-                not isinstance(self.default_value, int)
-                or isinstance(self.default_value, bool)
-                or self.default_value <= 0
-            ):
-                raise ValueError("Default value must be a positive entry ID for OBJECT type")
-
-        elif self.type == AttrType.ARRAY_OBJECT:
-            if not isinstance(self.default_value, list) or not all(
-                isinstance(item, int) and not isinstance(item, bool) and item > 0
-                for item in self.default_value
-            ):
-                raise ValueError(
-                    "Default value must be a list of positive entry IDs for ARRAY_OBJECT type"
-                )
-            if len(self.default_value) != len(set(self.default_value)):
-                raise ValueError("Default value entry IDs must be unique for ARRAY_OBJECT type")
-            if not self.default_value:
-                self.default_value = None
-
+        self.default_value = _validate_default_value_for_type(self.type, self.default_value)
         return self
 
 
@@ -296,65 +293,6 @@ class EntityAttrCreateSerializer(serializers.ModelSerializer[EntityAttr]):
             raise ObjectNotExistsError("attrs type(%s) does not exist" % type)
 
         return type
-
-    def _validate_default_value_for_type(self, attr_type: int, default_value: Any) -> Any:
-        """
-        Validates that the default_value is appropriate for the given attribute type.
-        Returns the validated (and potentially converted) default value.
-        """
-        if default_value is None:
-            return None
-
-        # String and Text types
-        if attr_type in [AttrType.STRING, AttrType.TEXT]:
-            if not isinstance(default_value, str):
-                raise ValidationError(
-                    f"Default value must be a string for this attribute type, "
-                    f"got {type(default_value).__name__}"
-                )
-            return default_value
-
-        # Boolean type
-        elif attr_type == AttrType.BOOLEAN:
-            if isinstance(default_value, bool):
-                return default_value
-            raise ValidationError(
-                f"Default value must be a boolean for BOOLEAN type, "
-                f"got {type(default_value).__name__}"
-            )
-
-        # Number type
-        elif attr_type == AttrType.NUMBER:
-            if isinstance(default_value, int | float) and not isinstance(default_value, bool):
-                if math.isnan(default_value) or math.isinf(default_value):
-                    raise ValidationError("Default value cannot be NaN or Infinity for NUMBER type")
-                return default_value
-            raise ValidationError(
-                f"Default value must be a number for NUMBER type, "
-                f"got {type(default_value).__name__}"
-            )
-
-        elif attr_type == AttrType.OBJECT:
-            if isinstance(default_value, int) and not isinstance(default_value, bool):
-                if default_value > 0:
-                    return default_value
-            raise ValidationError("Default value must be a positive entry ID for OBJECT type")
-
-        elif attr_type == AttrType.ARRAY_OBJECT:
-            if isinstance(default_value, list) and all(
-                isinstance(item, int) and not isinstance(item, bool) and item > 0
-                for item in default_value
-            ):
-                if len(default_value) != len(set(default_value)):
-                    raise ValidationError(
-                        "Default value entry IDs must be unique for ARRAY_OBJECT type"
-                    )
-                return default_value or None
-            raise ValidationError(
-                "Default value must be a list of positive entry IDs for ARRAY_OBJECT type"
-            )
-
-        return default_value
 
     def validate(self, attr: dict[str, Any]) -> dict[str, Any]:
         # Use Pydantic model for comprehensive validation
@@ -495,65 +433,6 @@ class EntityAttrUpdateSerializer(serializers.ModelSerializer[EntityAttr]):
 
         return type
 
-    def _validate_default_value_for_type(self, attr_type: int, default_value: Any) -> Any:
-        """
-        Validates that the default_value is appropriate for the given attribute type.
-        Returns the validated (and potentially converted) default value.
-        """
-        if default_value is None:
-            return None
-
-        # String and Text types
-        if attr_type in [AttrType.STRING, AttrType.TEXT]:
-            if not isinstance(default_value, str):
-                raise ValidationError(
-                    f"Default value must be a string for this attribute type, "
-                    f"got {type(default_value).__name__}"
-                )
-            return default_value
-
-        # Boolean type
-        elif attr_type == AttrType.BOOLEAN:
-            if isinstance(default_value, bool):
-                return default_value
-            raise ValidationError(
-                f"Default value must be a boolean for BOOLEAN type, "
-                f"got {type(default_value).__name__}"
-            )
-
-        # Number type
-        elif attr_type == AttrType.NUMBER:
-            if isinstance(default_value, int | float) and not isinstance(default_value, bool):
-                if math.isnan(default_value) or math.isinf(default_value):
-                    raise ValidationError("Default value cannot be NaN or Infinity for NUMBER type")
-                return default_value
-            raise ValidationError(
-                f"Default value must be a number for NUMBER type, "
-                f"got {type(default_value).__name__}"
-            )
-
-        elif attr_type == AttrType.OBJECT:
-            if isinstance(default_value, int) and not isinstance(default_value, bool):
-                if default_value > 0:
-                    return default_value
-            raise ValidationError("Default value must be a positive entry ID for OBJECT type")
-
-        elif attr_type == AttrType.ARRAY_OBJECT:
-            if isinstance(default_value, list) and all(
-                isinstance(item, int) and not isinstance(item, bool) and item > 0
-                for item in default_value
-            ):
-                if len(default_value) != len(set(default_value)):
-                    raise ValidationError(
-                        "Default value entry IDs must be unique for ARRAY_OBJECT type"
-                    )
-                return default_value or None
-            raise ValidationError(
-                "Default value must be a list of positive entry IDs for ARRAY_OBJECT type"
-            )
-
-        return default_value
-
     def validate(self, attr: dict[str, Any]) -> dict[str, Any]:
         # case update EntityAttr
         if "id" in attr:
@@ -643,15 +522,10 @@ class EntityAttrUpdateSerializer(serializers.ModelSerializer[EntityAttr]):
             attr["choices"] = None
 
         if default_value is not None and attr_type is not None:
-            if attr_type not in EntityAttr.CUSTOM_DEFAULT_VALUE_TYPES:
-                # Clear default_value for unsupported types (incl. SELECT/MULTI_SELECT
-                # whose choice ids are auto-assigned, making static default storage
-                # ambiguous; deferred to a follow-up).
-                attr["default_value"] = None
-            else:
-                attr["default_value"] = self._validate_default_value_for_type(
-                    attr_type, default_value
-                )
+            try:
+                attr["default_value"] = _validate_default_value_for_type(attr_type, default_value)
+            except ValueError as exc:
+                raise ValidationError(str(exc)) from exc
 
         effective_default_value = attr.get(
             "default_value",
@@ -827,68 +701,6 @@ class EntitySerializer(serializers.ModelSerializer[Entity]):
 
         return item_name_type
 
-    def _validate_and_convert_default_value(self, attr_type: int, default_value: Any) -> Any:
-        """
-        Helper method to validate and convert default_value based on attribute type.
-        This implements the same logic as EntityAttrCreateSerializer.
-        """
-        if default_value is None:
-            return None
-
-        if attr_type not in EntityAttr.CUSTOM_DEFAULT_VALUE_TYPES:
-            return None
-
-        # String and Text types
-        if attr_type in [AttrType.STRING, AttrType.TEXT]:
-            if not isinstance(default_value, str):
-                raise ValidationError(
-                    f"Default value must be a string for this attribute type, "
-                    f"got {type(default_value).__name__}"
-                )
-            return default_value
-
-        # Boolean type
-        elif attr_type == AttrType.BOOLEAN:
-            if isinstance(default_value, bool):
-                return default_value
-            raise ValidationError(
-                f"Default value must be a boolean for BOOLEAN type, "
-                f"got {type(default_value).__name__}"
-            )
-
-        # Number type
-        elif attr_type == AttrType.NUMBER:
-            if isinstance(default_value, int | float) and not isinstance(default_value, bool):
-                if math.isnan(default_value) or math.isinf(default_value):
-                    raise ValidationError("Default value cannot be NaN or Infinity for NUMBER type")
-                return default_value
-            raise ValidationError(
-                f"Default value must be a number for NUMBER type, "
-                f"got {type(default_value).__name__}"
-            )
-
-        elif attr_type == AttrType.OBJECT:
-            if isinstance(default_value, int) and not isinstance(default_value, bool):
-                if default_value > 0:
-                    return default_value
-            raise ValidationError("Default value must be a positive entry ID for OBJECT type")
-
-        elif attr_type == AttrType.ARRAY_OBJECT:
-            if isinstance(default_value, list) and all(
-                isinstance(item, int) and not isinstance(item, bool) and item > 0
-                for item in default_value
-            ):
-                if len(default_value) != len(set(default_value)):
-                    raise ValidationError(
-                        "Default value entry IDs must be unique for ARRAY_OBJECT type"
-                    )
-                return default_value or None
-            raise ValidationError(
-                "Default value must be a list of positive entry IDs for ARRAY_OBJECT type"
-            )
-
-        return default_value
-
     def _update_or_create(
         self,
         user: User,
@@ -928,9 +740,7 @@ class EntitySerializer(serializers.ModelSerializer[Entity]):
             if default_value is not None and attr_type is not None:
                 # Apply the same validation logic as in the serializer
                 try:
-                    converted_value = self._validate_and_convert_default_value(
-                        attr_type, default_value
-                    )
+                    converted_value = _validate_default_value_for_type(attr_type, default_value)
                     attr_data["default_value"] = converted_value
                 except Exception:
                     # If conversion fails, keep the original value
