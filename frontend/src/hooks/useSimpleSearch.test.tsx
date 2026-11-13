@@ -1,11 +1,34 @@
 /**
  */
 
-import { renderHook, act } from "@testing-library/react";
+import { renderHook, act, screen } from "@testing-library/react";
 import { FC, ReactNode } from "react";
+import { ErrorBoundary } from "react-error-boundary";
 import { MemoryRouter } from "react-router";
 
 import { useSimpleSearch } from "./useSimpleSearch";
+
+const mockNavigation = vi.hoisted(() => ({
+  enabled: false,
+  navigate: vi.fn<(to: import("react-router").To) => Promise<void>>(),
+}));
+
+vi.mock("react-router", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("react-router")>();
+  return {
+    ...actual,
+    useNavigate: () => {
+      const navigate = actual.useNavigate();
+      return mockNavigation.enabled ? mockNavigation.navigate : navigate;
+    },
+  };
+});
+
+afterEach(() => {
+  mockNavigation.enabled = false;
+  mockNavigation.navigate.mockReset();
+  vi.restoreAllMocks();
+});
 
 function createWrapper(
   initialEntries: string[] = ["/"],
@@ -108,6 +131,93 @@ describe("useSimpleSearch", () => {
 
       const [query] = result.current;
       expect(query).toBe("test query");
+    });
+  });
+
+  describe("asynchronous navigation", () => {
+    const cases = [
+      {
+        action: "submitQuery",
+        invoke: (search: ReturnType<typeof useSimpleSearch>) =>
+          search[2]("new query"),
+        expectedSearch: "simple_search_query=new%20query&simple_search_page=1",
+      },
+      {
+        action: "changePage",
+        invoke: (search: ReturnType<typeof useSimpleSearch>) => search[3](3),
+        expectedSearch: "simple_search_query=existing&simple_search_page=3",
+      },
+    ];
+
+    test.each(
+      cases,
+    )("$action accepts a navigation that resolves asynchronously", async ({
+      invoke,
+      expectedSearch,
+    }) => {
+      let finishNavigation!: () => void;
+      mockNavigation.enabled = true;
+      mockNavigation.navigate.mockReturnValue(
+        new Promise<void>((resolve) => {
+          finishNavigation = resolve;
+        }),
+      );
+      const onError = vi.fn();
+      const wrapper: FC<{ children: ReactNode }> = ({ children }) => (
+        <MemoryRouter initialEntries={["/?simple_search_query=existing"]}>
+          <ErrorBoundary
+            fallback={<div role="alert">Navigation failed</div>}
+            onError={onError}
+          >
+            {children}
+          </ErrorBoundary>
+        </MemoryRouter>
+      );
+      const { result } = renderHook(() => useSimpleSearch(), { wrapper });
+
+      act(() => invoke(result.current));
+      expect(mockNavigation.navigate).toHaveBeenCalledWith({
+        pathname: "/ui/",
+        search: expectedSearch,
+      });
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+
+      await act(async () => {
+        finishNavigation();
+      });
+
+      expect(onError).not.toHaveBeenCalled();
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    });
+
+    test.each(
+      cases,
+    )("$action sends a rejected navigation to the ErrorBoundary", async ({
+      invoke,
+    }) => {
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      const error = new Error("Navigation rejected");
+      mockNavigation.enabled = true;
+      mockNavigation.navigate.mockRejectedValue(error);
+      const onError = vi.fn();
+      const wrapper: FC<{ children: ReactNode }> = ({ children }) => (
+        <MemoryRouter>
+          <ErrorBoundary
+            fallback={<div role="alert">Navigation failed</div>}
+            onError={onError}
+          >
+            {children}
+          </ErrorBoundary>
+        </MemoryRouter>
+      );
+      const { result } = renderHook(() => useSimpleSearch(), { wrapper });
+
+      act(() => invoke(result.current));
+
+      expect(await screen.findByRole("alert")).toHaveTextContent(
+        "Navigation failed",
+      );
+      expect(onError).toHaveBeenCalledWith(error, expect.anything());
     });
   });
 });

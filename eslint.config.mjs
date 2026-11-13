@@ -125,5 +125,23 @@ export default tseslint.config(
         },
       ],
     },
+  },
+  {
+    // Start with shared data-access code. Tests keep their existing untyped
+    // lint and tsconfig.test.json checks; they are excluded by tsconfig.json.
+    files: ["frontend/src/{hooks,services,repository}/**/*.{ts,tsx}"],
+    ignores: ["**/*.test.{ts,tsx}"],
+    languageOptions: {
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+    rules: {
+      // `void` does not handle rejection. Await, return, or catch the Promise.
+      "@typescript-eslint/no-floating-promises": ["error", { ignoreVoid: false }],
+      "@typescript-eslint/no-misused-promises": "error",
+      "@typescript-eslint/await-thenable": "error",
+    },
   }
 );

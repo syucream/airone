@@ -3,6 +3,8 @@ import { useNavigate, useLocation } from "react-router";
 
 import { networkPath, topPath } from "../routes/Routes";
 
+import { useError } from "./useError";
+
 type Query = string | undefined;
 
 export const useSimpleSearch = (): [
@@ -13,6 +15,7 @@ export const useSimpleSearch = (): [
 ] => {
   const location = useLocation();
   const navigate = useNavigate();
+  const raiseError = useError();
   const searchPath =
     location.pathname === networkPath() ? networkPath() : topPath();
 
@@ -29,24 +32,28 @@ export const useSimpleSearch = (): [
 
   const submitQuery = useCallback(
     (query: Query) => {
-      navigate({
-        pathname: searchPath,
-        search:
-          query != null
-            ? `simple_search_query=${encodeURIComponent(query)}&simple_search_page=1`
-            : undefined,
-      });
+      Promise.resolve(
+        navigate({
+          pathname: searchPath,
+          search:
+            query != null
+              ? `simple_search_query=${encodeURIComponent(query)}&simple_search_page=1`
+              : undefined,
+        }),
+      ).catch(raiseError);
     },
-    [navigate, searchPath],
+    [navigate, raiseError, searchPath],
   );
 
   const changePage = useCallback(
     (page: number) => {
       const params = new URLSearchParams(location.search);
       params.set("simple_search_page", page.toString());
-      navigate({ pathname: searchPath, search: params.toString() });
+      Promise.resolve(
+        navigate({ pathname: searchPath, search: params.toString() }),
+      ).catch(raiseError);
     },
-    [location.search, navigate, searchPath],
+    [location.search, navigate, raiseError, searchPath],
   );
 
   return [query, page, submitQuery, changePage];

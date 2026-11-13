@@ -1,6 +1,8 @@
 import { startTransition, useCallback, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router";
 
+import { useError } from "./useError";
+
 type UsePageReturn = {
   page: number;
   query: string;
@@ -14,6 +16,7 @@ type UsePageReturn = {
 export const usePage = (): UsePageReturn => {
   const location = useLocation();
   const navigate = useNavigate();
+  const raiseError = useError();
 
   const { page, query } = useMemo(() => {
     const params = new URLSearchParams(location.search);
@@ -32,13 +35,15 @@ export const usePage = (): UsePageReturn => {
       startTransition(() => {
         const params = new URLSearchParams(location.search);
         params.set("page", newPage.toString());
-        navigate({
-          pathname: location.pathname,
-          search: params.toString(),
-        });
+        Promise.resolve(
+          navigate({
+            pathname: location.pathname,
+            search: params.toString(),
+          }),
+        ).catch(raiseError);
       });
     },
-    [location.pathname, location.search, navigate],
+    [location.pathname, location.search, navigate, raiseError],
   );
 
   const changeQuery = useCallback(
@@ -49,13 +54,15 @@ export const usePage = (): UsePageReturn => {
           params.set("query", encodeURIComponent(newQuery));
         }
         params.set("page", "1");
-        navigate({
-          pathname: location.pathname,
-          search: params.toString(),
-        });
+        Promise.resolve(
+          navigate({
+            pathname: location.pathname,
+            search: params.toString(),
+          }),
+        ).catch(raiseError);
       });
     },
-    [location.pathname, navigate],
+    [location.pathname, navigate, raiseError],
   );
 
   return { page, query, changePage, changeQuery };

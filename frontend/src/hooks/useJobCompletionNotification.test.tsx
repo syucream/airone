@@ -15,6 +15,8 @@ const wrapper: FC<{ children: ReactNode }> = ({ children }) => (
   <SnackbarProvider maxSnack={5}>{children}</SnackbarProvider>
 );
 
+const originalLocks = Object.getOwnPropertyDescriptor(navigator, "locks");
+
 const makeJob = (
   overrides: Partial<JobSerializers> & { id: number },
 ): JobSerializers => {
@@ -38,6 +40,11 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.restoreAllMocks();
+  if (originalLocks) {
+    Object.defineProperty(navigator, "locks", originalLocks);
+  } else {
+    Reflect.deleteProperty(navigator, "locks");
+  }
 });
 
 describe("useJobCompletionNotification", () => {
@@ -82,6 +89,93 @@ describe("useJobCompletionNotification", () => {
 
     firstTab.unmount();
     secondTab.unmount();
+  });
+
+  test("claims an export inside the lock before downloading across tabs", async () => {
+    const callbacks: Array<() => void> = [];
+    const request = vi.fn((_name: string, callback: () => void) => {
+      return new Promise<void>((resolve) => {
+        callbacks.push(() => {
+          callback();
+          resolve();
+        });
+      });
+    });
+    Object.defineProperty(navigator, "locks", {
+      configurable: true,
+      value: { request },
+    });
+    const job = makeJob({
+      id: 307,
+      operation: JobOperations.EXPORT_ENTRY_V2,
+      status: JobStatuses.PROCESSING,
+    });
+    const firstTab = renderHook(
+      ({ recentJobs }) => useJobCompletionNotification(recentJobs),
+      { wrapper, initialProps: { recentJobs: [job] } },
+    );
+    const secondTab = renderHook(
+      ({ recentJobs }) => useJobCompletionNotification(recentJobs),
+      { wrapper, initialProps: { recentJobs: [job] } },
+    );
+    firstTab.rerender({ recentJobs: [{ ...job, status: JobStatuses.DONE }] });
+    secondTab.rerender({ recentJobs: [{ ...job, status: JobStatuses.DONE }] });
+
+    expect(request).toHaveBeenCalledTimes(2);
+    expect(request).toHaveBeenCalledWith(
+      "airone-auto-export-download",
+      expect.any(Function),
+    );
+    expect(HTMLAnchorElement.prototype.click).not.toHaveBeenCalled();
+    expect(localStorage.getItem("job__auto_downloaded_export_ids")).toBeNull();
+    vi.mocked(HTMLAnchorElement.prototype.click).mockImplementation(() => {
+      expect(localStorage.getItem("job__auto_downloaded_export_ids")).toBe(
+        "[307]",
+      );
+    });
+
+    await act(async () => {
+      for (const callback of callbacks) callback();
+    });
+
+    expect(HTMLAnchorElement.prototype.click).toHaveBeenCalledTimes(1);
+    expect(
+      screen.getAllByRole("link", { name: /ダウンロード|Download/ }),
+    ).toHaveLength(2);
+  });
+
+  test("keeps the manual link without claiming or downloading when the lock fails", async () => {
+    const request = vi.fn(() => Promise.reject(new Error("Lock unavailable")));
+    Object.defineProperty(navigator, "locks", {
+      configurable: true,
+      value: { request },
+    });
+    const job = makeJob({
+      id: 308,
+      operation: JobOperations.EXPORT_ENTRY_V2,
+      createdAt: new Date(Date.now() + 1000),
+    });
+    const { rerender } = renderHook(
+      ({ recentJobs }) => useJobCompletionNotification(recentJobs),
+      { wrapper, initialProps: { recentJobs: [job] } },
+    );
+
+    expect(
+      await screen.findByText(
+        i18n.t("notification.operationFailed", {
+          targetName: "job-308",
+          operationName: i18n.t("common.download"),
+        }),
+      ),
+    ).toBeInTheDocument();
+    rerender({ recentJobs: [job] });
+
+    expect(request).toHaveBeenCalledTimes(1);
+    expect(HTMLAnchorElement.prototype.click).not.toHaveBeenCalled();
+    expect(localStorage.getItem("job__auto_downloaded_export_ids")).toBeNull();
+    expect(
+      screen.getByRole("link", { name: /ダウンロード|Download/ }),
+    ).toHaveAttribute("href", "/job/api/v2/308/download?encode=utf-8");
   });
 
   test("configuration export downloads automatically and keeps a download link", async () => {

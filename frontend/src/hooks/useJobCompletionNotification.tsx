@@ -41,7 +41,7 @@ const saveNotifiedIds = (ids: Set<number>) => {
   );
 };
 
-const downloadExportOnce = (jobId: number): void => {
+const downloadExportOnce = (jobId: number, onFailure: () => void): void => {
   const download = () => {
     const raw = localStorage.getItem(AUTO_DOWNLOADED_EXPORTS_KEY);
     let downloadedIds: number[] = [];
@@ -67,7 +67,9 @@ const downloadExportOnce = (jobId: number): void => {
   };
 
   if (navigator.locks) {
-    void navigator.locks.request(AUTO_DOWNLOAD_LOCK, download);
+    // Keep the manual download available if the lock or download fails. Never
+    // retry outside the lock: another tab may already have claimed this job.
+    navigator.locks.request(AUTO_DOWNLOAD_LOCK, download).catch(onFailure);
   } else {
     // Older browsers lack Web Locks. localStorage still suppresses repeated
     // calls in the normal same-origin tab polling flow.
@@ -124,7 +126,15 @@ export const useJobCompletionNotification = (
 
       if (job.status === JobStatuses.DONE) {
         if (isExportJob(job.operation)) {
-          downloadExportOnce(job.id);
+          downloadExportOnce(job.id, () => {
+            enqueueSnackbar(
+              NotificationMessages.operationFailed(
+                targetName,
+                translate("common.download"),
+              ),
+              { variant: "warning" },
+            );
+          });
           enqueueSnackbar(NotificationMessages.exportReady(targetName), {
             variant: "success",
             persist: true,

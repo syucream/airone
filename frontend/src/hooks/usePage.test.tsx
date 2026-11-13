@@ -1,11 +1,34 @@
 /**
  */
 
-import { renderHook, act } from "@testing-library/react";
+import { renderHook, act, screen } from "@testing-library/react";
 import { FC, ReactNode } from "react";
+import { ErrorBoundary } from "react-error-boundary";
 import { MemoryRouter } from "react-router";
 
 import { usePage } from "./usePage";
+
+const mockNavigation = vi.hoisted(() => ({
+  enabled: false,
+  navigate: vi.fn<(to: import("react-router").To) => Promise<void>>(),
+}));
+
+vi.mock("react-router", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("react-router")>();
+  return {
+    ...actual,
+    useNavigate: () => {
+      const navigate = actual.useNavigate();
+      return mockNavigation.enabled ? mockNavigation.navigate : navigate;
+    },
+  };
+});
+
+afterEach(() => {
+  mockNavigation.enabled = false;
+  mockNavigation.navigate.mockReset();
+  vi.restoreAllMocks();
+});
 
 function createWrapper(
   initialEntries: string[] = ["/"],
@@ -18,6 +41,38 @@ function createWrapper(
 }
 
 describe("usePage", () => {
+  test.each([
+    "changePage",
+    "changeQuery",
+  ] as const)("%s sends a rejected navigation to the ErrorBoundary", async (action) => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const error = new Error("Navigation rejected");
+    mockNavigation.enabled = true;
+    mockNavigation.navigate.mockRejectedValue(error);
+    const onError = vi.fn();
+    const wrapper: FC<{ children: ReactNode }> = ({ children }) => (
+      <MemoryRouter>
+        <ErrorBoundary
+          fallback={<div role="alert">Navigation failed</div>}
+          onError={onError}
+        >
+          {children}
+        </ErrorBoundary>
+      </MemoryRouter>
+    );
+    const { result } = renderHook(() => usePage(), { wrapper });
+
+    act(() => {
+      if (action === "changePage") result.current.changePage(2);
+      else result.current.changeQuery("search");
+    });
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Navigation failed",
+    );
+    expect(onError).toHaveBeenCalledWith(error, expect.anything());
+  });
+
   describe("initial state", () => {
     test("should return default page 1 when no page param in URL", () => {
       const { result } = renderHook(() => usePage(), {
