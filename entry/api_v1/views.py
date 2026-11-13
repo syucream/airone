@@ -1,5 +1,4 @@
 import json
-import re
 from datetime import date, datetime
 from typing import Any, cast
 from zoneinfo import ZoneInfo
@@ -13,6 +12,7 @@ from acl.models import ACLBase
 from airone.lib.acl import ACLType
 from airone.lib.elasticsearch import prepend_escape_character
 from airone.lib.http import http_get, http_post
+from airone.lib.regex import RegexBudget, RegexValidationError
 from airone.lib.types import AttrType
 from entity.models import Entity, EntityAttr
 from entry.models import Attribute, AttributeValue, Entry
@@ -79,6 +79,20 @@ def search_entries(
     if "cond_link" in recv_data and any([x for x in ["and", "or"] if x == recv_data["cond_link"]]):
         cond_link = recv_data["cond_link"]
 
+    budget = RegexBudget()
+    text_patterns = {}
+    try:
+        for cond in recv_data["cond_params"]:
+            if cond["type"] == "text" and cond.get("value"):
+                value = cond["value"]
+                if not isinstance(value, str):
+                    raise RegexValidationError("Regular expression must be a string.")
+                if value not in text_patterns:
+                    # Keep the legacy prefix, including its newline and anchor behavior.
+                    text_patterns[value] = budget.compile(".*" + value)
+    except RegexValidationError as exc:
+        return HttpResponse(str(exc), status=400)
+
     total_entries: list[Entry] = []
     for entity_id in entity_ids.split(","):
         if not Entity.objects.filter(id=entity_id).exists():
@@ -92,7 +106,7 @@ def search_entries(
 
     def _is_match_value(attrv: AttributeValue, cond: dict[str, Any]) -> Any:
         if cond["type"] == "text":
-            return re.match(r".*%s" % cond["value"], attrv.value)
+            return budget.match(text_patterns[cond["value"]], attrv.value)
         else:
             assert attrv.referral is not None  # cond type "entry" implies a referral is set
             return int(cond["value"]) == attrv.referral.id
@@ -132,7 +146,10 @@ def search_entries(
         else:
             return all([_is_match_attrs(attrs, cond) for cond in recv_data["cond_params"]])
 
-    ret_entries = [x for x in total_entries if _is_match_entry(x)]
+    try:
+        ret_entries = [x for x in total_entries if _is_match_entry(x)]
+    except RegexValidationError as exc:
+        return HttpResponse(str(exc), status=400)
 
     return JsonResponse(
         {

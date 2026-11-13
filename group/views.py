@@ -14,6 +14,7 @@ from airone.lib.http import (
     http_post,
     render,
 )
+from airone.lib.yaml import safe_load_yaml
 from group.models import Group
 from job.models import Job, JobOperation
 from user.models import User
@@ -271,8 +272,8 @@ def import_user_and_group(request: HttpRequest) -> HttpResponse:
 @check_superuser
 def do_import_user_and_group(request: HttpRequest, context: str) -> HttpResponse:
     try:
-        data = yaml.load(context, Loader=yaml.SafeLoader)
-    except (yaml.parser.ParserError, yaml.scanner.ScannerError):
+        data = safe_load_yaml(context)
+    except yaml.YAMLError:
         return HttpResponse("Couldn't parse uploaded file", status=400)
 
     # complement if empty in request

@@ -33,6 +33,7 @@ from airone.lib.drf import (
     get_bound_parent,
 )
 from airone.lib.log import Logger
+from airone.lib.regex import RegexBudget, RegexValidationError
 from airone.lib.types import AttrType, AttrTypeValue
 from entity.admin import EntityAttrResource, EntityResource
 from entity.models import Entity, EntityAttr, ItemNameType
@@ -817,9 +818,9 @@ class EntitySerializer(serializers.ModelSerializer[Entity]):
 
     def validate_item_name_pattern(self, item_name_pattern: str) -> str:
         try:
-            re.compile(item_name_pattern)
-        except Exception:
-            raise ValidationError("Invalid regex pattern")
+            RegexBudget().compile(item_name_pattern)
+        except RegexValidationError as exc:
+            raise ValidationError(f"Invalid regex pattern: {exc}") from exc
 
         return item_name_pattern
 

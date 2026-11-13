@@ -14,6 +14,7 @@ from airone.lib.acl import ACLType
 from airone.lib.elasticsearch import AttrHint, SimpleSearchResultRecord
 from airone.lib.http import HttpResponseSeeOther, http_file_upload, http_get, http_post, render
 from airone.lib.log import Logger
+from airone.lib.yaml import safe_load_yaml
 from entity.admin import EntityAttrResource, EntityResource
 from entity.models import Entity, EntityAttr
 from entry.admin import AttrResource, AttrValueResource, EntryResource
@@ -74,7 +75,7 @@ def do_import_data(request: HttpRequest, context: str) -> HttpResponse:
         return HttpResponse("File size over", status=400)
 
     try:
-        data = yaml.safe_load(context)
+        data = safe_load_yaml(context)
     except yaml.YAMLError:
         return HttpResponse("Couldn't parse uploaded file", status=400)
 

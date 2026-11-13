@@ -17,6 +17,7 @@ from rest_framework.views import APIView, exception_handler
 from yaml import SafeDumper
 
 from airone.lib.log import Logger
+from airone.lib.yaml import safe_load_yaml
 from common.lib.import_detector import UnknownImportFormatError, unwrap_envelope
 from user.models import User
 
@@ -27,7 +28,7 @@ SafeDumper.add_representer(ReturnList, yaml.representer.SafeRepresenter.represen
 
 class YAMLParser(BaseParser):
     """
-    Parses JSON-serialized data.
+    Parses YAML with bounded input size, nesting, and alias expansion.
     """
 
     media_type = "application/yaml"
@@ -45,10 +46,9 @@ class YAMLParser(BaseParser):
         encoding = parser_context.get("encoding", settings.DEFAULT_CHARSET)
 
         try:
-            data = stream.read().decode(encoding)
-            loaded: dict[str, object] = yaml.safe_load(data)
+            loaded: dict[str, object] = safe_load_yaml(stream, encoding=encoding)
             return loaded
-        except (ValueError, yaml.parser.ParserError, yaml.scanner.ScannerError) as exc:
+        except (ValueError, yaml.YAMLError) as exc:
             raise ParseError("YAML parse error - %s" % str(exc))
 
 

@@ -23,6 +23,7 @@ from airone.lib.http import (
     render,
 )
 from airone.lib.types import AttrType
+from airone.lib.yaml import safe_load_yaml
 from entity.models import Entity, EntityAttr
 from entry.models import Attribute, AttributeValue, Entry
 from entry.utils import get_sort_order
@@ -553,7 +554,7 @@ def do_import_data(request: HttpRequest, entity_id: int, context: str) -> HttpRe
         return HttpResponse("Failed to get entity of specified id", status=400)
 
     try:
-        data = yaml.safe_load(context)
+        data = safe_load_yaml(context)
     except yaml.parser.ParserError:
         return HttpResponse("Couldn't parse uploaded file", status=400)
     except ValueError as e:

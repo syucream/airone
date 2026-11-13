@@ -1,4 +1,3 @@
-import re
 from collections.abc import Mapping
 from datetime import date, datetime
 from typing import Any, Literal, NotRequired, TypedDict, cast
@@ -24,6 +23,7 @@ from airone.lib.drf import (
 )
 from airone.lib.elasticsearch import EntryFilterKey, FilterKey
 from airone.lib.log import Logger
+from airone.lib.regex import RegexBudget, RegexValidationError
 from airone.lib.types import AttrDefaultValue, AttrType, coerce_number
 from entity.api_v2.serializers import EntitySerializer
 from entity.models import Entity, EntityAttr
@@ -549,17 +549,17 @@ class EntryBaseSerializer(serializers.ModelSerializer[Entry]):
         if "\t" in name:
             raise InvalidValueError("Names containing tab characters cannot be specified.")
 
-        # Check specified name is matched with Model.item_name_patten if it's configured
-        if schema.item_name_pattern is None:
-            # OK to be created or updated because there is no pattern to be regulated
-            pass
-        elif re.match(schema.item_name_pattern, name):
-            # OK to be created or updated
-            pass
-        else:
-            raise InvalidValueError(
-                'Specified name doesn\'t match configured pattern "%s"' % schema.item_name_pattern
-            )
+        if schema.item_name_pattern is not None:
+            budget = RegexBudget()
+            try:
+                matches = budget.match(budget.compile(schema.item_name_pattern), name)
+            except RegexValidationError as exc:
+                raise InvalidValueError(f"Configured name pattern: {exc}") from exc
+            if not matches:
+                raise InvalidValueError(
+                    'Specified name doesn\'t match configured pattern "%s"'
+                    % schema.item_name_pattern
+                )
 
         return name
 
