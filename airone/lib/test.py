@@ -3,6 +3,7 @@ import functools
 import inspect
 import io
 import json
+import logging
 import os
 import re
 import sys
@@ -12,6 +13,7 @@ from zoneinfo import ZoneInfo
 
 import yaml
 from django.conf import settings
+from django.db import DEFAULT_DB_ALIAS, connections
 from django.test import Client, TestCase, override_settings
 
 from airone.lib.acl import ACLType
@@ -308,11 +310,48 @@ class AironeTestCase(TestCase):
         return self._do_login(uname)
 
 
+class CommitCallbacksClient(Client):
+    """Simulate request commits for tests that mock asynchronous tasks eagerly.
+
+    TestCase keeps a transaction open for the whole test. This opt-in client
+    drains only callbacks registered by a request, once its transactions have
+    completed. Removed callbacks cannot run twice under an outer
+    captureOnCommitCallbacks context. Explicit transactions surrounding a request
+    still own their callbacks; this client never simulates their commit.
+    """
+
+    def request(self, **request: Any) -> Any:
+        connection = connections[DEFAULT_DB_ALIAS]
+        start = len(connection.run_on_commit)
+        response = super().request(**request)
+        if connection.needs_rollback or any(
+            not getattr(block, "_from_testcase", False) for block in connection.atomic_blocks
+        ):
+            return response
+
+        while len(connection.run_on_commit) > start:
+            # Django stores (savepoints, callback, robust); older stubs omit robust.
+            _, callback, robust = cast(
+                tuple[set[str | None], Callable[[], Any], bool],
+                connection.run_on_commit.pop(start),
+            )
+            if robust:
+                try:
+                    callback()
+                except Exception:
+                    logging.getLogger("django.db.backends.base").exception(
+                        "Error calling on_commit callback in CommitCallbacksClient"
+                    )
+            else:
+                callback()
+        return response
+
+
 class AironeViewTest(AironeTestCase):
     def setUp(self) -> None:
         super().setUp()
 
-        self.client = Client()
+        self.client = self.client_class()
 
     def open_fixture_file(self, fname: str) -> io.TextIOWrapper:
         test_file_path = inspect.getfile(self.__class__)

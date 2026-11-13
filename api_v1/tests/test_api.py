@@ -10,7 +10,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
 from airone.lib.acl import ACLType
-from airone.lib.test import AironeViewTest
+from airone.lib.test import AironeViewTest, CommitCallbacksClient
 from airone.lib.types import AttrType
 from entity.models import Entity, EntityAttr
 from entry import tasks
@@ -25,6 +25,8 @@ from user.models import User
 
 
 class APITest(AironeViewTest):
+    client_class = CommitCallbacksClient
+
     def setUp(self):
         super(APITest, self).setUp()
 

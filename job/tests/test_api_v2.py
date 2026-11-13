@@ -500,11 +500,12 @@ class ViewTest(AironeViewTest):
 
         # create an entry through the new UI (api_v2) endpoint
         params = {"name": "new_entry", "schema": entity.id, "attrs": []}
-        resp = self.client.post(
-            "/entity/api/v2/%d/entries/" % entity.id,
-            json.dumps(params),
-            "application/json",
-        )
+        with self.captureOnCommitCallbacks(execute=True):
+            resp = self.client.post(
+                "/entity/api/v2/%d/entries/" % entity.id,
+                json.dumps(params),
+                "application/json",
+            )
         self.assertEqual(resp.status_code, 202, resp.content)
 
         # the entry must have been created (the task ran synchronously)

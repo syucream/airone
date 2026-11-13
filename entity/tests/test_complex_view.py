@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch
 from django.urls import reverse
 
 from airone.lib.acl import ACLType
-from airone.lib.test import AironeViewTest
+from airone.lib.test import AironeViewTest, CommitCallbacksClient
 from airone.lib.types import AttrType
 from entity import tasks as entity_tasks
 from entity.models import Entity, EntityAttr
@@ -14,6 +14,8 @@ from role.models import Role
 
 
 class ComplexViewTest(AironeViewTest):
+    client_class = CommitCallbacksClient
+
     """
     This has complex tests that combine multiple requests across the inter-applicational
     """

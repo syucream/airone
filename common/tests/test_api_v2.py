@@ -3,7 +3,7 @@ from unittest.mock import Mock, patch
 
 import yaml
 
-from airone.lib.test import AironeViewTest
+from airone.lib.test import AironeViewTest, CommitCallbacksClient
 from entity.models import Entity
 from group.models import Group
 from job import tasks as job_tasks
@@ -19,6 +19,8 @@ PATCH_ROLE = patch("role.tasks.import_role_v2.delay", Mock(side_effect=role_task
 
 
 class CommonImportAPITest(AironeViewTest):
+    client_class = CommitCallbacksClient
+
     def _post(self, data: object, query: str = "") -> object:
         return self.client.post(
             "/common/api/v2/import" + query, yaml.dump(data), content_type="application/yaml"

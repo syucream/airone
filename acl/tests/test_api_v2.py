@@ -5,7 +5,7 @@ from django.db import connection
 
 from acl.models import ACLBase
 from airone.lib.acl import ACLType
-from airone.lib.test import AironeViewTest
+from airone.lib.test import AironeViewTest, CommitCallbacksClient
 from airone.lib.types import AttrType
 from entity import tasks
 from entity.models import Entity, EntityAttr
@@ -13,6 +13,8 @@ from role.models import Role
 
 
 class ViewTest(AironeViewTest):
+    client_class = CommitCallbacksClient
+
     def initialization_for_retrieve_test(self):
         self.user = self.admin_login()
         self.role = Role.objects.create(name="role")

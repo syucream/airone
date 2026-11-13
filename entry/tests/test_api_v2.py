@@ -8,7 +8,7 @@ from rest_framework.exceptions import ValidationError
 
 from acl.models import ACLType
 from airone.lib.elasticsearch import AttrHint
-from airone.lib.test import AironeViewTest
+from airone.lib.test import AironeViewTest, CommitCallbacksClient
 from airone.lib.types import (
     AttrDefaultValue,
     AttrType,
@@ -25,6 +25,8 @@ from user.models import User
 
 
 class BaseViewTest(AironeViewTest):
+    client_class = CommitCallbacksClient
+
     def setUp(self):
         super(BaseViewTest, self).setUp()
 

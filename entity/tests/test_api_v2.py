@@ -16,7 +16,7 @@ from rest_framework.exceptions import ValidationError
 from acl.models import ACLBase, ACLType
 from airone.lib.drf import YAMLRenderer
 from airone.lib.log import Logger
-from airone.lib.test import AironeViewTest, load_export_payload
+from airone.lib.test import AironeViewTest, CommitCallbacksClient, load_export_payload
 from airone.lib.types import AttrType
 from common.lib.import_detector import ImportType
 from common.tests.compat import post_import
@@ -36,6 +36,8 @@ from webhook.models import Webhook
 
 
 class ViewTest(AironeViewTest):
+    client_class = CommitCallbacksClient
+
     def setUp(self):
         super().setUp()
 
@@ -4793,6 +4795,8 @@ class ViewTest(AironeViewTest):
 
 class EntityHistoryAPITest(AironeViewTest):
     """Tests for EntityHistoryAPI with simple-history changes support."""
+
+    client_class = CommitCallbacksClient
 
     def setUp(self):
         super().setUp()

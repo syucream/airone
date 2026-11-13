@@ -1,7 +1,7 @@
 import json
 from unittest import mock
 
-from airone.lib.test import AironeViewTest
+from airone.lib.test import AironeViewTest, CommitCallbacksClient
 from airone.lib.types import AttrType
 from entity import tasks as entity_tasks
 from entry import tasks as entry_tasks
@@ -9,6 +9,8 @@ from isolation.models import IsolationAction, IsolationCondition, IsolationParen
 
 
 class IsolationAPITest(AironeViewTest):
+    client_class = CommitCallbacksClient
+
     def setUp(self):
         super().setUp()
         self.user = self.guest_login()

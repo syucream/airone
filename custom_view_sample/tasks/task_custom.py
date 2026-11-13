@@ -10,10 +10,7 @@ from user.models import User
 def update_custom_attribute(self: Any, job_id: str) -> None:
     job = Job.objects.get(id=job_id)
 
-    if job.proceed_if_ready():
-        # At the first time, update job status to prevent executing this job duplicately
-        job.update(JobStatus.PROCESSING)
-
+    if job.claim_for_processing():
         user = User.objects.filter(id=job.user.id).first()
         assert job.target is not None
         entry = Entry.objects.filter(id=job.target.id, is_active=True).first()

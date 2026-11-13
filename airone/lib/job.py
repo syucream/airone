@@ -19,11 +19,8 @@ def _handle_task(
         on_cancelled(job)
         return
 
-    if not job.proceed_if_ready():
+    if not job.claim_for_processing():
         return
-
-    # update Job status from PREPARING to PROCEEDING
-    job.update(JobStatus.PROCESSING)
 
     try:
         # running Job processing

@@ -3,7 +3,7 @@ from unittest.mock import Mock, patch
 
 import yaml
 
-from airone.lib.test import AironeViewTest, load_export_payload
+from airone.lib.test import AironeViewTest, CommitCallbacksClient, load_export_payload
 from common.lib.import_detector import ImportType
 from common.tests.compat import post_import
 from entry.models import Attribute, Entry
@@ -15,6 +15,8 @@ from user.models import User
 
 
 class ViewTest(AironeViewTest):
+    client_class = CommitCallbacksClient
+
     def setUp(self):
         super(ViewTest, self).setUp()
 

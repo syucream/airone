@@ -1,0 +1,24 @@
+name: Celery worker fault tests
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - name: Run real worker fault tests
+        run: tools/test_celery_worker.sh
+      - name: Upload worker logs and results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: celery-worker-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .artifacts/celery-worker/
+          include-hidden-files: true
+          if-no-files-found: warn

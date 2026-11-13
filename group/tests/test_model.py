@@ -153,7 +153,8 @@ class ModelTest(AironeTestCase):
             entity,
             values={"group": testg},
         )
-        testg.delete()
+        with self.captureOnCommitCallbacks(execute=True):
+            testg.delete()
 
         resp1 = AdvancedSearchService.search_entries(
             self.user1, [entity.id], [AttrHint(name="group")]

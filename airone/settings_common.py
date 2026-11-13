@@ -1,8 +1,6 @@
-import errno
 import json
 import logging
 import os
-import subprocess
 from typing import Any
 
 import environ
@@ -10,6 +8,7 @@ from configurations import Configuration
 from ddtrace import config, patch_all, tracer  # type: ignore[attr-defined]
 
 from airone.lib import devmode
+from airone.lib.version import get_version
 
 env = environ.Env()
 env.read_env(os.path.join(environ.Path(__file__) - 2, ".env"))
@@ -377,30 +376,14 @@ class Common(Configuration):  # type: ignore[misc]
         "WEBHOOK": env.bool("AIRONE_FLAGS_WEBHOOK", True),
     }
 
-    try:
-        proc = subprocess.Popen(
-            "cd %s && git tag --points-at | grep -v pagoda-core- | head -1" % BASE_DIR,
-            shell=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-        outs, errs = proc.communicate(timeout=1)
-        # if `git describe --tags` prints some string to stdout, use the result as version
-        # else use 'unknown' as version (e.g. untagged git repository)
-        if outs:
-            AIRONE["VERSION"] = outs.decode("utf-8").strip()
-        else:
-            logging.getLogger(__name__).warning("could not describe airone version from git")
+    AIRONE["VERSION"] = get_version(BASE_DIR)
 
+    try:
         # create a directory to store temporary file for applications
         if not os.path.exists(MEDIA_ROOT):
             os.makedirs(MEDIA_ROOT)
-
-    except OSError as e:
-        # errno.ENOENT is the errno of FileNotFoundError
-        if e.errno == errno.ENOENT:
-            # do nothing and use 'unknown' as version when git does not exists
-            logging.getLogger(__name__).warning("git command not found.")
+    except OSError:
+        logging.getLogger(__name__).warning("could not create media directory", exc_info=True)
 
     _es_default_index = "airone-%s" % devmode.namespace() if LITE else "airone"
     ES_CONFIG = env.search_url(

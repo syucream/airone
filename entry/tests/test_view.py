@@ -9,7 +9,7 @@ from django.urls import reverse
 
 from airone.lib.acl import ACLType
 from airone.lib.elasticsearch import AttrHint
-from airone.lib.test import AironeViewTest, DisableStderr
+from airone.lib.test import AironeViewTest, CommitCallbacksClient, DisableStderr
 from airone.lib.types import (
     AttrType,
 )
@@ -27,6 +27,8 @@ from user.models import User
 
 
 class BaseViewTest(AironeViewTest):
+    client_class = CommitCallbacksClient
+
     def setUp(self):
         super(BaseViewTest, self).setUp()
 

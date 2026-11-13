@@ -133,7 +133,12 @@ def post_import(
             patch("job.tasks.import_general.delay", Mock(side_effect=job_tasks.import_general)),
             transaction.atomic(),
         ):
-            response = testcase.client.post(common_url, data, content_type=content_type, **extra)
+            # This rehearsal deliberately rolls back its writes, but compares the
+            # completed worker result. Simulate publication explicitly here.
+            with testcase.captureOnCommitCallbacks(execute=True):
+                response = testcase.client.post(
+                    common_url, data, content_type=content_type, **extra
+                )
             common = _capture(response)
             # the search index is not part of the transaction
             for entry in Entry.objects.exclude(id__in=entry_ids_before):

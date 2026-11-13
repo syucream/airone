@@ -366,9 +366,8 @@ def register_plugin_job_task(offset: int) -> Callable[[TaskHandler], TaskHandler
             job = Job.objects.get(id=job_id)
             if job.is_canceled():
                 return JobStatus.CANCELED
-            if not job.proceed_if_ready():
+            if not job.claim_for_processing():
                 return
-            job.update(JobStatus.PROCESSING)
             try:
                 # ... task processing ...
                 job.update(JobStatus.DONE)

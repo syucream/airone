@@ -11,7 +11,8 @@ from zoneinfo import ZoneInfo
 
 from django.conf import settings
 from django.core.files.storage import default_storage
-from django.db import models
+from django.db import models, router, transaction
+from django.utils import timezone
 
 from acl.models import ACLBase
 from airone.lib import auto_complement
@@ -392,6 +393,26 @@ class Job(models.Model):
 
         self.save(update_fields=update_fields)
 
+    def claim_for_processing(self) -> bool:
+        """Check readiness and atomically claim a preparing job for this worker."""
+        if not self.proceed_if_ready():
+            return False
+
+        updated_at = timezone.now()
+        using = router.db_for_write(type(self), instance=self)
+        claimed = (
+            type(self)
+            .objects.using(using)
+            .filter(pk=self.pk, status=JobStatus.PREPARING)
+            .update(status=JobStatus.PROCESSING, updated_at=updated_at)
+        )
+        if not claimed:
+            self.refresh_from_db(using=using, fields=["status", "updated_at"])
+            return False
+        self.status = JobStatus.PROCESSING
+        self.updated_at = updated_at
+        return True
+
     def to_json(self) -> dict[str, Any]:
         # For advanced search results export, target is assumed to be empty.
         return {
@@ -413,6 +434,11 @@ class Job(models.Model):
         }
 
     def run(self, will_delay: bool = True) -> Any:
+        """Dispatch after commit, returning None if deferred, otherwise the task result.
+
+        Asynchronous calls in autocommit return Celery's AsyncResult immediately.
+        Synchronous calls always execute immediately and return the handler result.
+        """
         method_table = self.method_table()
         if self.operation not in method_table:
             Logger.error("Job %s has invalid operation type" % self.id)
@@ -421,6 +447,14 @@ class Job(models.Model):
         # initiate job processing
         method = method_table[self.operation]
         if will_delay:
+            using = router.db_for_write(type(self), instance=self)
+            if transaction.get_connection(using).in_atomic_block:
+                job_id = self.id
+                transaction.on_commit(
+                    lambda: method.delay(job_id),  # type: ignore[attr-defined]
+                    using=using,
+                )
+                return None
             # method is a Celery task with .delay() method
             return method.delay(self.id)  # type: ignore[attr-defined]
         else:

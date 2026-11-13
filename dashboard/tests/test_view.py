@@ -6,7 +6,7 @@ from unittest.mock import Mock, mock_open, patch
 import yaml
 from django.urls import reverse
 
-from airone.lib.test import AironeViewTest
+from airone.lib.test import AironeViewTest, CommitCallbacksClient
 from airone.lib.types import (
     AttrType,
 )
@@ -22,6 +22,8 @@ from user.models import User
 
 
 class ViewTest(AironeViewTest):
+    client_class = CommitCallbacksClient
+
     def setUp(self):
         super(ViewTest, self).setUp()
 

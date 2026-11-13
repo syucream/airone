@@ -226,6 +226,11 @@ The dev server wants the opposite: jobs should actually complete. So
 in the request process. Creating a model or an item returns `202` and the work
 has already happened by the time you look.
 
+To exercise actual worker processes, MySQL commit visibility, duplicate delivery,
+and worker crashes, run `tools/test_celery_worker.sh`. See
+[Real Celery worker fault tests](../celery_worker_tests/) for the on-demand local
+and GitHub Actions lane, retained logs, and delivery guarantees.
+
 ## Housekeeping
 
 ```

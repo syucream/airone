@@ -4,7 +4,7 @@ from unittest import mock
 from django.urls import reverse
 
 from airone.lib.elasticsearch import AttrHint
-from airone.lib.test import AironeViewTest
+from airone.lib.test import AironeViewTest, CommitCallbacksClient
 from airone.lib.types import AttrType
 from entry.services import AdvancedSearchService
 from group import tasks
@@ -13,6 +13,8 @@ from user.models import User
 
 
 class APITest(AironeViewTest):
+    client_class = CommitCallbacksClient
+
     # helper methods to craete User and Group
     def _create_user(self, name):
         return User.objects.create(username=name)

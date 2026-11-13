@@ -1,7 +1,7 @@
 from unittest.mock import Mock, patch
 
 from airone.lib.acl import ACLType
-from airone.lib.test import AironeViewTest
+from airone.lib.test import AironeViewTest, CommitCallbacksClient
 from airone.lib.types import AttrType
 from entry import tasks
 from job.models import Job
@@ -9,6 +9,8 @@ from role.models import Role
 
 
 class CascadeACLTest(AironeViewTest):
+    client_class = CommitCallbacksClient
+
     """A source mutation never grants write access to its cascade targets."""
 
     def setUp(self):

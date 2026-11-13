@@ -5,7 +5,7 @@ import yaml
 from django.contrib.auth.models import Permission
 from django.urls import reverse
 
-from airone.lib.test import AironeViewTest
+from airone.lib.test import AironeViewTest, CommitCallbacksClient
 from airone.lib.types import (
     AttrType,
 )
@@ -18,6 +18,8 @@ from user.models import History, User
 
 
 class ViewTest(AironeViewTest):
+    client_class = CommitCallbacksClient
+
     """
     This has simple tests that check basic functionality
     """

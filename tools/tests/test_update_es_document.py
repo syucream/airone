@@ -54,7 +54,8 @@ class UpdateESDocuemntlTest(AironeTestCase):
         ret = AdvancedSearchService.search_entries(self.user, [self.entity1.id, self.entity2.id])
         self.assertEqual(ret.ret_count, 0)
 
-        initialize_es_document([])
+        with self.captureOnCommitCallbacks(execute=True):
+            initialize_es_document([])
 
         ret = AdvancedSearchService.search_entries(self.user, [self.entity1.id])
         self.assertEqual(ret.ret_count, 3)
@@ -68,13 +69,15 @@ class UpdateESDocuemntlTest(AironeTestCase):
         self.assertEqual(ret.ret_values[0].entry["id"], self.entry2.id)
 
         # recreate index, specified entity
-        initialize_es_document([self.entity2.name])
+        with self.captureOnCommitCallbacks(execute=True):
+            initialize_es_document([self.entity2.name])
         ret = AdvancedSearchService.search_entries(self.user, [self.entity1.id, self.entity2.id])
         self.assertEqual(ret.ret_count, 1)
 
     @patch("entry.tasks.update_es_documents.delay", Mock(side_effect=update_es_documents))
     def test_update_entry(self):
-        initialize_es_document([])
+        with self.captureOnCommitCallbacks(execute=True):
+            initialize_es_document([])
 
         # update entry-0
         entry = self.entries[0]
@@ -110,7 +113,8 @@ class UpdateESDocuemntlTest(AironeTestCase):
 
     @patch("entry.tasks.update_es_documents.delay", Mock(side_effect=update_es_documents))
     def test_delete_entry(self):
-        initialize_es_document([])
+        with self.captureOnCommitCallbacks(execute=True):
+            initialize_es_document([])
 
         # delete entry-0
         entry = self.entries[0]

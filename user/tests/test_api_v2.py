@@ -12,7 +12,12 @@ from rest_framework import status
 from rest_framework.authtoken.models import Token
 
 from airone.lib.acl import ACLType
-from airone.lib.test import AironeViewTest, load_export_payload, with_airone_settings
+from airone.lib.test import (
+    AironeViewTest,
+    CommitCallbacksClient,
+    load_export_payload,
+    with_airone_settings,
+)
 from airone.lib.types import (
     AttrType,
 )
@@ -966,6 +971,8 @@ class ViewTest(AironeViewTest):
 
 
 class RecentActivityAPITest(ViewTest):
+    client_class = CommitCallbacksClient
+
     def setUp(self):
         super().setUp()
 
