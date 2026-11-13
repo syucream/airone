@@ -1,20 +1,31 @@
 from typing import Any
 
+from social_core.exceptions import AuthForbidden  # type: ignore[import-untyped]
+from social_django.models import UserSocialAuth
+
 from user.models import User
 
 
 def create_user(
-    details: dict[str, str], user: User | None = None, *args: Any, **kwargs: Any
+    details: dict[str, str],
+    user: User | None = None,
+    *args: Any,
+    backend: Any = None,
+    social: UserSocialAuth | None = None,
+    **kwargs: Any,
 ) -> dict[str, Any]:
-    # When first time login, UserSocialAuth model's object is created.
-    # If UserSocialAuth exists, user already exists.
+    # Only a previously associated identity can authenticate an existing user.
+    # A logged-in user alone is not evidence that this identity belongs to them.
     if user:
+        if social is None or social.user_id != user.pk:
+            raise AuthForbidden(backend)
         return {"is_new": False}
 
-    # Returns User if the AirOne user already exists.
-    user = User.objects.filter(username=details["username"], is_active=True).first()
-    if not user:
-        # Create a User if the AirOne user does not exist.
-        user = User.objects.create(username=details["username"], email=details["email"])
+    # Provider usernames do not establish ownership of existing local accounts.
+    if User.objects.filter(username=details["username"]).exists():
+        raise AuthForbidden(backend)
 
+    user = User.objects.create(username=details["username"], email=details["email"])
+    user.set_unusable_password()
+    user.save(update_fields=["password"])
     return {"user": user}

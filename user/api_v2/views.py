@@ -47,6 +47,7 @@ from user.api_v2.serializers import (
 )
 from user.import_service import import_users
 from user.models import User
+from user.password_reset import get_password_reset_user, send_password_reset_email
 
 
 def _entry_ref(entry: Any) -> dict[str, Any]:
@@ -557,11 +558,11 @@ class PasswordResetAPI(viewsets.GenericViewSet[Any]):
         serializer = PasswordResetSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        # TODO may be better to implement it in serializer
         username = serializer.validated_data.get("username")
         user = self._get_user(username)
         if not user:
-            return Response("user %s not found" % username, status=status.HTTP_400_BAD_REQUEST)
+            # Acknowledge every valid request without disclosing account eligibility.
+            return Response(serializer.validated_data)
 
         UserModelClass = get_user_model()
         user_email = getattr(user, UserModelClass.get_email_field_name())
@@ -594,17 +595,7 @@ class PasswordResetAPI(viewsets.GenericViewSet[Any]):
         """
         Given a username, return matching user who should receive a reset or None.
         """
-        UserModelClass = get_user_model()
-        active_users = UserModelClass._default_manager.filter(
-            **{
-                "%s__iexact" % UserModelClass.USERNAME_FIELD: username,
-                "is_active": True,
-            }
-        )
-        if len(active_users) == 1 and active_users[0].has_usable_password():
-            return active_users[0]
-        else:
-            return None
+        return get_password_reset_user(username)
 
     def _send_mail(
         self,
@@ -628,7 +619,7 @@ class PasswordResetAPI(viewsets.GenericViewSet[Any]):
             html_email = loader.render_to_string(html_email_template_name, context)
             email_message.attach_alternative(html_email, "text/html")
 
-        email_message.send()
+        send_password_reset_email(email_message)
 
 
 class PasswordResetConfirmAPI(viewsets.GenericViewSet[Any]):

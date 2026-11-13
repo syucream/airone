@@ -19,6 +19,7 @@ from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 
 from user.models import User
+from user.password_reset import get_password_reset_user, send_password_reset_email
 
 UserModel = get_user_model()
 
@@ -55,22 +56,13 @@ class UsernameBasedPasswordResetForm(forms.Form):
             html_email = loader.render_to_string(html_email_template_name, context)
             email_message.attach_alternative(html_email, "text/html")
 
-        email_message.send()
+        send_password_reset_email(email_message)
 
     def get_user(self, username: str) -> User | None:
         """
         Given a username, return matching user who should receive a reset or None.
         """
-        active_users = UserModel._default_manager.filter(
-            **{
-                "%s__iexact" % self.USERNAME_FIELD: username,
-                "is_active": True,
-            }
-        )
-        if len(active_users) == 1 and active_users[0].has_usable_password():
-            return active_users[0]
-        else:
-            return None
+        return get_password_reset_user(username)
 
     def save(
         self,

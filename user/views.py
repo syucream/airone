@@ -3,7 +3,6 @@ from datetime import timedelta
 from typing import Any, cast
 
 from django.contrib.auth import views as auth_views
-from django.contrib.auth.forms import PasswordResetForm
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpRequest, HttpResponse
 from django.http.response import JsonResponse
@@ -312,21 +311,6 @@ class PasswordReset(auth_views.PasswordResetView):
     template_name = "password_reset_form.html"
     form_class = UsernameBasedPasswordResetForm  # type: ignore[assignment]
 
-    def form_valid(self, form: PasswordResetForm) -> HttpResponse:
-        # additionally validate if the user can reset its password
-        username = form.cleaned_data["username"]
-        user = User.objects.filter(username=username).first()
-        if not user:
-            return HttpResponse("user does not exist", status=400)
-        if user.authenticate_type != User.AuthenticateType.AUTH_TYPE_LOCAL:
-            return HttpResponse(
-                "This user is authenticated without AirOne local way(like LDAP)."
-                "Please confirm your authenticate information.",
-                status=400,
-            )
-
-        return super(PasswordReset, self).form_valid(form)
-
 
 class PasswordResetDone(auth_views.PasswordResetDoneView):
     template_name = "password_reset_done.html"
@@ -335,6 +319,12 @@ class PasswordResetDone(auth_views.PasswordResetDoneView):
 class PasswordResetConfirm(auth_views.PasswordResetConfirmView):
     success_url = reverse_lazy("user:password_reset_complete")
     template_name = "password_reset_confirm.html"
+
+    def get_user(self, uidb64: str) -> User | None:
+        user = super().get_user(uidb64)
+        if user is None or not user.can_reset_password:
+            return None
+        return user
 
 
 class PasswordResetComplete(auth_views.PasswordResetCompleteView):

@@ -99,6 +99,19 @@ class User(AbstractUser):
     def token(self) -> Token | None:
         return Token.objects.filter(user=self).first()
 
+    @property
+    def can_reset_password(self) -> bool:
+        """Allow reset only for enabled, active accounts with a usable local password."""
+        return (
+            not settings.AIRONE["PASSWORD_RESET_DISABLED"]
+            and self.is_active
+            and self.authenticate_type == User.AuthenticateType.AUTH_TYPE_LOCAL
+            # Legacy SSO and service accounts may have an empty encoded password,
+            # which Django's has_usable_password() alone does not reject.
+            and bool(self.password)
+            and self.has_usable_password()
+        )
+
     def belonging_groups(self, is_direct_belonging: bool = False) -> Iterable[Group]:
         """This returns groups that include hierarchical superior groups"""
 

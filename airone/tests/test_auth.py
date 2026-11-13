@@ -3,9 +3,7 @@ from urllib.parse import quote
 from django.conf import settings
 from django.test import override_settings
 
-from airone.auth.social_auth import create_user
 from airone.lib.test import AironeViewTest, extract_json_script
-from user.models import User
 
 
 class ViewTest(AironeViewTest):
@@ -95,17 +93,3 @@ class ViewTest(AironeViewTest):
         resp = self.client.post("/auth/logout/")
         self.assertEqual(resp.status_code, 200)
         self.assertTemplateUsed(template_name="registration/logged_out.html")
-
-    def test_social_auth_create_user(self):
-        user = User.objects.create(username="hogefuga")
-
-        result = create_user({}, user)
-        self.assertEqual(result["is_new"], False)
-
-        result = create_user({"username": "hogefuga", "email": "hogefuga@example.com"})
-        self.assertEqual(result["user"], user)
-
-        user.delete()
-        result = create_user({"username": "hogefuga", "email": "hogefuga@example.com"})
-        new_user = User.objects.filter(username="hogefuga").first()
-        self.assertEqual(result["user"], new_user)

@@ -4,6 +4,7 @@ from unittest import mock
 from unittest.mock import Mock, patch
 
 import yaml
+from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator
 from django.utils import timezone
 from django.utils.encoding import force_bytes
@@ -12,7 +13,7 @@ from rest_framework import status
 from rest_framework.authtoken.models import Token
 
 from airone.lib.acl import ACLType
-from airone.lib.test import AironeViewTest, load_export_payload, with_airone_settings
+from airone.lib.test import AironeViewTest, load_export_payload
 from airone.lib.types import (
     AttrType,
 )
@@ -622,7 +623,8 @@ class ViewTest(AironeViewTest):
         resp = self.client.post(
             "/user/api/v2/password_reset", json.dumps(params), "application/json"
         )
-        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json(), params)
 
     def test_password_reset_confirm(self):
         user = self._create_user("user")
@@ -771,11 +773,6 @@ class ViewTest(AironeViewTest):
             "You don't have permission to access this object",
         )
 
-    @with_airone_settings(
-        {
-            "PASSWORD_RESET_DISABLED": True,
-        }
-    )
     def test_patch_user_password_when_PASSWORD_RESET_DISABLED_is_set(self):
         user = self.guest_login()
         old_passwd = user.username
@@ -786,9 +783,10 @@ class ViewTest(AironeViewTest):
             "new_passwd": new_passwd,
             "chk_passwd": new_passwd,
         }
-        resp = self.client.patch(
-            "/user/api/v2/%d/edit_passwd" % user.id, json.dumps(params), "application/json"
-        )
+        with patch.dict(settings.AIRONE, PASSWORD_RESET_DISABLED=True):
+            resp = self.client.patch(
+                "/user/api/v2/%d/edit_passwd" % user.id, json.dumps(params), "application/json"
+            )
         self.assertEqual(resp.status_code, 403)
 
         # check password wasn't changed

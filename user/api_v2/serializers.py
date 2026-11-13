@@ -426,6 +426,8 @@ class PasswordResetConfirmSerializer(serializers.Serializer[Any]):
             user = User.objects.get(pk=uid)
         except (ValueError, TypeError, OverflowError, User.DoesNotExist, ValidationError):
             return None
+        if not user.can_reset_password:
+            return None
         return user
 
     def validate_token(self, value: str) -> str:

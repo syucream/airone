@@ -5,9 +5,7 @@ from unittest.mock import Mock, patch
 from django.urls import reverse
 
 from airone.lib.test import AironeViewTest
-from user.forms import UsernameBasedPasswordResetForm
 from user.models import User
-from user.views import PasswordReset
 
 
 class ViewTest(AironeViewTest):
@@ -755,18 +753,9 @@ class ViewTest(AironeViewTest):
 
     def test_password_reset_with_invalid_username(self):
         user = self._create_user("testuser", authenticate_type=User.AuthenticateType.AUTH_TYPE_LDAP)
-
-        # testing this view class requires a complicated client.
-        # instead of that, we call the override method directly for now.
-        # see also django tests/auth_tests/client.py
-        view = PasswordReset()
-
-        form_with_unknown_user = UsernameBasedPasswordResetForm({"username": "unknown"})
-        form_with_unknown_user.is_valid()
-        resp = view.form_valid(form_with_unknown_user)
-        self.assertEqual(resp.status_code, 400)
-
-        form_with_ldap_user = UsernameBasedPasswordResetForm({"username": user.username})
-        form_with_ldap_user.is_valid()
-        resp = view.form_valid(form_with_ldap_user)
-        self.assertEqual(resp.status_code, 400)
+        for username in ("unknown", user.username):
+            with self.subTest(username=username):
+                resp = self.client.post(reverse("user:password_reset"), {"username": username})
+                self.assertRedirects(
+                    resp, reverse("user:password_reset_done"), fetch_redirect_response=False
+                )
