@@ -80,7 +80,23 @@ class AttrValueResource(AironeModelResource):
     def get_permission_targets(self, instance: AttributeValue) -> list[ACLBase]:
         # AttributeValue has no ACL of its own; writing it means writing its Attribute
         parent_attr = Attribute.objects.filter(id=instance.parent_attr_id).first()
-        return [parent_attr] if parent_attr else []
+        if not parent_attr:
+            return []
+        if instance.parent_attrv_id:
+            parent = AttributeValue.objects.filter(id=instance.parent_attrv_id).first()
+            # Check stored and imported array ownership before any row is saved.
+            if (
+                not parent
+                or parent.parent_attr_id != parent_attr.id
+                or not parent_attr.schema.type & AttrType._ARRAY
+                or instance.get_status(AttributeValue.STATUS_DATA_ARRAY_PARENT)
+                or not parent.get_status(AttributeValue.STATUS_DATA_ARRAY_PARENT)
+                or parent.parent_attrv_id is not None
+                or parent.id == instance.id
+            ):
+                return []
+            # Ownership equality above makes the same Attribute's ACL cover both values.
+        return [parent_attr]
 
     def after_save_instance(
         self, instance: AttributeValue, row: dict[str, Any], **kwargs: Any
@@ -127,6 +143,7 @@ class AttrValueResource(AironeModelResource):
             x["data"]
             for x in results
             if x["data"]["status"] & AttributeValue.STATUS_DATA_ARRAY_PARENT
+            and any(row.import_type in ("new", "update") for row in x["result"].rows)
         ]:
             attr_value = AttributeValue.objects.get(id=data["id"])
             attr_value.parent_attr.parent_entry.register_es()

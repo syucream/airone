@@ -392,6 +392,87 @@ class ImportPermissionTest(AironeViewTest):
         self.assertEqual(resp.status_code, 303)
         self.assertEqual(self.public_attr.get_latest_value().value, "new")
 
+    def test_cross_attribute_array_injection_is_skipped(self):
+        self.guest_login()
+        for attr_type in (AttrType.ARRAY_STRING, AttrType.ARRAY_OBJECT):
+            for private in (False, True):
+                entity = self.create_entity(
+                    self.owner,
+                    f"array-{attr_type}-{private}",
+                    [{"name": "array", "type": attr_type}],
+                    is_public=not private,
+                )
+                entry = self.add_entry(self.owner, "array-entry", entity)
+                attr = entry.attrs.get(schema__name="array")
+                parent = attr.get_latest_value()
+                before = list(parent.data_array.values_list("id", flat=True))
+                for update in (False, True):
+                    with self.subTest(attr_type=attr_type, private=private, update=update):
+                        original = self.public_attr.get_latest_value()
+                        row = self._attr_value_row(
+                            original.id if update else 99999,
+                            self.public_attr,
+                            "injected",
+                            "owner" if update else "guest",
+                        )
+                        row.update(parent_attrv=parent.id, refer=self.public_entry.id)
+                        self.assertEqual(self._import({"AttributeValue": [row]}).status_code, 303)
+                        self.assertEqual(
+                            list(parent.data_array.values_list("id", flat=True)), before
+                        )
+                        self.assertFalse(AttributeValue.objects.filter(id=99999).exists())
+                        original.refresh_from_db()
+                        self.assertEqual(original.value, "original")
+                        self.assertIsNone(original.parent_attrv_id)
+
+    def test_valid_array_leaf_create_and_update(self):
+        self.guest_login()
+        for attr_type in (AttrType.ARRAY_STRING, AttrType.ARRAY_OBJECT):
+            entity = self.create_entity(
+                self.owner, f"array-{attr_type}", [{"name": "array", "type": attr_type}]
+            )
+            entry = self.add_entry(self.owner, "array-entry", entity)
+            attr = entry.attrs.get(schema__name="array")
+            parent = attr.get_latest_value()
+            for value in ("created", "updated"):
+                row = self._attr_value_row(99999, attr, value, "guest")
+                row.update(parent_attrv=parent.id, refer=self.public_entry.id)
+                self.assertEqual(self._import({"AttributeValue": [row]}).status_code, 303)
+                leaf = AttributeValue.objects.get(id=99999)
+                self.assertEqual(leaf.parent_attrv_id, parent.id)
+                self.assertEqual(leaf.value, value)
+                self.assertFalse(leaf.is_latest)
+            leaf.delete()
+
+    def test_invalid_array_parent_and_existing_reference_are_skipped(self):
+        self.guest_login()
+        entity = self.create_entity(
+            self.owner, "array", [{"name": "array", "type": AttrType.ARRAY_STRING}]
+        )
+        entry = self.add_entry(self.owner, "array-entry", entity)
+        attr = entry.attrs.get(schema__name="array")
+        parent = attr.get_latest_value()
+        leaf = AttributeValue.objects.create(
+            parent_attr=attr, parent_attrv=parent, created_user=self.owner, value="leaf"
+        )
+        for parent_id, status in (
+            (leaf.id, 0),
+            (parent.id, AttributeValue.STATUS_DATA_ARRAY_PARENT),
+        ):
+            row = self._attr_value_row(99999, attr, "injected", "guest")
+            row.update(parent_attrv=parent_id, status=status)
+            self.assertEqual(self._import({"AttributeValue": [row]}).status_code, 303)
+            self.assertFalse(AttributeValue.objects.filter(id=99999).exists())
+
+        original = self.public_attr.get_latest_value()
+        original.parent_attrv = parent
+        original.save(update_fields=["parent_attrv"])
+        row = self._attr_value_row(original.id, self.public_attr, "injected", "owner")
+        self.assertEqual(self._import({"AttributeValue": [row]}).status_code, 303)
+        original.refresh_from_db()
+        self.assertEqual(original.parent_attrv_id, parent.id)
+        self.assertEqual(original.value, "original")
+
     def test_create_entry_in_unwritable_entity_is_skipped(self):
         self.guest_login()
 
