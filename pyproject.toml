@@ -178,6 +178,7 @@ dev = [
     # required by requests-html (lxml.html.clean was split into this package in
     # lxml 5.2+). Used only in tests; remove if requests-html is removed.
     "lxml-html-clean>=0.4.0",
+    "schemathesis==4.14.1",
 ]
 plugins = [
     "pagoda-hello-world-plugin",

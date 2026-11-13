@@ -15,8 +15,20 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - name: Fetch API comparison base
+        env:
+          API_BASE_REF: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if ! [[ "$API_BASE_REF" =~ ^[0-9a-f]{40}$ ]] || [[ "$API_BASE_REF" =~ ^0+$ ]]; then
+            echo "::error::Missing or invalid API comparison base."
+            exit 1
+          fi
+          git fetch --no-tags --depth=1 origin "$API_BASE_REF"
+          git cat-file -e "$API_BASE_REF^{commit}"
+          echo "API_BASE_REF=$API_BASE_REF" >> "$GITHUB_ENV"
       - name: Set up Pagoda env
         uses: ./.github/actions/setup-pagoda-env
         with:
@@ -29,6 +41,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
       - name: Regenerate API client
+        env:
+          PAGODA_LITE: "1"
         run: npm run generate:client
       - name: Check committed generated files
         run: |
@@ -39,3 +53,17 @@ jobs:
             echo "::error::Run npm run generate:client and commit all generated changes."
             exit 1
           fi
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: "1.26.11"
+          cache: false
+      - name: Install pinned oasdiff
+        run: |
+          GOBIN="$RUNNER_TEMP/oasdiff-bin" go install github.com/oasdiff/oasdiff@v1.37.0
+          echo "$RUNNER_TEMP/oasdiff-bin" >> "$GITHUB_PATH"
+      - name: Test compatibility gate failure detection
+        run: uv run python -m unittest tools.tests.test_api_compatibility
+      - name: Check API backward compatibility
+        run: uv run python tools/check_api_compatibility.py --base-ref "$API_BASE_REF"
+      - name: Check read API responses against the schema
+        run: tools/lite.sh test airone.tests.test_api_contract
