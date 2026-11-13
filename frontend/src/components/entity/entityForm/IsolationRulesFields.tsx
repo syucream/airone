@@ -479,7 +479,10 @@ export const IsolationRulesFields: FC<Props> = ({
               <TableCell />
               <TableCell />
               <TableCell>
-                <IconButton onClick={() => insert(0, emptyRule())}>
+                <IconButton
+                  aria-label={t("entity.form.addIsolationRule")}
+                  onClick={() => insert(0, emptyRule())}
+                >
                   <AddIcon />
                 </IconButton>
               </TableCell>

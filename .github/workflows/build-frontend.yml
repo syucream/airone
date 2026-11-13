@@ -8,6 +8,7 @@ on:
     paths:
       - 'frontend/**/*.ts'
       - 'frontend/**/*.tsx'
+      - 'e2e/**'
       - '.github/workflows/build-frontend.yml'
       - '.node-version'
       - 'package.json'
@@ -17,6 +18,7 @@ on:
       # that enforces it.
       - 'tsconfig.json'
       - 'tsconfig.lib.json'
+      - 'tsconfig.e2e.json'
       - '*.config.{js,mjs,ts}'
 
 concurrency:
@@ -94,6 +96,38 @@ jobs:
         with:
           name: coverage-frontend
           path: coverage/lcov.info
+
+  a11y:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: ".node-version"
+          registry-url: https://npm.pkg.github.com/
+          scope: '@dmm-com'
+          cache: 'npm'
+      - name: install dependencies
+        run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
+      - name: typecheck E2E
+        run: npm run typecheck:e2e
+      - name: build
+        run: npm run build
+      - name: install browser
+        run: npx playwright install --with-deps chromium
+      - name: accessibility tests
+        run: npm run test:a11y
+      - name: Upload accessibility test results
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: a11y-test-results
+          path: e2e/test-results
 
   report-coverage:
     runs-on: ubuntu-24.04

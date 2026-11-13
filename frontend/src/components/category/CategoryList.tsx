@@ -79,6 +79,7 @@ const CategoryListContent: FC = () => {
         {categories.results.map((category) => (
           <Grid size={{ xs: 12, sm: 6, md: 4 }} key={category.id}>
             <List
+              component="div"
               subheader={
                 <CategoryListHeader
                   category={category}
@@ -87,7 +88,12 @@ const CategoryListContent: FC = () => {
               }
             >
               <Box
+                component="ul"
                 sx={{
+                  listStyle: "none",
+                  p: 0,
+                  mt: 0,
+                  mb: 0,
                   display: "flex",
                   flexDirection: "column",
                   //overflowY: "scroll",
@@ -96,14 +102,15 @@ const CategoryListContent: FC = () => {
                 }}
               >
                 {category.models.map((models) => (
-                  <Typography
-                    key={models.id}
-                    component={AironeLink}
-                    to={entityEntriesPath(models.id)}
-                    variant="body2"
-                  >
-                    {models.name}
-                  </Typography>
+                  <li key={models.id}>
+                    <Typography
+                      component={AironeLink}
+                      to={entityEntriesPath(models.id)}
+                      variant="body2"
+                    >
+                      {models.name}
+                    </Typography>
+                  </li>
                 ))}
               </Box>
             </List>

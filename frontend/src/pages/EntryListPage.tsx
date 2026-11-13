@@ -52,6 +52,9 @@ const EntryListContent: FC<Props> = ({ canCreateEntry = true }) => {
         <Box width="50px">
           <IconButton
             id="entity_menu"
+            aria-label={t("common.openMenu", {
+              name: t("common.target.entity"),
+            })}
             onClick={(e) => {
               setEntityAnchorEl(e.currentTarget);
             }}

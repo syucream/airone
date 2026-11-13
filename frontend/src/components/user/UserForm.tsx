@@ -507,6 +507,7 @@ const ElemIsSuperuser: FC<Props> = ({ control }) => {
           defaultValue={false}
           render={({ field }) => (
             <Checkbox
+              inputProps={{ "aria-label": t("user.form.isSuperuser") }}
               checked={field.value}
               onChange={(e) => field.onChange(e.target.checked)}
               disabled={!(loginUser?.isSuperuser ?? false)}

@@ -8,6 +8,6 @@ export const AironeLink: React.ComponentType<LinkProps> = styled(
   textDecoration: "none",
   "&:hover": {
     textDecoration: "underline",
-    color: theme.palette.secondary.main,
+    color: theme.palette.primary.dark,
   },
 }));

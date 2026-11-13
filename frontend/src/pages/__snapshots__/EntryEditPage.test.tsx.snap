@@ -28,7 +28,7 @@ exports[`EntryEditPage > should match snapshot 1`] = `
                     class="MuiBreadcrumbs-li"
                   >
                     <a
-                      class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                      class="MuiTypography-root MuiTypography-body1 css-1fh40yg-MuiTypography-root"
                       data-discover="true"
                       href="/ui/"
                     >
@@ -45,7 +45,7 @@ exports[`EntryEditPage > should match snapshot 1`] = `
                     class="MuiBreadcrumbs-li"
                   >
                     <a
-                      class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                      class="MuiTypography-root MuiTypography-body1 css-1fh40yg-MuiTypography-root"
                       data-discover="true"
                       href="/ui/entities"
                     >
@@ -66,7 +66,7 @@ exports[`EntryEditPage > should match snapshot 1`] = `
                     >
                       <a
                         aria-label="test entity"
-                        class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                        class="MuiTypography-root MuiTypography-body1 css-1fh40yg-MuiTypography-root"
                         data-discover="true"
                         data-mui-internal-clone-element="true"
                         href="/ui/entities/2/entries"
@@ -100,7 +100,7 @@ exports[`EntryEditPage > should match snapshot 1`] = `
                     >
                       <a
                         aria-label="test entry"
-                        class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                        class="MuiTypography-root MuiTypography-body1 css-1fh40yg-MuiTypography-root"
                         data-discover="true"
                         data-mui-internal-clone-element="true"
                         href="/ui/entities/2/entries/1/details"
@@ -292,7 +292,7 @@ exports[`EntryEditPage > should match snapshot 1`] = `
                       アイテム名
                     </p>
                     <p
-                      class="MuiTypography-root MuiTypography-body1 css-1yompuc-MuiTypography-root"
+                      class="MuiTypography-root MuiTypography-body1 css-mvb26t-MuiTypography-root"
                     >
                       必須
                     </p>
@@ -348,6 +348,7 @@ exports[`EntryEditPage > should match snapshot 1`] = `
                   >
                     <p
                       class="MuiTypography-root MuiTypography-body1 css-zaqce3-MuiTypography-root"
+                      id="_r_5_-attribute-1"
                     >
                       attr1
                     </p>
@@ -367,8 +368,9 @@ exports[`EntryEditPage > should match snapshot 1`] = `
                       >
                         <input
                           aria-invalid="false"
+                          aria-labelledby="_r_5_-attribute-1"
                           class="MuiInputBase-input MuiInput-input css-1yrc8ca-MuiInputBase-input-MuiInput-input"
-                          id="_r_6_"
+                          id="_r_7_"
                           name="attrs.1.value.asString"
                           type="text"
                           value=""
@@ -399,6 +401,7 @@ exports[`EntryEditPage > should match snapshot 1`] = `
             class="MuiBox-root css-1h9v3gn"
           >
             <button
+              aria-label="先頭に戻る"
               class="MuiButtonBase-root MuiFab-root MuiFab-circular MuiFab-sizeLarge MuiFab-primary MuiFab-root MuiFab-circular MuiFab-sizeLarge MuiFab-primary css-6vxf02-MuiButtonBase-root-MuiFab-root"
               id="scroll_button"
               tabindex="0"
@@ -445,7 +448,7 @@ exports[`EntryEditPage > should match snapshot 1`] = `
                   class="MuiBreadcrumbs-li"
                 >
                   <a
-                    class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                    class="MuiTypography-root MuiTypography-body1 css-1fh40yg-MuiTypography-root"
                     data-discover="true"
                     href="/ui/"
                   >
@@ -462,7 +465,7 @@ exports[`EntryEditPage > should match snapshot 1`] = `
                   class="MuiBreadcrumbs-li"
                 >
                   <a
-                    class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                    class="MuiTypography-root MuiTypography-body1 css-1fh40yg-MuiTypography-root"
                     data-discover="true"
                     href="/ui/entities"
                   >
@@ -483,7 +486,7 @@ exports[`EntryEditPage > should match snapshot 1`] = `
                   >
                     <a
                       aria-label="test entity"
-                      class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                      class="MuiTypography-root MuiTypography-body1 css-1fh40yg-MuiTypography-root"
                       data-discover="true"
                       data-mui-internal-clone-element="true"
                       href="/ui/entities/2/entries"
@@ -517,7 +520,7 @@ exports[`EntryEditPage > should match snapshot 1`] = `
                   >
                     <a
                       aria-label="test entry"
-                      class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                      class="MuiTypography-root MuiTypography-body1 css-1fh40yg-MuiTypography-root"
                       data-discover="true"
                       data-mui-internal-clone-element="true"
                       href="/ui/entities/2/entries/1/details"
@@ -709,7 +712,7 @@ exports[`EntryEditPage > should match snapshot 1`] = `
                     アイテム名
                   </p>
                   <p
-                    class="MuiTypography-root MuiTypography-body1 css-1yompuc-MuiTypography-root"
+                    class="MuiTypography-root MuiTypography-body1 css-mvb26t-MuiTypography-root"
                   >
                     必須
                   </p>
@@ -765,6 +768,7 @@ exports[`EntryEditPage > should match snapshot 1`] = `
                 >
                   <p
                     class="MuiTypography-root MuiTypography-body1 css-zaqce3-MuiTypography-root"
+                    id="_r_5_-attribute-1"
                   >
                     attr1
                   </p>
@@ -784,8 +788,9 @@ exports[`EntryEditPage > should match snapshot 1`] = `
                     >
                       <input
                         aria-invalid="false"
+                        aria-labelledby="_r_5_-attribute-1"
                         class="MuiInputBase-input MuiInput-input css-1yrc8ca-MuiInputBase-input-MuiInput-input"
-                        id="_r_6_"
+                        id="_r_7_"
                         name="attrs.1.value.asString"
                         type="text"
                         value=""
@@ -816,6 +821,7 @@ exports[`EntryEditPage > should match snapshot 1`] = `
           class="MuiBox-root css-1h9v3gn"
         >
           <button
+            aria-label="先頭に戻る"
             class="MuiButtonBase-root MuiFab-root MuiFab-circular MuiFab-sizeLarge MuiFab-primary MuiFab-root MuiFab-circular MuiFab-sizeLarge MuiFab-primary css-6vxf02-MuiButtonBase-root-MuiFab-root"
             id="scroll_button"
             tabindex="0"

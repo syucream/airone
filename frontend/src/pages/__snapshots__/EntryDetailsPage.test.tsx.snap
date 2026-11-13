@@ -28,7 +28,7 @@ exports[`should match snapshot 1`] = `
                     class="MuiBreadcrumbs-li"
                   >
                     <a
-                      class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                      class="MuiTypography-root MuiTypography-body1 css-1fh40yg-MuiTypography-root"
                       data-discover="true"
                       href="/ui/"
                     >
@@ -45,7 +45,7 @@ exports[`should match snapshot 1`] = `
                     class="MuiBreadcrumbs-li"
                   >
                     <a
-                      class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                      class="MuiTypography-root MuiTypography-body1 css-1fh40yg-MuiTypography-root"
                       data-discover="true"
                       href="/ui/entities"
                     >
@@ -66,7 +66,7 @@ exports[`should match snapshot 1`] = `
                     >
                       <a
                         aria-label="test entity"
-                        class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                        class="MuiTypography-root MuiTypography-body1 css-1fh40yg-MuiTypography-root"
                         data-discover="true"
                         data-mui-internal-clone-element="true"
                         href="/ui/entities/2/entries"
@@ -100,7 +100,7 @@ exports[`should match snapshot 1`] = `
                     >
                       <a
                         aria-label="test entry"
-                        class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                        class="MuiTypography-root MuiTypography-body1 css-1fh40yg-MuiTypography-root"
                         data-discover="true"
                         data-mui-internal-clone-element="true"
                         href="/ui/entities/2/entries/1/details"
@@ -183,6 +183,7 @@ exports[`should match snapshot 1`] = `
                     class="MuiBox-root css-vxcgou"
                   >
                     <button
+                      aria-label="アイテムの操作メニューを開く"
                       class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium css-53g0n7-MuiButtonBase-root-MuiIconButton-root"
                       id="entryMenu"
                       tabindex="0"
@@ -458,7 +459,7 @@ exports[`should match snapshot 1`] = `
                   class="MuiBreadcrumbs-li"
                 >
                   <a
-                    class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                    class="MuiTypography-root MuiTypography-body1 css-1fh40yg-MuiTypography-root"
                     data-discover="true"
                     href="/ui/"
                   >
@@ -475,7 +476,7 @@ exports[`should match snapshot 1`] = `
                   class="MuiBreadcrumbs-li"
                 >
                   <a
-                    class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                    class="MuiTypography-root MuiTypography-body1 css-1fh40yg-MuiTypography-root"
                     data-discover="true"
                     href="/ui/entities"
                   >
@@ -496,7 +497,7 @@ exports[`should match snapshot 1`] = `
                   >
                     <a
                       aria-label="test entity"
-                      class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                      class="MuiTypography-root MuiTypography-body1 css-1fh40yg-MuiTypography-root"
                       data-discover="true"
                       data-mui-internal-clone-element="true"
                       href="/ui/entities/2/entries"
@@ -530,7 +531,7 @@ exports[`should match snapshot 1`] = `
                   >
                     <a
                       aria-label="test entry"
-                      class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                      class="MuiTypography-root MuiTypography-body1 css-1fh40yg-MuiTypography-root"
                       data-discover="true"
                       data-mui-internal-clone-element="true"
                       href="/ui/entities/2/entries/1/details"
@@ -613,6 +614,7 @@ exports[`should match snapshot 1`] = `
                   class="MuiBox-root css-vxcgou"
                 >
                   <button
+                    aria-label="アイテムの操作メニューを開く"
                     class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium css-53g0n7-MuiButtonBase-root-MuiIconButton-root"
                     id="entryMenu"
                     tabindex="0"

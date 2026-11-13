@@ -42,7 +42,7 @@ const Result = styled(Typography)(({ theme }) => ({
 })) as OverridableComponent<TypographyTypeMap>;
 
 const ResultEntityForEntry = styled(Typography)(({}) => ({
-  color: "gray",
+  color: "#666666",
 }));
 
 export const DashboardPage: FC = () => {

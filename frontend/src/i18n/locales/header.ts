@@ -21,6 +21,8 @@ export const headerMessages = defineMessages({
     jobs: "ジョブ一覧",
     "header.unknownUser": "不明なユーザ",
     "header.openNavigationMenu": "ナビゲーションメニューを開く",
+    "header.openUserMenu": "ユーザメニューを開く",
+    "header.openJobMenu": "ジョブメニューを開く",
   },
   en: {
     categories: "Categories",
@@ -40,5 +42,7 @@ export const headerMessages = defineMessages({
     jobs: "Jobs",
     "header.unknownUser": "Unknown user",
     "header.openNavigationMenu": "Open navigation menu",
+    "header.openUserMenu": "Open user menu",
+    "header.openJobMenu": "Open job menu",
   },
 });

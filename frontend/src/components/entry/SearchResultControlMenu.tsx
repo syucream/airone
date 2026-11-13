@@ -633,6 +633,7 @@ export const SearchResultControlMenu: FC<Props> = ({
                 );
               setEditTargetAttrname && setEditTargetAttrname(attrname);
               setEditTargetAttrtype && setEditTargetAttrtype(attrType ?? 0);
+              handleClose();
               setOpenEditModal(true);
             }}
           >

@@ -355,6 +355,8 @@ export const SearchResultsTableHead: FC<Props> = ({
         {!isReadonly && (
           <TableCell sx={{ witdh: "80px" }}>
             <StyledIconButton
+              aria-label={t("advancedSearch.results.selectVisibleEntries")}
+              aria-pressed={allVisibleSelected}
               onClick={() => {
                 handleChangeAllBulkOperationEntryIds(!allVisibleSelected);
               }}

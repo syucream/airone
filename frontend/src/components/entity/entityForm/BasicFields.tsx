@@ -198,6 +198,9 @@ export const BasicFields: FC<Props> = ({
                 render={({ field }) => (
                   <Checkbox
                     data-testid="isToplevel"
+                    inputProps={{
+                      "aria-label": t("entity.form.showOnTopPage"),
+                    }}
                     checked={field.value}
                     onChange={(e) => field.onChange(e.target.checked)}
                   />

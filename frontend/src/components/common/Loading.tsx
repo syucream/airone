@@ -18,7 +18,7 @@ export const Loading: FC = () => {
   return (
     <Box data-testid="loading">
       <LoadingBox>
-        <CircularProgress />
+        <CircularProgress aria-label="Loading" />
         <Text>Loading...</Text>
       </LoadingBox>
     </Box>

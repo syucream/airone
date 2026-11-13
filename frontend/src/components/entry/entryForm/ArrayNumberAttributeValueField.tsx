@@ -19,6 +19,7 @@ const StyledBox = styled(Box)(({}) => ({
 
 interface CommonProps {
   attrId: number;
+  labelledBy?: string;
   index?: number;
   control: Control<Schema>;
   isDisabled?: boolean;
@@ -31,6 +32,7 @@ export const NumberAttributeValueFieldForArray: FC<
   }
 > = ({
   attrId,
+  labelledBy,
   index,
   control,
   handleClickDeleteListItem,
@@ -46,6 +48,7 @@ export const NumberAttributeValueFieldForArray: FC<
         render={({ field, fieldState: { error } }) => (
           <TextField
             {...field}
+            inputProps={{ "aria-labelledby": labelledBy }}
             type="number"
             variant="standard"
             error={error != null}
@@ -88,6 +91,7 @@ export const NumberAttributeValueFieldForArray: FC<
 
 export const ArrayNumberAttributeValueField: FC<CommonProps> = ({
   attrId,
+  labelledBy,
   control,
 }) => {
   const { fields, insert, remove, replace } = useFieldArray({
@@ -118,6 +122,7 @@ export const ArrayNumberAttributeValueField: FC<CommonProps> = ({
       {fields.map((field, index) => (
         <ListItem key={field.id} disablePadding={true}>
           <NumberAttributeValueFieldForArray
+            labelledBy={labelledBy}
             control={control}
             attrId={attrId}
             index={index}

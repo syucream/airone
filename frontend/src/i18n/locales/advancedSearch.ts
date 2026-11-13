@@ -2,6 +2,10 @@ import { defineMessages } from "../defineMessages";
 
 export const advancedSearchMessages = defineMessages({
   ja: {
+    "advancedSearch.editModal.loadingTargets": "対象アイテムの確認中",
+    "advancedSearch.results.selectEntry": "{{name}}を選択",
+    "advancedSearch.results.selectVisibleEntries":
+      "このページのアイテムをすべて選択",
     // AdvancedSearchModal
     "advancedSearch.modal.resetAttrTitle": "検索属性の再設定",
     "advancedSearch.modal.selectAttrPlaceholder": "属性を選択",
@@ -107,6 +111,10 @@ export const advancedSearchMessages = defineMessages({
     "advancedSearch.resultsPage.confirmDeleteAction": "削除する",
   },
   en: {
+    "advancedSearch.editModal.loadingTargets": "Checking target items",
+    "advancedSearch.results.selectEntry": "Select {{name}}",
+    "advancedSearch.results.selectVisibleEntries":
+      "Select all items on this page",
     // AdvancedSearchModal
     "advancedSearch.modal.resetAttrTitle": "Reset search attributes",
     "advancedSearch.modal.selectAttrPlaceholder": "Select attributes",

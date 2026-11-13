@@ -4,6 +4,9 @@ import { defineMessages } from "../defineMessages";
 // Prefer reusing these keys over adding a domain-specific duplicate.
 export const commonMessages = defineMessages({
   ja: {
+    "common.openMenu": "{{name}}の操作メニューを開く",
+    "common.booleanValue": "真偽値",
+
     // Generic actions
     "common.cancel": "キャンセル",
     "common.submit": "送信",
@@ -158,6 +161,8 @@ export const commonMessages = defineMessages({
       "※モデル・アイテム・ユーザ他、いずれのインポートファイルも受け付けます。CSV形式のファイルは選択できません。",
   },
   en: {
+    "common.openMenu": "Open actions for {{name}}",
+    "common.booleanValue": "Boolean value",
     // Generic actions
     "common.cancel": "Cancel",
     "common.submit": "Submit",

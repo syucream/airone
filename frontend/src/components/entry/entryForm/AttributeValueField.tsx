@@ -31,6 +31,7 @@ interface Props {
   setValue: UseFormSetValue<Schema>;
   type: number;
   schemaId: number;
+  labelledBy?: string;
   choices?: Array<{ value?: string; label: string }>;
   isDisabled?: boolean;
 }
@@ -40,6 +41,7 @@ export const AttributeValueField: FC<Props> = ({
   setValue,
   type,
   schemaId,
+  labelledBy,
   choices,
   isDisabled = false,
 }) => {
@@ -47,6 +49,7 @@ export const AttributeValueField: FC<Props> = ({
     case EntryAttributeTypeTypeEnum.STRING:
       return (
         <StringAttributeValueField
+          labelledBy={labelledBy}
           control={control}
           attrId={schemaId}
           isDisabled={isDisabled}
@@ -56,6 +59,7 @@ export const AttributeValueField: FC<Props> = ({
     case EntryAttributeTypeTypeEnum.TEXT:
       return (
         <StringAttributeValueField
+          labelledBy={labelledBy}
           control={control}
           attrId={schemaId}
           isDisabled={isDisabled}
@@ -86,6 +90,7 @@ export const AttributeValueField: FC<Props> = ({
     case EntryAttributeTypeTypeEnum.BOOLEAN:
       return (
         <BooleanAttributeValueField
+          labelledBy={labelledBy}
           attrId={schemaId}
           control={control}
           isDisabled={isDisabled}
@@ -95,6 +100,7 @@ export const AttributeValueField: FC<Props> = ({
     case EntryAttributeTypeTypeEnum.NUMBER:
       return (
         <NumberAttributeValueField
+          labelledBy={labelledBy}
           attrId={schemaId}
           control={control}
           isDisabled={isDisabled}
@@ -104,6 +110,7 @@ export const AttributeValueField: FC<Props> = ({
     case EntryAttributeTypeTypeEnum.OBJECT:
       return (
         <ObjectAttributeValueField
+          labelledBy={labelledBy}
           attrId={schemaId}
           control={control}
           setValue={setValue}
@@ -114,6 +121,7 @@ export const AttributeValueField: FC<Props> = ({
     case EntryAttributeTypeTypeEnum.GROUP:
       return (
         <GroupAttributeValueField
+          labelledBy={labelledBy}
           attrId={schemaId}
           control={control}
           setValue={setValue}
@@ -124,6 +132,7 @@ export const AttributeValueField: FC<Props> = ({
     case EntryAttributeTypeTypeEnum.ROLE:
       return (
         <RoleAttributeValueField
+          labelledBy={labelledBy}
           attrId={schemaId}
           control={control}
           setValue={setValue}
@@ -134,6 +143,7 @@ export const AttributeValueField: FC<Props> = ({
     case EntryAttributeTypeTypeEnum.NAMED_OBJECT:
       return (
         <NamedObjectAttributeValueField
+          labelledBy={labelledBy}
           attrId={schemaId}
           control={control}
           setValue={setValue}
@@ -144,6 +154,7 @@ export const AttributeValueField: FC<Props> = ({
     case EntryAttributeTypeTypeEnum.ARRAY_OBJECT:
       return (
         <ObjectAttributeValueField
+          labelledBy={labelledBy}
           attrId={schemaId}
           control={control}
           setValue={setValue}
@@ -155,6 +166,7 @@ export const AttributeValueField: FC<Props> = ({
     case EntryAttributeTypeTypeEnum.ARRAY_GROUP:
       return (
         <GroupAttributeValueField
+          labelledBy={labelledBy}
           attrId={schemaId}
           control={control}
           setValue={setValue}
@@ -166,6 +178,7 @@ export const AttributeValueField: FC<Props> = ({
     case EntryAttributeTypeTypeEnum.ARRAY_ROLE:
       return (
         <RoleAttributeValueField
+          labelledBy={labelledBy}
           attrId={schemaId}
           control={control}
           setValue={setValue}
@@ -176,17 +189,26 @@ export const AttributeValueField: FC<Props> = ({
 
     case EntryAttributeTypeTypeEnum.ARRAY_STRING:
       return (
-        <ArrayStringAttributeValueField control={control} attrId={schemaId} />
+        <ArrayStringAttributeValueField
+          control={control}
+          attrId={schemaId}
+          labelledBy={labelledBy}
+        />
       );
 
     case EntryAttributeTypeTypeEnum.ARRAY_NUMBER:
       return (
-        <ArrayNumberAttributeValueField control={control} attrId={schemaId} />
+        <ArrayNumberAttributeValueField
+          control={control}
+          attrId={schemaId}
+          labelledBy={labelledBy}
+        />
       );
 
     case EntryAttributeTypeTypeEnum.ARRAY_NAMED_OBJECT:
       return (
         <ArrayNamedObjectAttributeValueField
+          labelledBy={labelledBy}
           attrId={schemaId}
           control={control}
           setValue={setValue}
@@ -197,6 +219,7 @@ export const AttributeValueField: FC<Props> = ({
     case EntryAttributeTypeTypeEnum.ARRAY_NAMED_OBJECT_BOOLEAN:
       return (
         <ArrayNamedObjectAttributeValueField
+          labelledBy={labelledBy}
           attrId={schemaId}
           control={control}
           setValue={setValue}

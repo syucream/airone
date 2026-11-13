@@ -169,6 +169,9 @@ const EntryDetailsContent: FC<Props> = ({
           <MenuBox>
             <IconButton
               id="entryMenu"
+              aria-label={t("common.openMenu", {
+                name: t("common.target.entry"),
+              })}
               onClick={(e) => {
                 setEntryAnchorEl(e.currentTarget);
               }}

@@ -8,12 +8,14 @@ import { getStagedHelperTextStyle } from "utils/styleUtils";
 
 interface Props {
   attrId: number;
+  labelledBy?: string;
   control: Control<Schema>;
   isDisabled?: boolean;
 }
 
 export const BooleanAttributeValueField: FC<Props> = ({
   attrId,
+  labelledBy,
   control,
   isDisabled = false,
 }) => {
@@ -25,6 +27,7 @@ export const BooleanAttributeValueField: FC<Props> = ({
       render={({ field, fieldState: { error, isDirty } }) => (
         <Box>
           <Checkbox
+            inputProps={{ "aria-labelledby": labelledBy }}
             checked={field.value}
             onChange={(e) => field.onChange(e.target.checked)}
             disabled={isDisabled}

@@ -7,6 +7,7 @@ import { groupPath } from "../../routes/Routes";
 import { ServerContext } from "../../services/ServerContext";
 
 import { AironeLink } from "components/common";
+import { useTranslation } from "hooks/useTranslation";
 
 const CHILDREN_INDENT_WIDTH = 16;
 
@@ -27,6 +28,7 @@ export const GroupTreeItem: FC<Props> = ({
   handleSelectGroupId,
   setGroupAnchorEls,
 }) => {
+  const { t } = useTranslation();
   const isSuperuser = ServerContext.getInstance()?.user?.isSuperuser ?? false;
 
   return (
@@ -40,6 +42,11 @@ export const GroupTreeItem: FC<Props> = ({
             }}
           >
             <Checkbox
+              inputProps={{
+                "aria-label": t("group.tree.selectGroup", {
+                  name: groupTree.name,
+                }),
+              }}
               checked={groupTree.id === selectedGroupId}
               onChange={(e) =>
                 handleSelectGroupId(e.target.checked ? groupTree.id : null)
@@ -54,6 +61,7 @@ export const GroupTreeItem: FC<Props> = ({
             )}
             {isSuperuser && setGroupAnchorEls != null && (
               <IconButton
+                aria-label={t("group.tree.openMenu", { name: groupTree.name })}
                 sx={{ margin: "0 0 0 auto" }}
                 onClick={(e) => {
                   setGroupAnchorEls({

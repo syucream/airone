@@ -15,7 +15,7 @@ import {
   Typography,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { FC } from "react";
+import { FC, useId } from "react";
 import { Control, Controller, useFormState } from "react-hook-form";
 import { UseFormSetValue } from "react-hook-form";
 
@@ -60,7 +60,7 @@ const RequiredLabel = styled(Typography)(({}) => ({
   border: "0.5px solid gray",
   borderRadius: 16,
   color: "white",
-  backgroundColor: "gray",
+  backgroundColor: "#666",
   padding: "0 8px",
 }));
 
@@ -85,6 +85,7 @@ export const EntryForm: FC<EntryFormProps> = ({
   skipItemName,
 }) => {
   const { t } = useTranslation();
+  const formId = useId();
   const { errors } = useFormState({
     control,
   });
@@ -194,7 +195,9 @@ export const EntryForm: FC<EntryFormProps> = ({
               <TableRow key={id}>
                 <StyledTableCell id={`attrs-${name}`}>
                   <TableBox>
-                    <StyledTypography>{name}</StyledTypography>
+                    <StyledTypography id={`${formId}-attribute-${id}`}>
+                      {name}
+                    </StyledTypography>
                     {isMandatory && (
                       <RequiredLabel>
                         {t("entryForm.form.required")}
@@ -209,6 +212,7 @@ export const EntryForm: FC<EntryFormProps> = ({
                       setValue={setValue}
                       type={type}
                       schemaId={id}
+                      labelledBy={`${formId}-attribute-${id}`}
                       choices={choices ?? undefined}
                     />
                   ) : (
@@ -246,7 +250,12 @@ export const EntryForm: FC<EntryFormProps> = ({
         </TableBody>
       </Table>
       <BottomBox>
-        <Fab id="scroll_button" color="primary" onClick={scrollToTop}>
+        <Fab
+          id="scroll_button"
+          color="primary"
+          onClick={scrollToTop}
+          aria-label={t("entryForm.form.scrollToTop")}
+        >
           <KeyboardArrowUpRoundedIcon />
         </Fab>
       </BottomBox>

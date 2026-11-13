@@ -2,6 +2,7 @@ import { defineMessages } from "../defineMessages";
 
 export const userMessages = defineMessages({
   ja: {
+    "user.list.openMenu": "{{username}}のユーザメニューを開く",
     // ChangeUserAuthModal
     "user.changeAuthModal.title": "LDAP への認証方法の変更",
     "user.changeAuthModal.description":
@@ -136,6 +137,7 @@ export const userMessages = defineMessages({
     "user.terms.backToAgreement": "規約同意ページに戻る",
   },
   en: {
+    "user.list.openMenu": "Open user menu for {{username}}",
     // ChangeUserAuthModal
     "user.changeAuthModal.title": "Change authentication method to LDAP",
     "user.changeAuthModal.description":

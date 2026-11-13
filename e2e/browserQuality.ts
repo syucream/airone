@@ -50,7 +50,43 @@ export const expectNoBrowserFailures = (failures: string[]) => {
   expect(failures).toEqual([]);
 };
 
+// Keep the complete scan as evidence, including inconclusive checks that need
+// manual assessment. No rule is disabled for the rest of the page.
+export const expectAccessibility = async (page: Page, testInfo: TestInfo) => {
+  // Scan settled colors, not a transient blend during a menu/dialog fade.
+  // Infinite animations (for example loading spinners) must not block a scan.
+  await page.evaluate(async () => {
+    await Promise.all(
+      document
+        .getAnimations()
+        .filter((animation) =>
+          Number.isFinite(
+            Number(animation.effect?.getComputedTiming().endTime),
+          ),
+        )
+        .map((animation) => animation.finished.catch(() => {})),
+    );
+  });
+  const axeResults = await new AxeBuilder({ page }).analyze();
+  const severeViolations = axeResults.violations.filter((violation) =>
+    ["critical", "serious"].includes(violation.impact ?? ""),
+  );
+
+  await testInfo.attach("axe-results", {
+    body: JSON.stringify(axeResults, null, 2),
+    contentType: "application/json",
+  });
+
+  expect(
+    severeViolations.map(({ id, nodes }) => ({
+      rule: id,
+      targets: nodes.map(({ target }) => target),
+    })),
+  ).toEqual([]);
+};
+
 export const expectUiQualityGate = async (page: Page, testInfo: TestInfo) => {
+  await expectAccessibility(page, testInfo);
   const viewport = page.viewportSize();
   const pageSize = await page.evaluate(() => ({
     scrollWidth: document.documentElement.scrollWidth,
@@ -108,20 +144,5 @@ export const expectUiQualityGate = async (page: Page, testInfo: TestInfo) => {
     });
   expect(offscreenControls).toEqual([]);
 
-  const axeResults = await new AxeBuilder({ page })
-    .disableRules(["button-name", "color-contrast", "label", "list"])
-    .analyze();
-  const severeViolations = axeResults.violations.filter((violation) =>
-    ["critical", "serious"].includes(violation.impact ?? ""),
-  );
-
-  if (severeViolations.length > 0) {
-    await testInfo.attach("axe-violations", {
-      body: JSON.stringify(severeViolations, null, 2),
-      contentType: "application/json",
-    });
-  }
-
-  expect(severeViolations).toEqual([]);
   expect(viewport?.width ?? 0).toBeGreaterThan(0);
 };

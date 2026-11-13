@@ -2,6 +2,8 @@ import { defineMessages } from "../defineMessages";
 
 export const groupMessages = defineMessages({
   ja: {
+    "group.tree.selectGroup": "{{name}}を選択",
+    "group.tree.openMenu": "{{name}}のグループメニューを開く",
     // GroupControlMenu
     "group.controlMenu.editGroup": "グループ編集",
     "group.controlMenu.deleteConfirm": "本当に削除しますか？",
@@ -45,6 +47,8 @@ export const groupMessages = defineMessages({
     "group.edit.submitFailureDetail": '詳細: "{{message}}"',
   },
   en: {
+    "group.tree.selectGroup": "Select {{name}}",
+    "group.tree.openMenu": "Open group menu for {{name}}",
     // GroupControlMenu
     "group.controlMenu.editGroup": "Edit group",
     "group.controlMenu.deleteConfirm": "Are you sure you want to delete this?",

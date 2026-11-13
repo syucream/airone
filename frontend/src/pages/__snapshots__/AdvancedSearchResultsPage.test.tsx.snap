@@ -28,7 +28,7 @@ exports[`should match snapshot 1`] = `
                     class="MuiBreadcrumbs-li"
                   >
                     <a
-                      class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                      class="MuiTypography-root MuiTypography-body1 css-1fh40yg-MuiTypography-root"
                       data-discover="true"
                       href="/ui/"
                     >
@@ -45,7 +45,7 @@ exports[`should match snapshot 1`] = `
                     class="MuiBreadcrumbs-li"
                   >
                     <a
-                      class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                      class="MuiTypography-root MuiTypography-body1 css-1fh40yg-MuiTypography-root"
                       data-discover="true"
                       href="/ui/advanced_search"
                     >
@@ -202,6 +202,8 @@ exports[`should match snapshot 1`] = `
                         scope="col"
                       >
                         <button
+                          aria-label="このページのアイテムをすべて選択"
+                          aria-pressed="false"
                           class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium css-5ws45t-MuiButtonBase-root-MuiIconButton-root"
                           tabindex="0"
                           type="button"
@@ -305,6 +307,7 @@ exports[`should match snapshot 1`] = `
                           class="MuiButtonBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium PrivateSwitchBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium css-imrjgg-MuiButtonBase-root-MuiCheckbox-root"
                         >
                           <input
+                            aria-label="entry1を選択"
                             class="PrivateSwitchBase-input css-j8yymo"
                             data-indeterminate="false"
                             type="checkbox"
@@ -327,7 +330,7 @@ exports[`should match snapshot 1`] = `
                         data-search-entry-name="true"
                       >
                         <a
-                          class="MuiBox-root css-p5ouq3"
+                          class="MuiBox-root css-oh22yo"
                           data-discover="true"
                           href="/ui/entities/1/entries/2/details"
                         >
@@ -444,7 +447,7 @@ exports[`should match snapshot 1`] = `
                   class="MuiBreadcrumbs-li"
                 >
                   <a
-                    class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                    class="MuiTypography-root MuiTypography-body1 css-1fh40yg-MuiTypography-root"
                     data-discover="true"
                     href="/ui/"
                   >
@@ -461,7 +464,7 @@ exports[`should match snapshot 1`] = `
                   class="MuiBreadcrumbs-li"
                 >
                   <a
-                    class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                    class="MuiTypography-root MuiTypography-body1 css-1fh40yg-MuiTypography-root"
                     data-discover="true"
                     href="/ui/advanced_search"
                   >
@@ -618,6 +621,8 @@ exports[`should match snapshot 1`] = `
                       scope="col"
                     >
                       <button
+                        aria-label="このページのアイテムをすべて選択"
+                        aria-pressed="false"
                         class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium css-5ws45t-MuiButtonBase-root-MuiIconButton-root"
                         tabindex="0"
                         type="button"
@@ -721,6 +726,7 @@ exports[`should match snapshot 1`] = `
                         class="MuiButtonBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium PrivateSwitchBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium css-imrjgg-MuiButtonBase-root-MuiCheckbox-root"
                       >
                         <input
+                          aria-label="entry1を選択"
                           class="PrivateSwitchBase-input css-j8yymo"
                           data-indeterminate="false"
                           type="checkbox"
@@ -743,7 +749,7 @@ exports[`should match snapshot 1`] = `
                       data-search-entry-name="true"
                     >
                       <a
-                        class="MuiBox-root css-p5ouq3"
+                        class="MuiBox-root css-oh22yo"
                         data-discover="true"
                         href="/ui/entities/1/entries/2/details"
                       >

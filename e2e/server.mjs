@@ -115,17 +115,31 @@ const serverEntity = {
   permission: ACL_FULL,
 };
 
+const makeUser = (user) => ({
+  is_superuser: false,
+  is_active: true,
+  is_readonly: false,
+  date_joined: "2026-01-01T00:00:00Z",
+  token: null,
+  authenticate_type: 1,
+  parent_user: null,
+  groups: [],
+  roles: [],
+  co_users: [],
+  ...user,
+});
+
 const state = {
   entities: [serverEntity],
   entries: [],
   users: [
-    {
+    makeUser({
       id: 1,
       username: "admin",
       email: "admin@example.test",
       is_superuser: true,
       is_active: true,
-    },
+    }),
   ],
   groups: [{ id: 1, name: "Engineering", members: [], parent_groups: [] }],
   roles: [
@@ -658,7 +672,7 @@ const handleApi = async (req, res, parsed) => {
       if (collection.key === "roles") input = hydrateRoleRelations(input);
       const records = state[collection.key];
       const created = {
-        ...input,
+        ...(collection.key === "users" ? makeUser(input) : input),
         id: Math.max(...records.map(({ id }) => id), 0) + 1,
         ...(collection.key === "roles" ? { is_editable: true } : {}),
       };

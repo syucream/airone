@@ -8,12 +8,14 @@ import { getStagedErrorStyle } from "utils/styleUtils";
 
 interface Props {
   attrId: number;
+  labelledBy?: string;
   control: Control<Schema>;
   isDisabled?: boolean;
 }
 
 export const NumberAttributeValueField: FC<Props> = ({
   attrId,
+  labelledBy,
   control,
   isDisabled = false,
 }) => {
@@ -25,6 +27,7 @@ export const NumberAttributeValueField: FC<Props> = ({
       render={({ field, fieldState: { error, isDirty } }) => (
         <TextField
           {...field}
+          inputProps={{ "aria-labelledby": labelledBy }}
           type="number"
           variant="standard"
           error={error != null}

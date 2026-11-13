@@ -54,6 +54,8 @@ vi.mock("../../hooks/useTranslation", () => ({
         noRunningJobs: "No running jobs",
         jobs: "Jobs",
         "header.openNavigationMenu": "Open navigation menu",
+        "header.openUserMenu": "Open user menu",
+        "header.openJobMenu": "Open job menu",
       };
       return translations[key] || key;
     },
@@ -119,19 +121,21 @@ describe("Header", () => {
     test("should show user menu when user icon is clicked", async () => {
       render(<Header />, { wrapper: TestWrapper });
 
-      // Find the user icon button (PersonIcon)
-      const buttons = screen.getAllByRole("button");
-      const userButton = buttons.find((btn) =>
-        btn.querySelector('svg[data-testid="PersonIcon"]'),
-      );
+      const userButton = screen.getByRole("button", { name: "Open user menu" });
+      expect(userButton).toHaveAttribute("aria-expanded", "false");
+      fireEvent.click(userButton);
 
-      if (userButton) {
-        fireEvent.click(userButton);
+      expect(await screen.findByText(/testuser/)).toBeVisible();
+      expect(userButton).toHaveAttribute("aria-expanded", "true");
+      expect(
+        document.getElementById(userButton.getAttribute("aria-controls")!),
+      ).toBeInTheDocument();
 
-        await waitFor(() => {
-          expect(screen.getByText(/testuser/)).toBeInTheDocument();
-        });
-      }
+      fireEvent.keyDown(screen.getByRole("menu"), { key: "Escape" });
+      await waitFor(() => {
+        expect(userButton).toHaveAttribute("aria-expanded", "false");
+        expect(screen.queryByText(/testuser/)).not.toBeVisible();
+      });
     });
   });
 
@@ -139,18 +143,21 @@ describe("Header", () => {
     test("should show job menu when job icon is clicked", async () => {
       render(<Header />, { wrapper: TestWrapper });
 
-      const buttons = screen.getAllByRole("button");
-      const jobButton = buttons.find((btn) =>
-        btn.querySelector('svg[data-testid="TaskIcon"]'),
-      );
+      const jobButton = screen.getByRole("button", { name: "Open job menu" });
+      expect(jobButton).toHaveAttribute("aria-expanded", "false");
+      fireEvent.click(jobButton);
 
-      if (jobButton) {
-        fireEvent.click(jobButton);
+      expect(await screen.findByText("No running jobs")).toBeVisible();
+      expect(jobButton).toHaveAttribute("aria-expanded", "true");
+      expect(
+        document.getElementById(jobButton.getAttribute("aria-controls")!),
+      ).toBeInTheDocument();
 
-        await waitFor(() => {
-          expect(screen.getByText("No running jobs")).toBeInTheDocument();
-        });
-      }
+      fireEvent.keyDown(screen.getByRole("menu"), { key: "Escape" });
+      await waitFor(() => {
+        expect(jobButton).toHaveAttribute("aria-expanded", "false");
+        expect(screen.queryByText("No running jobs")).not.toBeVisible();
+      });
     });
   });
 

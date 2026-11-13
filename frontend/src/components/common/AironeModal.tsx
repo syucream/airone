@@ -1,6 +1,6 @@
 import { Box, Modal, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { FC, ReactNode } from "react";
+import { FC, ReactNode, useId } from "react";
 
 const StyledModal = styled(Modal)(({}) => ({
   display: "flex",
@@ -9,6 +9,7 @@ const StyledModal = styled(Modal)(({}) => ({
 }));
 
 const Paper = styled(Box)(({ theme }) => ({
+  position: "relative",
   display: "flex",
   flexDirection: "column",
   boxSizing: "border-box",
@@ -37,14 +38,21 @@ export const AironeModal: FC<Props> = ({
   onClose,
   children,
 }) => {
+  const labelId = useId();
   return (
     <StyledModal open={open} onClose={onClose}>
-      <Paper id="modal">
-        <Typography variant={"h6"} my="8px">
+      <Paper
+        id="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={`${labelId}-title`}
+        aria-describedby={description ? `${labelId}-description` : undefined}
+      >
+        <Typography id={`${labelId}-title`} variant={"h6"} my="8px">
           {title}
         </Typography>
         {description && (
-          <Typography variant={"body2"} my="4px">
+          <Typography id={`${labelId}-description`} variant={"body2"} my="4px">
             {description}
           </Typography>
         )}

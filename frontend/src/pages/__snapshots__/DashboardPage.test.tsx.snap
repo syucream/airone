@@ -96,7 +96,7 @@ exports[`DashboardPage > should match snapshot 1`] = `
             <div
               class="MuiGrid2-root MuiGrid2-direction-xs-row MuiGrid2-grid-xs-12 MuiGrid2-grid-sm-6 MuiGrid2-grid-md-4 css-1sbb1tz-MuiGrid2-root"
             >
-              <ul
+              <div
                 class="MuiList-root MuiList-padding MuiList-subheader css-h1es49-MuiList-root"
               >
                 <div
@@ -134,6 +134,7 @@ exports[`DashboardPage > should match snapshot 1`] = `
                     class="MuiBox-root css-1tkayks"
                   >
                     <button
+                      aria-label="Category Aの操作メニューを開く"
                       class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium css-53g0n7-MuiButtonBase-root-MuiIconButton-root"
                       tabindex="0"
                       type="button"
@@ -152,23 +153,25 @@ exports[`DashboardPage > should match snapshot 1`] = `
                     </button>
                   </div>
                 </div>
-                <div
-                  class="MuiBox-root css-1kcxdgd"
+                <ul
+                  class="MuiBox-root css-1l0f6aj"
                 >
-                  <a
-                    class="MuiTypography-root MuiTypography-body2 css-14btd25-MuiTypography-root"
-                    data-discover="true"
-                    href="/ui/entities/10/entries"
-                  >
-                    Model 1
-                  </a>
-                </div>
-              </ul>
+                  <li>
+                    <a
+                      class="MuiTypography-root MuiTypography-body2 css-1c0tdd0-MuiTypography-root"
+                      data-discover="true"
+                      href="/ui/entities/10/entries"
+                    >
+                      Model 1
+                    </a>
+                  </li>
+                </ul>
+              </div>
             </div>
             <div
               class="MuiGrid2-root MuiGrid2-direction-xs-row MuiGrid2-grid-xs-12 MuiGrid2-grid-sm-6 MuiGrid2-grid-md-4 css-1sbb1tz-MuiGrid2-root"
             >
-              <ul
+              <div
                 class="MuiList-root MuiList-padding MuiList-subheader css-h1es49-MuiList-root"
               >
                 <div
@@ -206,6 +209,7 @@ exports[`DashboardPage > should match snapshot 1`] = `
                     class="MuiBox-root css-1tkayks"
                   >
                     <button
+                      aria-label="Category Bの操作メニューを開く"
                       class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium css-53g0n7-MuiButtonBase-root-MuiIconButton-root"
                       tabindex="0"
                       type="button"
@@ -224,15 +228,15 @@ exports[`DashboardPage > should match snapshot 1`] = `
                     </button>
                   </div>
                 </div>
-                <div
-                  class="MuiBox-root css-1kcxdgd"
+                <ul
+                  class="MuiBox-root css-1l0f6aj"
                 />
-              </ul>
+              </div>
             </div>
             <div
               class="MuiGrid2-root MuiGrid2-direction-xs-row MuiGrid2-grid-xs-12 MuiGrid2-grid-sm-6 MuiGrid2-grid-md-4 css-1sbb1tz-MuiGrid2-root"
             >
-              <ul
+              <div
                 class="MuiList-root MuiList-padding MuiList-subheader css-h1es49-MuiList-root"
               >
                 <div
@@ -270,6 +274,7 @@ exports[`DashboardPage > should match snapshot 1`] = `
                     class="MuiBox-root css-1tkayks"
                   >
                     <button
+                      aria-label="Category Cの操作メニューを開く"
                       class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium css-53g0n7-MuiButtonBase-root-MuiIconButton-root"
                       tabindex="0"
                       type="button"
@@ -288,25 +293,29 @@ exports[`DashboardPage > should match snapshot 1`] = `
                     </button>
                   </div>
                 </div>
-                <div
-                  class="MuiBox-root css-1kcxdgd"
+                <ul
+                  class="MuiBox-root css-1l0f6aj"
                 >
-                  <a
-                    class="MuiTypography-root MuiTypography-body2 css-14btd25-MuiTypography-root"
-                    data-discover="true"
-                    href="/ui/entities/20/entries"
-                  >
-                    Model 2
-                  </a>
-                  <a
-                    class="MuiTypography-root MuiTypography-body2 css-14btd25-MuiTypography-root"
-                    data-discover="true"
-                    href="/ui/entities/30/entries"
-                  >
-                    Model 3
-                  </a>
-                </div>
-              </ul>
+                  <li>
+                    <a
+                      class="MuiTypography-root MuiTypography-body2 css-1c0tdd0-MuiTypography-root"
+                      data-discover="true"
+                      href="/ui/entities/20/entries"
+                    >
+                      Model 2
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      class="MuiTypography-root MuiTypography-body2 css-1c0tdd0-MuiTypography-root"
+                      data-discover="true"
+                      href="/ui/entities/30/entries"
+                    >
+                      Model 3
+                    </a>
+                  </li>
+                </ul>
+              </div>
             </div>
           </div>
           <div
@@ -481,7 +490,7 @@ exports[`DashboardPage > should match snapshot 1`] = `
           <div
             class="MuiGrid2-root MuiGrid2-direction-xs-row MuiGrid2-grid-xs-12 MuiGrid2-grid-sm-6 MuiGrid2-grid-md-4 css-1sbb1tz-MuiGrid2-root"
           >
-            <ul
+            <div
               class="MuiList-root MuiList-padding MuiList-subheader css-h1es49-MuiList-root"
             >
               <div
@@ -519,6 +528,7 @@ exports[`DashboardPage > should match snapshot 1`] = `
                   class="MuiBox-root css-1tkayks"
                 >
                   <button
+                    aria-label="Category Aの操作メニューを開く"
                     class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium css-53g0n7-MuiButtonBase-root-MuiIconButton-root"
                     tabindex="0"
                     type="button"
@@ -537,23 +547,25 @@ exports[`DashboardPage > should match snapshot 1`] = `
                   </button>
                 </div>
               </div>
-              <div
-                class="MuiBox-root css-1kcxdgd"
+              <ul
+                class="MuiBox-root css-1l0f6aj"
               >
-                <a
-                  class="MuiTypography-root MuiTypography-body2 css-14btd25-MuiTypography-root"
-                  data-discover="true"
-                  href="/ui/entities/10/entries"
-                >
-                  Model 1
-                </a>
-              </div>
-            </ul>
+                <li>
+                  <a
+                    class="MuiTypography-root MuiTypography-body2 css-1c0tdd0-MuiTypography-root"
+                    data-discover="true"
+                    href="/ui/entities/10/entries"
+                  >
+                    Model 1
+                  </a>
+                </li>
+              </ul>
+            </div>
           </div>
           <div
             class="MuiGrid2-root MuiGrid2-direction-xs-row MuiGrid2-grid-xs-12 MuiGrid2-grid-sm-6 MuiGrid2-grid-md-4 css-1sbb1tz-MuiGrid2-root"
           >
-            <ul
+            <div
               class="MuiList-root MuiList-padding MuiList-subheader css-h1es49-MuiList-root"
             >
               <div
@@ -591,6 +603,7 @@ exports[`DashboardPage > should match snapshot 1`] = `
                   class="MuiBox-root css-1tkayks"
                 >
                   <button
+                    aria-label="Category Bの操作メニューを開く"
                     class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium css-53g0n7-MuiButtonBase-root-MuiIconButton-root"
                     tabindex="0"
                     type="button"
@@ -609,15 +622,15 @@ exports[`DashboardPage > should match snapshot 1`] = `
                   </button>
                 </div>
               </div>
-              <div
-                class="MuiBox-root css-1kcxdgd"
+              <ul
+                class="MuiBox-root css-1l0f6aj"
               />
-            </ul>
+            </div>
           </div>
           <div
             class="MuiGrid2-root MuiGrid2-direction-xs-row MuiGrid2-grid-xs-12 MuiGrid2-grid-sm-6 MuiGrid2-grid-md-4 css-1sbb1tz-MuiGrid2-root"
           >
-            <ul
+            <div
               class="MuiList-root MuiList-padding MuiList-subheader css-h1es49-MuiList-root"
             >
               <div
@@ -655,6 +668,7 @@ exports[`DashboardPage > should match snapshot 1`] = `
                   class="MuiBox-root css-1tkayks"
                 >
                   <button
+                    aria-label="Category Cの操作メニューを開く"
                     class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium css-53g0n7-MuiButtonBase-root-MuiIconButton-root"
                     tabindex="0"
                     type="button"
@@ -673,25 +687,29 @@ exports[`DashboardPage > should match snapshot 1`] = `
                   </button>
                 </div>
               </div>
-              <div
-                class="MuiBox-root css-1kcxdgd"
+              <ul
+                class="MuiBox-root css-1l0f6aj"
               >
-                <a
-                  class="MuiTypography-root MuiTypography-body2 css-14btd25-MuiTypography-root"
-                  data-discover="true"
-                  href="/ui/entities/20/entries"
-                >
-                  Model 2
-                </a>
-                <a
-                  class="MuiTypography-root MuiTypography-body2 css-14btd25-MuiTypography-root"
-                  data-discover="true"
-                  href="/ui/entities/30/entries"
-                >
-                  Model 3
-                </a>
-              </div>
-            </ul>
+                <li>
+                  <a
+                    class="MuiTypography-root MuiTypography-body2 css-1c0tdd0-MuiTypography-root"
+                    data-discover="true"
+                    href="/ui/entities/20/entries"
+                  >
+                    Model 2
+                  </a>
+                </li>
+                <li>
+                  <a
+                    class="MuiTypography-root MuiTypography-body2 css-1c0tdd0-MuiTypography-root"
+                    data-discover="true"
+                    href="/ui/entities/30/entries"
+                  >
+                    Model 3
+                  </a>
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
         <div

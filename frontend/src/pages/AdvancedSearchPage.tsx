@@ -180,6 +180,9 @@ export const AdvancedSearchPage: FC = () => {
           <Box>
             {t("advancedSearch.page.searchAllEntities")}
             <Checkbox
+              inputProps={{
+                "aria-label": t("advancedSearch.page.searchAllEntities"),
+              }}
               checked={searchAllEntities}
               onChange={(e) =>
                 updateModelScope(selectedEntities, e.target.checked)
@@ -216,6 +219,9 @@ export const AdvancedSearchPage: FC = () => {
             <Box>
               {t("advancedSearch.page.includeReferral")}
               <Checkbox
+                inputProps={{
+                  "aria-label": t("advancedSearch.page.includeReferral"),
+                }}
                 checked={hasReferral}
                 onChange={(e) => setHasReferral(e.target.checked)}
               />

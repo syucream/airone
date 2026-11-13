@@ -2,6 +2,8 @@ import { defineMessages } from "../defineMessages";
 
 export const entityMessages = defineMessages({
   ja: {
+    "entity.form.addIsolationRule": "参照制限ルールを追加",
+    "entity.form.addWebhook": "Webhookを追加",
     // Entity list
     "entity.list.pageTitle": "モデル一覧",
     "entity.list.searchPlaceholder": "モデルを絞り込む",
@@ -176,6 +178,8 @@ export const entityMessages = defineMessages({
     "entity.edit.description": "エンティテイティ詳細 / 編集",
   },
   en: {
+    "entity.form.addIsolationRule": "Add reference restriction rule",
+    "entity.form.addWebhook": "Add webhook",
     // Entity list
     "entity.list.pageTitle": "Entities",
     "entity.list.searchPlaceholder": "Filter entities",

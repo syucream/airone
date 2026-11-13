@@ -105,14 +105,18 @@ describe("SearchResultsTableHead", () => {
 
   test("should render bulk operation checkbox when not readonly", () => {
     renderSearchResultsTableHead();
-    // Look for the checkbox button without text label
-    const checkbox = screen.getByRole("button", { name: "" });
+    const checkbox = screen.getByRole("button", {
+      name: "このページのアイテムをすべて選択",
+    });
     expect(checkbox).toBeInTheDocument();
+    expect(checkbox).toHaveAttribute("aria-pressed", "false");
   });
 
   test("should not render bulk operation checkbox when readonly", () => {
     renderSearchResultsTableHead({ isReadonly: true });
-    const checkbox = screen.queryByRole("button", { name: "" });
+    const checkbox = screen.queryByRole("button", {
+      name: "このページのアイテムをすべて選択",
+    });
     expect(checkbox).not.toBeInTheDocument();
   });
 

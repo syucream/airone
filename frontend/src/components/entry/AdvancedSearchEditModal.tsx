@@ -340,7 +340,12 @@ export const AdvancedSearchEditModal: FC<Props> = ({
               })}
             </Alert>
           )}
-          {(checking || previewLoading) && <CircularProgress size={20} />}
+          {(checking || previewLoading) && (
+            <CircularProgress
+              size={20}
+              aria-label={t("advancedSearch.editModal.loadingTargets")}
+            />
+          )}
           {previewFailed && (
             <Alert severity="error">
               {t("advancedSearch.editModal.previewFailed")}
@@ -365,7 +370,12 @@ export const AdvancedSearchEditModal: FC<Props> = ({
               </Typography>
             </AccordionSummary>
             <AccordionDetails>
-              {previewLoading && <CircularProgress size={20} />}
+              {previewLoading && (
+                <CircularProgress
+                  size={20}
+                  aria-label={t("advancedSearch.editModal.loadingTargets")}
+                />
+              )}
               <AdvancedSearchTargetList
                 targets={displayedTargets.map((entry) => ({
                   ...entry,
@@ -404,6 +414,7 @@ export const AdvancedSearchEditModal: FC<Props> = ({
           setValue={setValue}
           type={targetAttrtype}
           schemaId={targetAttrID}
+          labelledBy="bulk-update-attribute-label"
           choices={targetChoices ?? undefined}
         />
       </Box>

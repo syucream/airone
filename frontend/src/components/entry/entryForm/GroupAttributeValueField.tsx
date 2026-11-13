@@ -30,6 +30,7 @@ const StyledBox = styled(Box)(() => ({
 
 interface Props {
   attrId: number;
+  labelledBy?: string;
   control: Control<Schema>;
   setValue: UseFormSetValue<Schema>;
   multiple?: boolean;
@@ -40,6 +41,7 @@ type GroupOption = { id: number; name: string };
 
 export const GroupAttributeValueField: FC<Props> = ({
   attrId,
+  labelledBy,
   control,
   setValue,
   multiple = false,
@@ -138,6 +140,10 @@ export const GroupAttributeValueField: FC<Props> = ({
               renderInput={(params) => (
                 <TextField
                   {...params}
+                  inputProps={{
+                    ...params.inputProps,
+                    "aria-labelledby": labelledBy,
+                  }}
                   error={!!error}
                   helperText={error?.message}
                   size="small"

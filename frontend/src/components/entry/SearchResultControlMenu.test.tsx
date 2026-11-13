@@ -61,7 +61,11 @@ describe("SearchResultControlMenu", () => {
     const button = screen.getByRole("button", { name: "一括更新" });
     expect(button).toBeEnabled();
     fireEvent.click(button);
+    expect(defaultProps.handleClose).toHaveBeenCalledOnce();
     expect(defaultProps.setOpenEditModal).toHaveBeenCalledWith(true);
+    expect(defaultProps.handleClose.mock.invocationCallOrder[0]).toBeLessThan(
+      defaultProps.setOpenEditModal.mock.invocationCallOrder[0],
+    );
   });
 
   test("should not render menu when anchorElem is null", () => {

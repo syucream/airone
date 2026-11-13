@@ -22,6 +22,7 @@ type ReferralOption = {
 
 interface Props {
   attrId: number;
+  labelledBy?: string;
   value: ReferralOption | ReferralOption[] | null;
   handleChange: (
     value: GetEntryAttrReferral | GetEntryAttrReferral[] | null,
@@ -39,6 +40,7 @@ const labelOf = (o: ReferralOption | null | undefined): string | undefined =>
 
 export const ReferralsAutocomplete: FC<Props> = ({
   attrId,
+  labelledBy,
   value,
   handleChange,
   multiple,
@@ -224,6 +226,7 @@ export const ReferralsAutocomplete: FC<Props> = ({
         renderInput={(params) => (
           <TextField
             {...params}
+            inputProps={{ ...params.inputProps, "aria-labelledby": labelledBy }}
             error={error != null}
             helperText={error?.message}
             size="small"

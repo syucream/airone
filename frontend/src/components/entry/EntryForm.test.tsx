@@ -140,6 +140,46 @@ describe("EntryForm", () => {
     ).not.toThrow();
   });
 
+  test("should label attributes containing spaces with distinct form labels", () => {
+    const entity = {
+      ...mockEntity,
+      attrs: [{ ...mockEntity.attrs[0], name: "Display name" }],
+    };
+    const Wrapper: FC = () => {
+      const { control, setValue } = useForm<Schema>({
+        defaultValues: entryInfo,
+      });
+      return (
+        <EntryForm
+          entity={entity}
+          control={control}
+          setValue={setValue}
+          skipItemName={true}
+        />
+      );
+    };
+
+    render(
+      <>
+        <Wrapper />
+        <Wrapper />
+      </>,
+      { wrapper: TestWrapper },
+    );
+
+    const inputs = screen.getAllByRole("textbox", { name: "Display name" });
+    expect(inputs).toHaveLength(2);
+    const labelIds = inputs.map((input) =>
+      input.getAttribute("aria-labelledby"),
+    );
+    expect(new Set(labelIds).size).toBe(2);
+    for (const labelId of labelIds) {
+      expect(document.getElementById(labelId ?? "")).toHaveTextContent(
+        "Display name",
+      );
+    }
+  });
+
   test("should display entry name field with value", () => {
     const Wrapper: FC = () => {
       const { control, setValue } = useForm<Schema>({

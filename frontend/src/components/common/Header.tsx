@@ -104,7 +104,7 @@ const Title = styled(Typography)(({ theme }) => ({
 })) as OverridableComponent<TypographyTypeMap>;
 
 const Version = styled(Typography)(({ theme }) => ({
-  color: "#FFFFFF8A",
+  color: "white",
   paddingLeft: "20px",
   maxWidth: "64px",
   overflow: "hidden",
@@ -426,7 +426,9 @@ export const Header: FC = () => {
                 </Button>
               )}
               <IconButton
+                aria-label={t("header.openUserMenu")}
                 aria-controls="user-menu"
+                aria-expanded={Boolean(userAnchorEl)}
                 aria-haspopup="true"
                 onClick={(e) => setUserAnchorEl(e.currentTarget)}
               >
@@ -455,7 +457,9 @@ export const Header: FC = () => {
                 </MenuItem>
               </Menu>
               <IconButton
+                aria-label={t("header.openJobMenu")}
                 aria-controls="job-menu"
+                aria-expanded={Boolean(jobAnchorEl)}
                 aria-haspopup="true"
                 onClick={handleOpenMenu}
               >
@@ -464,6 +468,7 @@ export const Header: FC = () => {
                 </Badge>
               </IconButton>
               <Menu
+                id="job-menu"
                 anchorEl={jobAnchorEl}
                 open={Boolean(jobAnchorEl)}
                 onClose={() => setJobAnchorEl(null)}

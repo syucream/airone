@@ -28,7 +28,7 @@ exports[`EditGroupPage > should match snapshot 1`] = `
                     class="MuiBreadcrumbs-li"
                   >
                     <a
-                      class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                      class="MuiTypography-root MuiTypography-body1 css-1fh40yg-MuiTypography-root"
                       data-discover="true"
                       href="/ui/"
                     >
@@ -45,7 +45,7 @@ exports[`EditGroupPage > should match snapshot 1`] = `
                     class="MuiBreadcrumbs-li"
                   >
                     <a
-                      class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                      class="MuiTypography-root MuiTypography-body1 css-1fh40yg-MuiTypography-root"
                       data-discover="true"
                       href="/ui/groups"
                     >
@@ -307,6 +307,7 @@ exports[`EditGroupPage > should match snapshot 1`] = `
                       class="MuiButtonBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium PrivateSwitchBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium css-imrjgg-MuiButtonBase-root-MuiCheckbox-root"
                     >
                       <input
+                        aria-label="group1を選択"
                         class="PrivateSwitchBase-input css-j8yymo"
                         data-indeterminate="false"
                         type="checkbox"
@@ -324,7 +325,7 @@ exports[`EditGroupPage > should match snapshot 1`] = `
                       </svg>
                     </span>
                     <a
-                      class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                      class="MuiTypography-root MuiTypography-body1 css-1fh40yg-MuiTypography-root"
                       data-discover="true"
                       href="/ui/groups/1"
                     >
@@ -338,6 +339,7 @@ exports[`EditGroupPage > should match snapshot 1`] = `
                       class="MuiButtonBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium PrivateSwitchBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium css-imrjgg-MuiButtonBase-root-MuiCheckbox-root"
                     >
                       <input
+                        aria-label="group1を選択"
                         class="PrivateSwitchBase-input css-j8yymo"
                         data-indeterminate="false"
                         type="checkbox"
@@ -355,7 +357,7 @@ exports[`EditGroupPage > should match snapshot 1`] = `
                       </svg>
                     </span>
                     <a
-                      class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                      class="MuiTypography-root MuiTypography-body1 css-1fh40yg-MuiTypography-root"
                       data-discover="true"
                       href="/ui/groups/1"
                     >
@@ -369,6 +371,7 @@ exports[`EditGroupPage > should match snapshot 1`] = `
                       class="MuiButtonBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium PrivateSwitchBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium css-imrjgg-MuiButtonBase-root-MuiCheckbox-root"
                     >
                       <input
+                        aria-label="group2を選択"
                         class="PrivateSwitchBase-input css-j8yymo"
                         data-indeterminate="false"
                         type="checkbox"
@@ -386,7 +389,7 @@ exports[`EditGroupPage > should match snapshot 1`] = `
                       </svg>
                     </span>
                     <a
-                      class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                      class="MuiTypography-root MuiTypography-body1 css-1fh40yg-MuiTypography-root"
                       data-discover="true"
                       href="/ui/groups/2"
                     >
@@ -408,6 +411,7 @@ exports[`EditGroupPage > should match snapshot 1`] = `
                       class="MuiButtonBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium PrivateSwitchBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium css-imrjgg-MuiButtonBase-root-MuiCheckbox-root"
                     >
                       <input
+                        aria-label="group2を選択"
                         class="PrivateSwitchBase-input css-j8yymo"
                         data-indeterminate="false"
                         type="checkbox"
@@ -425,7 +429,7 @@ exports[`EditGroupPage > should match snapshot 1`] = `
                       </svg>
                     </span>
                     <a
-                      class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                      class="MuiTypography-root MuiTypography-body1 css-1fh40yg-MuiTypography-root"
                       data-discover="true"
                       href="/ui/groups/2"
                     >
@@ -464,7 +468,7 @@ exports[`EditGroupPage > should match snapshot 1`] = `
                   class="MuiBreadcrumbs-li"
                 >
                   <a
-                    class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                    class="MuiTypography-root MuiTypography-body1 css-1fh40yg-MuiTypography-root"
                     data-discover="true"
                     href="/ui/"
                   >
@@ -481,7 +485,7 @@ exports[`EditGroupPage > should match snapshot 1`] = `
                   class="MuiBreadcrumbs-li"
                 >
                   <a
-                    class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                    class="MuiTypography-root MuiTypography-body1 css-1fh40yg-MuiTypography-root"
                     data-discover="true"
                     href="/ui/groups"
                   >
@@ -743,6 +747,7 @@ exports[`EditGroupPage > should match snapshot 1`] = `
                     class="MuiButtonBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium PrivateSwitchBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium css-imrjgg-MuiButtonBase-root-MuiCheckbox-root"
                   >
                     <input
+                      aria-label="group1を選択"
                       class="PrivateSwitchBase-input css-j8yymo"
                       data-indeterminate="false"
                       type="checkbox"
@@ -760,7 +765,7 @@ exports[`EditGroupPage > should match snapshot 1`] = `
                     </svg>
                   </span>
                   <a
-                    class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                    class="MuiTypography-root MuiTypography-body1 css-1fh40yg-MuiTypography-root"
                     data-discover="true"
                     href="/ui/groups/1"
                   >
@@ -774,6 +779,7 @@ exports[`EditGroupPage > should match snapshot 1`] = `
                     class="MuiButtonBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium PrivateSwitchBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium css-imrjgg-MuiButtonBase-root-MuiCheckbox-root"
                   >
                     <input
+                      aria-label="group1を選択"
                       class="PrivateSwitchBase-input css-j8yymo"
                       data-indeterminate="false"
                       type="checkbox"
@@ -791,7 +797,7 @@ exports[`EditGroupPage > should match snapshot 1`] = `
                     </svg>
                   </span>
                   <a
-                    class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                    class="MuiTypography-root MuiTypography-body1 css-1fh40yg-MuiTypography-root"
                     data-discover="true"
                     href="/ui/groups/1"
                   >
@@ -805,6 +811,7 @@ exports[`EditGroupPage > should match snapshot 1`] = `
                     class="MuiButtonBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium PrivateSwitchBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium css-imrjgg-MuiButtonBase-root-MuiCheckbox-root"
                   >
                     <input
+                      aria-label="group2を選択"
                       class="PrivateSwitchBase-input css-j8yymo"
                       data-indeterminate="false"
                       type="checkbox"
@@ -822,7 +829,7 @@ exports[`EditGroupPage > should match snapshot 1`] = `
                     </svg>
                   </span>
                   <a
-                    class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                    class="MuiTypography-root MuiTypography-body1 css-1fh40yg-MuiTypography-root"
                     data-discover="true"
                     href="/ui/groups/2"
                   >
@@ -844,6 +851,7 @@ exports[`EditGroupPage > should match snapshot 1`] = `
                     class="MuiButtonBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium PrivateSwitchBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium css-imrjgg-MuiButtonBase-root-MuiCheckbox-root"
                   >
                     <input
+                      aria-label="group2を選択"
                       class="PrivateSwitchBase-input css-j8yymo"
                       data-indeterminate="false"
                       type="checkbox"
@@ -861,7 +869,7 @@ exports[`EditGroupPage > should match snapshot 1`] = `
                     </svg>
                   </span>
                   <a
-                    class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                    class="MuiTypography-root MuiTypography-body1 css-1fh40yg-MuiTypography-root"
                     data-discover="true"
                     href="/ui/groups/2"
                   >

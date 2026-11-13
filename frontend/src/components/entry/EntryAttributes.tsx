@@ -102,7 +102,7 @@ export const EntryAttributes: FC<Props> = ({
               key={attr.schema.name}
               highlighted={triggeredAttrIds.has(attr.schema.id)}
             >
-              <AttrNameTableCell>
+              <AttrNameTableCell component="th" scope="row">
                 <AttrNameBox>
                   {triggeredAttrIds.has(attr.schema.id) ? (
                     <Tooltip
@@ -133,7 +133,11 @@ export const EntryAttributes: FC<Props> = ({
               <AttrValueTableCell>
                 {attr.isReadable ? (
                   <AttributeValue
-                    attrInfo={{ type: attr.type, value: attr.value }}
+                    attrInfo={{
+                      name: attr.schema.name,
+                      type: attr.type,
+                      value: attr.value,
+                    }}
                   />
                 ) : (
                   <Typography>Permission denied.</Typography>

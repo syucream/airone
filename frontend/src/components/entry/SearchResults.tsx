@@ -37,6 +37,7 @@ import {
   AttributeValueList,
   AttributeValueListItem,
 } from "components/entry/AttributeValue";
+import { useTranslation } from "hooks/useTranslation";
 import { entryDetailsPath, entryEditPath } from "routes/Routes";
 import { AdvancedSerarchResultListParam } from "services/Constants";
 import {
@@ -121,6 +122,7 @@ export const SearchResults: FC<Props> = ({
   omitHeadline = false,
   entityAttrs = [],
 }) => {
+  const { t } = useTranslation();
   // attrTypes are sourced from entityAttrs (the EntityAttr definitions),
   // which always include freshly-added attributes regardless of whether any
   // Entry/ES document references them yet. Falling back to results.values[0]
@@ -278,6 +280,14 @@ export const SearchResults: FC<Props> = ({
                   {!isReadonly && (
                     <TableCell sx={{ padding: 0 }}>
                       <Checkbox
+                        inputProps={{
+                          "aria-label": t(
+                            "advancedSearch.results.selectEntry",
+                            {
+                              name: result.entry.name,
+                            },
+                          ),
+                        }}
                         checked={bulkOperationEntryIds.includes(
                           result.entry.id,
                         )}

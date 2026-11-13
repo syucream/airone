@@ -7,6 +7,7 @@ import { Control, Controller, useFieldArray } from "react-hook-form";
 
 import { Schema } from "./EntryFormSchema";
 
+import { useTranslation } from "hooks/useTranslation";
 import { getStagedErrorStyle } from "utils/styleUtils";
 
 const StyledList = styled(List)(({}) => ({
@@ -21,6 +22,7 @@ const StyledBox = styled(Box)(({}) => ({
 
 interface CommonProps {
   attrId: number;
+  labelledBy?: string;
   index?: number;
   control: Control<Schema>;
   isDisabled?: boolean;
@@ -34,6 +36,7 @@ export const StringAttributeValueField: FC<
   }
 > = ({
   attrId,
+  labelledBy,
   index,
   control,
   handleClickDeleteListItem,
@@ -41,6 +44,7 @@ export const StringAttributeValueField: FC<
   multiline,
   isDisabled = false,
 }) => {
+  const { t } = useTranslation();
   return (
     <StyledBox>
       <Controller
@@ -54,6 +58,7 @@ export const StringAttributeValueField: FC<
         render={({ field, fieldState: { error, isDirty } }) => (
           <TextField
             {...field}
+            inputProps={{ "aria-labelledby": labelledBy }}
             variant="standard"
             error={error != null}
             helperText={error?.message}
@@ -70,6 +75,7 @@ export const StringAttributeValueField: FC<
           {handleClickDeleteListItem != null && (
             <IconButton
               id="del_button"
+              aria-label={t("entryForm.field.removeValue")}
               onClick={() => handleClickDeleteListItem(index)}
             >
               <DeleteOutlineIcon />
@@ -78,6 +84,7 @@ export const StringAttributeValueField: FC<
           {handleClickAddListItem != null && (
             <IconButton
               id="add_button"
+              aria-label={t("entryForm.field.addValue")}
               onClick={() => handleClickAddListItem(index)}
             >
               <AddIcon />
@@ -91,6 +98,7 @@ export const StringAttributeValueField: FC<
 
 export const ArrayStringAttributeValueField: FC<CommonProps> = ({
   attrId,
+  labelledBy,
   control,
 }) => {
   const { fields, insert, remove, replace } = useFieldArray({
@@ -121,6 +129,7 @@ export const ArrayStringAttributeValueField: FC<CommonProps> = ({
       {fields.map((field, index) => (
         <ListItem key={field.id} disablePadding={true}>
           <StringAttributeValueField
+            labelledBy={labelledBy}
             control={control}
             attrId={attrId}
             index={index}

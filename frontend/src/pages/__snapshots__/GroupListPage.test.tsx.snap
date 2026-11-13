@@ -28,7 +28,7 @@ exports[`GroupListPage > should match snapshot 1`] = `
                     class="MuiBreadcrumbs-li"
                   >
                     <a
-                      class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                      class="MuiTypography-root MuiTypography-body1 css-1fh40yg-MuiTypography-root"
                       data-discover="true"
                       href="/ui/"
                     >
@@ -152,6 +152,7 @@ exports[`GroupListPage > should match snapshot 1`] = `
                         class="MuiButtonBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium PrivateSwitchBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium css-imrjgg-MuiButtonBase-root-MuiCheckbox-root"
                       >
                         <input
+                          aria-label="group1を選択"
                           class="PrivateSwitchBase-input css-j8yymo"
                           data-indeterminate="false"
                           type="checkbox"
@@ -169,13 +170,14 @@ exports[`GroupListPage > should match snapshot 1`] = `
                         </svg>
                       </span>
                       <a
-                        class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                        class="MuiTypography-root MuiTypography-body1 css-1fh40yg-MuiTypography-root"
                         data-discover="true"
                         href="/ui/groups/1"
                       >
                         group1
                       </a>
                       <button
+                        aria-label="group1のグループメニューを開く"
                         class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium css-1ffhwr1-MuiButtonBase-root-MuiIconButton-root"
                         tabindex="0"
                         type="button"
@@ -200,6 +202,7 @@ exports[`GroupListPage > should match snapshot 1`] = `
                         class="MuiButtonBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium PrivateSwitchBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium css-imrjgg-MuiButtonBase-root-MuiCheckbox-root"
                       >
                         <input
+                          aria-label="group1を選択"
                           class="PrivateSwitchBase-input css-j8yymo"
                           data-indeterminate="false"
                           type="checkbox"
@@ -217,13 +220,14 @@ exports[`GroupListPage > should match snapshot 1`] = `
                         </svg>
                       </span>
                       <a
-                        class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                        class="MuiTypography-root MuiTypography-body1 css-1fh40yg-MuiTypography-root"
                         data-discover="true"
                         href="/ui/groups/1"
                       >
                         group1
                       </a>
                       <button
+                        aria-label="group1のグループメニューを開く"
                         class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium css-1ffhwr1-MuiButtonBase-root-MuiIconButton-root"
                         tabindex="0"
                         type="button"
@@ -248,6 +252,7 @@ exports[`GroupListPage > should match snapshot 1`] = `
                         class="MuiButtonBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium PrivateSwitchBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium css-imrjgg-MuiButtonBase-root-MuiCheckbox-root"
                       >
                         <input
+                          aria-label="group2を選択"
                           class="PrivateSwitchBase-input css-j8yymo"
                           data-indeterminate="false"
                           type="checkbox"
@@ -265,13 +270,14 @@ exports[`GroupListPage > should match snapshot 1`] = `
                         </svg>
                       </span>
                       <a
-                        class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                        class="MuiTypography-root MuiTypography-body1 css-1fh40yg-MuiTypography-root"
                         data-discover="true"
                         href="/ui/groups/2"
                       >
                         group2
                       </a>
                       <button
+                        aria-label="group2のグループメニューを開く"
                         class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium css-1ffhwr1-MuiButtonBase-root-MuiIconButton-root"
                         tabindex="0"
                         type="button"
@@ -304,6 +310,7 @@ exports[`GroupListPage > should match snapshot 1`] = `
                         class="MuiButtonBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium PrivateSwitchBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium css-imrjgg-MuiButtonBase-root-MuiCheckbox-root"
                       >
                         <input
+                          aria-label="group2を選択"
                           class="PrivateSwitchBase-input css-j8yymo"
                           data-indeterminate="false"
                           type="checkbox"
@@ -321,13 +328,14 @@ exports[`GroupListPage > should match snapshot 1`] = `
                         </svg>
                       </span>
                       <a
-                        class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                        class="MuiTypography-root MuiTypography-body1 css-1fh40yg-MuiTypography-root"
                         data-discover="true"
                         href="/ui/groups/2"
                       >
                         group2
                       </a>
                       <button
+                        aria-label="group2のグループメニューを開く"
                         class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium css-1ffhwr1-MuiButtonBase-root-MuiIconButton-root"
                         tabindex="0"
                         type="button"
@@ -388,7 +396,7 @@ exports[`GroupListPage > should match snapshot 1`] = `
                 <input
                   aria-invalid="false"
                   class="MuiInputBase-input MuiOutlinedInput-input MuiInputBase-inputAdornedStart css-2u11ia-MuiInputBase-input-MuiOutlinedInput-input"
-                  id="_r_7_"
+                  id="_r_8_"
                   placeholder="ユーザを絞り込む"
                   type="text"
                   value=""
@@ -443,7 +451,7 @@ exports[`GroupListPage > should match snapshot 1`] = `
                   class="MuiBreadcrumbs-li"
                 >
                   <a
-                    class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                    class="MuiTypography-root MuiTypography-body1 css-1fh40yg-MuiTypography-root"
                     data-discover="true"
                     href="/ui/"
                   >
@@ -567,6 +575,7 @@ exports[`GroupListPage > should match snapshot 1`] = `
                       class="MuiButtonBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium PrivateSwitchBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium css-imrjgg-MuiButtonBase-root-MuiCheckbox-root"
                     >
                       <input
+                        aria-label="group1を選択"
                         class="PrivateSwitchBase-input css-j8yymo"
                         data-indeterminate="false"
                         type="checkbox"
@@ -584,13 +593,14 @@ exports[`GroupListPage > should match snapshot 1`] = `
                       </svg>
                     </span>
                     <a
-                      class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                      class="MuiTypography-root MuiTypography-body1 css-1fh40yg-MuiTypography-root"
                       data-discover="true"
                       href="/ui/groups/1"
                     >
                       group1
                     </a>
                     <button
+                      aria-label="group1のグループメニューを開く"
                       class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium css-1ffhwr1-MuiButtonBase-root-MuiIconButton-root"
                       tabindex="0"
                       type="button"
@@ -615,6 +625,7 @@ exports[`GroupListPage > should match snapshot 1`] = `
                       class="MuiButtonBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium PrivateSwitchBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium css-imrjgg-MuiButtonBase-root-MuiCheckbox-root"
                     >
                       <input
+                        aria-label="group1を選択"
                         class="PrivateSwitchBase-input css-j8yymo"
                         data-indeterminate="false"
                         type="checkbox"
@@ -632,13 +643,14 @@ exports[`GroupListPage > should match snapshot 1`] = `
                       </svg>
                     </span>
                     <a
-                      class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                      class="MuiTypography-root MuiTypography-body1 css-1fh40yg-MuiTypography-root"
                       data-discover="true"
                       href="/ui/groups/1"
                     >
                       group1
                     </a>
                     <button
+                      aria-label="group1のグループメニューを開く"
                       class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium css-1ffhwr1-MuiButtonBase-root-MuiIconButton-root"
                       tabindex="0"
                       type="button"
@@ -663,6 +675,7 @@ exports[`GroupListPage > should match snapshot 1`] = `
                       class="MuiButtonBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium PrivateSwitchBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium css-imrjgg-MuiButtonBase-root-MuiCheckbox-root"
                     >
                       <input
+                        aria-label="group2を選択"
                         class="PrivateSwitchBase-input css-j8yymo"
                         data-indeterminate="false"
                         type="checkbox"
@@ -680,13 +693,14 @@ exports[`GroupListPage > should match snapshot 1`] = `
                       </svg>
                     </span>
                     <a
-                      class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                      class="MuiTypography-root MuiTypography-body1 css-1fh40yg-MuiTypography-root"
                       data-discover="true"
                       href="/ui/groups/2"
                     >
                       group2
                     </a>
                     <button
+                      aria-label="group2のグループメニューを開く"
                       class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium css-1ffhwr1-MuiButtonBase-root-MuiIconButton-root"
                       tabindex="0"
                       type="button"
@@ -719,6 +733,7 @@ exports[`GroupListPage > should match snapshot 1`] = `
                       class="MuiButtonBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium PrivateSwitchBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeMedium css-imrjgg-MuiButtonBase-root-MuiCheckbox-root"
                     >
                       <input
+                        aria-label="group2を選択"
                         class="PrivateSwitchBase-input css-j8yymo"
                         data-indeterminate="false"
                         type="checkbox"
@@ -736,13 +751,14 @@ exports[`GroupListPage > should match snapshot 1`] = `
                       </svg>
                     </span>
                     <a
-                      class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                      class="MuiTypography-root MuiTypography-body1 css-1fh40yg-MuiTypography-root"
                       data-discover="true"
                       href="/ui/groups/2"
                     >
                       group2
                     </a>
                     <button
+                      aria-label="group2のグループメニューを開く"
                       class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium css-1ffhwr1-MuiButtonBase-root-MuiIconButton-root"
                       tabindex="0"
                       type="button"
@@ -803,7 +819,7 @@ exports[`GroupListPage > should match snapshot 1`] = `
               <input
                 aria-invalid="false"
                 class="MuiInputBase-input MuiOutlinedInput-input MuiInputBase-inputAdornedStart css-2u11ia-MuiInputBase-input-MuiOutlinedInput-input"
-                id="_r_7_"
+                id="_r_8_"
                 placeholder="ユーザを絞り込む"
                 type="text"
                 value=""

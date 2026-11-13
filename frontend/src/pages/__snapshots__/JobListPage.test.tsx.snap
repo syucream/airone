@@ -28,7 +28,7 @@ exports[`JobListPage > should match snapshot 1`] = `
                     class="MuiBreadcrumbs-li"
                   >
                     <a
-                      class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                      class="MuiTypography-root MuiTypography-body1 css-1fh40yg-MuiTypography-root"
                       data-discover="true"
                       href="/ui/"
                     >
@@ -480,7 +480,7 @@ exports[`JobListPage > should match snapshot 1`] = `
                   class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
                 >
                   <a
-                    class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                    class="MuiTypography-root MuiTypography-body1 css-1fh40yg-MuiTypography-root"
                     data-discover="true"
                     href="/ui/entities/0/entries"
                   />
@@ -489,7 +489,7 @@ exports[`JobListPage > should match snapshot 1`] = `
                   class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
                 >
                   <a
-                    class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                    class="MuiTypography-root MuiTypography-body1 css-1fh40yg-MuiTypography-root"
                     data-discover="true"
                     href="/ui/entities/0/entries/1/details"
                   >
@@ -577,7 +577,7 @@ exports[`JobListPage > should match snapshot 1`] = `
                   class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
                 >
                   <a
-                    class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                    class="MuiTypography-root MuiTypography-body1 css-1fh40yg-MuiTypography-root"
                     data-discover="true"
                     href="/ui/entities/0/entries"
                   />
@@ -586,7 +586,7 @@ exports[`JobListPage > should match snapshot 1`] = `
                   class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
                 >
                   <a
-                    class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                    class="MuiTypography-root MuiTypography-body1 css-1fh40yg-MuiTypography-root"
                     data-discover="true"
                     href="/ui/entities/0/entries/2/details"
                   >
@@ -760,7 +760,7 @@ exports[`JobListPage > should match snapshot 1`] = `
                   class="MuiBreadcrumbs-li"
                 >
                   <a
-                    class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                    class="MuiTypography-root MuiTypography-body1 css-1fh40yg-MuiTypography-root"
                     data-discover="true"
                     href="/ui/"
                   >
@@ -1212,7 +1212,7 @@ exports[`JobListPage > should match snapshot 1`] = `
                 class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
               >
                 <a
-                  class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                  class="MuiTypography-root MuiTypography-body1 css-1fh40yg-MuiTypography-root"
                   data-discover="true"
                   href="/ui/entities/0/entries"
                 />
@@ -1221,7 +1221,7 @@ exports[`JobListPage > should match snapshot 1`] = `
                 class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
               >
                 <a
-                  class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                  class="MuiTypography-root MuiTypography-body1 css-1fh40yg-MuiTypography-root"
                   data-discover="true"
                   href="/ui/entities/0/entries/1/details"
                 >
@@ -1309,7 +1309,7 @@ exports[`JobListPage > should match snapshot 1`] = `
                 class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
               >
                 <a
-                  class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                  class="MuiTypography-root MuiTypography-body1 css-1fh40yg-MuiTypography-root"
                   data-discover="true"
                   href="/ui/entities/0/entries"
                 />
@@ -1318,7 +1318,7 @@ exports[`JobListPage > should match snapshot 1`] = `
                 class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeMedium css-1dc80h3-MuiTableCell-root"
               >
                 <a
-                  class="MuiTypography-root MuiTypography-body1 css-1rk5fdy-MuiTypography-root"
+                  class="MuiTypography-root MuiTypography-body1 css-1fh40yg-MuiTypography-root"
                   data-discover="true"
                   href="/ui/entities/0/entries/2/details"
                 >

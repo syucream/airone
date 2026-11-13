@@ -149,6 +149,9 @@ const UserListContent: FC = () => {
                       {isMenuVisible && (
                         <>
                           <IconButton
+                            aria-label={t("user.list.openMenu", {
+                              username: user.username,
+                            })}
                             onClick={(e) => {
                               setUserAnchorEls({
                                 ...userAnchorEls,

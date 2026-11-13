@@ -204,7 +204,10 @@ export const WebhookFields: FC<Props> = ({ control }) => {
               <TableCell />
               <TableCell />
               <TableCell>
-                <IconButton onClick={() => handleAppendWebhook(0)}>
+                <IconButton
+                  aria-label={t("entity.form.addWebhook")}
+                  onClick={() => handleAppendWebhook(0)}
+                >
                   <AddIcon />
                 </IconButton>
               </TableCell>

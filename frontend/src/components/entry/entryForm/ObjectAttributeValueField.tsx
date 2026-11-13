@@ -10,7 +10,7 @@ import {
   Typography,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { FC, useEffect, useState } from "react";
+import { FC, useEffect, useId, useState } from "react";
 import { Control, Controller, useFieldArray } from "react-hook-form";
 import { UseFormSetValue } from "react-hook-form";
 
@@ -58,6 +58,7 @@ const BooleanBox = styled(Box)(({}) => ({
 
 interface CommonProps {
   attrId: number;
+  labelledBy?: string;
   control: Control<Schema>;
   setValue: UseFormSetValue<Schema>;
   isDisabled?: boolean;
@@ -67,7 +68,14 @@ export const ObjectAttributeValueField: FC<
   CommonProps & {
     multiple?: boolean;
   }
-> = ({ multiple, attrId, control, setValue, isDisabled = false }) => {
+> = ({
+  multiple,
+  attrId,
+  labelledBy,
+  control,
+  setValue,
+  isDisabled = false,
+}) => {
   const [hasRestrictedItems, setHasRestrictedItems] = useState(false);
   const { t } = useTranslation();
 
@@ -126,6 +134,7 @@ export const ObjectAttributeValueField: FC<
         control={control}
         render={({ field, fieldState: { error } }) => (
           <ReferralsAutocomplete
+            labelledBy={labelledBy}
             attrId={attrId}
             value={field.value ?? null}
             handleChange={handleChange}
@@ -149,6 +158,7 @@ export const NamedObjectAttributeValueField: FC<
   }
 > = ({
   attrId,
+  labelledBy,
   index,
   control,
   setValue,
@@ -158,6 +168,9 @@ export const NamedObjectAttributeValueField: FC<
 }) => {
   const [hasRestrictedItems, setHasRestrictedItems] = useState(false);
   const { t } = useTranslation();
+  const labelId = useId();
+  const labelledWith = (part: string) =>
+    [labelledBy, `${labelId}-${part}`].filter(Boolean).join(" ");
 
   const handleChange = (
     value: GetEntryAttrReferral | GetEntryAttrReferral[] | null,
@@ -193,7 +206,9 @@ export const NamedObjectAttributeValueField: FC<
   return (
     <NamedObjectBox>
       <FlexBox>
-        <StyledTypography variant="caption">name</StyledTypography>
+        <StyledTypography id={`${labelId}-name`} variant="caption">
+          {t("entryForm.objectField.name")}
+        </StyledTypography>
         <NameBox>
           <Controller
             name={
@@ -206,6 +221,7 @@ export const NamedObjectAttributeValueField: FC<
             render={({ field, fieldState: { error, isDirty } }) => (
               <TextField
                 {...field}
+                inputProps={{ "aria-labelledby": labelledWith("name") }}
                 variant="standard"
                 fullWidth
                 error={error != null}
@@ -218,7 +234,7 @@ export const NamedObjectAttributeValueField: FC<
       </FlexBox>
       {withBoolean === true && (
         <BooleanBox>
-          <StyledTypography variant="caption">
+          <StyledTypography id={`${labelId}-disabled`} variant="caption">
             {t("entryForm.objectField.disabled")}
           </StyledTypography>
           <Controller
@@ -226,6 +242,7 @@ export const NamedObjectAttributeValueField: FC<
             control={control}
             render={({ field }) => (
               <Checkbox
+                inputProps={{ "aria-labelledby": labelledWith("disabled") }}
                 checked={field.value ?? false}
                 onChange={(e) => field.onChange(e.target.checked)}
               />
@@ -235,7 +252,7 @@ export const NamedObjectAttributeValueField: FC<
       )}
       <Box flexGrow={1}>
         <Box display="flex" alignItems="center" gap={1}>
-          <StyledTypography variant="caption">
+          <StyledTypography id={`${labelId}-target`} variant="caption">
             {t("entryForm.objectField.selectItem")}
           </StyledTypography>
           {hasRestrictedItems && (
@@ -253,6 +270,7 @@ export const NamedObjectAttributeValueField: FC<
           control={control}
           render={({ field, fieldState: { error } }) => (
             <ReferralsAutocomplete
+              labelledBy={labelledWith("target")}
               attrId={attrId}
               value={field.value ?? null}
               handleChange={handleChange}
@@ -267,6 +285,7 @@ export const NamedObjectAttributeValueField: FC<
           {handleClickDeleteListItem != null && (
             <IconButton
               id="del_button"
+              aria-label={t("entryForm.field.removeValue")}
               onClick={() => handleClickDeleteListItem(index)}
             >
               <DeleteOutlineIcon />
@@ -275,6 +294,7 @@ export const NamedObjectAttributeValueField: FC<
           {handleClickAddListItem != null && (
             <IconButton
               id="add_button"
+              aria-label={t("entryForm.field.addValue")}
               onClick={() => handleClickAddListItem(index)}
             >
               <AddIcon />
@@ -290,7 +310,7 @@ export const ArrayNamedObjectAttributeValueField: FC<
   CommonProps & {
     withBoolean?: boolean;
   }
-> = ({ attrId, control, setValue, withBoolean }) => {
+> = ({ attrId, labelledBy, control, setValue, withBoolean }) => {
   const { fields, insert, remove, replace } = useFieldArray({
     control,
     name: `attrs.${attrId}.value.asArrayNamedObject`,
@@ -319,6 +339,7 @@ export const ArrayNamedObjectAttributeValueField: FC<
       {fields.map((field, index) => (
         <ListItem key={field.id} disablePadding={true}>
           <NamedObjectAttributeValueField
+            labelledBy={labelledBy}
             control={control}
             setValue={setValue}
             attrId={attrId}

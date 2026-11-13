@@ -8,6 +8,11 @@ export const entryFormMessages = defineMessages({
     "entryForm.form.columnContent": "内容",
     "entryForm.form.required": "必須",
 
+    "entryForm.form.scrollToTop": "先頭に戻る",
+    "entryForm.field.addValue": "値を追加",
+    "entryForm.field.removeValue": "値を削除",
+    "entryForm.objectField.name": "名前",
+
     // Attribute value fields
     "entryForm.dateField.selectDate": "月日を選択",
     "entryForm.dateTimeField.selectDateTime": "日時を選択",
@@ -57,6 +62,11 @@ export const entryFormMessages = defineMessages({
     "entryForm.form.columnItem": "Item",
     "entryForm.form.columnContent": "Content",
     "entryForm.form.required": "Required",
+
+    "entryForm.form.scrollToTop": "Back to top",
+    "entryForm.field.addValue": "Add value",
+    "entryForm.field.removeValue": "Remove value",
+    "entryForm.objectField.name": "Name",
 
     // Attribute value fields
     "entryForm.dateField.selectDate": "Select a date",

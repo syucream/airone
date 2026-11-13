@@ -49,8 +49,18 @@ test("@crud @user performs browser UI CRUD", async ({
   await expect(username).toHaveValue("browser-user");
   await username.fill("browser-user-updated");
   await username.press("Tab");
+  const updatedResponse = page.waitForResponse(
+    (response) =>
+      response.url().includes(`/user/api/v2/${created.id}/`) &&
+      response.request().method() === "PUT" &&
+      response.ok(),
+  );
   await page.getByRole("button", { name: "保存" }).click();
+  await updatedResponse;
   await page.reload();
+  await expect(username).toHaveValue("browser-user-updated");
+  await expectUiQualityGate(page, testInfo);
+  await page.goto("/ui/users");
   const updated = page.getByText("browser-user-updated", { exact: true });
   await expect(updated).toBeVisible();
   const card = updated.locator(
@@ -78,6 +88,7 @@ test("@crud @group performs browser UI CRUD", async ({
   await input.fill("Browser Group");
   await input.press("Tab");
   await page.getByRole("button", { name: "保存" }).click();
+  await expect(page).toHaveURL(/\/ui\/groups$/);
   await page.reload();
   const createdLink = page.getByText("Browser Group", { exact: true });
   await expect(createdLink).toBeVisible();
@@ -85,9 +96,11 @@ test("@crud @group performs browser UI CRUD", async ({
     await (await request.get("/group/api/v2/groups")).json()
   ).results.find(({ name }: { name: string }) => name === "Browser Group");
   await createdLink.click();
+  await expect(input).toHaveValue("Browser Group");
   await input.fill("Browser Group Updated");
   await input.press("Tab");
   await page.getByRole("button", { name: "保存" }).click();
+  await expect(page).toHaveURL(/\/ui\/groups$/);
   await page.reload();
   const updated = page.getByText("Browser Group Updated", { exact: true });
   const item = updated.locator("xpath=ancestor::li[1]");
@@ -117,6 +130,7 @@ test("@crud @role performs browser UI CRUD", async ({
   await adminGroup.getByRole("combobox").click();
   await page.getByRole("option", { name: "Engineering" }).click();
   await page.getByRole("button", { name: "保存" }).click();
+  await expect(page).toHaveURL(/\/ui\/roles$/);
   await page.reload();
   let row = page.getByRole("row").filter({ hasText: "Browser Role" });
   const created = (await (await request.get("/role/api/v2")).json()).find(
@@ -126,6 +140,7 @@ test("@crud @role performs browser UI CRUD", async ({
   await page.getByPlaceholder("ロール名").fill("Browser Role Updated");
   await page.getByPlaceholder("備考").fill("updated through browser");
   await page.getByRole("button", { name: "保存" }).click();
+  await expect(page).toHaveURL(/\/ui\/roles$/);
   await page.reload();
   row = page.getByRole("row").filter({ hasText: "Browser Role Updated" });
   await expect(row).toContainText("updated through browser");

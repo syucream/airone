@@ -1,7 +1,13 @@
 /**
  */
 
-import { render, screen, fireEvent, within } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { Component, ReactNode } from "react";
 
 import { TestWrapper } from "TestWrapper";
@@ -413,7 +419,7 @@ describe("SearchResults", () => {
     // Post-fix behavior: SearchResults sources the type from `entityAttrs`
     // (now populated with `type` by EntityAttrNameAPI), so the modal opens
     // cleanly with the correct field for the attribute's type.
-    test("opens bulk-edit modal cleanly when row 0 lacks the new attr", () => {
+    test("opens bulk-edit modal cleanly when row 0 lacks the new attr", async () => {
       const NEW_ATTR = "newattr";
 
       const resultsWithMissingAttr: AdvancedSearchResult = {
@@ -498,6 +504,15 @@ describe("SearchResults", () => {
 
         // No error boundary trip and modal heading is rendered.
         expect(screen.queryByTestId("boundary-error")).toBeNull();
+        expect(
+          screen.getByText("一括更新する（変更後の）値に更新"),
+        ).toBeInTheDocument();
+
+        await waitFor(() => {
+          expect(
+            screen.queryByRole("button", { name: "一括更新" }),
+          ).not.toBeInTheDocument();
+        });
         expect(
           screen.getByText("一括更新する（変更後の）値に更新"),
         ).toBeInTheDocument();

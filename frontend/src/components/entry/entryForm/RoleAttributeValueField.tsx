@@ -30,6 +30,7 @@ const StyledBox = styled(Box)(() => ({
 
 interface Props {
   attrId: number;
+  labelledBy?: string;
   control: Control<Schema>;
   setValue: UseFormSetValue<Schema>;
   multiple?: boolean;
@@ -41,6 +42,7 @@ type RoleOption = { id: number; name: string };
 export const RoleAttributeValueField: FC<Props> = ({
   multiple = false,
   attrId,
+  labelledBy,
   control,
   setValue,
   isDisabled = false,
@@ -132,6 +134,10 @@ export const RoleAttributeValueField: FC<Props> = ({
               renderInput={(params) => (
                 <TextField
                   {...params}
+                  inputProps={{
+                    ...params.inputProps,
+                    "aria-labelledby": labelledBy,
+                  }}
                   error={!!error}
                   helperText={error?.message}
                   size="small"
