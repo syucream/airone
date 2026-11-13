@@ -11,6 +11,7 @@ from pydantic import BaseModel, SerializerFunctionWrapHandler, model_serializer
 from typing_extensions import TypedDict
 
 from airone.lib.acl import ACLType
+from airone.lib.acl_reader import ACLReader
 from airone.lib.es_inmemory import InMemoryElasticsearch
 from airone.lib.log import Logger
 from airone.lib.types import AttrType, BaseIntEnum, coerce_number
@@ -1425,6 +1426,26 @@ def make_search_results(
             continue
         ordered_hits.append((entry, hit["_source"]))
 
+    # Resolve referral metadata and permissions from current database state in one batch.
+    readable_referrals: dict[int, AdvancedSearchResultRecordIdNamePair] = {}
+    if user is not None and hint_referral is not None:
+        referral_ids = {
+            referral["id"]
+            for _, entry_info in ordered_hits
+            for referral in entry_info.get("referrals", [])
+        }
+        reader = ACLReader(user)
+        referral_entries = Entry.objects.filter(
+            id__in=referral_ids, is_active=True, schema__is_active=True
+        ).select_related("schema")
+        for referral in referral_entries:
+            if reader.has_permission(referral, ACLType.Readable):
+                readable_referrals[referral.id] = {
+                    "id": referral.id,
+                    "name": referral.name,
+                    "schema": {"id": referral.schema.id, "name": referral.schema.name},
+                }
+
     for entry, entry_info in ordered_hits:
         record = AdvancedSearchResultRecord(
             entity={"id": entry.schema.id, "name": entry.schema.name},
@@ -1434,9 +1455,16 @@ def make_search_results(
         )
 
         if hint_referral is not None:
-            record.referrals = cast(
-                list[AdvancedSearchResultRecordIdNamePair], entry_info.get("referrals", [])
-            )
+            if user is None:
+                record.referrals = cast(
+                    list[AdvancedSearchResultRecordIdNamePair], entry_info.get("referrals", [])
+                )
+            else:
+                record.referrals = [
+                    readable_referrals[referral["id"]]
+                    for referral in entry_info.get("referrals", [])
+                    if referral["id"] in readable_referrals
+                ]
 
         # Check for has permission to Entry. But it will be omitted when user is None.
         if (
