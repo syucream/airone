@@ -18,6 +18,10 @@ on:
       - 'tsconfig.json'
       - 'tsconfig.lib.json'
       - '*.config.{js,mjs,ts}'
+      - 'e2e/bundle-delivery.spec.ts'
+      - 'e2e/playwright.config.ts'
+      - 'e2e/server.mjs'
+      - 'tools/check_frontend_library.cjs'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -70,6 +74,18 @@ jobs:
         run: npm run build:development
       - name: build(library)
         run: npm run build:lib
+      - name: build(production)
+        run: npm run build:production
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Verify production bundle delivery and library contract
+        run: npm run test:bundle-delivery
+      - name: Upload bundle delivery failures
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: bundle-delivery-failures
+          path: e2e/test-results/
   test:
     runs-on: ubuntu-24.04
     permissions:

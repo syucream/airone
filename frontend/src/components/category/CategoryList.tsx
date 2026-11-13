@@ -5,16 +5,17 @@ import { FC, Suspense } from "react";
 import { Link } from "react-router";
 
 import { CategoryListHeader } from "components/category/CategoryListHeader";
-import { AironeLink, Loading } from "components/common";
+import { AironeLink } from "components/common/AironeLink";
+import { Loading } from "components/common/Loading";
 import { PaginationFooter } from "components/common/PaginationFooter";
 import { SearchBox } from "components/common/SearchBox";
 import { usePage } from "hooks/usePage";
 import { usePagodaSWR } from "hooks/usePagodaSWR";
 import { useTranslation } from "hooks/useTranslation";
-import { ServerContext } from "index";
-import { aironeApiClient } from "repository";
+import { aironeApiClient } from "repository/AironeApiClient";
 import { entityEntriesPath, newCategoryPath } from "routes/Routes";
 import { EntityListParam } from "services/Constants";
+import { ServerContext } from "services/ServerContext";
 import { normalizeToMatch } from "services/StringUtil";
 
 const CategoryListContent: FC = () => {

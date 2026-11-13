@@ -11,13 +11,14 @@ import { styled } from "@mui/material/styles";
 import { FC } from "react";
 import { Link, useNavigate } from "react-router";
 
-import { Loading, SearchBox } from "components";
 import { CategoryList } from "components/category/CategoryList";
-import { useSimpleSearch } from "hooks";
+import { Loading } from "components/common/Loading";
+import { SearchBox } from "components/common/SearchBox";
 import { useAsync } from "hooks/useAsync";
+import { useSimpleSearch } from "hooks/useSimpleSearch";
 import { useTranslation } from "hooks/useTranslation";
-import { aironeApiClient } from "repository";
-import { entryDetailsPath } from "routes";
+import { aironeApiClient } from "repository/AironeApiClient";
+import { entryDetailsPath } from "routes/Routes";
 
 const SEARCH_PAGE_SIZE = 30;
 

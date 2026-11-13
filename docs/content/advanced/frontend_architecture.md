@@ -159,6 +159,52 @@ npm run build:production
 - Optimize bundle size
 - Use appropriate caching strategies
 
+##### Route bundle delivery
+
+The application build keeps `ui.js` as its only initial script. React lazy
+routes and their shared dependencies are loaded on demand as
+`<id>.<contenthash>.ui.js`. Webpack resolves these files relative to the URL of
+`ui.js`, so nested page URLs and a separate static asset host work without
+additional template script tags. Do not enable initial vendor or runtime
+chunks without updating both the application and login templates.
+
+Keep imports on the dashboard's critical path pointed at the modules they
+use. Importing through the broad component or library barrel can pull in
+unrelated forms and date pickers, reducing the benefit of route splitting.
+
+Deploy the complete application build output, including the hashed chunks,
+before serving the corresponding `ui.js`. Django's `collectstatic` and the
+default `CompressedManifestStaticFilesStorage` include these files. Retain
+the original webpack filenames: the runtime references them directly, rather
+than looking up Django's manifest. If static files use a CDN, publish all of
+these files there as well. Invalidate the fixed-name `ui.js` when publishing
+a new build.
+
+Keep the previous release's hashed chunks available for already-open tabs
+during rollout. If a chunk is no longer available, the existing error dialog
+offers an explicit reload to fetch the current entry bundle; the application
+does not automatically reload and discard in-progress input. Avoid cleaning
+the entire `static/js` directory, which also contains legacy UI assets.
+
+The library build is intentionally different: `webpack.library.config.js`
+continues to inline lazy routes into the single `pagoda-core.js` UMD file.
+Extension builders using that library retain their existing distribution
+contract.
+
+To verify production delivery locally:
+
+```sh
+npm run build:lib
+npm run build:production
+npm run test:e2e:install
+npm run test:bundle-delivery
+```
+
+This gate checks the library's single-file output and uses Chromium with
+mock APIs to verify deferred route downloads, client navigation, nested URL
+and login entry points, a separate asset host, and recovery from a missing
+chunk. It does not verify production CDN deployment or backend API behavior.
+
 #### Legacy UI
 - Minimize server-side processing
 - Optimize template rendering

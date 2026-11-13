@@ -1,6 +1,5 @@
 const path = require('path');
 const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
-const webpack = require('webpack');
 
 module.exports = {
   entry: {
@@ -8,10 +7,15 @@ module.exports = {
   },
   output: {
     filename: "ui.js",
+    // Resolve lazy routes beside ui.js, including when static files use a CDN.
+    chunkFilename: "[id].[contenthash:12].ui.js",
+    publicPath: "auto",
     path: path.resolve('static/js')
   },
   optimization: {
-    splitChunks: false,
+    // Templates load only ui.js. Keep shared initial code in that entry while
+    // deduplicating dependencies shared by lazily loaded routes.
+    splitChunks: { chunks: "async" },
   },
   resolve: {
     extensions: [".webpack.js", ".web.js", ".ts", ".tsx", ".js"],
@@ -52,6 +56,5 @@ module.exports = {
   ignoreWarnings: [/Failed to parse source map/],
   plugins: [
     new ForkTsCheckerWebpackPlugin(),
-    new webpack.optimize.LimitChunkCountPlugin({ maxChunks: 1 }),
   ]
 };
