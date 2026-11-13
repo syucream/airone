@@ -1,16 +1,12 @@
 import json
 from typing import Literal
 
-import requests
-import urllib3
 from django.conf import settings
-from urllib3.exceptions import InsecureRequestWarning
 
 from airone.lib.log import Logger
+from airone.lib.webhook import post_webhook
 from entry.models import Entry
 from user.models import User
-
-urllib3.disable_warnings(InsecureRequestWarning)
 
 EventType = Literal["entry.create", "entry.update", "entry.delete"]
 
@@ -25,10 +21,9 @@ def _send_request_to_webhook_endpoint(entry: Entry, user: User, event_type: Even
 
     # send requests for each webhook endpoints
     for webhook in entry.schema.webhooks.filter(is_enabled=True, is_verified=True):
-        requests.post(
+        post_webhook(
             webhook.url,
             headers={x["header_key"]: x["header_value"] for x in webhook.headers},
-            verify=False,
             data=json.dumps(
                 {
                     "event": event_type,

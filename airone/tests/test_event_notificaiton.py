@@ -35,57 +35,56 @@ class EventNotificationTest(AironeViewTest):
         # clear data which is used in individual tests
         self._test_data = {}
 
-    @mock.patch("airone.lib.event_notification.requests")
-    def test_notify_entry_create(self, mock_requests):
-        def side_effect(url, data, headers, verify):
+    @mock.patch("airone.lib.event_notification.post_webhook")
+    def test_notify_entry_create(self, mock_post_webhook):
+        def side_effect(url, *, data, headers):
             self._test_data["is_post_called"] = True
             self.assertEqual(url, "https://example.com")
             self.assertEqual(headers, {"Content-Type": "application/json"})
             self.assertEqual(json.loads(data)["event"], "entry.create")
             self.assertEqual(json.loads(data)["data"], self.entry.to_dict(self.user))
             self.assertEqual(json.loads(data)["user"], self.user.username)
-            self.assertFalse(verify)
 
         # call notification method and check response
-        mock_requests.post.side_effect = side_effect
+        mock_post_webhook.side_effect = side_effect
         notify_entry_create(self.entry, self.user)
 
         # check side effect is called
         self.assertTrue(self._test_data["is_post_called"])
 
-    @mock.patch("airone.lib.event_notification.requests")
-    def test_notify_entry_update(self, mock_requests):
-        def side_effect(url, data, headers, verify):
+    @mock.patch("airone.lib.event_notification.post_webhook")
+    def test_notify_entry_update(self, mock_post_webhook):
+        def side_effect(url, *, data, headers):
             self._test_data["is_post_called"] = True
             self.assertEqual(json.loads(data)["event"], "entry.update")
             self.assertEqual(json.loads(data)["data"], self.entry.to_dict(self.user))
             self.assertEqual(json.loads(data)["user"], self.user.username)
 
         # call notification method and check response
-        mock_requests.post.side_effect = side_effect
+        mock_post_webhook.side_effect = side_effect
         notify_entry_update(self.entry, self.user)
 
         # check side effect is called
         self.assertTrue(self._test_data["is_post_called"])
 
-    @mock.patch("airone.lib.event_notification.requests")
-    def test_notify_entry_delete(self, mock_requests):
-        def side_effect(url, data, headers, verify):
+    @mock.patch("airone.lib.event_notification.post_webhook")
+    def test_notify_entry_delete(self, mock_post_webhook):
+        def side_effect(url, *, data, headers):
             self._test_data["is_post_called"] = True
             self.assertEqual(json.loads(data)["event"], "entry.delete")
             self.assertEqual(json.loads(data)["data"], self.entry.to_dict(self.user))
             self.assertEqual(json.loads(data)["user"], self.user.username)
 
         # call notification method and check response
-        mock_requests.post.side_effect = side_effect
+        mock_post_webhook.side_effect = side_effect
         notify_entry_delete(self.entry, self.user)
 
         # check side effect is called
         self.assertTrue(self._test_data["is_post_called"])
 
-    @mock.patch("airone.lib.event_notification.requests")
-    def test_notify_event_when_webhook_is_unabled(self, mock_requests):
-        def side_effect(url, data, headers, verify):
+    @mock.patch("airone.lib.event_notification.post_webhook")
+    def test_notify_event_when_webhook_is_unabled(self, mock_post_webhook):
+        def side_effect(url, *, data, headers):
             self._test_data["is_post_called"] = True
 
         # disable registred webhook instance
@@ -93,15 +92,15 @@ class EventNotificationTest(AironeViewTest):
         self.webhook.save()
 
         # call notification method and check response
-        mock_requests.post.side_effect = side_effect
+        mock_post_webhook.side_effect = side_effect
         notify_entry_create(self.entry, self.user)
 
         # check side effect is not called
         self.assertFalse("is_post_called" in self._test_data)
 
-    @mock.patch("airone.lib.event_notification.requests")
-    def test_notify_event_when_webhook_is_unverified(self, mock_requests):
-        def side_effect(url, data, headers, verify):
+    @mock.patch("airone.lib.event_notification.post_webhook")
+    def test_notify_event_when_webhook_is_unverified(self, mock_post_webhook):
+        def side_effect(url, *, data, headers):
             self._test_data["is_post_called"] = True
 
         # disable registred webhook instance
@@ -109,19 +108,19 @@ class EventNotificationTest(AironeViewTest):
         self.webhook.save()
 
         # call notification method and check response
-        mock_requests.post.side_effect = side_effect
+        mock_post_webhook.side_effect = side_effect
         notify_entry_create(self.entry, self.user)
 
         # check side effect is not called
         self.assertFalse("is_post_called" in self._test_data)
 
-    @mock.patch("airone.lib.event_notification.requests")
-    def test_notify_event_when_webhook_flag_is_disabled(self, mock_requests):
-        def side_effect(url, data, headers, verify):
+    @mock.patch("airone.lib.event_notification.post_webhook")
+    def test_notify_event_when_webhook_flag_is_disabled(self, mock_post_webhook):
+        def side_effect(url, *, data, headers):
             self._test_data["is_post_called"] = True
 
         # call notification method and check response
-        mock_requests.post.side_effect = side_effect
+        mock_post_webhook.side_effect = side_effect
 
         try:
             settings.AIRONE_FLAGS = {"WEBHOOK": False}
