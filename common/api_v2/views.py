@@ -82,7 +82,9 @@ class CommonImportAPI(generics.GenericAPIView[Any]):
                 data=payload, context={"request": request}
             )
             entity_serializer.is_valid(raise_exception=True)
-            job_ids.append(self._start_general_job(user, "entity", entity_serializer.initial_data))
+            job_ids.append(
+                self._start_general_job(user, "entity", entity_serializer.validated_data)
+            )
         elif import_type == ImportType.ENTRY:
             preview_job_id = _parse_preview_job_id(request)
             entry_serializer = EntryImportSerializer(data=payload)

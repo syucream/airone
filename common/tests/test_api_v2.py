@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -48,6 +49,51 @@ class CommonImportAPITest(AironeViewTest):
         self.assertEqual(job.operation, JobOperation.IMPORT_GENERAL_V2)
         self.assertEqual(job.status, JobStatus.DONE)
         self.assertTrue(Entity.objects.filter(name="entity", is_active=True).exists())
+
+    @PATCH_GENERAL
+    def test_import_entity_stores_only_validated_fields(self) -> None:
+        self.admin_login()
+        with open(ENTITY_FIXTURE) as fp:
+            data = yaml.safe_load(fp)
+        data["unknown"] = {"nested": "discard"}
+        data["Entity"][0]["unknown"] = "discard"
+        data["EntityAttr"][0]["unknown"] = {"nested": "discard"}
+        data["Entity"][0]["status"] = "0"
+
+        resp = self._post(data)
+
+        self.assertEqual(resp.status_code, 200)
+        job = Job.objects.get(id=resp.json()["job_ids"][0])
+        stored = json.loads(job.params)["data"]
+        self.assertEqual(set(stored), {"Entity", "EntityAttr"})
+        self.assertNotIn("unknown", stored["Entity"][0])
+        self.assertNotIn("unknown", stored["EntityAttr"][0])
+        self.assertIs(type(stored["Entity"][0]["status"]), int)
+        self.assertIs(stored["EntityAttr"][0]["is_mandatory"], True)
+        self.assertIs(stored["EntityAttr"][1]["is_mandatory"], False)
+        self.assertEqual(job.status, JobStatus.DONE)
+        self.assertTrue(Entity.objects.filter(name="entity", is_active=True).exists())
+
+    def test_import_entity_discards_unknown_yaml_aliases_before_job_storage(self) -> None:
+        self.guest_login()
+        payload = """Entity: []
+EntityAttr: []
+unknown_seed: &seed [discard, discard, discard]
+unknown_branch: &branch [*seed, *seed, *seed]
+unknown_tree: [*branch, *branch, *branch]
+"""
+
+        with patch("job.models.Job.run"):
+            resp = self.client.post(
+                "/common/api/v2/import", payload, content_type="application/yaml"
+            )
+
+        self.assertEqual(resp.status_code, 200)
+        job = Job.objects.get(id=resp.json()["job_ids"][0])
+        self.assertEqual(
+            json.loads(job.params),
+            {"kind": "entity", "data": {"Entity": [], "EntityAttr": []}},
+        )
 
     @PATCH_GENERAL
     def test_import_user(self) -> None:
