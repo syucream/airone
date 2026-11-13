@@ -13,7 +13,7 @@ function update_attr_condition(entities) {
     selected_attr.children().remove();
 
     for(var attr_name of data['result']) {
-      all_attr.append($(`<option value='${ attr_name }'>${ attr_name }</option>`));
+      all_attr.append($('<option>').val(attr_name).text(attr_name));
     }
 
     $('#attr_condition').show();
@@ -58,7 +58,7 @@ $('#append_target_attr').on('click', function() {
   var elem_selected = $('#selected_attr');
 
   $("#all_attr").find(":selected").each(function(i, elem){
-    if(elem_selected.find(`option[value="${ $(elem).val() }"]`).length == 0) {
+    if(elem_selected.find('option').filter(function() { return this.value === elem.value; }).length == 0) {
       elem_selected.append($(elem).clone());
     }
   });

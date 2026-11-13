@@ -11,6 +11,7 @@
 {% endblock %}
 
 {% block script %}
+{{ hint_attrs|json_script:"advanced-search-hint-attrs" }}
 <script>
   {% include 'advanced_search/result.js' %}
 </script>

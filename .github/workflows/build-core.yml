@@ -8,6 +8,7 @@ on:
     paths:
       - "**/*.py"
       - "templates/**/*.html"
+      - "templates/**/*.js"
       - ".github/workflows/build-core.yml"
       - ".github/actions/setup-pagoda-env/action.yml"
       - "pyproject.toml"

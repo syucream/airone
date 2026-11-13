@@ -1,5 +1,5 @@
 function make_attr_elem(attr, hint_attr) {
-  var new_elem = $(`<td id=${ hint_attr }/>`);
+  var new_elem = $('<td>').attr('id', hint_attr);
 
   function get_named_column(value) {
     var key = Object.keys(value)[0];
@@ -116,6 +116,7 @@ function make_attr_elem(attr, hint_attr) {
 
 function reconstruct_tbody(results) {
   var elem_parent = $('#main_table');
+  const hint_attrs = JSON.parse(document.querySelector('script#advanced-search-hint-attrs[type="application/json"]').textContent);
 
   // First of all, clear tbody
   elem_parent.children().remove();
@@ -125,13 +126,13 @@ function reconstruct_tbody(results) {
 
     new_elem_entry.append(`<th id=entry_name><a href='/entry/show/${ result.entry.id }/'>${ result.entry.name } [${ result.entity.name}]</a></th>`);
 
-    {% for hint_attr in hint_attrs %}
+    for (const hint_attr of hint_attrs) {
       if(result.is_readable == false){
-        new_elem_entry.append("<td class='table-secondary' id='{{ hint_attr.name }}'>Permission denied.</td>");
+        new_elem_entry.append($('<td>').addClass('table-secondary').attr('id', hint_attr.name).text('Permission denied.'));
       }else{
-        new_elem_entry.append(make_attr_elem(result.attrs['{{ hint_attr.name }}'], '{{ hint_attr.name }}'));
+        new_elem_entry.append(make_attr_elem(result.attrs[hint_attr.name], hint_attr.name));
       }
-    {% endfor %}
+    }
 
     {% if has_referral%}
       let elem_ref_td = $('<td id=referral />');
@@ -254,7 +255,7 @@ $(document).ready(function() {
         elem_selector.removeAttr('disabled');
 
         for(let name of data['result']) {
-          elem_selector.append($(`<option value='${ name }'>${ name }</option>`));
+          elem_selector.append($('<option>').val(name).text(name));
         }
       }).fail(function(msg){
         MessageBox.error(msg);
@@ -316,7 +317,7 @@ $(document).ready(function() {
     if ($(e.target).hasClass('append_attr')) {
       // Here is append processing to add selected items to selector
       $("#modal_condition_all_attr").find(":selected").each(function(i, elem){
-        if(elem_selected.find(`option[value="${ $(elem).val() }"]`).length == 0) {
+        if(elem_selected.find('option').filter(function() { return this.value === elem.value; }).length == 0) {
           elem_selected.append($(elem).clone());
         }
       });
@@ -342,7 +343,8 @@ $(document).ready(function() {
     params.push(`entry_name=${$('.hint_entry_name').val()}`)
 
     const attrinfo = $('#modal_condition_selected_attr').find('option').map(function() {
-      var hint_attr_value = $(`.hint_attr_value[attrname="${this.value }"]`).val()
+      const attr_name = this.value;
+      var hint_attr_value = $('.hint_attr_value').filter(function() { return $(this).attr('attrname') === attr_name; }).val()
       if (hint_attr_value){
         return {'name': this.value, 'keyword': hint_attr_value};
       } else {
