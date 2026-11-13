@@ -608,6 +608,9 @@ class Common(Configuration):  # type: ignore[misc]
             ]
         )
 
+    # Bound Cartesian expansion across all advanced-search CSV export records.
+    CSV_EXPORT_MAX_ROWS = env.int("AIRONE_CSV_EXPORT_MAX_ROWS", 100_000)
+
     # Dynamic record number limitations on model level validation (None means unlimited)
     MAX_ENTITIES: int | None = env.int("AIRONE_MAX_ENTITIES", None)
     MAX_ATTRIBUTES_PER_ENTITY: int | None = env.int("AIRONE_MAX_ATTRIBUTES_PER_ENTITY", None)

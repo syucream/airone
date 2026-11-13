@@ -25,10 +25,29 @@ def iter_csv_records(
     Independent arrays produce all combinations. Joined source arrays have
     already been narrowed to the reference belonging to each joined row.
     """
+    # Validate every record before constructing any Cartesian product or output row.
+    names = list(dict.fromkeys(attr_names))
+    remaining = settings.CSV_EXPORT_MAX_ROWS
+    if remaining <= 0:
+        raise ValueError("CSV_EXPORT_MAX_ROWS must be a positive integer")
+    for record in values:
+        row_count = 1
+        for name in names:
+            value = record.attrs.get(name, {})
+            if value.get("type", 0) & AttrType._ARRAY and isinstance(value.get("value"), list):
+                row_count *= max(1, len(value["value"]))
+            if row_count > remaining:
+                break
+        if row_count > remaining:
+            raise ValueError(
+                f"CSV export exceeds the maximum of {settings.CSV_EXPORT_MAX_ROWS} data rows"
+            )
+        remaining -= row_count
+
     for record in values:
         arrays = {
             name: record.attrs[name]["value"] or [None]
-            for name in dict.fromkeys(attr_names)
+            for name in names
             if name in record.attrs
             and record.attrs[name].get("type", 0) & AttrType._ARRAY
             and isinstance(record.attrs[name].get("value"), list)
@@ -37,10 +56,12 @@ def iter_csv_records(
             yield record
             continue
         for items in product(*arrays.values()):
-            row = record.model_copy(deep=True)
+            # Exporters only read values; copy the cells replaced by expansion.
+            attrs = record.attrs.copy()
             for name, item in zip(arrays, items):
-                row.attrs[name]["value"] = [] if item is None else [item]
-            yield row
+                attrs[name] = attrs[name].copy()
+                attrs[name]["value"] = [] if item is None else [item]
+            yield record.model_copy(update={"attrs": attrs})
 
 
 def _csv_export(
