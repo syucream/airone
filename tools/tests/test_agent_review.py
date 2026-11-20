@@ -284,10 +284,16 @@ class AgentReviewTest(unittest.TestCase):
         self.assertFalse((self.repo / "custom_view").exists())
 
     def test_docs_only_non_django_scenario_does_not_prepare_django(self) -> None:
-        self.review(
-            "passed",
-            scenario=("sh", "-c", 'test -z "$PAGODA_REVIEW_MIGRATIONS" && test ! -e custom_view'),
-        )
+        # This test can itself run inside an outer review's Django environment.
+        with patch.dict(os.environ, {"PAGODA_REVIEW_MIGRATIONS": "inherited"}):
+            self.review(
+                "passed",
+                scenario=(
+                    "sh",
+                    "-c",
+                    'test "$PAGODA_REVIEW_MIGRATIONS" = inherited && test ! -L custom_view',
+                ),
+            )
 
     def test_gate_timeout_stops_descendant_writes_and_records_receipt(self) -> None:
         ready = self.workspace / "descendant-started"
