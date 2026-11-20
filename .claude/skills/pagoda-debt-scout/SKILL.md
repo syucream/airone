@@ -20,6 +20,27 @@ Biome's changed mode selects files, not newly introduced diagnostics. Complexipy
 
 Record the base revision, current revision, tool versions, and scan time with the findings. If an existing report's provenance is unknown or its configuration differs, use it only as a hint and rerun before making a regression claim. A jscpd `isNew` value is meaningful only for the baseline used by that scan.
 
+## Review a frontend change with an agent
+
+Start with the component being edited and its existing siblings, including any newly created source files. A scan of only the changed file can miss a copy in an untouched file. Inspect the diff to decide whether either occurrence belongs to this change.
+
+For a PR review, prioritize a clone introduced or extended by the PR. For a maintenance run, select a frequently changed area and include existing clones. Record which mode led to the patch so that a cleanup of historical code is credited to the maintenance run.
+
+The locked jscpd CLI supports both token matches and JS/TS function AST comparison. The following entry-form scan uses the `*Field.tsx` glob to select the widgets.
+
+```sh
+npx --no-install jscpd --config .jscpd.json --reporters ai,json \
+  --output .cache/debt/entry-form/exact frontend/src/components/entry/entryForm/*Field.tsx
+npx --no-install jscpd --config .jscpd.json --similarity 0.90 --kind ast --reporters ai,json \
+  --output .cache/debt/entry-form/ast frontend/src/components/entry/entryForm/*Field.tsx
+```
+
+Read the compact `ai` console output first. The local JSON report has paths and ranges for individual matches. Use Git history to check whether the two sites have required the same fix before. Check the tests at each caller for cases where their contracts differ. Treat multiple hits inside one pair of widgets as one decision.
+
+When a cleanup was requested, select one candidate. Record the baseline test result, make the patch, rerun the same tests and both scans, then run the usual frontend checks. Include the shared file in the second scan. Report the change in maintenance work (for example, how many places need editing for a selection behavior change), a rejected candidate with its reason, and any failing checks. A review can finish with zero patches.
+
+The [Pagoda pilot](references/pilot.md) records one accepted pair, one rejected pair, and comparisons with similarity and Qlty.
+
 ## Triage findings
 
 Prioritize signals in this order:

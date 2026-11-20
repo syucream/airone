@@ -178,10 +178,12 @@ describe("GroupAttributeValueField", () => {
       { id: 2, name: "group2" },
     ]);
   });
-  test("searches groups with entered text", async () => {
+  test("falls back to local filtering when the group search has no matches", async () => {
     const spy = vi
       .spyOn(aironeApiClient, "getGroups")
-      .mockResolvedValue(groups);
+      .mockImplementation(async (_page, query) =>
+        query === undefined ? groups : { count: 0, results: [] },
+      );
     const { result } = renderHook(() =>
       useForm<Schema>({ resolver: zodResolver(schema), defaultValues }),
     );
@@ -195,9 +197,12 @@ describe("GroupAttributeValueField", () => {
     );
     const input = screen.getByRole("combobox");
     input.focus();
-    fireEvent.input(input, { target: { value: "admin" } });
-    await waitFor(() => expect(input).toHaveValue("admin"));
-    await waitFor(() => expect(spy).toHaveBeenCalledWith(1, "admin"));
+    fireEvent.input(input, { target: { value: "ＧＲＯＵＰ２" } });
+    await waitFor(() => expect(input).toHaveValue("ＧＲＯＵＰ２"));
+    await waitFor(() => expect(spy).toHaveBeenCalledWith(1, "ＧＲＯＵＰ２"));
+    expect(
+      await screen.findByRole("option", { name: "group2" }),
+    ).toBeInTheDocument();
   });
 
   test("renders caption in english", async () => {
