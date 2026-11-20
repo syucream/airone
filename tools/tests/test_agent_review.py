@@ -267,6 +267,8 @@ class AgentReviewTest(unittest.TestCase):
                 ("bash", script),
                 ("sh", "-eu", "--", f"./{script}"),
                 ("bash", "--noprofile", "-eo", "pipefail", str(self.repo / script)),
+                ("bash", "--noprofile", "--norc", "-l", script),
+                ("bash", "--noprofile", "--noediting", script),
             )
             for scenario in scenarios:
                 with self.subTest(scenario=scenario):
@@ -290,8 +292,9 @@ class AgentReviewTest(unittest.TestCase):
                 "passed",
                 scenario=(
                     "sh",
-                    "-c",
+                    "-ec",
                     'test "$PAGODA_REVIEW_MIGRATIONS" = inherited && test ! -L custom_view',
+                    "tools/lite.sh",
                 ),
             )
 

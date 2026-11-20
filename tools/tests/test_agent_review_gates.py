@@ -105,6 +105,16 @@ class GateCommandsTest(unittest.TestCase):
             ],
         )
 
+    def test_webpack_changes_run_the_corresponding_build_once(self):
+        app = ["npm", "run", "build"]
+        library = ["npm", "run", "build:lib"]
+        self.assertIn(library, gate_commands(["webpack.library.config.js"]))
+        self.assertIn(library, gate_commands(["tsconfig.lib.json"]))
+        self.assertNotIn(library, gate_commands(["webpack.config.js"]))
+        commands = gate_commands(["webpack.config.js", "e2e/entries.spec.ts"])
+        self.assertEqual(commands.count(app), 1)
+        self.assertLess(commands.index(app), len(commands) - 1)
+
     def test_live_e2e_only_uses_frontend_static_checks(self):
         self.assertEqual(
             gate_commands(["e2e/live/entry.live-spec.ts"]),

@@ -4,7 +4,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 # Prettier respects .gitignore. Keep the temporary output under the repo config
 # and outside ignored artifact paths so it formats the same files as CI.
-scratch=$(mktemp -d ./pagoda-client-check.XXXXXX)
+scratch=$(mktemp -d "${PAGODA_REVIEW_CLIENT_PARENT:-.}/pagoda-client-check.XXXXXX")
 trap 'rm -rf -- "$scratch"' EXIT
 PAGODA_CLIENT_SPEC_PATH="$scratch/spec.yaml" PAGODA_LITE=1 \
     DJANGO_CONFIGURATION=DRFSpectacularExcludeCustomView \

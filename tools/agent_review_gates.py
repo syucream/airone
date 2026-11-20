@@ -171,21 +171,22 @@ def gate_commands(paths: list[str]) -> list[list[str]]:
         commands.extend([["npm", "run", "lint"], ["npm", "run", "typecheck"]])
     if frontend:
         commands.append(["npm", "run", "test"])
+    if mock_browser or "webpack.config.js" in paths:
+        commands.append(["npm", "run", "build"])
+    if "webpack.library.config.js" in paths or "tsconfig.lib.json" in paths:
+        commands.append(["npm", "run", "build:lib"])
     if mock_browser:
-        commands.extend(
+        commands.append(
             [
-                ["npm", "run", "build"],
-                [
-                    "env",
-                    "CI=1",
-                    "npm",
-                    "exec",
-                    "--offline",
-                    "--",
-                    "playwright",
-                    "test",
-                    "--config=e2e/playwright.config.ts",
-                ],
+                "env",
+                "CI=1",
+                "npm",
+                "exec",
+                "--offline",
+                "--",
+                "playwright",
+                "test",
+                "--config=e2e/playwright.config.ts",
             ]
         )
     return commands

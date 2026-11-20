@@ -218,16 +218,19 @@ def check_environment(needs_django: bool, run: Path) -> Iterator[dict[str, str]]
     env["DJANGO_SETTINGS_MODULE"] = "tools.agent_review_settings"
     sample = Path("custom_view_sample")
     installed = Path("custom_view")
-    if installed.is_symlink() and installed.resolve() == sample.resolve():
-        yield env
-        return
-    if installed.exists() or installed.is_symlink():
-        raise ValueError("Use a clean worktree for Django checks: custom_view is already occupied.")
-    installed.symlink_to(sample, target_is_directory=True)
+    existing_sample = installed.is_symlink() and installed.resolve() == sample.resolve()
+    if not existing_sample:
+        if installed.exists() or installed.is_symlink():
+            raise ValueError("Use a clean worktree for Django checks: custom_view is occupied.")
+        installed.symlink_to(sample, target_is_directory=True)
     try:
-        yield env
+        # Prettier skips ignored output. Own the visible scratch directory in
+        # the runner so killing a generator cannot leave the next review dirty.
+        with tempfile.TemporaryDirectory(prefix="pagoda-review-", dir=Path.cwd()) as scratch:
+            env["PAGODA_REVIEW_CLIENT_PARENT"] = scratch
+            yield env
     finally:
-        if installed.is_symlink() and installed.readlink() == sample:
+        if not existing_sample and installed.is_symlink() and installed.readlink() == sample:
             installed.unlink()
 
 
@@ -265,25 +268,26 @@ def scenario_executable(command: Sequence[str]) -> Path | None:
     if Path(executable).name not in {"sh", "bash"}:
         return Path(executable).resolve()
 
-    # Only recognize direct script invocations. Shell code and other wrappers
-    # can opt in to Django setup with --django-scenario.
+    # Skip shell option switches, consuming values for the options that take
+    # them. Stop at -c or -s because their operands are not script paths.
+    # Shell code and other wrappers can opt in with --django-scenario.
     arguments = iter(command[1:])
     for argument in arguments:
         if argument == "--":
             return Path(script).resolve() if (script := next(arguments, None)) else None
-        if argument in {"--noprofile", "--norc", "--posix", "--verbose"}:
-            continue
-        if argument == "-" or argument.startswith("--"):
+        if argument == "-":
             return None
+        if argument.startswith("--"):
+            if argument in {"--init-file", "--rcfile"}:
+                next(arguments, None)
+            continue
         if not argument.startswith(("-", "+")):
             return Path(argument).resolve()
         flags = argument[1:]
-        if flags.endswith(("o", "O")):
-            flags = flags[:-1]
-            if next(arguments, None) is None:
-                return None
-        if set(flags) - set("abefhkmnptuvxBCEHPT"):
+        if argument.startswith("-") and any(flag in flags for flag in ("c", "s")):
             return None
+        if flags.endswith(("o", "O")):
+            next(arguments, None)
     return None
 
 
