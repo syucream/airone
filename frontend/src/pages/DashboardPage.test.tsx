@@ -130,10 +130,14 @@ describe("DashboardPage", () => {
   });
 
   describe("loading state", () => {
-    test("should show loading indicator initially", async () => {
+    test("shows the loading indicator until the categories arrive", async () => {
+      let finishRequest!: () => void;
+      const pending = new Promise<void>((resolve) => {
+        finishRequest = resolve;
+      });
       server.use(
         http.get("http://localhost/category/api/v2/", async () => {
-          await new Promise((resolve) => setTimeout(resolve, 100));
+          await pending;
           return HttpResponse.json(mockCategories);
         }),
       );
@@ -142,7 +146,12 @@ describe("DashboardPage", () => {
         render(<DashboardPage />, { wrapper: TestWrapper });
       });
 
-      expect(screen.getByTestId("loading")).toBeInTheDocument();
+      try {
+        expect(screen.getByTestId("loading")).toBeVisible();
+      } finally {
+        finishRequest();
+      }
+      expect(await screen.findByText("Category A")).toBeVisible();
     });
   });
 
