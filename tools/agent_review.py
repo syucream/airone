@@ -5,6 +5,7 @@ import fcntl
 import json
 import os
 import shlex
+import shutil
 import signal
 import subprocess
 import sys
@@ -255,6 +256,37 @@ def run_checks(
             raise ValueError(f"Check exited {returncode}: {shlex.join(argv)}. See {filename}.")
 
 
+def scenario_executable(command: Sequence[str]) -> Path | None:
+    """Identify the program or a script passed directly to sh or bash."""
+    search_path = os.environ.get("PATH", os.defpath) or os.curdir
+    executable = shutil.which(command[0], path=search_path)
+    if executable is None:
+        return None
+    if Path(executable).name not in {"sh", "bash"}:
+        return Path(executable).resolve()
+
+    # Only recognize direct script invocations. Shell code and other wrappers
+    # can opt in to Django setup with --django-scenario.
+    arguments = iter(command[1:])
+    for argument in arguments:
+        if argument == "--":
+            return Path(script).resolve() if (script := next(arguments, None)) else None
+        if argument in {"--noprofile", "--norc", "--posix", "--verbose"}:
+            continue
+        if argument == "-" or argument.startswith("--"):
+            return None
+        if not argument.startswith(("-", "+")):
+            return Path(argument).resolve()
+        flags = argument[1:]
+        if flags.endswith(("o", "O")):
+            flags = flags[:-1]
+            if next(arguments, None) is None:
+                return None
+        if set(flags) - set("abefhkmnptuvxBCEHPT"):
+            return None
+    return None
+
+
 def evaluate(args: argparse.Namespace, run: Path, report: dict[str, Any]) -> None:
     base_tip = resolve(args.base)
     head = resolve("HEAD")
@@ -270,15 +302,20 @@ def evaluate(args: argparse.Namespace, run: Path, report: dict[str, Any]) -> Non
     report["paths"] = paths
     checks = [["git", "diff", "--no-ext-diff", "--no-textconv", "--check", base, head, "--"]]
     checks.extend(gate_commands(paths))
-    if args.scenario:
-        checks.append(args.scenario)
-    executables = [Path(command[0]).resolve() for command in checks]
+    scenario = args.django_scenario or args.scenario
+    if scenario:
+        checks.append(scenario)
+    executables = [scenario_executable(command) for command in checks]
     lite = Path("tools/lite.sh").resolve()
-    first_lite = next((i for i, executable in enumerate(executables) if executable == lite), None)
-    if first_lite is not None:
+    first_migration = next(
+        (i for i, executable in enumerate(executables) if executable == lite), None
+    )
+    if first_migration is None and args.django_scenario:
+        first_migration = len(checks) - 1
+    if first_migration is not None:
         # Targeted lite tests reuse the checkout's ignored migrations. Refresh once per run.
         checks.insert(
-            first_lite,
+            first_migration,
             [
                 "env",
                 "PAGODA_LITE=1",
@@ -291,9 +328,12 @@ def evaluate(args: argparse.Namespace, run: Path, report: dict[str, Any]) -> Non
             ],
         )
     uses_django = (
-        first_lite is not None or Path("tools/check_generated_client.sh").resolve() in executables
+        first_migration is not None
+        or Path("tools/check_generated_client.sh").resolve() in executables
     )
     with check_environment(uses_django, run) as env:
+        if args.django_scenario:
+            env["PAGODA_LITE"] = "1"
         run_checks(checks, run, report, env)
 
     check_candidate(head, args.base, base_tip)
@@ -314,12 +354,26 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base", required=True, help="Local ref for the intended PR target")
     parser.add_argument("--intent", required=True, help="Observable acceptance criteria")
-    parser.add_argument(
+    scenarios = parser.add_mutually_exclusive_group()
+    scenarios.add_argument(
         "--scenario", nargs=argparse.REMAINDER, help="Additional acceptance command"
     )
-    args = parser.parse_args(argv)
-    if not args.intent.strip() or args.scenario == []:
-        parser.error("Supply non-empty acceptance criteria and a command if using --scenario.")
+    scenarios.add_argument(
+        "--django-scenario",
+        nargs=argparse.REMAINDER,
+        help="Additional acceptance command with isolated Django setup and migrations",
+    )
+    args, extra = parser.parse_known_args(argv)
+    scenario = args.django_scenario or args.scenario
+    if extra:
+        # argparse stops REMAINDER at a standalone --. Forward it and its tail
+        # to the selected command when it already has an executable.
+        if scenario and extra[0] == "--":
+            scenario.extend(extra)
+        else:
+            parser.error(f"unrecognized arguments: {shlex.join(extra)}")
+    if not args.intent.strip() or [] in (args.scenario, args.django_scenario):
+        parser.error("Supply non-empty acceptance criteria and a command for the chosen scenario.")
     os.chdir(git("rev-parse", "--show-toplevel"))
     REPORTS.mkdir(parents=True, exist_ok=True)
     with (REPORTS / "lock").open("a") as lock:

@@ -36,7 +36,8 @@ Use your own acceptance command or one supplied by a trusted maintainer.
    and mock E2E changes build the bundle and run Playwright. Changes to backend
    runtime Python, generator tooling or the committed client regenerate the client
    to a temporary directory and compare it to the checked-in output. This covers
-   schema annotations inherited from shared views. Every candidate
+   schema annotations inherited from shared views. The intermediate OpenAPI schema
+   is written to the same temporary directory. Every candidate
    gets a Git whitespace check. For Lite tests the runner points Django at the
    candidate SDK and temporarily links the tracked sample as `custom_view` (as in
    CI). Use a checkout with test settings, a free `custom_view` path or a link to
@@ -54,6 +55,11 @@ verify it before reviewing. For live integrations, use the dedicated stack and
 the instructions in `e2e/live/README.md`. Live E2E paths select static checks
 automatically. Supply the live scenario separately. Lite search ranking and the
 mock browser API have different fidelity from the real stack. Report which ran.
+
+Direct Lite and code-generation scenarios also work when invoked from PATH or
+as a script argument to Bash or sh. For a wrapper that needs Django, use
+`--django-scenario <command> <args...>` as the last option. It prepares the
+sample app and fresh migrations before running the wrapper.
 
 ## Close the loop
 

@@ -103,6 +103,9 @@ def gate_commands(paths: list[str]) -> list[list[str]]:
         plugin_sdk |= changed.parts[:2] == ("plugin", "sdk")
         python |= changed.suffix == ".py" or path in {"pyproject.toml", "uv.lock"}
 
+        # The sample issues real requests through both public extension mounts.
+        if path in {"airone/urls.py", "api_v1/urls.py", "api_v2/urls.py"}:
+            apps.add("custom_view")
         if root in DJANGO_APPS:
             apps.add(root)
         elif root == "custom_view_sample":

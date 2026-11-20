@@ -122,6 +122,11 @@ class GateCommandsTest(unittest.TestCase):
             gate_commands(["custom_view_sample/api_v2/views.py"]),
         )
 
+    def test_shared_urlconfs_run_the_sample_extension_route_tests(self):
+        for path in ("airone/urls.py", "api_v1/urls.py", "api_v2/urls.py"):
+            with self.subTest(path=path):
+                self.assertIn(["tools/lite.sh", "test", "custom_view"], gate_commands([path]))
+
     def test_login_template_runs_auth_tests(self):
         self.assertIn(
             ["tools/lite.sh", "test", "airone"],
