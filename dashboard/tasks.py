@@ -2,7 +2,7 @@ import csv
 import io
 from collections.abc import Iterator
 from itertools import product
-from typing import Any
+from typing import Any, NotRequired, TypedDict
 
 import yaml
 from django.conf import settings
@@ -46,7 +46,7 @@ def iter_csv_records(
 def _csv_export(
     job: Job,
     values: list[AdvancedSearchResultRecord],
-    recv_data: dict[str, Any],
+    attr_names: list[str],
     has_referral: bool,
 ) -> io.StringIO | None:
     output = io.StringIO(newline="")
@@ -55,13 +55,10 @@ def _csv_export(
 
     # write first line of CSV
     if has_referral is not False:
-        writer.writerow(
-            ["Name"] + ["Entity"] + [x["name"] for x in recv_data["attrinfo"]] + ["Referral"]
-        )
+        writer.writerow(["Name", "Entity", *attr_names, "Referral"])
     else:
-        writer.writerow(["Name"] + ["Entity"] + [x["name"] for x in recv_data["attrinfo"]])
+        writer.writerow(["Name", "Entity", *attr_names])
 
-    attr_names = [attr["name"] for attr in recv_data["attrinfo"]]
     for index, entry_info in enumerate(iter_csv_records(values, attr_names)):
         line_data = [entry_info.entry["name"]]
 
@@ -72,14 +69,14 @@ def _csv_export(
         # Append the data which specifies Entity name to which target Entry belongs
         line_data.append(entry_info.entity["name"])
 
-        for attrinfo in recv_data["attrinfo"]:
+        for attr_name in attr_names:
             # This condition eliminates the possibility that an attribute
             # which target entry doens't have is specified in attrinfo variable.
-            if attrinfo["name"] not in entry_info.attrs:
+            if attr_name not in entry_info.attrs:
                 line_data.append("")
                 continue
 
-            value = entry_info.attrs[attrinfo["name"]]
+            value = entry_info.attrs[attr_name]
 
             vtype = None
             if "type" in value:
@@ -160,15 +157,26 @@ def _csv_export(
     return output
 
 
+class _ExportReferral(TypedDict):
+    entity: str
+    entry: str
+
+
+class _ExportEntry(TypedDict):
+    name: str
+    attrs: dict[str, object]
+    referrals: NotRequired[list[_ExportReferral]]
+
+
 def _yaml_export(
     job: Job,
     values: list[AdvancedSearchResultRecord],
-    recv_data: dict[str, Any],
+    attr_names: list[str],
     has_referral: bool,
 ) -> io.StringIO | None:
     output = io.StringIO()
 
-    def _get_attr_value(atype: int, value: Any) -> Any:
+    def _get_attr_value(atype: int, value: Any) -> object:
         match atype:
             case _ if atype & AttrType._ARRAY:
                 return [_get_attr_value(atype ^ AttrType._ARRAY, x) for x in value]
@@ -183,9 +191,9 @@ def _yaml_export(
             case _:
                 return value
 
-    resp_data: dict[str, Any] = {}
+    resp_data: dict[str, list[_ExportEntry]] = {}
     for index, entry_info in enumerate(values):
-        data: dict[str, Any] = {
+        data: _ExportEntry = {
             "name": entry_info.entry["name"],
             "attrs": {},
         }
@@ -194,13 +202,13 @@ def _yaml_export(
         if index % Job.STATUS_CHECK_FREQUENCY == 0 and job.is_canceled():
             return None
 
-        for attrinfo in recv_data["attrinfo"]:
-            if attrinfo["name"] in entry_info.attrs:
-                _adata = entry_info.attrs[attrinfo["name"]]
+        for attr_name in attr_names:
+            if attr_name in entry_info.attrs:
+                _adata = entry_info.attrs[attr_name]
                 if "value" not in _adata:
                     continue
 
-                data["attrs"][attrinfo["name"]] = _get_attr_value(_adata["type"], _adata["value"])
+                data["attrs"][attr_name] = _get_attr_value(_adata["type"], _adata["value"])
 
         if has_referral is not False:
             data["referrals"] = [
@@ -224,34 +232,34 @@ def _yaml_export(
 @register_job_task(JobOperation.EXPORT_SEARCH_RESULT)
 @app.task(bind=True)
 @may_schedule_until_job_is_ready
-def export_search_result(self: Any, job: Job) -> None:
+def export_search_result(self: object, job: Job) -> None:
     user = job.user
     params = job.get_typed_params(SearchExportParams)
-    recv_data = params.model_dump(mode="json", by_alias=True, exclude_unset=True)
-
-    # Do not care whether the "has_referral" value is
-    has_referral: bool = recv_data.get("has_referral", False)
-    referral_name: str | None = recv_data.get("referral_name")
-    entry_name: str | None = recv_data.get("entry_name")
-    hint_attrs = [AttrHint.model_validate(attr) for attr in recv_data["attrinfo"]]
+    has_referral = params.has_referral
+    referral_name = params.referral_name
+    hint_attrs = [
+        AttrHint.model_validate(attr.model_dump(mode="json", by_alias=True, exclude_unset=True))
+        for attr in params.attrinfo
+    ]
+    attr_names = [hint.name for hint in hint_attrs]
     if has_referral and referral_name is None:
         referral_name = ""
 
     resp = AdvancedSearchService.search_entries(
         user,
-        recv_data["entities"],
+        params.entities,
         hint_attrs,
         settings.ES_CONFIG["MAXIMUM_RESULTS_NUM"],
-        entry_name,
+        params.entry_name,
         referral_name,
     )
 
     io_stream: io.StringIO | None = None
-    match recv_data["export_style"]:
+    match params.export_style:
         case "yaml":
-            io_stream = _yaml_export(job, resp.ret_values, recv_data, has_referral)
+            io_stream = _yaml_export(job, resp.ret_values, attr_names, has_referral)
         case "csv":
-            io_stream = _csv_export(job, resp.ret_values, recv_data, has_referral)
+            io_stream = _csv_export(job, resp.ret_values, attr_names, has_referral)
 
     if io_stream:
         job.set_cache(io_stream.getvalue())

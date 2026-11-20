@@ -731,7 +731,7 @@ def import_entries(self: Task[Any, Any], job: Job) -> tuple[JobStatus, str, None
     return None
 
 
-def _get_validation_error_messages(detail: Any) -> list[str]:
+def _get_validation_error_messages(detail: object) -> list[str]:
     if isinstance(detail, dict):
         return [
             message
@@ -1127,7 +1127,9 @@ def export_search_result_v2(self: Any, job: Job) -> tuple[JobStatus, str, ACLBas
             if join_attrs:
                 output = _csv_export_v2(job, resp.ret_values, params, has_referral)
             else:
-                output = _csv_export(job, resp.ret_values, params, has_referral)
+                output = _csv_export(
+                    job, resp.ret_values, [hint.name for hint in hint_attrs], has_referral
+                )
 
     if output:
         job.set_cache(output.getvalue())
@@ -1294,33 +1296,31 @@ def bulk_update_entries(
     params = job.get_typed_params(BulkEditParams)
     job_params = params.model_dump(mode="json", by_alias=True, exclude_unset=True)
 
+    attr_value: dict[str, object] = job_params["value"]
     target_attr = EntityAttr.objects.filter(
-        id=job_params["value"]["id"], parent_entity_id=job_params["modelid"]
+        id=params.value.id, parent_entity_id=params.modelid
     ).first()
     if target_attr is None:
         return JobStatus.ERROR, "The attribute does not belong to the specified model.", None
 
     # Selected items are constrained to the user's searchable items in this model.
     # Without an explicit selection, retain the existing filter-based bulk edit.
+    hint_entry = job_params.get("hint_entry")
     resp = AdvancedSearchService.search_entries(
         user=job.user,
-        hint_entity_ids=[job_params["modelid"]],
+        hint_entity_ids=[params.modelid],
         hint_attrs=[AttrHint(**x) for x in job_params.get("attrinfo", [])]
-        if job_params.get("entry_ids") is None
+        if params.entry_ids is None
         else [],
-        hint_entry=EntryHint(**job_params.get("hint_entry"))
-        if job_params.get("hint_entry") and job_params.get("entry_ids") is None
-        else None,
-        hint_referral=job_params.get("referral_name")
-        if job_params.get("entry_ids") is None
-        else None,
-        entry_ids=job_params.get("entry_ids"),
+        hint_entry=EntryHint(**hint_entry) if hint_entry and params.entry_ids is None else None,
+        hint_referral=params.referral_name if params.entry_ids is None else None,
+        entry_ids=params.entry_ids,
         retrieve_all=True,
     )
 
     # update each items in accordance with job_params.value parameter
     context = {"request": DRFRequest(job.user)}
-    selected_ids = set(job_params["entry_ids"]) if job_params.get("entry_ids") else None
+    selected_ids = set(params.entry_ids) if params.entry_ids else None
     records = [
         record
         for record in resp.ret_values
@@ -1341,14 +1341,9 @@ def bulk_update_entries(
                 return None
 
             entry = Entry.objects.get(id=record.entry["id"])
-            updating_data: dict[str, list[Any]] = {"attrs": []}
-            if job_params.get("value"):
-                updating_data["attrs"].append(
-                    {
-                        "id": job_params.get("value")["id"],
-                        "value": job_params.get("value")["value"],
-                    }
-                )
+            updating_data: dict[str, list[dict[str, object]]] = {"attrs": []}
+            if attr_value:
+                updating_data["attrs"].append({"id": params.value.id, "value": attr_value["value"]})
 
             old_attrv = _get_latest_top_level_value(entry, target_attr)
 

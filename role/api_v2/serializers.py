@@ -8,6 +8,7 @@ from rest_framework import serializers
 from acl.models import ACLBase
 from airone.lib.drf import RequiredParameterError
 from group.models import Group
+from role.history import RoleHistoryEvent
 from role.models import Role
 from user.models import User
 
@@ -283,7 +284,7 @@ class RoleImportSerializer(serializers.ListSerializer[Role]):
         return roles
 
 
-class RoleHistorySerializer(serializers.Serializer[Any]):
+class RoleHistorySerializer(serializers.Serializer[RoleHistoryEvent]):
     history_id = serializers.IntegerField(read_only=True)
     history_source = serializers.ChoiceField(choices=["role", "permission"])
     history_date = serializers.DateTimeField()

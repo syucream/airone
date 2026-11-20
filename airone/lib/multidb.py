@@ -1,10 +1,11 @@
-from typing import Any, Callable
+from collections.abc import Callable, Mapping, Sequence
+from typing import TypeVar
 
 from django.http import HttpRequest, HttpResponse
 from multidb.middleware import PinningRouterMiddleware
 from multidb.pinning import unpin_this_thread
 
-ViewT = Any  # may be a function, a DRF view class, or a DRF view_func with .cls
+ViewT = TypeVar("ViewT", bound=Callable[..., object])
 
 
 def db_readonly(view: ViewT) -> ViewT:
@@ -20,11 +21,11 @@ def db_readonly(view: ViewT) -> ViewT:
     size reasons (e.g. the advanced-search APIs that ship complex filters in
     the request body) but do not perform any DB writes.
     """
-    view._db_readonly = True
+    setattr(view, "_db_readonly", True)
     return view
 
 
-def _view_opts_in_to_replica(view_func: Callable[..., Any]) -> bool:
+def _view_opts_in_to_replica(view_func: Callable[..., object]) -> bool:
     cls = getattr(view_func, "cls", None)
     if cls is not None and getattr(cls, "_db_readonly", False):
         return True
@@ -43,9 +44,9 @@ class AironePinningRouterMiddleware(PinningRouterMiddleware):  # type: ignore[mi
     def process_view(
         self,
         request: HttpRequest,
-        view_func: Callable[..., Any],
-        view_args: list[Any],
-        view_kwargs: dict[str, Any],
+        view_func: Callable[..., object],
+        view_args: Sequence[object],
+        view_kwargs: Mapping[str, object],
     ) -> None:
         if _view_opts_in_to_replica(view_func):
             unpin_this_thread()

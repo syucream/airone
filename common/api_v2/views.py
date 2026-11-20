@@ -97,7 +97,7 @@ class CommonImportAPI(generics.GenericAPIView[Any]):
             user_serializer = UserImportSerializer(data=payload)
             user_serializer.is_valid(raise_exception=True)
             try:
-                validate_user_import_data(cast(list[dict[str, Any]], payload))
+                validate_user_import_data(user_serializer.initial_data)
             except ImportDataError as e:
                 raise ValidationError(str(e))
             job_ids.append(self._start_general_job(user, "user", payload))
@@ -120,7 +120,7 @@ class CommonImportAPI(generics.GenericAPIView[Any]):
         )
 
     @staticmethod
-    def _start_general_job(user: User, kind: str, data: Any) -> int:
+    def _start_general_job(user: User, kind: str, data: object) -> int:
         job = Job.new_import_general_v2(user, kind, data)
         job.run()
         return job.id
@@ -164,7 +164,7 @@ class CommonImportPreviewAPI(generics.GenericAPIView[Any]):
                 return Response(status=status.HTTP_403_FORBIDDEN)
             entry_serializer = EntryImportSerializer(data=payload)
             entry_serializer.is_valid(raise_exception=True)
-            jobs, error_list = start_entry_import_previews(user, payload)
+            jobs, error_list = start_entry_import_previews(user, entry_serializer.initial_data)
             job_ids = [job["job_id"] for job in jobs]
         else:
             raise ValidationError("A preview is only available for model and item import files")

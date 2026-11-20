@@ -1,4 +1,6 @@
-from typing import Any, cast
+from __future__ import annotations
+
+from typing import NotRequired, TypedDict
 
 from django.db.models import QuerySet
 from drf_spectacular.utils import extend_schema_field
@@ -10,21 +12,28 @@ from rest_framework.views import APIView
 from group.models import Group
 
 
-class GroupTreeSerializer(serializers.Serializer[Any]):
+class GroupTreeNode(TypedDict):
+    id: int
+    name: str
+    display_name: NotRequired[str]
+    children: NotRequired[list[GroupTreeNode]]
+
+
+class GroupTreeSerializer(serializers.Serializer[GroupTreeNode]):
     id = serializers.IntegerField()
     name = serializers.CharField()
     children = serializers.SerializerMethodField()
 
     @extend_schema_field(serializers.ListField(child=serializers.DictField()))
-    def get_children(self, obj: dict[str, Any]) -> list[dict[str, Any]]:
-        return cast(list[dict[str, Any]], obj.get("children", []))
+    def get_children(self, obj: GroupTreeNode) -> list[GroupTreeNode]:
+        return obj.get("children", [])
 
 
 class GroupTreeAPI(APIView):
     serializer_class = GroupTreeSerializer
 
     def get(self, request: Request, format: str | None = None) -> Response:
-        def _make_hierarchical_group(groups: QuerySet[Group]) -> list[dict[str, Any]]:
+        def _make_hierarchical_group(groups: QuerySet[Group]) -> list[GroupTreeNode]:
             return [
                 {
                     "id": g.id,

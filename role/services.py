@@ -1,7 +1,7 @@
 """Validation shared by role requests and their asynchronous workers."""
 
+from collections.abc import Mapping
 from types import SimpleNamespace
-from typing import Any
 
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
@@ -15,16 +15,17 @@ from user.models import User
 
 def restore_data(
     role: Role, history_id: int, user: User, history_source: str = "role"
-) -> tuple[dict[str, Any], list[int]]:
+) -> tuple[dict[str, str | bool | list[int]], list[int]]:
     event = get_role_history_event(role, history_id, history_source)
-    data: dict[str, Any] = {
+    relations = event["relations"]
+    data: dict[str, str | bool | list[int]] = {
         "name": event["name"],
         "description": event["description"],
         "is_active": True,
     }
     for key in ROLE_RELATIONS:
-        data[key] = [value["id"] for value in event["relations"][key]]
-    permission_ids = [value["id"] for value in event["relations"]["permissions"]]
+        data[key] = [value["id"] for value in relations[key]]
+    permission_ids = [value["id"] for value in relations["permissions"]]
     permissions = HistoricalPermission.objects.filter(pk__in=permission_ids)
     if permissions.count() != len(permission_ids):
         raise ValidationError("A permission in this history no longer exists")
@@ -41,7 +42,9 @@ def restore_data(
     return data, permission_ids
 
 
-def validate_role_data(role: Role, data: dict[str, Any], user: User) -> RoleCreateUpdateSerializer:
+def validate_role_data(
+    role: Role, data: Mapping[str, object], user: User
+) -> RoleCreateUpdateSerializer:
     serializer = RoleCreateUpdateSerializer(
         role, data=data, context={"request": SimpleNamespace(user=user)}
     )

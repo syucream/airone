@@ -4,10 +4,35 @@ Every importable resource reports a preview in the same shape, so that one job
 endpoint can serve them all and the frontend needs a single renderer.
 """
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
-from typing import Any, Literal
+from typing import Literal, NotRequired, TypedDict
 
 PreviewAction = Literal["create", "update", "unchanged", "skip", "error"]
+
+
+class PreviewChange(TypedDict):
+    field: str
+    before: str | None
+    after: str | None
+
+
+class PreviewRow(TypedDict):
+    index: int
+    kind: str
+    name: str
+    action: PreviewAction
+    reason: str | None
+    changes: list[PreviewChange]
+    will_invoke_trigger: NotRequired[bool]
+    baseline: NotRequired[Mapping[str, object] | None]
+
+
+class PreviewPayload(TypedDict):
+    summary: dict[str, int]
+    rows: list[PreviewRow]
+    truncated: bool
+
 
 # Summary keys are past tense because "create"/"update" would shadow
 # rest_framework.serializers.BaseSerializer.create()/update().
@@ -39,8 +64,8 @@ class PreviewCollector:
     summary: dict[str, int] = field(
         default_factory=lambda: {key: 0 for key in PREVIEW_SUMMARY_KEYS.values()} | {"total": 0}
     )
-    _notable: list[dict[str, Any]] = field(default_factory=list)
-    _unchanged: list[dict[str, Any]] = field(default_factory=list)
+    _notable: list[PreviewRow] = field(default_factory=list)
+    _unchanged: list[PreviewRow] = field(default_factory=list)
     _dropped: int = 0
 
     def add(
@@ -50,14 +75,14 @@ class PreviewCollector:
         name: str,
         action: PreviewAction,
         reason: str | None = None,
-        changes: list[dict[str, str | None]] | None = None,
+        changes: list[PreviewChange] | None = None,
         will_invoke_trigger: bool = False,
-        baseline: dict[str, Any] | None = None,
+        baseline: Mapping[str, object] | None = None,
     ) -> None:
         self.summary[PREVIEW_SUMMARY_KEYS[action]] += 1
         self.summary["total"] += 1
 
-        row = {
+        row: PreviewRow = {
             "index": self.summary["total"] - 1,
             "kind": kind,
             "name": name,
@@ -82,10 +107,10 @@ class PreviewCollector:
             self._dropped += 1
 
     @property
-    def rows(self) -> list[dict[str, Any]]:
+    def rows(self) -> list[PreviewRow]:
         return self._notable + self._unchanged
 
-    def payload(self) -> dict[str, Any]:
+    def payload(self) -> PreviewPayload:
         return {
             "summary": self.summary,
             "rows": self.rows,

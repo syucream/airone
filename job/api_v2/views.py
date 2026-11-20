@@ -19,7 +19,7 @@ from rest_framework.response import Response
 from airone.lib.acl import ACLObjType
 from airone.lib.drf import FileIsNotExistsError, InvalidValueError, JobIsNotDoneError
 from airone.lib.http import get_download_response
-from airone.lib.import_preview import PREVIEW_SUMMARY_KEYS
+from airone.lib.import_preview import PREVIEW_SUMMARY_KEYS, PreviewPayload, PreviewRow
 from entry.models import Entry
 from job.api_v2.serializers import ImportPreviewSerializer, JobSerializers
 from job.models import Job, JobOperation, JobStatus
@@ -144,7 +144,7 @@ class JobAPI(viewsets.ModelViewSet[Job]):
             raise JobIsNotDoneError("Target job has not yet done")
 
         try:
-            payload = job.get_cache()
+            payload: PreviewPayload = job.get_cache()
         except OSError as e:
             # errno.ENOENT is the errno of FileNotFoundError
             if e.errno == errno.ENOENT:
@@ -199,7 +199,7 @@ class JobAPI(viewsets.ModelViewSet[Job]):
             raise InvalidValueError("Invalid encode parameter")
 
         try:
-            payload = job.get_cache()
+            payload: PreviewPayload = job.get_cache()
         except OSError as e:
             if e.errno == errno.ENOENT:
                 raise FileIsNotExistsError("Target file is not exists")
@@ -230,11 +230,11 @@ class JobAPI(viewsets.ModelViewSet[Job]):
 INTERNAL_PREVIEW_KEYS = frozenset({"baseline"})
 
 
-def _public_row(row: dict[str, Any]) -> dict[str, Any]:
+def _public_row(row: PreviewRow) -> dict[str, object]:
     return {key: value for key, value in row.items() if key not in INTERNAL_PREVIEW_KEYS}
 
 
-def _filter_by_action(rows: list[dict[str, Any]], action: str | None) -> list[dict[str, Any]]:
+def _filter_by_action(rows: list[PreviewRow], action: str | None) -> list[PreviewRow]:
     if not action:
         return rows
 

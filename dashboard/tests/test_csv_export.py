@@ -56,10 +56,13 @@ class CsvExportTest(SimpleTestCase):
                         is_readable=True,
                     )
                     original = record.model_dump()
+                    attr_names = ["array", "scalar"]
                     output = exporter(
                         Mock(is_canceled=Mock(return_value=False)),
                         [record],
-                        {"attrinfo": [{"name": "array"}, {"name": "scalar"}]},
+                        attr_names
+                        if exporter is _csv_export
+                        else {"attrinfo": [{"name": name} for name in attr_names]},
                         False,
                     )
                     prefix = ["vm7264", "VM"] if exporter is _csv_export else ["vm7264"]
@@ -82,10 +85,13 @@ class CsvExportTest(SimpleTestCase):
         )
         for exporter in [_csv_export, _csv_export_v2]:
             with self.subTest(exporter=exporter.__name__):
+                attr_names = ["ips", "tags", "scalar"]
                 output = exporter(
                     Mock(is_canceled=Mock(return_value=False)),
                     [record],
-                    {"attrinfo": [{"name": name} for name in ["ips", "tags", "scalar"]]},
+                    attr_names
+                    if exporter is _csv_export
+                    else {"attrinfo": [{"name": name} for name in attr_names]},
                     False,
                 )
                 prefix = ["vm7264", "VM"] if exporter is _csv_export else ["vm7264"]

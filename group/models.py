@@ -1,5 +1,3 @@
-import importlib
-import sys
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, ClassVar
 
@@ -13,6 +11,7 @@ from airone.lib.types import AttrType
 if TYPE_CHECKING:
     from acl.models import ACLBase
     from airone.lib.acl import ACLType
+    from entry.models import Entry
 
 
 class Group(DjangoGroup):
@@ -88,7 +87,9 @@ class Group(DjangoGroup):
             ]
         )
 
-    def get_referred_entries(self, entity_name: str | None = None) -> "QuerySet[Any]":
+    def get_referred_entries(self, entity_name: str | None = None) -> "QuerySet[Entry]":
+        from entry.models import AttributeValue, Entry
+
         # make query to identify AttributeValue that specify this Group instance
         query = Q(
             Q(
@@ -106,16 +107,8 @@ class Group(DjangoGroup):
         if entity_name:
             query = Q(query, parent_attr__parent_entry__schema__name=entity_name)
 
-        # import entry.models if it's necessary
-        if "entry" in sys.modules:
-            entry_model = sys.modules["entry"].models
-        else:
-            entry_model = importlib.import_module("entry.models")
-
-        # get Entries that has AttributeValues, which specify this Group instance.
-        qs: QuerySet[Any] = entry_model.Entry.objects.filter(
-            pk__in=entry_model.AttributeValue.objects.filter(query).values_list(
+        return Entry.objects.filter(
+            pk__in=AttributeValue.objects.filter(query).values_list(
                 "parent_attr__parent_entry", flat=True
             )
         )
-        return qs

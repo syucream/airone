@@ -1,10 +1,11 @@
-from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, cast
+from collections.abc import Mapping, Sequence
+from typing import TYPE_CHECKING, NotRequired, TypedDict, cast
 
 from django.conf import settings
 from django.db.models import Prefetch
 from elasticsearch import NotFoundError
 
+from acl.models import ACLBase
 from airone.lib.acl import ACLType
 from airone.lib.elasticsearch import (
     ESS,
@@ -24,7 +25,7 @@ from airone.lib.elasticsearch import (
     make_search_results_for_simple,
 )
 from airone.lib.http import DRFRequest
-from airone.lib.import_preview import PreviewCollector
+from airone.lib.import_preview import PreviewChange, PreviewCollector, PreviewPayload
 from airone.lib.log import Logger
 from airone.lib.types import AttrType
 from entity.models import Entity, EntityAttr
@@ -48,7 +49,7 @@ class AdvancedSearchService:
     def search_entries(
         kls,
         user: User | None,
-        hint_entity_ids: list[str],
+        hint_entity_ids: Sequence[int | str],
         hint_attrs: list[AttrHint] | None = None,
         limit: int = CONFIG.MAX_LIST_ENTRIES,
         entry_name: str | None = None,
@@ -76,7 +77,7 @@ class AdvancedSearchService:
 
         Args:
             user (User | None): User who executed the process
-            hint_entity_ids (list(str)): Entity ID specified in the search condition input
+            hint_entity_ids: Entity IDs, passed as integers or strings.
             hint_attrs (list(dict[str, str])): Defaults to Empty list.
                 A list of search strings and attribute sets
             limit (int): Defaults to 100.
@@ -123,7 +124,7 @@ class AdvancedSearchService:
         if not hint_attrs:
             hint_attrs = []
 
-        sort_clauses: list[dict[str, Any]] | None = None
+        sort_clauses: list[dict[str, object]] | None = None
         if sort_target_attrname:
             sort_clauses = make_attr_sort_clauses(
                 sort_target_attrname, sort_order, sort_target_attr_type
@@ -309,7 +310,7 @@ class AdvancedSearchService:
         if not attr_type or not attr_value:
             return []
 
-        def _valid_id(v: Any) -> int | None:
+        def _valid_id(v: object) -> int | None:
             # return only int and positive value, because Entry IDs are positive integers.
             return v if isinstance(v, int) and v > 0 else None
 
@@ -598,7 +599,7 @@ class AdvancedSearchService:
         exists: bool = True
         while exists:
             exists = False
-            register_docs: list[Mapping[str, Any]] = []
+            register_docs: list[Mapping[str, object]] = []
             for entry in entry_list[start_pos : start_pos + 1000]:
                 exists = True
                 es_doc = entry.get_es_document(entity_attrs=entity_attrs)
@@ -635,7 +636,49 @@ class AdvancedSearchService:
         es.refresh_index()
 
 
-def resolve_import_entry_references(params: ImportEntryParams) -> list[dict[str, Any]]:
+class _ImportEntityAttribute(TypedDict):
+    id: int
+    type: int
+    refs: list[ACLBase]
+
+
+class _ImportAttribute(TypedDict):
+    name: str
+    value: object
+    id: NotRequired[int]
+
+
+class _ResolvedImportEntry(TypedDict):
+    name: str
+    attrs: list[_ImportAttribute]
+    id: NotRequired[int]
+    schema: NotRequired[Entity]
+
+
+class _RawImportAttribute(TypedDict):
+    name: str
+    value: NotRequired[object]
+
+
+class _RawImportEntry(TypedDict):
+    attrs: NotRequired[list[_RawImportAttribute]]
+
+
+class _EntryImportBaseline(TypedDict):
+    entry_id: int | None
+    values: dict[str, int]
+
+
+class _CachedPreviewRow(TypedDict):
+    name: str
+    baseline: NotRequired[_EntryImportBaseline | None]
+
+
+class _CachedPreviewPayload(TypedDict):
+    rows: list[_CachedPreviewRow]
+
+
+def resolve_import_entry_references(params: ImportEntryParams) -> list[_ResolvedImportEntry]:
     """Resolve name based references in import params into database ids.
 
     Returns the entries in the dict shape ``EntryCreateSerializer`` /
@@ -645,7 +688,7 @@ def resolve_import_entry_references(params: ImportEntryParams) -> list[dict[str,
     instead of aborting the whole import.
     """
 
-    def _object(val: Any, refs: list[Entity]) -> int | None:
+    def _object(val: object, refs: list[ACLBase]) -> int | None:
         if not val:
             return None
         # Compatibility: a bare string matches the first entry that shares the
@@ -658,14 +701,18 @@ def resolve_import_entry_references(params: ImportEntryParams) -> list[dict[str,
                     val,
                     [x.name for x in refs],
                 )
-            ref_entry: Entry | None = Entry.objects.filter(name=val, schema__in=refs).first()
+            ref_entry: Entry | None = Entry.objects.filter(
+                name=val, schema_id__in=[ref.id for ref in refs]
+            ).first()
             return ref_entry.id if ref_entry else 0
         if isinstance(val, dict):
             ref_entry = Entry.objects.filter(name=val["name"], schema__name=val["entity"]).first()
             return ref_entry.id if ref_entry else 0
         return None
 
-    def _named_object(val: dict[str, Any], refs: list[Entity], is_boolean: bool) -> dict[str, Any]:
+    def _named_object(
+        val: dict[object, object], refs: list[ACLBase], is_boolean: bool
+    ) -> dict[str, object]:
         """Convert a named-object value of ``{<name>: <referral>}`` shape.
 
         For (ARRAY_)NAMED_OBJECT_BOOLEAN, the exported boolean flag lives either
@@ -675,7 +722,7 @@ def resolve_import_entry_references(params: ImportEntryParams) -> list[dict[str,
         dropped and the attribute value is never recognised as updated.
         """
         items = dict(val)
-        boolean: bool | None = None
+        boolean: object = None
         if is_boolean and isinstance(items.get("boolean"), bool):
             boolean = items.pop("boolean")
         if not items:
@@ -685,33 +732,33 @@ def resolve_import_entry_references(params: ImportEntryParams) -> list[dict[str,
         if is_boolean and boolean is None and isinstance(referral, dict):
             boolean = referral.get("boolean")
 
-        converted = {"name": name, "id": _object(referral, refs)}
+        converted: dict[str, object] = {"name": name, "id": _object(referral, refs)}
         if is_boolean:
             converted["boolean"] = bool(boolean)
         return converted
 
-    def _group(val: Any) -> int | None:
+    def _group(val: object) -> int | None:
         if val:
             ref_group: Group | None = Group.objects.filter(name=val).first()
             return ref_group.id if ref_group else 0
         return None
 
-    def _role(val: Any) -> int | None:
+    def _role(val: object) -> int | None:
         if val:
             ref_role: Role | None = Role.objects.filter(name=val).first()
             return ref_role.id if ref_role else 0
         return None
 
-    def _convert(value: Any, attr_info: dict[str, Any]) -> Any:
+    def _convert(value: object, attr_info: _ImportEntityAttribute) -> object:
         attr_type: int = attr_info["type"]
-        refs: list[Entity] = attr_info["refs"]
+        refs: list[ACLBase] = attr_info["refs"]
         # _NAMED types also carry the BOOLEAN bit when they hold a boolean flag
         is_boolean_named = bool(attr_type & AttrType._NAMED and attr_type & AttrType.BOOLEAN)
 
         if attr_type & AttrType._ARRAY:
             if not isinstance(value, list):
                 return value
-            converted: list[Any] = list(value)
+            converted: list[object] = list(value)
             for i, child_value in enumerate(value):
                 if attr_type & AttrType.OBJECT:
                     if attr_type & AttrType._NAMED:
@@ -741,7 +788,7 @@ def resolve_import_entry_references(params: ImportEntryParams) -> list[dict[str,
         return converted_value
 
     entity: Entity | None = Entity.objects.filter(name=params.entity, is_active=True).first()
-    entity_attrs: dict[str, dict[str, Any]] = (
+    entity_attrs: dict[str, _ImportEntityAttribute] = (
         {
             entity_attr.name: {
                 "id": entity_attr.id,
@@ -754,9 +801,9 @@ def resolve_import_entry_references(params: ImportEntryParams) -> list[dict[str,
         else {}
     )
 
-    entries: list[dict[str, Any]] = []
+    entries: list[_ResolvedImportEntry] = []
     for entry in params.entries:
-        attrs: list[dict[str, Any]] = []
+        attrs: list[_ImportAttribute] = []
         for attr in entry.attrs:
             attr_info = entity_attrs.get(attr.name)
             if attr_info is None:
@@ -772,7 +819,7 @@ def resolve_import_entry_references(params: ImportEntryParams) -> list[dict[str,
                     "id": attr_info["id"],
                 }
             )
-        entry_data: dict[str, Any] = {"name": entry.name, "attrs": attrs}
+        entry_data: _ResolvedImportEntry = {"name": entry.name, "attrs": attrs}
         if entry.id is not None:
             entry_data["id"] = entry.id
         entries.append(entry_data)
@@ -796,11 +843,11 @@ class EntryImportPreviewService:
         job: "Job",
         user: User,
         entity: Entity,
-        entries: list[dict[str, Any]],
-        raw_entries: list[dict[str, Any]],
-    ) -> dict[str, Any] | None:
+        entries: list[_ResolvedImportEntry],
+        raw_entries: list[_RawImportEntry],
+    ) -> PreviewPayload | None:
         """Return the preview payload, or None when the job was canceled."""
-        context = {"request": DRFRequest(user)}
+        context: dict[str, object] = {"request": DRFRequest(user)}
         collector = PreviewCollector()
         total_count = len(entries)
 
@@ -811,21 +858,21 @@ class EntryImportPreviewService:
             if job.is_canceled():
                 return None
 
-            raw_entry = raw_entries[index] if index < len(raw_entries) else {}
+            raw_entry: _RawImportEntry = raw_entries[index] if index < len(raw_entries) else {}
             _preview_one_entry(user, entity, entry_data, raw_entry, context, collector)
 
         return collector.payload()
 
     @classmethod
-    def load_baselines(kls, job: "Job") -> dict[str, dict[str, Any]] | None:
+    def load_baselines(kls, job: "Job") -> dict[str, _EntryImportBaseline] | None:
         return _load_preview_baselines(job)
 
     @classmethod
     def is_stale(
         kls,
         entry: Entry,
-        entry_data: dict[str, Any],
-        baselines: dict[str, dict[str, Any]] | None,
+        entry_data: _ResolvedImportEntry,
+        baselines: dict[str, _EntryImportBaseline] | None,
     ) -> bool:
         return _is_stale(entry, entry_data, baselines)
 
@@ -834,7 +881,7 @@ class EntryImportPreviewService:
         return _latest_value_ids(entry, entity_attr_ids)
 
 
-def _render_import_value(value: Any) -> str:
+def _render_import_value(value: object) -> str:
     """Render a value as the user wrote it in the import file."""
     match value:
         case None:
@@ -861,7 +908,7 @@ def _render_stored_value(attr: Attribute) -> str:
     return _render_import_value(attrv.get_value())
 
 
-def _unresolved_referrals(raw_value: Any, converted_value: Any) -> list[str]:
+def _unresolved_referrals(raw_value: object, converted_value: object) -> list[str]:
     """Names the importer could not resolve, reported as 0 by the serializer.
 
     A reference that cannot be resolved is silently stored as an empty value, so
@@ -886,7 +933,7 @@ def _unresolved_referrals(raw_value: Any, converted_value: Any) -> list[str]:
             return []
 
 
-def _render_serializer_errors(errors: Any) -> str:
+def _render_serializer_errors(errors: object) -> str:
     """Flatten a serializer's errors onto one line, keeping the message.
 
     A nested serializer reports a dict keyed by field, and a list of them keyed
@@ -907,12 +954,12 @@ def _render_serializer_errors(errors: Any) -> str:
 def _preview_one_entry(
     user: User,
     entity: Entity,
-    entry_data: dict[str, Any],
-    raw_entry: dict[str, Any],
-    context: dict[str, Any],
+    entry_data: _ResolvedImportEntry,
+    raw_entry: _RawImportEntry,
+    context: dict[str, object],
     collector: PreviewCollector,
 ) -> None:
-    entry_data = dict(entry_data, schema=entity)
+    entry_data = {**entry_data, "schema": entity}
     name = entry_data["name"]
 
     # Identify the Item the import would touch, exactly as import_entries_v2 does.
@@ -987,7 +1034,7 @@ def _preview_one_entry(
     )
 
 
-def _entry_baseline(entry: Entry, entry_data: dict[str, Any]) -> dict[str, Any]:
+def _entry_baseline(entry: Entry, entry_data: _ResolvedImportEntry) -> _EntryImportBaseline:
     """Fingerprint the values this row would overwrite.
 
     The import compares it against the values it finds, so that a row someone
@@ -1008,7 +1055,7 @@ def _latest_value_ids(entry: Entry, entity_attr_ids: list[int]) -> dict[str, int
     return latest
 
 
-def _collect_unresolved(entry_data: dict[str, Any], raw_entry: dict[str, Any]) -> list[str]:
+def _collect_unresolved(entry_data: _ResolvedImportEntry, raw_entry: _RawImportEntry) -> list[str]:
     raw_by_name = {x["name"]: x.get("value") for x in raw_entry.get("attrs", [])}
     warnings: list[str] = []
     for attr_data in entry_data.get("attrs", []):
@@ -1024,9 +1071,9 @@ def _collect_attr_changes(
     user: User,
     entity: Entity,
     entry: Entry | None,
-    entry_data: dict[str, Any],
-    raw_entry: dict[str, Any],
-) -> tuple[list[dict[str, str | None]], bool]:
+    entry_data: _ResolvedImportEntry,
+    raw_entry: _RawImportEntry,
+) -> tuple[list[PreviewChange], bool]:
     """Return the differences the import would apply, and whether any were withheld.
 
     An attribute the user cannot write is silently left alone by the import, so
@@ -1035,7 +1082,7 @@ def _collect_attr_changes(
     """
     raw_by_name = {x["name"]: x.get("value") for x in raw_entry.get("attrs", [])}
     attrs_data = entry_data.get("attrs", [])
-    changes: list[dict[str, str | None]] = []
+    changes: list[PreviewChange] = []
     denied = False
 
     for entity_attr in entity.attrs.filter(is_active=True):
@@ -1070,7 +1117,7 @@ def _collect_attr_changes(
     return changes, denied
 
 
-def _load_preview_baselines(job: Job) -> dict[str, dict[str, Any]] | None:
+def _load_preview_baselines(job: Job) -> dict[str, _EntryImportBaseline] | None:
     """Read the values a preview recorded, when the import was started from one.
 
     Without a preview job there is nothing to compare against and the import
@@ -1089,15 +1136,17 @@ def _load_preview_baselines(job: Job) -> dict[str, dict[str, Any]] | None:
         return None
 
     try:
-        payload = preview_job.get_cache()
+        payload: _CachedPreviewPayload = preview_job.get_cache()
     except OSError:
         return None
 
-    return {row["name"]: row["baseline"] for row in payload["rows"] if row.get("baseline")}
+    return {row["name"]: baseline for row in payload["rows"] if (baseline := row.get("baseline"))}
 
 
 def _is_stale(
-    entry: Entry, entry_data: dict[str, Any], baselines: dict[str, dict[str, Any]] | None
+    entry: Entry,
+    entry_data: _ResolvedImportEntry,
+    baselines: dict[str, _EntryImportBaseline] | None,
 ) -> bool:
     if baselines is None:
         return False

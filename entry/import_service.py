@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import Any
+from typing import TypedDict
 
 from airone.lib.acl import ACLType
 from airone.lib.drf import FrequentImportError
@@ -8,9 +8,14 @@ from job.models import Job, JobOperation, JobStatus
 from user.models import User
 
 
+class EntryImportPreviewJob(TypedDict):
+    entity: str
+    job_id: int
+
+
 def start_entry_import_jobs(
     user: User,
-    import_datas: list[dict[str, Any]],
+    import_datas: list[dict[str, object]],
     *,
     force: bool = False,
     preview_job_id: int | None = None,
@@ -67,8 +72,8 @@ def start_entry_import_jobs(
 
 
 def start_entry_import_previews(
-    user: User, import_datas: list[dict[str, Any]]
-) -> tuple[list[dict[str, Any]], list[str]]:
+    user: User, import_datas: list[dict[str, object]]
+) -> tuple[list[EntryImportPreviewJob], list[str]]:
     """Start one preview job per model in an item import file.
 
     Returns the started jobs as ``{"entity": name, "job_id": id}`` and the per-model
@@ -76,7 +81,7 @@ def start_entry_import_previews(
     """
     entities = Entity.objects.filter(name__in=[d["entity"] for d in import_datas], is_active=True)
 
-    jobs: list[dict[str, Any]] = []
+    jobs: list[EntryImportPreviewJob] = []
     error_list: list[str] = []
     for import_data in import_datas:
         entity = next((e for e in entities if e.name == import_data["entity"]), None)

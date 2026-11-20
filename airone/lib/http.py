@@ -2,9 +2,10 @@ import codecs
 import importlib
 import json
 import urllib.parse
+from collections.abc import Callable
 from datetime import datetime
 from io import StringIO
-from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar, cast
+from typing import Any, Concatenate, Dict, List, Optional, ParamSpec, Tuple, TypeVar, cast
 from urllib.parse import quote
 
 from django.conf import settings
@@ -22,6 +23,7 @@ from job.models import JobOperation, JobStatus
 from user.models import History, User
 
 _ACLBaseT = TypeVar("_ACLBaseT", bound=ACLBase)
+_ViewParams = ParamSpec("_ViewParams")
 
 
 class HttpResponseSeeOther(HttpResponseRedirect):
@@ -33,9 +35,12 @@ class DRFRequest(dict[str, Any]):
         self.user = user
 
 
-def http_get(func: Callable[..., HttpResponse]) -> Callable[..., HttpResponse]:
-    def wrapper(*args: Any, **kwargs: Any) -> HttpResponse:
-        request = args[0]
+def http_get(
+    func: Callable[Concatenate[HttpRequest, _ViewParams], HttpResponse],
+) -> Callable[Concatenate[HttpRequest, _ViewParams], HttpResponse]:
+    def wrapper(
+        request: HttpRequest, /, *args: _ViewParams.args, **kwargs: _ViewParams.kwargs
+    ) -> HttpResponse:
         if request.method != "GET":
             return HttpResponse("Invalid HTTP method is specified", status=400)
 
@@ -45,7 +50,7 @@ def http_get(func: Callable[..., HttpResponse]) -> Callable[..., HttpResponse]:
                 redirect_url = "/auth/login?next=%s" % (request.path)
             return HttpResponseSeeOther(redirect_url)
 
-        return func(*args, **kwargs)
+        return func(request, *args, **kwargs)
 
     return wrapper
 
@@ -70,17 +75,19 @@ def get_obj_with_check_perm(
     return (airone_instance, None)
 
 
-def check_superuser(func: Callable[..., HttpResponse]) -> Callable[..., HttpResponse]:
-    def wrapper(*args: Any, **kwargs: Any) -> HttpResponse:
-        request = args[0]
-
+def check_superuser(
+    func: Callable[Concatenate[HttpRequest, _ViewParams], HttpResponse],
+) -> Callable[Concatenate[HttpRequest, _ViewParams], HttpResponse]:
+    def wrapper(
+        request: HttpRequest, /, *args: _ViewParams.args, **kwargs: _ViewParams.kwargs
+    ) -> HttpResponse:
         if not request.user.is_authenticated:
             return HttpResponseSeeOther("/auth/login")
 
         if not request.user.is_superuser:
             return HttpResponse("This page needs administrative permission to access", status=400)
 
-        return func(*args, **kwargs)
+        return func(request, *args, **kwargs)
 
     return wrapper
 

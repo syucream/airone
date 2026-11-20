@@ -6,12 +6,13 @@ import time
 from datetime import date, datetime, timedelta
 from importlib import import_module
 from types import ModuleType
-from typing import Any, Callable, TypeAlias
+from typing import Any, Callable, TypeAlias, overload
 from zoneinfo import ZoneInfo
 
 from django.conf import settings
 from django.core.files.storage import default_storage
 from django.db import models
+from pydantic import BaseModel
 
 from acl.models import ACLBase
 from airone.lib import auto_complement
@@ -57,7 +58,7 @@ else:
         pass
 
 
-def _support_time_default(o: Any) -> str:
+def _support_time_default(o: object) -> str:
     if isinstance(o, date):
         return o.isoformat()
     raise TypeError(repr(o) + " is not JSON serializable")
@@ -261,7 +262,13 @@ class Job(models.Model):
             )
         )
 
-    def get_typed_params(self, expected_type: type[Any] | None = None) -> Any:
+    @overload
+    def get_typed_params[T: BaseModel](self, expected_type: type[T]) -> T: ...
+
+    @overload
+    def get_typed_params(self, expected_type: None = None) -> object: ...
+
+    def get_typed_params(self, expected_type: type[object] | None = None) -> object:
         """Return validated job parameters, parsing persisted JSON only once."""
 
         try:
@@ -479,7 +486,7 @@ class Job(models.Model):
         return kls.objects.create(**job_params)
 
     @staticmethod
-    def _serialize_params(operation: int, params: Any) -> str:
+    def _serialize_params(operation: int, params: object) -> str:
         """Validate core/registered params; retain legacy external compatibility."""
 
         try:

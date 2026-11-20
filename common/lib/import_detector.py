@@ -1,5 +1,5 @@
 import enum
-from typing import Any, NamedTuple
+from typing import Final, NamedTuple, TypedDict
 
 
 class ImportType(enum.Enum):
@@ -16,13 +16,13 @@ class UnknownImportFormatError(Exception):
 
 class ImportDocument(NamedTuple):
     import_type: ImportType
-    payload: Any
+    payload: object
 
 
 # Export files carry their type in an envelope: {"import_type": ..., "data": ...}.
 # Files without the envelope are the legacy format and are detected from their structure.
-ENVELOPE_TYPE_KEY = "import_type"
-ENVELOPE_DATA_KEY = "data"
+ENVELOPE_TYPE_KEY: Final = "import_type"
+ENVELOPE_DATA_KEY: Final = "data"
 
 _ENTITY_KEYS = {"Entity", "EntityAttr"}
 _ENTRY_KEYS = {"entity", "entries"}
@@ -31,7 +31,12 @@ _ROLE_KEYS = {"users", "admin_users", "admin_groups", "description", "permission
 _GROUP_KEYS = {"id", "name"}
 
 
-def _detect_record_type(record: Any) -> ImportType | None:
+class ImportEnvelope[T](TypedDict):
+    import_type: str
+    data: T
+
+
+def _detect_record_type(record: object) -> ImportType | None:
     if not isinstance(record, dict):
         return None
 
@@ -50,12 +55,12 @@ def _detect_record_type(record: Any) -> ImportType | None:
     return None
 
 
-def wrap_envelope(import_type: ImportType, data: Any) -> dict[str, Any]:
+def wrap_envelope[T](import_type: ImportType, data: T) -> ImportEnvelope[T]:
     """Put a payload into the envelope that declares its import type."""
     return {ENVELOPE_TYPE_KEY: import_type.value, ENVELOPE_DATA_KEY: data}
 
 
-def unwrap_envelope(data: Any) -> tuple[ImportType | None, Any]:
+def unwrap_envelope(data: object) -> tuple[ImportType | None, object]:
     """Split an envelope into its declared type and payload.
 
     A document without the envelope is returned as ``(None, data)`` so that the
@@ -73,7 +78,7 @@ def unwrap_envelope(data: Any) -> tuple[ImportType | None, Any]:
     return declared, data[ENVELOPE_DATA_KEY]
 
 
-def parse_import_document(data: Any) -> ImportDocument:
+def parse_import_document(data: object) -> ImportDocument:
     """Return the import type of a document and the payload to hand to the import.
 
     An envelope's declared type wins and its payload is not scanned, so the common case
@@ -86,7 +91,7 @@ def parse_import_document(data: Any) -> ImportDocument:
     return ImportDocument(declared, payload)
 
 
-def detect_import_type(data: Any) -> ImportType:
+def detect_import_type(data: object) -> ImportType:
     """Decide which import format a parsed document is.
 
     Raises UnknownImportFormatError when the document fits none of them, or more than one.
@@ -94,7 +99,7 @@ def detect_import_type(data: Any) -> ImportType:
     return parse_import_document(data).import_type
 
 
-def _detect_legacy(data: Any) -> ImportType:
+def _detect_legacy(data: object) -> ImportType:
     """Decide the import format of a document without an envelope, from its structure alone.
 
     Raises UnknownImportFormatError when it fits none of them, or more than one
