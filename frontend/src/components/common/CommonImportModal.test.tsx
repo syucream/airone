@@ -118,7 +118,8 @@ describe("CommonImportModal", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "変更内容を確認" }));
 
-    expect(await screen.findByText("unknown model: Foo")).toBeInTheDocument();
+    const modal = within(getFileInput().closest<HTMLElement>("#modal")!);
+    expect(await modal.findByText("unknown model: Foo")).toBeInTheDocument();
     expect(aironeApiClient.startCommonImportPreview).toHaveBeenCalledTimes(1);
     expect(aironeApiClient.importCommon).not.toHaveBeenCalled();
   });
@@ -138,7 +139,8 @@ describe("CommonImportModal", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "インポート" }));
 
-    expect(await screen.findByText("unknown model: Foo")).toBeInTheDocument();
+    const modal = within(getFileInput().closest<HTMLElement>("#modal")!);
+    expect(await modal.findByText("unknown model: Foo")).toBeInTheDocument();
     expect(aironeApiClient.importCommon).toHaveBeenCalledTimes(1);
     expect(defaultProps.closeImportModal).not.toHaveBeenCalled();
   });
