@@ -6,6 +6,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Pagoda (formerly AirOne) is an entity/metadata management platform with flexible data-structure, relations, and ACL. Backend is Django + DRF, frontend is React + TypeScript + Material-UI.
 
+## Before an agent-authored PR
+
+When preparing a PR, run the [agent review loop](docs/content/getting_started/agent_review.md)
+without waiting for a separate review request. Save the original acceptance criteria,
+commit the candidate, and run `python3 -m tools.agent_review --base <PR-target> --intent
+"<observable outcome>"`. Append `--scenario <command> <args...>` for behavior changes.
+Reproduce findings, fix confirmed regressions, and rerun on the new commit. Stop after a
+passing review, an unavailable prerequisite, or three rounds. Include the reviewed SHA,
+checks actually run, and outstanding findings in the handoff. The read-only reviewer
+performs only its assigned review and returns its verdict to the implementing agent.
+
 ## Build, Lint, and Test Commands
 
 ### Lite mode (no containers at all) — prefer this while iterating

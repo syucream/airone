@@ -1,0 +1,58 @@
+import os
+import subprocess
+import sys
+import tempfile
+import unittest
+from contextlib import chdir
+from pathlib import Path
+from unittest.mock import patch
+
+from tools.agent_review import check_environment
+
+SOURCE = Path(__file__).resolve().parents[2]
+MANAGE = (
+    "from configurations.management import execute_from_command_line; execute_from_command_line()"
+)
+
+
+class ReviewMigrationsTest(unittest.TestCase):
+    def test_required_field_on_second_candidate_uses_a_fresh_initial_migration(self) -> None:
+        with tempfile.TemporaryDirectory() as directory, chdir(directory):
+            Path("books/migrations").mkdir(parents=True)
+            for package in ("books", "books/migrations"):
+                Path(package, "__init__.py").touch()
+            old = Path("books/migrations/0001_initial.py")
+            old.write_text("raise AssertionError('review imported stale checkout migrations')\n")
+            Path("custom_view_sample").mkdir()
+            Path("fixture_settings.py").write_text(
+                "from configurations import Configuration\n"
+                "class Dev(Configuration):\n"
+                "    INSTALLED_APPS = ['books']\n"
+                "    DATABASES = {'default': {'ENGINE': 'django.db.backends.sqlite3',"
+                " 'NAME': ':memory:'}}\n"
+            )
+            settings = {
+                "DJANGO_SETTINGS_MODULE": "fixture_settings",
+                "DJANGO_CONFIGURATION": "Dev",
+                "PYTHONPATH": str(SOURCE),
+            }
+            with patch.dict(os.environ, settings):
+                for number, field in enumerate(("", "    pages = models.IntegerField()\n")):
+                    Path("books/models.py").write_text(
+                        "from django.db import models\nclass Book(models.Model):\n"
+                        "    title = models.TextField()\n" + field
+                    )
+                    run = Path(f"round-{number}")
+                    with check_environment(True, run) as env:
+                        for args in (["makemigrations", "--noinput"], ["migrate", "--noinput"]):
+                            result = subprocess.run(
+                                [sys.executable, "-c", MANAGE, *args],
+                                capture_output=True,
+                                text=True,
+                                env=env,
+                            )
+                            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                    files = list((run / "python/review_migrations/books").glob("0*.py"))
+                    self.assertEqual([p.name for p in files], ["0001_initial.py"])
+                    self.assertEqual("'pages'" in files[0].read_text(), bool(field))
+            self.assertIn("raise AssertionError", old.read_text())
