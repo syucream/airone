@@ -133,6 +133,31 @@ class CommonImportAPITest(AironeViewTest):
         self.assertEqual(len(resp.json()["error"]), 1)
         self._assert_no_job()
 
+    def test_entry_import_apis_return_jobs_and_errors_for_mixed_models(self) -> None:
+        user = self.admin_login()
+        entity = Entity.objects.create(name="E1", created_user=user)
+        data = [
+            {"entity": "Missing", "entries": []},
+            {"entity": entity.name, "entries": [{"name": "a"}]},
+        ]
+        cases = (
+            (self._post, 200, JobOperation.IMPORT_ENTRY_V2),
+            (self._preview, 202, JobOperation.IMPORT_ENTRY_PREVIEW),
+        )
+
+        for post, status_code, operation in cases:
+            with self.subTest(operation=operation), patch("job.models.Job.run") as run:
+                resp = post(data)
+
+                self.assertEqual(resp.status_code, status_code)
+                body = resp.json()
+                self.assertEqual(body["type"], "entry")
+                self.assertEqual(body["error"], ["Missing: Entity does not exists."])
+                job = Job.objects.get(operation=operation)
+                self.assertEqual(body["job_ids"], [job.id])
+                self.assertEqual(job.target_id, entity.id)
+                run.assert_called_once()
+
     def test_unrecognized_documents_are_rejected_without_a_job(self) -> None:
         self.admin_login()
         cases = [

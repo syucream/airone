@@ -1,8 +1,11 @@
 import {
+  Alert,
+  AlertTitle,
   Box,
   Button,
   CircularProgress,
   Input,
+  Link,
   Typography,
 } from "@mui/material";
 import Encoding from "encoding-japanese";
@@ -19,6 +22,7 @@ import { ImportPreview, ImportPreviewAction } from "./ImportPreview";
 import { ImportPreviewResult } from "./ImportPreviewResult";
 
 import { aironeApiClient } from "repository/AironeApiClient";
+import { jobsPath } from "routes/Routes";
 import { ImportPreviewParam } from "services/Constants";
 import {
   ImportPreviewFailure,
@@ -26,20 +30,26 @@ import {
   waitForImportPreviews,
 } from "services/ImportPreviewJob";
 
+interface ImportAcceptance {
+  jobIds: number[];
+  errors: string[];
+}
+
 interface Props {
   /** Receives the preview the user approved, when they previewed at all. */
   handleImport: (
     data: string | ArrayBuffer,
     previewJobIds: number[],
-  ) => Promise<void>;
+  ) => Promise<void | ImportAcceptance>;
   handleCancel?: () => void;
   /**
    * When given, the user can review what the file would change before importing
-   * it. The callback starts the preview jobs and returns their ids; this form
-   * waits for all of them. Previewing stays optional -- importing directly is
-   * always one click away, for users in a hurry or files not worth the wait.
+   * it. The callback returns the started job IDs and any rejection reasons.
+   * The form polls the started jobs.
    */
-  handlePreview?: (data: string | ArrayBuffer) => Promise<number[]>;
+  handlePreview?: (
+    data: string | ArrayBuffer,
+  ) => Promise<number[] | ImportAcceptance>;
 }
 
 // The file is read once and decoded in place. Reading it again through a
@@ -63,6 +73,10 @@ export const ImportForm: FC<Props> = ({
   const { t } = useTranslation();
   const [file, setFile] = useState<File>();
   const [errorMessage, setErrorMessage] = useState<string>("");
+  const [partial, setPartial] = useState<
+    ImportAcceptance & { stage: "preview" | "import" }
+  >();
+  const importSubmitted = partial?.stage === "import";
   const [preview, setPreview] = useState<ImportPreview>();
   // A ref, not state: the cancel button is on screen before the jobs have been
   // started, and it has to reach the ids the moment they exist.
@@ -86,6 +100,7 @@ export const ImportForm: FC<Props> = ({
 
   const onChange = (event: ChangeEvent<HTMLInputElement>) => {
     event.target.files && setFile(event.target.files[0]);
+    setPartial(undefined);
     setPreview(undefined);
     previewJobIds.current = [];
     setActions([]);
@@ -124,7 +139,13 @@ export const ImportForm: FC<Props> = ({
     setProcessing(true);
     setProgress(t("importForm.checkingChanges"));
     try {
-      const jobIds = await handlePreview(await readFileAsText(file));
+      const result = await handlePreview(await readFileAsText(file));
+      const { jobIds, errors } = Array.isArray(result)
+        ? { jobIds: result, errors: [] }
+        : result;
+      setPartial(
+        errors.length ? { stage: "preview", jobIds, errors } : undefined,
+      );
       previewJobIds.current = jobIds;
       setPreview(
         await waitForImportPreviews(jobIds, {
@@ -209,7 +230,16 @@ export const ImportForm: FC<Props> = ({
 
     setProcessing(true);
     try {
-      await handleImport(await readFileAsText(file), previewJobIds.current);
+      const result = await handleImport(
+        await readFileAsText(file),
+        previewJobIds.current,
+      );
+      if (result && result.errors.length > 0) {
+        setPreview(undefined);
+        setErrorMessage("");
+        setPartial({ ...result, stage: "import" });
+        return;
+      }
       sessionStorage.setItem("role-import-success", "1");
       window.location.reload();
     } catch (e) {
@@ -221,7 +251,12 @@ export const ImportForm: FC<Props> = ({
 
   return (
     <Box display="flex" flexDirection="column">
-      <Input type="file" onChange={onChange} data-testid="upload-import-file" />
+      <Input
+        type="file"
+        disabled={processing}
+        onChange={onChange}
+        data-testid="upload-import-file"
+      />
 
       {processing && progress != null && (
         <Box display="flex" alignItems="center" gap="8px" my="12px">
@@ -236,6 +271,43 @@ export const ImportForm: FC<Props> = ({
             {t("importForm.cancelPreview")}
           </Button>
         </Box>
+      )}
+
+      {partial && (
+        <Alert severity="warning" sx={{ my: 1 }}>
+          <AlertTitle>
+            {t(
+              importSubmitted
+                ? "importForm.partialImport"
+                : "importForm.partialPreview",
+            )}
+          </AlertTitle>
+          {importSubmitted && (
+            <>
+              {t("importForm.acceptedJobs")}
+              <ul>
+                {partial.jobIds.map((id) => (
+                  <li key={id}>
+                    <Link
+                      href={`${jobsPath()}?job_id=${id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {t("job.list.jobId")} {id}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+          {t("importForm.rejectedModels")}
+          <ul>
+            {partial.errors.map((reason, index) => (
+              <li key={index}>{reason}</li>
+            ))}
+          </ul>
+          {importSubmitted && t("importForm.retryRejected")}
+        </Alert>
       )}
 
       {preview && (
@@ -253,7 +325,7 @@ export const ImportForm: FC<Props> = ({
         {errorMessage}
       </Typography>
       <Box display="flex" justifyContent="flex-end">
-        {handlePreview != null && preview == null && (
+        {handlePreview != null && preview == null && !importSubmitted && (
           <Button
             variant="outlined"
             color="secondary"
@@ -269,7 +341,7 @@ export const ImportForm: FC<Props> = ({
           type="submit"
           variant="contained"
           color="secondary"
-          disabled={processing}
+          disabled={!file || processing || importSubmitted}
           onClick={onImport}
           sx={{ m: "4px" }}
         >
@@ -281,7 +353,7 @@ export const ImportForm: FC<Props> = ({
           onClick={handleCancel}
           sx={{ m: "4px" }}
         >
-          {t("common.cancel")}
+          {t(importSubmitted ? "common.close" : "common.cancel")}
         </Button>
       </Box>
     </Box>

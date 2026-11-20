@@ -1,14 +1,24 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 
 import { CommonImportModal } from "./CommonImportModal";
 
 import type { Mock } from "vitest";
 
 import { TestWrapper } from "TestWrapper";
+import { translate } from "i18n/config";
 import { aironeApiClient } from "repository/AironeApiClient";
+import { JobStatuses } from "services/Constants";
 
 vi.mock("repository/AironeApiClient", () => ({
   aironeApiClient: {
+    getImportPreview: vi.fn(),
+    getJob: vi.fn(),
     importCommon: vi.fn(),
     startCommonImportPreview: vi.fn(),
   },
@@ -31,12 +41,23 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.clearAllMocks();
+  vi.unstubAllGlobals();
+  sessionStorage.removeItem("role-import-success");
 });
 
 const getFileInput = (): HTMLInputElement =>
   screen
     .getByTestId("upload-import-file")
     .querySelector('input[type="file"]') as HTMLInputElement;
+
+const selectFile = (name: string) => {
+  fireEvent.change(getFileInput(), {
+    target: { files: [new File(["[]"], name, { type: "application/yaml" })] },
+  });
+};
+
+const getImportButton = () =>
+  screen.getByRole("button", { name: translate("common.import") });
 
 describe("CommonImportModal", () => {
   const defaultProps = {
@@ -148,7 +169,103 @@ describe("CommonImportModal", () => {
     );
   });
 
-  test("does not report an error when a job was started", async () => {
+  test("shows each accepted job and rejection and only allows importing again after changing files", async () => {
+    const reload = vi.fn();
+    vi.stubGlobal("location", { ...window.location, reload });
+    const errors = ["unknown model: Foo", "permission denied: Bar"];
+    vi.mocked(aironeApiClient.importCommon)
+      .mockResolvedValueOnce({ type: "entry", jobIds: [17, 24], error: errors })
+      .mockResolvedValueOnce({ type: "entry", jobIds: [25], error: [] });
+
+    render(<CommonImportModal {...defaultProps} />, { wrapper: TestWrapper });
+
+    selectFile("import.yaml");
+    fireEvent.click(getImportButton());
+
+    const warning = within(await screen.findByRole("alert"));
+    for (const error of errors) {
+      expect(warning.getByText(error)).toBeInTheDocument();
+    }
+    expect(
+      warning.getAllByRole("link").map((link) => link.getAttribute("href")),
+    ).toEqual(["/ui/jobs?job_id=17", "/ui/jobs?job_id=24"]);
+    expect(sessionStorage.getItem("role-import-success")).toBeNull();
+    expect(reload).not.toHaveBeenCalled();
+
+    expect(getImportButton()).toBeDisabled();
+    fireEvent.click(getImportButton());
+    expect(aironeApiClient.importCommon).toHaveBeenCalledTimes(1);
+
+    selectFile("corrected.yaml");
+    for (const error of errors) {
+      expect(screen.queryByText(error)).not.toBeInTheDocument();
+    }
+    expect(getImportButton()).toBeEnabled();
+    mockEncoding.convert.mockReturnValueOnce("corrected file contents");
+    fireEvent.click(getImportButton());
+
+    await waitFor(() => expect(reload).toHaveBeenCalledTimes(1));
+    expect(aironeApiClient.importCommon).toHaveBeenNthCalledWith(
+      2,
+      "corrected file contents",
+      false,
+      undefined,
+    );
+  });
+
+  test("shows the accepted preview rows alongside model rejections without importing", async () => {
+    const errors = ["unknown model: Foo", "permission denied: Bar"];
+    vi.mocked(aironeApiClient.startCommonImportPreview).mockResolvedValue({
+      jobIds: [42],
+      errors,
+    });
+    (aironeApiClient.getJob as Mock).mockResolvedValue({
+      status: JobStatuses.DONE,
+    });
+    vi.mocked(aironeApiClient.getImportPreview).mockResolvedValue({
+      summary: {
+        created: 1,
+        updated: 0,
+        unchanged: 0,
+        skipped: 0,
+        errored: 0,
+        total: 1,
+      },
+      count: 1,
+      truncated: false,
+      rows: [
+        {
+          action: "create",
+          changes: [],
+          index: 0,
+          kind: "Entry",
+          name: "accepted item",
+          reason: null,
+          willInvokeTrigger: false,
+        },
+      ],
+    });
+
+    render(<CommonImportModal {...defaultProps} />, { wrapper: TestWrapper });
+
+    selectFile("import.yaml");
+    fireEvent.click(screen.getByTestId("preview-import-file"));
+
+    const preview = await screen.findByTestId("import-preview");
+    expect(
+      within(preview).getByRole("cell", { name: "accepted item" }),
+    ).toBeInTheDocument();
+    const warning = within(await screen.findByRole("alert"));
+    for (const error of errors) {
+      expect(warning.getByText(error)).toBeInTheDocument();
+    }
+    expect(aironeApiClient.getJob).toHaveBeenCalledWith(42);
+    expect(aironeApiClient.importCommon).not.toHaveBeenCalled();
+  });
+
+  test("records success and reloads after all jobs are accepted", async () => {
+    const reload = vi.fn();
+    vi.stubGlobal("location", { ...window.location, reload });
     (aironeApiClient.importCommon as Mock).mockResolvedValue({
       type: "group",
       jobIds: [1],
@@ -157,19 +274,11 @@ describe("CommonImportModal", () => {
 
     render(<CommonImportModal {...defaultProps} />, { wrapper: TestWrapper });
 
-    const file = new File(["- id: 1"], "import.yaml", {
-      type: "application/yaml",
-    });
-    fireEvent.change(getFileInput(), {
-      target: { files: [file] },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "インポート" }));
+    selectFile("import.yaml");
+    fireEvent.click(getImportButton());
 
-    await waitFor(() =>
-      expect(aironeApiClient.importCommon).toHaveBeenCalledTimes(1),
-    );
-    expect(
-      screen.queryByText("ファイルのアップロードに失敗しました"),
-    ).not.toBeInTheDocument();
+    await waitFor(() => expect(reload).toHaveBeenCalledTimes(1));
+    expect(sessionStorage.getItem("role-import-success")).toBe("1");
+    expect(aironeApiClient.importCommon).toHaveBeenCalledTimes(1);
   });
 });

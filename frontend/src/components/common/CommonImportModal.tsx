@@ -30,7 +30,7 @@ export const CommonImportModal: FC<Props> = ({
           errors.join(" / ") || t("notification.uploadFailed"),
         );
       }
-      return jobIds;
+      return { jobIds, errors };
     },
     [t],
   );
@@ -50,6 +50,7 @@ export const CommonImportModal: FC<Props> = ({
           error.join(" / ") || t("notification.uploadFailed"),
         );
       }
+      return { jobIds, errors: error };
     },
     [t, forceImport],
   );
