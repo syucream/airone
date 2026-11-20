@@ -3,12 +3,14 @@ from datetime import timedelta
 from typing import Any, cast
 
 from django.contrib.auth import views as auth_views
+from django.contrib.auth.forms import PasswordResetForm
 from django.core.exceptions import ObjectDoesNotExist
-from django.http import HttpRequest, HttpResponse
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.http.response import JsonResponse
 from django.urls import reverse_lazy
 
 from airone.auth.ldap import LDAPBackend
+from airone.lib.canonical import get_canonical_url_parts
 from airone.lib.http import HttpResponseSeeOther, check_superuser, http_get, http_post, render
 from user.forms import UsernameBasedPasswordResetForm
 
@@ -310,6 +312,26 @@ class PasswordReset(auth_views.PasswordResetView):
     success_url = reverse_lazy("user:password_reset_done")
     template_name = "password_reset_form.html"
     form_class = UsernameBasedPasswordResetForm  # type: ignore[assignment]
+
+    def form_valid(self, form: PasswordResetForm) -> HttpResponse:
+        # Build the reset link from settings-derived parts instead of the
+        # client-controlled Host header (reset-link poisoning, CWE-640).
+        url_parts = get_canonical_url_parts(self.request)
+        extra_email_context: dict[str, str] | None = (
+            dict(self.extra_email_context) if self.extra_email_context is not None else None
+        )
+        form.save(
+            domain_override=url_parts["domain"],
+            use_https=url_parts["protocol"] == "https",
+            token_generator=self.token_generator,
+            from_email=self.from_email,
+            email_template_name=self.email_template_name,
+            subject_template_name=self.subject_template_name,
+            request=self.request,
+            html_email_template_name=self.html_email_template_name,
+            extra_email_context=extra_email_context,
+        )
+        return HttpResponseRedirect(self.get_success_url())
 
 
 class PasswordResetDone(auth_views.PasswordResetDoneView):

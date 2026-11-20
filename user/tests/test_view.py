@@ -2,6 +2,8 @@ import json
 from datetime import timedelta
 from unittest.mock import Mock, patch
 
+from django.core import mail
+from django.test import override_settings
 from django.urls import reverse
 
 from airone.lib.test import AironeViewTest
@@ -751,6 +753,7 @@ class ViewTest(AironeViewTest):
             )
             self.assertEqual(resp.status_code, 400)
 
+    @override_settings(ALLOWED_HOSTS=["pagoda.example.com", "testserver"])
     def test_password_reset_with_invalid_username(self):
         user = self._create_user("testuser", authenticate_type=User.AuthenticateType.AUTH_TYPE_LDAP)
         for username in ("unknown", user.username):
@@ -759,3 +762,27 @@ class ViewTest(AironeViewTest):
                 self.assertRedirects(
                     resp, reverse("user:password_reset_done"), fetch_redirect_response=False
                 )
+
+    def test_password_reset_link_ignores_host_header(self):
+        """
+        Regression test for reset-link poisoning via the Host header (CWE-640).
+        The emailed reset link must be built from the hostname derived from
+        ALLOWED_HOSTS, not from the client-controlled Host header.
+        """
+        self._create_user("user")
+        # mail.outbox is not cleared between tests in the same run
+        mail.outbox = []
+        with override_settings(
+            ALLOWED_HOSTS=["pagoda.example.com", "attacker.example"], SESSION_COOKIE_SECURE=True
+        ):
+            resp = self.client.post(
+                reverse("user:password_reset"),
+                {"username": "user"},
+                HTTP_HOST="attacker.example",
+            )
+
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(len(mail.outbox), 1)
+        body = mail.outbox[0].body
+        self.assertIn("https://pagoda.example.com", body)
+        self.assertNotIn("attacker.example", body)

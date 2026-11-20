@@ -4,29 +4,32 @@ from unittest.mock import patch
 from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator
 from django.core import mail
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 
+from airone.lib.test import DisableStderr
 from user.forms import UsernameBasedPasswordResetForm
 from user.models import User
 
 
+@override_settings(ALLOWED_HOSTS=["pagoda.example.com", "testserver"])
 class PasswordResetSecurityTest(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(
             {"username": "local-user", "email": "local@example.com", "password": "old-password"}
         )
 
-    def _requests(self, username):
+    def _requests(self, username, **extra):
         return (
             self.client.post(
                 "/user/api/v2/password_reset",
                 {"username": username},
                 content_type="application/json",
+                **extra,
             ),
-            self.client.post(reverse("user:password_reset"), {"username": username}),
+            self.client.post(reverse("user:password_reset"), {"username": username}, **extra),
         )
 
     def _assert_generic_response(self, responses, username):
@@ -68,6 +71,31 @@ class PasswordResetSecurityTest(TestCase):
     def test_unknown_account_has_the_same_response_without_mail(self):
         self._assert_generic_response(self._requests("unknown"), "unknown")
         self.assertEqual(len(mail.outbox), 0)
+
+    @override_settings(ALLOWED_HOSTS=["*"], DEBUG=False)
+    def test_missing_canonical_host_does_not_disclose_account_eligibility(self):
+        self.client.raise_request_exception = False
+        baseline = None
+        for condition in ("eligible", "unknown", "ldap", "disabled"):
+            with self.subTest(condition=condition):
+                self.user.authenticate_type = (
+                    User.AuthenticateType.AUTH_TYPE_LDAP
+                    if condition == "ldap"
+                    else User.AuthenticateType.AUTH_TYPE_LOCAL
+                )
+                self.user.save(update_fields=["authenticate_type"])
+                username = "unknown" if condition == "unknown" else self.user.username
+                with (
+                    patch.dict(settings.AIRONE, PASSWORD_RESET_DISABLED=condition == "disabled"),
+                    DisableStderr(),
+                ):
+                    responses = self._requests(username, HTTP_HOST="attacker.example")
+                self.assertEqual([response.status_code for response in responses], [500, 500])
+                observed = [(response.content, response["Content-Type"]) for response in responses]
+                if baseline is None:
+                    baseline = observed
+                self.assertEqual(observed, baseline)
+                self.assertFalse(any(self.user.email in message.to for message in mail.outbox))
 
     def test_mail_transport_failure_does_not_disclose_recipient(self):
         for failure in (SMTPException("transport unavailable"), OSError("connection failed")):
