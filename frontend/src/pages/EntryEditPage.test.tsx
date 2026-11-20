@@ -408,10 +408,13 @@ describe("EntryEditPage", () => {
 
   describe("loading state", () => {
     test("should show loading indicator initially", async () => {
-      // Delay the API response to see loading state
+      let releaseResponse!: () => void;
+      const responseGate = new Promise<void>((resolve) => {
+        releaseResponse = resolve;
+      });
       server.use(
         http.get("http://localhost/entity/api/v2/2/", async () => {
-          await new Promise((resolve) => setTimeout(resolve, 100));
+          await responseGate;
           return HttpResponse.json(mockEntity);
         }),
       );
@@ -428,14 +431,17 @@ describe("EntryEditPage", () => {
         },
       );
 
-      await act(async () => {
-        render(<RouterProvider router={router} />, {
-          wrapper: TestWrapperWithoutRoutes,
-        });
+      render(<RouterProvider router={router} />, {
+        wrapper: TestWrapperWithoutRoutes,
       });
 
-      // Loading should be shown initially
-      expect(screen.getByTestId("loading")).toBeInTheDocument();
+      try {
+        expect(await screen.findByTestId("loading")).toBeVisible();
+      } finally {
+        releaseResponse();
+      }
+      expect(await screen.findByDisplayValue("test entry")).toBeVisible();
+      expect(screen.queryByTestId("loading")).not.toBeInTheDocument();
     });
   });
 
