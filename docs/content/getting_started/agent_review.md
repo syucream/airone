@@ -33,9 +33,10 @@ Use your own acceptance command or one supplied by a trusted maintainer.
    ancestor and checks the worktree is clean. All candidate commits are reviewed.
 2. Changed paths select existing repo commands. Python changes run Ruff. Django
    changes run Lite by app, frontend changes run lint, type checks and Vitest,
-   and mock E2E changes build the bundle and run Playwright. API definitions, model fields, generator inputs
-   and committed client changes regenerate to a temporary directory and compare the
-   output to the checked-in client. Every candidate
+   and mock E2E changes build the bundle and run Playwright. Changes to backend
+   runtime Python, generator tooling or the committed client regenerate the client
+   to a temporary directory and compare it to the checked-in output. This covers
+   schema annotations inherited from shared views. Every candidate
    gets a Git whitespace check. For Lite tests the runner points Django at the
    candidate SDK and temporarily links the tracked sample as `custom_view` (as in
    CI). Use a checkout with test settings, a free `custom_view` path or a link to

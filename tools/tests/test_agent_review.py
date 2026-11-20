@@ -5,8 +5,12 @@ import subprocess
 import sys
 import tempfile
 import textwrap
+import time
 import unittest
 from pathlib import Path
+from unittest.mock import patch
+
+from tools.agent_review import run_checks
 
 IMPLEMENTATION_ROOT = Path(__file__).resolve().parents[2]
 INTENT = "Review the update to the operator instructions."
@@ -220,6 +224,61 @@ class AgentReviewTest(unittest.TestCase):
         self.write("custom_view/marker", "local extension")
         self.review("blocked", reviewer_called=False, scenario=("tools/lite.sh", "test", "job"))
         self.assertEqual((self.repo / "custom_view/marker").read_text(), "local extension")
+
+    def test_docs_only_django_scenarios_are_isolated_regardless_of_path(self) -> None:
+        (self.repo / "tools").mkdir()
+        (self.repo / "custom_view_sample").mkdir()
+        self.write("custom_view_sample/marker", "candidate")
+        django_environment = (
+            'test -L custom_view && test "$(cat custom_view/marker)" = candidate && '
+            'test -f "$PAGODA_REVIEW_MIGRATIONS/__init__.py"'
+        )
+        scripts = ("tools/lite.sh", "tools/check_generated_client.sh")
+        for script in scripts:
+            body = django_environment
+            if script == "tools/lite.sh":
+                body += " && test -f .artifacts/migrations-ready"
+            self.write(script, f"#!/bin/sh\n{body}\n")
+            (self.repo / script).chmod(0o755)
+        uv = self.workspace / "uv"
+        uv.write_text(
+            "#!/bin/sh\n"
+            'test "$*" = "run python manage.py makemigrations --noinput" && '
+            f"{django_environment} && touch .artifacts/migrations-ready\n"
+        )
+        uv.chmod(0o755)
+        self.git("add", *scripts, "custom_view_sample/marker")
+        self.git("commit", "-qm", "Add existing Django commands")
+        self.git("branch", "-f", "base", "HEAD")
+        self.write("README.md", "Candidate instructions\n")
+        self.commit_readme()
+
+        for script in scripts:
+            for executable in (script, f"./{script}", str(self.repo / script)):
+                with self.subTest(executable=executable):
+                    (self.repo / ".artifacts/migrations-ready").unlink(missing_ok=True)
+                    report = self.review("passed", scenario=(executable,))
+                    self.assertEqual(report["paths"], ["README.md"])
+                    self.assertFalse((self.repo / "custom_view").is_symlink())
+
+    def test_gate_timeout_stops_descendant_writes_and_records_receipt(self) -> None:
+        ready = self.workspace / "descendant-started"
+        unexpected = self.workspace / "unexpected-write"
+        parent = """sh -c ': > "$1"; sleep 0.8; : > "$2"' sh "$1" "$2" & wait"""
+        report: dict[str, list[dict[str, object]]] = {"checks": []}
+        with patch("tools.agent_review.CHECK_TIMEOUT", 0.4):
+            with self.assertRaises(subprocess.TimeoutExpired):
+                run_checks(
+                    [["sh", "-c", parent, "sh", str(ready), str(unexpected)]],
+                    self.workspace,
+                    report,
+                    os.environ.copy(),
+                )
+        self.assertTrue(ready.exists())
+        self.assertTrue(report["checks"][0]["timed_out"])
+        self.assertIn("seconds", report["checks"][0])
+        time.sleep(0.9)
+        self.assertFalse(unexpected.exists())
 
     def test_supplied_acceptance_failure_prevents_review(self) -> None:
         report = self.review(

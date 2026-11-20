@@ -5,19 +5,22 @@ import fcntl
 import json
 import os
 import shlex
+import signal
 import subprocess
 import sys
 import tempfile
 import time
 from collections.abc import Iterator, Sequence
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from fnmatch import fnmatchcase
 from pathlib import Path
-from typing import Any
+from typing import IO, Any
 
 from tools.agent_review_gates import gate_commands
 
 REPORTS = Path(".artifacts/agent-review")
+CHECK_TIMEOUT = 3600
+REVIEW_TIMEOUT = 900
 STRING = {"type": "string"}
 FINDING = {
     "type": "object",
@@ -108,6 +111,35 @@ def valid_review(data: Any, paths: list[str]) -> bool:
     )
 
 
+def run_process(
+    argv: Sequence[str],
+    log: IO[str],
+    *,
+    timeout: float,
+    env: dict[str, str] | None = None,
+    prompt: str | None = None,
+) -> int:
+    with subprocess.Popen(
+        argv,
+        stdin=subprocess.PIPE if prompt is not None else None,
+        stdout=log,
+        stderr=subprocess.STDOUT,
+        text=True,
+        env=env,
+        start_new_session=True,
+    ) as process:
+        try:
+            process.communicate(input=prompt, timeout=timeout)
+        except (subprocess.TimeoutExpired, KeyboardInterrupt):
+            # Killing only the leader leaves its commands running. Its process
+            # group still exists if any of those commands outlive the leader.
+            with suppress(ProcessLookupError):
+                os.killpg(process.pid, signal.SIGKILL)
+            process.wait()
+            raise
+        return process.returncode
+
+
 def review(run: Path, report: dict[str, Any]) -> dict[str, Any]:
     paths = report["paths"]
     prompt = f"""Act only as an independent code reviewer. Do not invoke the pre-PR loop,
@@ -133,29 +165,24 @@ you cannot review the diff or assess the criteria. An empty findings list means 
     schema.write_text(json.dumps(SCHEMA))
     result = run / "verdict.json"
     with (run / "reviewer.log").open("w") as log:
-        subprocess.run(
-            [
-                "codex",
-                "exec",
-                "--ephemeral",
-                "--ignore-user-config",
-                "-c",
-                'approval_policy="never"',
-                "-s",
-                "read-only",
-                "--output-schema",
-                str(schema),
-                "-o",
-                str(result),
-                "-",
-            ],
-            input=prompt,
-            text=True,
-            stdout=log,
-            stderr=subprocess.STDOUT,
-            timeout=900,
-            check=True,
-        )
+        argv = [
+            "codex",
+            "exec",
+            "--ephemeral",
+            "--ignore-user-config",
+            "-c",
+            'approval_policy="never"',
+            "-s",
+            "read-only",
+            "--output-schema",
+            str(schema),
+            "-o",
+            str(result),
+            "-",
+        ]
+        returncode = run_process(argv, log, timeout=REVIEW_TIMEOUT, prompt=prompt)
+        if returncode:
+            raise subprocess.CalledProcessError(returncode, argv)
     data = json.loads(result.read_text())
     if not valid_review(data, paths):
         raise ValueError("Invalid structured reviewer verdict.")
@@ -212,15 +239,20 @@ def run_checks(
         started = time.monotonic()
         receipt: dict[str, object] = {"argv": argv, "log": str(filename)}
         report["checks"].append(receipt)
-        with filename.open("w") as log:
-            result = subprocess.run(
-                argv, stdout=log, stderr=subprocess.STDOUT, timeout=3600, env=env
-            )
-        receipt.update(returncode=result.returncode, seconds=round(time.monotonic() - started, 2))
-        if result.returncode:
-            raise ValueError(
-                f"Check exited {result.returncode}: {shlex.join(argv)}. See {filename}."
-            )
+        try:
+            with filename.open("w") as log:
+                returncode = run_process(argv, log, timeout=CHECK_TIMEOUT, env=env)
+            receipt["returncode"] = returncode
+        except subprocess.TimeoutExpired:
+            receipt["timed_out"] = True
+            raise
+        except KeyboardInterrupt:
+            receipt["interrupted"] = True
+            raise
+        finally:
+            receipt["seconds"] = round(time.monotonic() - started, 2)
+        if returncode:
+            raise ValueError(f"Check exited {returncode}: {shlex.join(argv)}. See {filename}.")
 
 
 def evaluate(args: argparse.Namespace, run: Path, report: dict[str, Any]) -> None:
@@ -240,9 +272,9 @@ def evaluate(args: argparse.Namespace, run: Path, report: dict[str, Any]) -> Non
     checks.extend(gate_commands(paths))
     if args.scenario:
         checks.append(args.scenario)
-    first_lite = next(
-        (i for i, command in enumerate(checks) if command[0] == "tools/lite.sh"), None
-    )
+    executables = [Path(command[0]).resolve() for command in checks]
+    lite = Path("tools/lite.sh").resolve()
+    first_lite = next((i for i, executable in enumerate(executables) if executable == lite), None)
     if first_lite is not None:
         # Targeted lite tests reuse the checkout's ignored migrations. Refresh once per run.
         checks.insert(
@@ -258,7 +290,9 @@ def evaluate(args: argparse.Namespace, run: Path, report: dict[str, Any]) -> Non
                 "--noinput",
             ],
         )
-    uses_django = first_lite is not None or ["tools/check_generated_client.sh"] in checks
+    uses_django = (
+        first_lite is not None or Path("tools/check_generated_client.sh").resolve() in executables
+    )
     with check_environment(uses_django, run) as env:
         run_checks(checks, run, report, env)
 
@@ -302,11 +336,18 @@ def main(argv: Sequence[str] | None = None) -> int:
             evaluate(args, run, report)
         except (OSError, ValueError, subprocess.SubprocessError) as exc:
             report["reason"] = str(exc)
+        except KeyboardInterrupt:
+            report["reason"] = "Review interrupted."
         save(run / "report.json", report)
         save(latest, report)
         sys.stdout.write(json.dumps(report, indent=2, ensure_ascii=False) + "\n")
         return {"passed": 0, "changes_requested": 1, "blocked": 2}[report["status"]]
 
 
+def interrupt_on_sigterm(_signum: int, _frame: object) -> None:
+    raise KeyboardInterrupt
+
+
 if __name__ == "__main__":
+    signal.signal(signal.SIGTERM, interrupt_on_sigterm)
     sys.exit(main())

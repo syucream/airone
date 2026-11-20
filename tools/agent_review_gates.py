@@ -81,17 +81,19 @@ def gate_commands(paths: list[str]) -> list[list[str]]:
         if root == "docs":
             continue
         frontend |= root == "frontend" or path in FRONTEND_CONFIG or path in FRONTEND_TOOLS
-        # DRF can derive schemas from serializers, URL routing and Django model fields.
+        # A view can inherit its OpenAPI schema from any runtime module,
+        # including shared base classes and hooks outside the API directories.
         codegen |= (
             changed.suffix == ".py"
             and "tests" not in changed.parts
-            and (
-                "api_v1" in changed.parts
-                or "api_v2" in changed.parts
-                or changed.name in {"models.py", "urls.py", "serializers.py", "serializer.py"}
-            )
+            and (root in DJANGO_APPS or root in {"api_v2", "custom_view_sample", "plugin"})
         )
         codegen |= path in {
+            "manage.py",
+            "pyproject.toml",
+            "uv.lock",
+            "package.json",
+            "package-lock.json",
             "tools/generate_client.sh",
             "openapitools.json",
             "tools/check_generated_client.sh",
