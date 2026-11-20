@@ -2,6 +2,7 @@ import { vi } from "vitest";
 
 import {
   ImportPreviewFailure,
+  fetchImportPreviewPage,
   waitForImportPreview,
   waitForImportPreviews,
 } from "./ImportPreviewJob";
@@ -117,7 +118,52 @@ describe("waitForImportPreview", () => {
     });
     expect(merged.count).toBe(5);
     expect(merged.truncated).toBe(true);
-    expect(merged.rows).toEqual([{ name: "a" }, { name: "b" }]);
+    expect(merged.rows).toEqual([
+      { jobId: 1, name: "a" },
+      { jobId: 2, name: "b" },
+    ]);
+  });
+
+  test.each([
+    { counts: [150, 120], pageSize: 100 },
+    { counts: [250, 220], pageSize: 200 },
+  ])("reads the remaining 70 rows after each job returns $pageSize rows", async ({
+    counts,
+    pageSize,
+  }) => {
+    mockGetJob.mockResolvedValue({ status: JobStatuses.DONE });
+    const jobs = counts.map((count, jobId) =>
+      Array.from({ length: count }, (_, index) => ({
+        name: `job-${jobId}-${index}`,
+      })),
+    );
+    mockGetImportPreview.mockImplementation((jobId: number, { offset = 0 }) => {
+      const rows = jobs[jobId];
+      return {
+        summary: {
+          total: rows.length,
+          created: rows.length,
+          updated: 0,
+          skipped: 0,
+          unchanged: 0,
+          errored: 0,
+        },
+        count: rows.length,
+        rows: rows.slice(offset, offset + pageSize),
+        truncated: false,
+      };
+    });
+
+    const first = await waitForImportPreviews([0, 1]);
+    expect(first.count - first.rows.length).toBe(70);
+    const last = await fetchImportPreviewPage(first.nextPage, []);
+    expect(last.nextPage).toEqual([]);
+    expect([...first.rows, ...last.rows].map((row) => row.name).sort()).toEqual(
+      jobs
+        .flat()
+        .map((row) => row.name)
+        .sort(),
+    );
   });
 
   test("should stop polling once the caller has abandoned the job", async () => {

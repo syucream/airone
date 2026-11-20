@@ -21,6 +21,8 @@ export interface ImportPreviewChange {
 }
 
 export interface ImportPreviewRow {
+  /** Row indices are local to the job that produced them. */
+  jobId?: number;
   index: number;
   kind: string;
   name: string;

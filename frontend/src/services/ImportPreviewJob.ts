@@ -23,22 +23,30 @@ const statusMessage = (status: number): string | undefined => {
   }
 };
 
-/**
- * Wait for a preview job to finish, then read its result.
- *
- * Building a preview costs as much as the import it previews, so the backend
- * runs it on a worker. `onProgress` receives the job's own progress text, which
- * is the only thing that tells the user a large file is still being read.
- */
 interface ImportPreviewPage {
   action?: ImportPreviewAction[];
   offset?: number;
   limit?: number;
 }
 
-const mergePreviews = (previews: ImportPreview[]): ImportPreview => ({
-  summary: previews.reduce(
-    (merged, preview) => ({
+interface JobCursor {
+  jobId: number;
+  offset: number;
+}
+
+export interface PagedImportPreview extends ImportPreview {
+  nextPage: JobCursor[];
+}
+
+const mergePreviews = (
+  jobs: (JobCursor & { preview: ImportPreview })[],
+): PagedImportPreview => ({
+  nextPage: jobs.flatMap(({ jobId, offset, preview }) => {
+    const nextOffset = offset + preview.rows.length;
+    return nextOffset < preview.count ? [{ jobId, offset: nextOffset }] : [];
+  }),
+  summary: jobs.reduce(
+    (merged, { preview }) => ({
       created: merged.created + preview.summary.created,
       updated: merged.updated + preview.summary.updated,
       unchanged: merged.unchanged + preview.summary.unchanged,
@@ -55,9 +63,11 @@ const mergePreviews = (previews: ImportPreview[]): ImportPreview => ({
       total: 0,
     },
   ),
-  rows: previews.flatMap((preview) => preview.rows),
-  count: previews.reduce((total, preview) => total + preview.count, 0),
-  truncated: previews.some((preview) => preview.truncated),
+  rows: jobs.flatMap(({ jobId, preview }) =>
+    preview.rows.map((row) => ({ ...row, jobId })),
+  ),
+  count: jobs.reduce((total, { preview }) => total + preview.count, 0),
+  truncated: jobs.some(({ preview }) => preview.truncated),
 });
 
 /**
@@ -73,28 +83,31 @@ export const waitForImportPreviews = async (
     isAbandoned?: () => boolean;
     page?: ImportPreviewPage;
   } = {},
-): Promise<ImportPreview> =>
+): Promise<PagedImportPreview> =>
   mergePreviews(
     await Promise.all(
-      jobIds.map((jobId) => waitForImportPreview(jobId, options)),
+      jobIds.map(async (jobId) => ({
+        jobId,
+        offset: options.page?.offset ?? 0,
+        preview: await waitForImportPreview(jobId, options),
+      })),
     ),
   );
 
-/**
- * Read another page of finished preview jobs.
- *
- * Every job is asked for the same page: the rows of one file are shown as one
- * list, and a job that has run out simply contributes nothing.
- */
 export const fetchImportPreviewPage = async (
-  jobIds: number[],
-  page: ImportPreviewPage,
-): Promise<ImportPreview> =>
+  cursors: JobCursor[],
+  action: ImportPreviewAction[],
+): Promise<PagedImportPreview> =>
   mergePreviews(
     await Promise.all(
-      jobIds.map((jobId) =>
-        aironeApiClient.getImportPreview(jobId, toQuery(page)),
-      ),
+      cursors.map(async ({ jobId, offset }) => ({
+        jobId,
+        offset,
+        preview: await aironeApiClient.getImportPreview(
+          jobId,
+          toQuery({ action, offset }),
+        ),
+      })),
     ),
   );
 
@@ -104,6 +117,13 @@ const toQuery = (page: ImportPreviewPage) => ({
   action: page.action?.join(","),
 });
 
+/**
+ * Wait for a preview job to finish, then read its result.
+ *
+ * Building a preview costs as much as the import it previews, so the backend
+ * runs it on a worker. `onProgress` receives the job's own progress text, which
+ * is the only thing that tells the user a large file is still being read.
+ */
 export const waitForImportPreview = async (
   jobId: number,
   options: {

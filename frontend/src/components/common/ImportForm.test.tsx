@@ -16,6 +16,7 @@ import { MemoryRouter } from "react-router";
 import { ImportForm } from "./ImportForm";
 
 import i18n from "i18n/config";
+import { JobStatuses } from "services/Constants";
 
 // Ensure File is available in the global scope before tests run
 if (typeof global.File === "undefined") {
@@ -52,22 +53,16 @@ vi.mock("encoding-japanese", () => ({
 
 const mockCancelJob = vi.fn().mockResolvedValue(undefined);
 const mockDownloadImportPreview = vi.fn().mockResolvedValue(undefined);
+const mockGetJob = vi.fn();
+const mockGetImportPreview = vi.fn();
 vi.mock("repository/AironeApiClient", () => ({
   aironeApiClient: {
+    getJob: (...args: unknown[]) => mockGetJob(...args),
+    getImportPreview: (...args: unknown[]) => mockGetImportPreview(...args),
     cancelJob: (...args: unknown[]) => mockCancelJob(...args),
     downloadImportPreview: (...args: unknown[]) =>
       mockDownloadImportPreview(...args),
   },
-}));
-
-const mockWaitForImportPreviews = vi.fn();
-const mockFetchImportPreviewPage = vi.fn();
-vi.mock("services/ImportPreviewJob", async () => ({
-  ...(await vi.importActual("services/ImportPreviewJob")),
-  waitForImportPreviews: (...args: unknown[]) =>
-    mockWaitForImportPreviews(...args),
-  fetchImportPreviewPage: (...args: unknown[]) =>
-    mockFetchImportPreviewPage(...args),
 }));
 
 // Mock react-router
@@ -123,6 +118,8 @@ const previewWith = (
 describe("ImportForm", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockGetJob.mockReset().mockResolvedValue({ status: JobStatuses.DONE });
+    mockGetImportPreview.mockReset();
     // The real client returns promises; a bare vi.fn() would not, and the code
     // chains onto what it gets back.
     mockCancelJob.mockResolvedValue(undefined);
@@ -175,7 +172,7 @@ describe("ImportForm", () => {
   });
 
   test("should show what the file would change before importing it", async () => {
-    mockWaitForImportPreviews.mockResolvedValue({
+    mockGetImportPreview.mockResolvedValueOnce({
       summary: {
         created: 1,
         updated: 0,
@@ -214,59 +211,94 @@ describe("ImportForm", () => {
     );
     expect(handlePreview).toHaveBeenCalledTimes(1);
     // The form starts the jobs and then waits for them; it never previews inline.
-    expect(mockWaitForImportPreviews).toHaveBeenCalledWith(
-      [42],
-      expect.anything(),
-    );
+    expect(mockGetJob).toHaveBeenCalledWith(42);
     expect(screen.getByText("新規作成 1")).toBeInTheDocument();
     expect(screen.getByText("entity1")).toBeInTheDocument();
     expect(screen.getByText("note: a note")).toBeInTheDocument();
   });
 
-  test("should re-read the finished jobs when the user filters by action", async () => {
-    mockWaitForImportPreviews.mockResolvedValue(
+  test("restarts every job when filtering and retries a failed page from the same offsets", async () => {
+    const previews = [
       previewWith([
-        { index: 0, name: "ok", action: "create" },
-        { index: 1, name: "broken", action: "error" },
+        { index: 0, name: "created", action: "create" },
+        { index: 1, name: "error-a", action: "error" },
       ]),
+      previewWith([
+        { index: 0, name: "error-b", action: "error" },
+        { index: 1, name: "error-c", action: "error" },
+        { index: 2, name: "error-d", action: "error" },
+      ]),
+    ];
+    mockGetImportPreview.mockImplementation(
+      (jobId: number, { action, offset = 0 }) => {
+        const preview = previews[jobId];
+        const rows = preview.rows.filter(
+          (row) => !action || row.action === action,
+        );
+        return {
+          ...preview,
+          count: rows.length,
+          rows: rows.slice(offset, offset + 2),
+        };
+      },
     );
-    mockFetchImportPreviewPage.mockResolvedValue(
-      previewWith([{ index: 1, name: "broken", action: "error" }]),
-    );
-
+    const handlePreview = vi.fn().mockResolvedValue([0, 1]);
     render(
-      <ImportForm
-        handleImport={vi.fn()}
-        handlePreview={vi.fn().mockResolvedValue([7])}
-      />,
+      <ImportForm handleImport={vi.fn()} handlePreview={handlePreview} />,
       { wrapper: TestWrapper },
     );
-    selectFile(new File(["Entity: []"], "entity.yaml"));
+    selectFile(new File(["items"], "items.yaml"));
     fireEvent.click(screen.getByTestId("preview-import-file"));
-    await waitFor(() =>
-      expect(screen.getByTestId("import-preview")).toBeInTheDocument(),
-    );
+    await screen.findByText("created");
 
-    fireEvent.click(screen.getByTestId("import-preview-filter-error"));
+    const toggleErrors = () =>
+      fireEvent.click(screen.getByTestId("import-preview-filter-error"));
+    await act(async () => toggleErrors());
+    for (const jobId of [0, 1]) {
+      expect(mockGetImportPreview).toHaveBeenCalledWith(
+        jobId,
+        expect.objectContaining({ action: "error", offset: 0 }),
+      );
+    }
+    expect(screen.queryByText("created")).not.toBeInTheDocument();
+    expect(screen.getByText("error-a")).toBeInTheDocument();
+    const more = screen.getByTestId("import-preview-load-more");
+    expect(more).toHaveTextContent("1");
 
-    // The file is never uploaded again: the jobs already hold the whole preview.
-    await waitFor(() =>
-      expect(mockFetchImportPreviewPage).toHaveBeenCalledWith(
-        [7],
-        expect.objectContaining({ action: ["error"], offset: 0 }),
-      ),
+    mockGetImportPreview
+      .mockClear()
+      .mockRejectedValueOnce(new Error("page unavailable"));
+    await act(async () => fireEvent.click(more));
+    expect(screen.queryByText("error-d")).not.toBeInTheDocument();
+    await act(async () => fireEvent.click(more));
+    expect(mockGetImportPreview).toHaveBeenCalledTimes(2);
+    for (const call of mockGetImportPreview.mock.calls) {
+      expect(call).toEqual([
+        1,
+        expect.objectContaining({ action: "error", offset: 2 }),
+      ]);
+    }
+    expect(screen.getByText("error-d")).toBeInTheDocument();
+    expect(
+      screen.queryByTestId("import-preview-load-more"),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText("合計 5")).toBeInTheDocument();
+
+    await act(async () => toggleErrors());
+    expect(screen.getByText("created")).toBeInTheDocument();
+    expect(screen.queryByText("error-d")).not.toBeInTheDocument();
+    expect(screen.getByTestId("import-preview-load-more")).toHaveTextContent(
+      "1",
     );
-    await waitFor(() =>
-      expect(screen.queryByText("ok")).not.toBeInTheDocument(),
-    );
+    expect(handlePreview).toHaveBeenCalledTimes(1);
   });
 
   test("should append the next page instead of replacing what is shown", async () => {
-    mockWaitForImportPreviews.mockResolvedValue({
+    mockGetImportPreview.mockResolvedValueOnce({
       ...previewWith([{ index: 0, name: "first", action: "create" }]),
       count: 2,
     });
-    mockFetchImportPreviewPage.mockResolvedValue({
+    mockGetImportPreview.mockResolvedValueOnce({
       ...previewWith([{ index: 1, name: "second", action: "create" }]),
       count: 2,
     });
@@ -288,16 +320,68 @@ describe("ImportForm", () => {
 
     await waitFor(() => expect(screen.getByText("second")).toBeInTheDocument());
     expect(screen.getByText("first")).toBeInTheDocument();
-    expect(mockFetchImportPreviewPage).toHaveBeenCalledWith(
-      [7],
+    expect(mockGetImportPreview).toHaveBeenCalledWith(
+      7,
       expect.objectContaining({ offset: 1 }),
     );
+  });
+
+  test("appends every row when the two jobs return different page sizes", async () => {
+    const pageSizes = [3, 2];
+    const jobs = [5, 3].map((size, jobId) =>
+      previewWith(
+        Array.from({ length: size }, (_, index) => ({
+          index,
+          name: `job-${jobId}-${index}`,
+          action: "create",
+        })),
+      ),
+    );
+    mockGetImportPreview.mockImplementation((jobId: number, { offset = 0 }) => {
+      const job = jobs[jobId];
+      return {
+        ...job,
+        rows: job.rows.slice(offset, offset + pageSizes[jobId]),
+      };
+    });
+    render(
+      <ImportForm
+        handleImport={vi.fn()}
+        handlePreview={vi.fn().mockResolvedValue([0, 1])}
+      />,
+      { wrapper: TestWrapper },
+    );
+    selectFile(new File(["items"], "items.yaml"));
+    fireEvent.click(screen.getByTestId("preview-import-file"));
+
+    const more = await screen.findByTestId("import-preview-load-more");
+    expect(more).toHaveTextContent("3");
+    await act(async () => fireEvent.click(more));
+
+    expect(mockGetImportPreview).toHaveBeenCalledWith(
+      0,
+      expect.objectContaining({ offset: pageSizes[0] }),
+    );
+    expect(mockGetImportPreview).toHaveBeenCalledWith(
+      1,
+      expect.objectContaining({ offset: pageSizes[1] }),
+    );
+    const names = Array.from(
+      document.querySelectorAll<HTMLTableRowElement>("tbody tr"),
+      (row) => row.cells[2].textContent,
+    );
+    expect(names.sort()).toEqual(
+      jobs.flatMap((job) => job.rows.map((row) => row.name)).sort(),
+    );
+    expect(
+      screen.queryByTestId("import-preview-load-more"),
+    ).not.toBeInTheDocument();
   });
 
   test("should let the user give up on a preview that is still running", async () => {
     // Previewing a large file takes as long as importing it, so the wait has to
     // be escapable -- which is why previews run as cancelable jobs.
-    mockWaitForImportPreviews.mockReturnValue(new Promise(() => {}));
+    mockGetJob.mockReturnValue(new Promise(() => {}));
 
     render(
       <ImportForm
@@ -320,7 +404,7 @@ describe("ImportForm", () => {
 
   test("should hand the approved preview to the import", async () => {
     const handleImport = vi.fn().mockResolvedValue(undefined);
-    mockWaitForImportPreviews.mockResolvedValue(
+    mockGetImportPreview.mockResolvedValueOnce(
       previewWith([{ index: 0, name: "ok", action: "create" }]),
     );
 
@@ -347,7 +431,7 @@ describe("ImportForm", () => {
   });
 
   test("should let the user download the whole preview", async () => {
-    mockWaitForImportPreviews.mockResolvedValue(
+    mockGetImportPreview.mockResolvedValueOnce(
       previewWith([{ index: 0, name: "ok", action: "create" }]),
     );
 

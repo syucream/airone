@@ -109,6 +109,7 @@ export const ImportPreviewResult: FC<Props> = ({
             }
             label={`${importPreviewActionLabel(action)} ${preview.summary[ImportPreviewSummaryKey[action]]}`}
             size="small"
+            disabled={loading}
             onClick={() => toggleAction(action)}
             data-testid={`import-preview-filter-${action}`}
           />
@@ -151,7 +152,7 @@ export const ImportPreviewResult: FC<Props> = ({
           </TableHead>
           <TableBody>
             {preview.rows.map((row) => {
-              const key = `${row.kind}-${row.index}`;
+              const key = `${row.jobId ?? row.kind}-${row.index}`;
               return (
                 <TableRow
                   key={key}

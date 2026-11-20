@@ -15,13 +15,13 @@ import {
   toReportableNonFieldErrors,
 } from "../../services/AironeAPIErrorUtil";
 
-import { ImportPreview, ImportPreviewAction } from "./ImportPreview";
+import { ImportPreviewAction } from "./ImportPreview";
 import { ImportPreviewResult } from "./ImportPreviewResult";
 
 import { aironeApiClient } from "repository/AironeApiClient";
-import { ImportPreviewParam } from "services/Constants";
 import {
   ImportPreviewFailure,
+  PagedImportPreview,
   fetchImportPreviewPage,
   waitForImportPreviews,
 } from "services/ImportPreviewJob";
@@ -63,7 +63,7 @@ export const ImportForm: FC<Props> = ({
   const { t } = useTranslation();
   const [file, setFile] = useState<File>();
   const [errorMessage, setErrorMessage] = useState<string>("");
-  const [preview, setPreview] = useState<ImportPreview>();
+  const [preview, setPreview] = useState<PagedImportPreview>();
   // A ref, not state: the cancel button is on screen before the jobs have been
   // started, and it has to reach the ids the moment they exist.
   const previewJobIds = useRef<number[]>([]);
@@ -143,35 +143,32 @@ export const ImportForm: FC<Props> = ({
   };
 
   // Filtering and paging re-read the finished jobs; the file is never sent again.
-  const readPage = async (
-    nextActions: ImportPreviewAction[],
-    offset: number,
-  ) => {
+  const readPage = async (filter?: ImportPreviewAction[]) => {
+    if (preview == null) return;
     setProcessing(true);
     try {
-      const page = await fetchImportPreviewPage(previewJobIds.current, {
-        action: nextActions,
-        offset,
-        limit: ImportPreviewParam.MAX_ROW_COUNT,
-      });
-      setPreview((current) =>
-        offset > 0 && current != null
-          ? { ...page, rows: [...current.rows, ...page.rows] }
-          : page,
-      );
+      const cursors =
+        filter == null
+          ? preview.nextPage
+          : previewJobIds.current.map((jobId) => ({ jobId, offset: 0 }));
+      const page = await fetchImportPreviewPage(cursors, filter ?? actions);
+      if (filter == null) {
+        setPreview({
+          ...preview,
+          rows: [...preview.rows, ...page.rows],
+          nextPage: page.nextPage,
+        });
+      } else {
+        setPreview(page);
+        setActions(filter);
+      }
+      setErrorMessage("");
     } catch (e) {
       await reportError(e, t("importForm.loadPageFailed"));
     } finally {
       setProcessing(false);
     }
   };
-
-  const onChangeActions = async (nextActions: ImportPreviewAction[]) => {
-    setActions(nextActions);
-    await readPage(nextActions, 0);
-  };
-
-  const onLoadMore = () => readPage(actions, preview?.rows.length ?? 0);
 
   const onDownloadPreview = async () => {
     try {
@@ -221,7 +218,12 @@ export const ImportForm: FC<Props> = ({
 
   return (
     <Box display="flex" flexDirection="column">
-      <Input type="file" onChange={onChange} data-testid="upload-import-file" />
+      <Input
+        type="file"
+        disabled={processing}
+        onChange={onChange}
+        data-testid="upload-import-file"
+      />
 
       {processing && progress != null && (
         <Box display="flex" alignItems="center" gap="8px" my="12px">
@@ -242,8 +244,8 @@ export const ImportForm: FC<Props> = ({
         <ImportPreviewResult
           preview={preview}
           actions={actions}
-          onChangeActions={onChangeActions}
-          onLoadMore={onLoadMore}
+          onChangeActions={readPage}
+          onLoadMore={() => readPage()}
           onDownload={onDownloadPreview}
           loading={processing}
         />
