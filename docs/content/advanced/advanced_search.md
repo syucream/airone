@@ -204,9 +204,12 @@ Access Advanced Search programmatically through REST endpoints:
 
 ### CSV export row limit
 
-Advanced-search CSV exports expand independent array attributes into every
-combination. The total is limited to 100,000 data rows per export (excluding the
-header), across both the legacy and v2 APIs. Exports that exceed the limit fail
+Advanced-search CSV exports expand independent source array attributes into every
+combination when array splitting is enabled. Joined array values stay together
+in their CSV cells. With `split_array_values=false`, each search result stays in
+one row, with array values separated by newlines in a cell. Both layouts are
+limited to 100,000 data rows per export (excluding the header), across both the
+legacy and v2 APIs. Exports that exceed the limit fail
 before generating data rows and do not publish a partial download.
 Administrators can set `AIRONE_CSV_EXPORT_MAX_ROWS` to a positive integer to adjust
 this limit. Empty arrays count as one row; selecting an attribute more than once

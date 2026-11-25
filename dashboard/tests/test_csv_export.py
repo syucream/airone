@@ -75,6 +75,25 @@ class CsvExportTest(SimpleTestCase):
                     )
                     self.assertEqual(record.model_dump(), original)
 
+    def test_grouped_layout_keeps_array_values_in_one_cell(self):
+        record = AdvancedSearchResultRecord(
+            entity={"id": 1, "name": "VM"},
+            entry={"id": 2, "name": "vm7264"},
+            attrs={"ips": {"type": AttrType.ARRAY_STRING, "value": ["ip1", "ip2"]}},
+            is_readable=True,
+        )
+        output = _csv_export(
+            Mock(is_canceled=Mock(return_value=False)),
+            [record],
+            {"attrinfo": [{"name": "ips"}]},
+            False,
+            split_array_values=False,
+        )
+        self.assertEqual(
+            list(csv.reader(io.StringIO(output.getvalue()))),
+            [["Name", "Entity", "ips"], ["vm7264", "VM", "ip1\nip2"]],
+        )
+
     def test_multiple_arrays_repeat_other_values_for_all_combinations(self):
         record = AdvancedSearchResultRecord(
             entity={"id": 1, "name": "VM"},
@@ -137,20 +156,64 @@ class CsvExportTest(SimpleTestCase):
                 list(iter_csv_records(records, ["a"]))
             product.assert_not_called()
 
-    def test_joined_columns_count_toward_budget(self):
-        record = self.make_record(a=["a", "b"], **{"ref.tags": ["1", "2", "3"]})
+    def test_joined_arrays_remain_in_cells_and_only_source_arrays_expand(self):
+        record = self.make_record(a=["a", "b"])
+        record.joined_attrs = {
+            "ref.tags": {
+                "values": [
+                    {"type": AttrType.ARRAY_STRING, "value": ["1", "2", "3"]},
+                    {"type": AttrType.ARRAY_STRING, "value": ["4", "5"]},
+                ]
+            }
+        }
         params = {
             "attrinfo": [{"name": "a"}],
             "join_attrs": [{"name": "ref", "attrinfo": [{"name": "tags"}]}],
         }
-        with self.settings(CSV_EXPORT_MAX_ROWS=6):
-            output = _csv_export_v2(
-                Mock(is_canceled=Mock(return_value=False)), [record], params, False
-            )
-            self.assertEqual(len(list(csv.reader(io.StringIO(output.getvalue())))), 7)
-        with self.settings(CSV_EXPORT_MAX_ROWS=5):
-            with self.assertRaisesRegex(ValueError, "maximum of 5 data rows"):
+        original = record.model_dump()
+        for split, limit, cells in ((True, 2, ["a", "b"]), (False, 1, ["a\nb"])):
+            with self.subTest(split=split), self.settings(CSV_EXPORT_MAX_ROWS=limit):
+                output = _csv_export_v2(
+                    Mock(is_canceled=Mock(return_value=False)),
+                    [record],
+                    params,
+                    False,
+                    split_array_values=split,
+                )
+                self.assertEqual(
+                    list(csv.reader(io.StringIO(output.getvalue()))),
+                    [["Name", "a", "tags"]] + [["vm7264", cell, "1\n2\n3\n4\n5"] for cell in cells],
+                )
+        with self.settings(CSV_EXPORT_MAX_ROWS=1):
+            with self.assertRaisesRegex(ValueError, "maximum of 1 data rows"):
                 _csv_export_v2(Mock(), [record], params, False)
+        self.assertEqual(record.model_dump(), original)
+
+    def test_grouped_layout_budget_boundary_and_cumulative_one_over(self):
+        records = [self.make_record(a=["a", "b"]), self.make_record(a=["c", "d"])]
+        for exporter in (_csv_export, _csv_export_v2):
+            with self.subTest(exporter=exporter.__name__), self.settings(CSV_EXPORT_MAX_ROWS=2):
+                output = exporter(
+                    Mock(is_canceled=Mock(return_value=False)),
+                    records,
+                    {"attrinfo": [{"name": "a"}]},
+                    False,
+                    split_array_values=False,
+                )
+                prefix = ["vm7264", "VM"] if exporter is _csv_export else ["vm7264"]
+                self.assertEqual(
+                    list(csv.reader(io.StringIO(output.getvalue())))[1:],
+                    [prefix + ["a\nb"], prefix + ["c\nd"]],
+                )
+            with self.subTest(exporter=exporter.__name__), self.settings(CSV_EXPORT_MAX_ROWS=1):
+                with self.assertRaisesRegex(ValueError, "maximum of 1 data rows"):
+                    exporter(
+                        Mock(),
+                        records,
+                        {"attrinfo": [{"name": "a"}]},
+                        False,
+                        split_array_values=False,
+                    )
 
     def test_nonpositive_budget_is_rejected(self):
         for limit in (0, -1):
@@ -206,21 +269,42 @@ class CsvExportJobBudgetTest(AironeViewTest):
             attrs={"a": {"type": AttrType.ARRAY_STRING, "value": ["a", "b"]}},
             is_readable=True,
         )
-        result = AdvancedSearchResults(ret_count=1, ret_values=[record])
         cases = [
             (
                 reverse("dashboard:export_search_result"),
                 "dashboard.tasks.export_search_result.delay",
                 export_search_result,
+                True,
+                [],
             ),
             (
                 "/entry/api/v2/advanced_search_result_export/",
                 "entry.tasks.export_search_result_v2.delay",
                 export_search_result_v2,
+                True,
+                [],
+            ),
+            (
+                "/entry/api/v2/advanced_search_result_export/",
+                "entry.tasks.export_search_result_v2.delay",
+                export_search_result_v2,
+                False,
+                [],
+            ),
+            (
+                "/entry/api/v2/advanced_search_result_export/",
+                "entry.tasks.export_search_result_v2.delay",
+                export_search_result_v2,
+                False,
+                [{"name": "ref", "attrinfo": [{"name": "tags"}]}],
             ),
         ]
-        for url, delay, task in cases:
-            with self.subTest(url=url), self.settings(CSV_EXPORT_MAX_ROWS=1):
+        for url, delay, task, split, joins in cases:
+            result = AdvancedSearchResults(ret_count=2, ret_values=[record, record])
+            with (
+                self.subTest(url=url, split=split, joins=joins),
+                self.settings(CSV_EXPORT_MAX_ROWS=1),
+            ):
                 with (
                     patch(delay, side_effect=task),
                     patch(
@@ -239,6 +323,8 @@ class CsvExportJobBudgetTest(AironeViewTest):
                                 "attrinfo": [{"name": "a"}],
                                 "export_style": "csv",
                                 "is_all_entities": False,
+                                "split_array_values": split,
+                                "join_attrs": joins,
                             }
                         ),
                         "application/json",
