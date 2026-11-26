@@ -3,9 +3,7 @@ from typing import Any, cast
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
-from django.core.mail import EmailMultiAlternatives
 from django.db.models import QuerySet
-from django.template import loader
 from django.utils import timezone
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
@@ -45,9 +43,9 @@ from user.api_v2.serializers import (
     UserTokenSerializer,
     UserUpdateSerializer,
 )
+from user.forms import UsernameBasedPasswordResetForm
 from user.import_service import import_users
 from user.models import User
-from user.password_reset import get_password_reset_user, send_password_reset_email
 
 
 def _entry_ref(entry: Any) -> dict[str, Any]:
@@ -596,7 +594,7 @@ class PasswordResetAPI(viewsets.GenericViewSet[Any]):
         """
         Given a username, return matching user who should receive a reset or None.
         """
-        return get_password_reset_user(username)
+        return UsernameBasedPasswordResetForm().get_user(username)
 
     def _send_mail(
         self,
@@ -607,20 +605,14 @@ class PasswordResetAPI(viewsets.GenericViewSet[Any]):
         to_email: str,
         html_email_template_name: str | None = None,
     ) -> None:
-        """
-        Sends a django.core.mail.EmailMultiAlternatives to `to_email`.
-        """
-        subject: str = loader.render_to_string(subject_template_name, context)
-        # Email subject *must not* contain newlines
-        subject = "".join(subject.splitlines())
-        body = loader.render_to_string(email_template_name, context)
-
-        email_message = EmailMultiAlternatives(subject, body, from_email, [to_email])
-        if html_email_template_name is not None:
-            html_email = loader.render_to_string(html_email_template_name, context)
-            email_message.attach_alternative(html_email, "text/html")
-
-        send_password_reset_email(email_message)
+        UsernameBasedPasswordResetForm().send_mail(
+            subject_template_name,
+            email_template_name,
+            context,
+            from_email,
+            to_email,
+            html_email_template_name,
+        )
 
 
 class PasswordResetConfirmAPI(viewsets.GenericViewSet[Any]):

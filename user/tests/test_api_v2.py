@@ -604,7 +604,7 @@ class ViewTest(AironeViewTest):
         self.assertTrue(isinstance(obj, list))
         self.assertEqual(len(obj), 3)
 
-    @mock.patch("user.api_v2.views.EmailMultiAlternatives")
+    @mock.patch("user.forms.EmailMultiAlternatives")
     @override_settings(ALLOWED_HOSTS=["pagoda.example.com", "testserver"])
     def test_password_reset(self, mock_email):
         user = self._create_user("user")

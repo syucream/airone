@@ -5,9 +5,12 @@
 # with supporting username based email resolution.
 #
 
+import logging
+from smtplib import SMTPException
 from typing import Any, cast
 
 from django import forms
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UsernameField
 from django.contrib.auth.tokens import default_token_generator
@@ -19,9 +22,9 @@ from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 
 from user.models import User
-from user.password_reset import get_password_reset_user, send_password_reset_email
 
 UserModel = get_user_model()
+logger = logging.getLogger(__name__)
 
 
 class UsernameBasedPasswordResetForm(forms.Form):
@@ -56,13 +59,27 @@ class UsernameBasedPasswordResetForm(forms.Form):
             html_email = loader.render_to_string(html_email_template_name, context)
             email_message.attach_alternative(html_email, "text/html")
 
-        send_password_reset_email(email_message)
+        try:
+            email_message.send()
+        except (SMTPException, OSError):
+            # Transport failures must not disclose whether a recipient exists.
+            logger.exception("Unable to send password reset email")
 
     def get_user(self, username: str) -> User | None:
         """
         Given a username, return matching user who should receive a reset or None.
         """
-        return get_password_reset_user(username)
+        if settings.AIRONE["PASSWORD_RESET_DISABLED"]:
+            return None
+
+        users = list(
+            UserModel._default_manager.filter(
+                **{f"{self.USERNAME_FIELD}__iexact": username, "is_active": True}
+            )[:2]
+        )
+        if len(users) == 1 and users[0].can_reset_password and users[0].email:
+            return users[0]
+        return None
 
     def save(
         self,

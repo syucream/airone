@@ -102,7 +102,7 @@ class PasswordResetSecurityTest(TestCase):
             with self.subTest(failure=type(failure).__name__):
                 with (
                     patch("django.core.mail.EmailMultiAlternatives.send", side_effect=failure),
-                    self.assertLogs("user.password_reset", level="ERROR") as logs,
+                    self.assertLogs("user.forms", level="ERROR") as logs,
                 ):
                     self._assert_generic_response(
                         self._requests(self.user.username), self.user.username
