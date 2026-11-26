@@ -546,6 +546,8 @@ class ViewTest(AironeViewTest):
 
         self.assertEqual(user1.email, "user1@example.com")
         self.assertEqual(user1.groups.count(), 2)
+        # Imported users get no local password, so it must stay unusable.
+        self.assertFalse(user1.has_usable_password())
 
     def test_import_by_non_superuser_is_forbidden(self):
         admin = User.objects.create(username="admin", email="admin@example.com", is_superuser=True)
