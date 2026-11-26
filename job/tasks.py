@@ -3,7 +3,7 @@ from __future__ import annotations
 import csv
 import io
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, cast
 
 from celery import Task
 from django.core.files.storage import default_storage
@@ -173,10 +173,14 @@ def import_general(self: Task[Any, Any], job: Job) -> tuple[JobStatus, str, None
             )
             serializer.is_valid(raise_exception=True)
             serializer.save()
-        elif params.kind == "user":
-            import_users(params.data)
         else:
-            import_groups(params.data)
+            # Historical jobs could persist a mapping for any import kind. Let
+            # the import services continue to handle previously accepted input.
+            records = cast(list[dict[str, object]], params.data)
+            if params.kind == "user":
+                import_users(records)
+            else:
+                import_groups(records)
     except ImportDataError as e:
         return JobStatus.ERROR, str(e), None
 

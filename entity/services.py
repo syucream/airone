@@ -3,7 +3,7 @@
 from typing import Any, Callable, NamedTuple
 
 from airone.lib.acl import ACLType
-from airone.lib.import_preview import PreviewAction, PreviewCollector
+from airone.lib.import_preview import PreviewAction, PreviewChange, PreviewCollector, PreviewPayload
 from airone.lib.resources import AironeModelResource
 from entity.admin import (
     EntityAttrResource,
@@ -15,7 +15,7 @@ from entity.models import Entity, EntityAttr
 from user.models import User
 
 
-class _PreviewField(NamedTuple):
+class _PreviewField[T: Entity | EntityAttr](NamedTuple):
     """One comparable field, read from the file and from the stored object.
 
     The two sides are rendered as text before they are compared: the file holds
@@ -24,7 +24,7 @@ class _PreviewField(NamedTuple):
 
     name: str
     from_row: Callable[[dict[str, Any]], str]
-    from_instance: Callable[[Any], str]
+    from_instance: Callable[[T], str]
 
 
 def _text(value: Any) -> str:
@@ -37,7 +37,7 @@ def _bool_text(value: Any) -> str:
     return str(bool(value))
 
 
-ENTITY_FIELDS = [
+ENTITY_FIELDS: list[_PreviewField[Entity]] = [
     _PreviewField("name", lambda row: _text(row.get("name")), lambda x: _text(x.name)),
     _PreviewField("note", lambda row: _text(row.get("note")), lambda x: _text(x.note)),
     _PreviewField(
@@ -57,7 +57,7 @@ ENTITY_FIELDS = [
     ),
 ]
 
-ENTITY_ATTR_FIELDS = [
+ENTITY_ATTR_FIELDS: list[_PreviewField[EntityAttr]] = [
     _PreviewField("name", lambda row: _text(row.get("name")), lambda x: _text(x.name)),
     _PreviewField(
         "is_mandatory",
@@ -85,7 +85,7 @@ ENTITY_ATTR_FIELDS = [
 class _RowOutcome(NamedTuple):
     action: PreviewAction
     reason: str | None
-    changes: list[dict[str, str | None]]
+    changes: list[PreviewChange]
 
 
 class EntityImportPreviewService:
@@ -108,7 +108,7 @@ class EntityImportPreviewService:
         validated_data: dict[str, Any],
         on_progress: Callable[[int, int], None] | None = None,
         is_canceled: Callable[[], bool] | None = None,
-    ) -> dict[str, Any] | None:
+    ) -> PreviewPayload | None:
         """Return the preview payload, or None when the job was canceled."""
         return _build(user, validated_data, on_progress, is_canceled)
 
@@ -118,7 +118,7 @@ def _build(
     validated_data: dict[str, Any],
     on_progress: Callable[[int, int], None] | None,
     is_canceled: Callable[[], bool] | None,
-) -> dict[str, Any] | None:
+) -> PreviewPayload | None:
     entities: list[dict[str, Any]] = validated_data["Entity"]
     entity_attrs: list[dict[str, Any]] = validated_data["EntityAttr"]
 
@@ -223,12 +223,12 @@ def _preview_entity_attr_row(
     return _compare(user, EntityAttrResource, ENTITY_ATTR_FIELDS, row, instance)
 
 
-def _compare(
+def _compare[T: Entity | EntityAttr](
     user: User,
     resource: type[AironeModelResource],
-    fields: list[_PreviewField],
+    fields: list[_PreviewField[T]],
     row: dict[str, Any],
-    instance: Any | None,
+    instance: T | None,
 ) -> _RowOutcome:
     if instance is None:
         # Inhibits the spoofing, as AironeModelResource.skip_row() does.
@@ -244,7 +244,7 @@ def _compare(
             ],
         )
 
-    changes: list[dict[str, str | None]] = [
+    changes: list[PreviewChange] = [
         {"field": f.name, "before": f.from_instance(instance), "after": f.from_row(row)}
         for f in fields
         if f.from_instance(instance) != f.from_row(row)

@@ -47,6 +47,17 @@ ignore_errors = true
 module = ["*.migrations.*"]
 ignore_errors = true
 
+# Keep these internal contracts checked at every caller. Strict mode still
+# permits an explicit Any to erase a parameter or return type.
+[[tool.mypy.overrides]]
+module = [
+    "airone.lib.import_preview",
+    "common.lib.import_detector",
+    "entry.import_service",
+    "entry.services",
+]
+disallow_any_explicit = true
+
 # Third-party packages that ship neither inline types nor stubs. Listing them
 # explicitly (instead of a global ignore_missing_imports) keeps a typo or a
 # newly added untyped dependency from silently becoming Any.

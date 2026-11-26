@@ -68,7 +68,7 @@ class LegacyIndexedValue(JobParamsModel):
 
     @field_validator("index", mode="before")
     @classmethod
-    def coerce_legacy_index(cls, value: Any) -> Any:
+    def coerce_legacy_index(cls, value: object) -> object:
         if isinstance(value, str) and value.isdecimal():
             return int(value)
         return value
@@ -145,7 +145,7 @@ class ExportEntryParams(JobParamsModel):
 
     @field_validator("target_id", mode="before")
     @classmethod
-    def coerce_legacy_target_id(cls, value: Any) -> Any:
+    def coerce_legacy_target_id(cls, value: object) -> object:
         if isinstance(value, str) and value.isdecimal():
             return int(value)
         return value
@@ -181,7 +181,7 @@ class SearchExportParams(JobParamsModel):
 
     @field_validator("entities", mode="before")
     @classmethod
-    def coerce_legacy_entity_ids(cls, value: Any) -> Any:
+    def coerce_legacy_entity_ids(cls, value: object) -> object:
         if isinstance(value, list):
             return [
                 int(item) if isinstance(item, str) and item.isdecimal() else item for item in value
@@ -217,7 +217,7 @@ class EntityAttrParams(JobParamsModel):
 
     @field_validator("type", mode="before")
     @classmethod
-    def coerce_legacy_type(cls, value: Any) -> Any:
+    def coerce_legacy_type(cls, value: object) -> object:
         # HTML form submissions historically persisted AttrType as a decimal string.
         if isinstance(value, str) and value.isdecimal():
             return int(value)
@@ -225,7 +225,7 @@ class EntityAttrParams(JobParamsModel):
 
     @field_validator("id", mode="before")
     @classmethod
-    def coerce_legacy_id(cls, value: Any) -> Any:
+    def coerce_legacy_id(cls, value: object) -> object:
         # HTML form submissions historically persisted ids as decimal strings.
         if isinstance(value, str) and value.isdecimal():
             return int(value)
@@ -233,7 +233,7 @@ class EntityAttrParams(JobParamsModel):
 
     @field_validator("ref_ids", mode="before")
     @classmethod
-    def coerce_legacy_ref_ids(cls, value: Any) -> Any:
+    def coerce_legacy_ref_ids(cls, value: object) -> object:
         # Legacy HTML form submissions persist referral ids as decimal strings.
         if isinstance(value, list):
             return [
@@ -292,12 +292,14 @@ class EntityAttrV2Params(JobParamsModel):
 
     @field_validator("referral", mode="before")
     @classmethod
-    def coerce_serializer_referrals(cls, value: Any) -> Any:
+    def coerce_serializer_referrals(cls, value: object) -> object:
         return _coerce_model_ids(value)
 
     @field_validator("choices", mode="after")
     @classmethod
-    def validate_choices(cls, value: list[dict[str, str]] | None, info: ValidationInfo) -> Any:
+    def validate_choices(
+        cls, value: list[dict[str, str]] | None, info: ValidationInfo
+    ) -> list[dict[str, str]] | None:
         attr_type = info.data.get("type")
         if value is None:
             if attr_type in (AttrType.SELECT, AttrType.MULTI_SELECT):
@@ -312,7 +314,7 @@ class EntityAttrV2Params(JobParamsModel):
 
     @field_validator("default_value", mode="after")
     @classmethod
-    def normalize_default_value(cls, value: Any, info: ValidationInfo) -> Any:
+    def normalize_default_value(cls, value: object, info: ValidationInfo) -> object:
         return _normalize_entity_attr_default(value, info.data.get("type"))
 
 
@@ -337,12 +339,14 @@ class EditEntityAttrV2Params(JobParamsModel):
 
     @field_validator("referral", mode="before")
     @classmethod
-    def coerce_serializer_referrals(cls, value: Any) -> Any:
+    def coerce_serializer_referrals(cls, value: object) -> object:
         return _coerce_model_ids(value)
 
     @field_validator("choices", mode="after")
     @classmethod
-    def validate_choices(cls, value: list[dict[str, str]] | None, info: ValidationInfo) -> Any:
+    def validate_choices(
+        cls, value: list[dict[str, str]] | None, info: ValidationInfo
+    ) -> list[dict[str, str]] | None:
         attr_type = info.data.get("type")
         if value is None:
             return None
@@ -355,7 +359,7 @@ class EditEntityAttrV2Params(JobParamsModel):
 
     @field_validator("default_value", mode="after")
     @classmethod
-    def normalize_default_value(cls, value: Any, info: ValidationInfo) -> Any:
+    def normalize_default_value(cls, value: object, info: ValidationInfo) -> object:
         return _normalize_entity_attr_default(value, info.data.get("type"))
 
     @model_validator(mode="after")
@@ -365,7 +369,7 @@ class EditEntityAttrV2Params(JobParamsModel):
         return self
 
 
-def _normalize_entity_attr_default(value: Any, attr_type: Any) -> Any:
+def _normalize_entity_attr_default(value: object, attr_type: object) -> object:
     """Preserve the established async EntityAttr default normalization contract."""
 
     if value is None or attr_type is None:
@@ -388,7 +392,7 @@ def _normalize_entity_attr_default(value: Any, attr_type: Any) -> Any:
     return None
 
 
-def _coerce_model_ids(value: Any) -> Any:
+def _coerce_model_ids(value: object) -> object:
     """Convert DRF related-model values to the ids persisted in a job payload."""
 
     if not isinstance(value, list):
@@ -657,13 +661,14 @@ def get_job_params_contract(operation: int) -> ParamsContract:
         raise ValueError(f"No job parameter contract for operation {operation_id}") from None
 
 
-def validate_job_params(operation: int, params: Any) -> Any:
-    """Validate Python input and return a Pydantic model (or union member)."""
+def validate_job_params(operation: int, params: object) -> BaseModel:
+    """Validate Python input and return a Pydantic model."""
 
-    return TypeAdapter(get_job_params_contract(operation)).validate_python(params)
+    contract: TypeAdapter[BaseModel] = TypeAdapter(get_job_params_contract(operation))
+    return contract.validate_python(params)
 
 
-def parse_job_params(operation: int, params_json: str | bytes | bytearray) -> Any:
+def parse_job_params(operation: int, params_json: str | bytes | bytearray) -> BaseModel:
     """Validate JSON persisted in ``Job.params``."""
 
     # Some historical MAY_INVOKE_TRIGGER jobs stored the old default ``{}``.
@@ -672,13 +677,14 @@ def parse_job_params(operation: int, params_json: str | bytes | bytearray) -> An
         encoded = params_json.encode() if isinstance(params_json, str) else bytes(params_json)
         if encoded.strip() == b"{}":
             return TriggerListParams([])
-    return TypeAdapter(get_job_params_contract(operation)).validate_json(params_json)
+    contract: TypeAdapter[BaseModel] = TypeAdapter(get_job_params_contract(operation))
+    return contract.validate_json(params_json)
 
 
-def serialize_job_params(operation: int, params: Any) -> str:
+def serialize_job_params(operation: int, params: object) -> str:
     """Validate and emit deterministic JSON-mode storage representation."""
 
-    contract = TypeAdapter(get_job_params_contract(operation))
+    contract: TypeAdapter[BaseModel] = TypeAdapter(get_job_params_contract(operation))
     validated = contract.validate_python(params)
     json_value = contract.dump_python(validated, mode="json", exclude_unset=True, by_alias=True)
     return json.dumps(json_value, ensure_ascii=False, separators=(",", ":"), sort_keys=True)

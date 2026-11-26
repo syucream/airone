@@ -32,6 +32,7 @@ from airone.lib.drf import (
     RequiredParameterError,
     get_bound_parent,
 )
+from airone.lib.import_preview import PreviewPayload
 from airone.lib.log import Logger
 from airone.lib.types import AttrType, AttrTypeValue
 from entity.admin import EntityAttrResource, EntityResource
@@ -1825,7 +1826,7 @@ class EntityImportExportRootSerializer(serializers.Serializer[dict[str, Any]]):
         _do_import(EntityResource, self.validated_data["Entity"])
         _do_import(EntityAttrResource, self.validated_data["EntityAttr"])
 
-    def build_preview(self, job: "Job | None" = None) -> dict[str, Any] | None:
+    def build_preview(self, job: "Job | None" = None) -> PreviewPayload | None:
         """Report what save() would change, without touching anything.
 
         The preview is read-only. Building it by running the real import inside a
