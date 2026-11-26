@@ -23,7 +23,7 @@ from role.api_v2.serializers import (
     RoleRestoreSerializer,
     RoleSerializer,
 )
-from role.history import role_history_events
+from role.history import RoleHistoryEvent, role_history_events
 from role.models import Role
 from role.services import restore_data, validate_role_data
 from user.models import User
@@ -136,10 +136,13 @@ class RoleAPI(viewsets.ModelViewSet[Role]):
         pagination = LimitOffsetPagination()
         pagination.default_limit = 10
         pagination.max_limit = 100
-        page: list[dict[str, Any]] | None = pagination.paginate_queryset(
+        page: list[RoleHistoryEvent] | None = pagination.paginate_queryset(
             cast(Any, histories), request, view=self
         )
-        serializer = RoleHistorySerializer(page if page is not None else histories, many=True)
+        serializer = serializers.ListSerializer(
+            instance=page if page is not None else histories,
+            child=RoleHistorySerializer(),
+        )
         response = pagination.get_paginated_response(serializer.data)
         response.data["role"] = {
             "id": role.pk,

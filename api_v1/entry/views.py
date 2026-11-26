@@ -85,8 +85,9 @@ class EntrySearchChainAPI(APIView):
         if not serializer.is_valid():
             return Response({}, status=status.HTTP_400_BAD_REQUEST)
 
+        user = cast(User, request.user)
         try:
-            (_, ret_data) = serializer.search_entries(request.user)
+            (_, ret_data) = serializer.search_entries(user)
         except ElasticsearchException:
             return Response(
                 {
@@ -104,7 +105,7 @@ class EntrySearchChainAPI(APIView):
             ret_values: list[AdvancedSearchResultRecord] = []
             for i in range(0, len(ret_data), 100):
                 entry_info = AdvancedSearchService.search_entries(
-                    cast(User, request.user),
+                    user,
                     serializer.validated_data["entities"],
                     entry_name="|".join(["^%s$" % x["name"] for x in ret_data[i : i + 100]]),
                     is_output_all=True,

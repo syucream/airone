@@ -1133,10 +1133,22 @@ def export_search_result_v2(self: Any, job: Job) -> tuple[JobStatus, str, ACLBas
         case "csv":
             # Use v2 format (no Entity column, with sub-attribute columns)
             # when join_attrs is specified.
-            export_csv = _csv_export_v2 if join_attrs else _csv_export
-            output = export_csv(
-                job, resp.ret_values, params, has_referral, split_array_values=split_array_values
-            )
+            if join_attrs:
+                output = _csv_export_v2(
+                    job,
+                    resp.ret_values,
+                    params,
+                    has_referral,
+                    split_array_values=split_array_values,
+                )
+            else:
+                output = _csv_export(
+                    job,
+                    resp.ret_values,
+                    [hint.name for hint in hint_attrs],
+                    has_referral,
+                    split_array_values=split_array_values,
+                )
 
     if output:
         job.set_cache(output.getvalue())

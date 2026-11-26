@@ -821,7 +821,7 @@ class AdvancedSearchChainAPI(generics.GenericAPIView[Any]):
         serializer.is_valid(raise_exception=True)
 
         try:
-            (_, ret_data) = serializer.search_entries(request.user)
+            (_, ret_data) = serializer.search_entries(cast("User", request.user))
         except ElasticsearchException:
             return Response(
                 {

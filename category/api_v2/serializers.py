@@ -1,4 +1,4 @@
-from typing import Any
+from typing import NotRequired, TypedDict
 
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
@@ -40,6 +40,19 @@ class CategoryListSerializer(serializers.ModelSerializer[Category]):
         return get_permission_level(user, obj)
 
 
+class _CategoryEntityData(TypedDict):
+    id: int
+    name: NotRequired[str]
+    is_public: NotRequired[bool]
+
+
+class _CategoryData(TypedDict, total=False):
+    name: str
+    note: str
+    priority: int
+    models: list[_CategoryEntityData]
+
+
 class CategoryCreateSerializer(serializers.ModelSerializer[Category]):
     id = serializers.IntegerField(required=False, read_only=True)
     models = CategoryEntitySerializer(many=True)
@@ -48,7 +61,7 @@ class CategoryCreateSerializer(serializers.ModelSerializer[Category]):
         model = Category
         fields = ["id", "name", "note", "models", "priority"]
 
-    def create(self, validated_data: dict[str, Any]) -> Category:
+    def create(self, validated_data: _CategoryData) -> Category:
         # create Category instance
         category = Category.objects.create(
             created_user=self.context["request"].user,
@@ -71,11 +84,11 @@ class CategoryUpdateSerializer(serializers.ModelSerializer[Category]):
         model = Category
         fields = ["name", "note", "models", "priority"]
 
-    def update(self, category: Category, validated_data: dict[str, Any]) -> Category:
+    def update(self, category: Category, validated_data: _CategoryData) -> Category:
         # name and note are updated
         updated_fields: list[str] = []
 
-        for key in ["name", "note", "priority"]:
+        for key in ("name", "note", "priority"):
             content = validated_data.get(key, getattr(category, key))
             if content != getattr(category, key):
                 setattr(category, key, content)

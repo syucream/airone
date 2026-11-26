@@ -1,3 +1,4 @@
+import collections.abc
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, cast
 
@@ -48,7 +49,7 @@ class AdvancedSearchService:
     def search_entries(
         kls,
         user: User | None,
-        hint_entity_ids: list[str],
+        hint_entity_ids: collections.abc.Sequence[int | str],
         hint_attrs: list[AttrHint] | None = None,
         limit: int = CONFIG.MAX_LIST_ENTRIES,
         entry_name: str | None = None,
@@ -76,7 +77,7 @@ class AdvancedSearchService:
 
         Args:
             user (User | None): User who executed the process
-            hint_entity_ids (list(str)): Entity ID specified in the search condition input
+            hint_entity_ids: Entity IDs, passed as integers or strings.
             hint_attrs (list(dict[str, str])): Defaults to Empty list.
                 A list of search strings and attribute sets
             limit (int): Defaults to 100.

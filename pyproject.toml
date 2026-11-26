@@ -66,6 +66,17 @@ module = [
 ]
 ignore_missing_imports = true
 
+# Keep these internal contracts checked at every caller. Strict mode still
+# permits an explicit Any to erase a parameter or return type.
+[[tool.mypy.overrides]]
+module = [
+    "category.api_v2.serializers",
+    "group.api_v1.views",
+    "role.history",
+    "role.services",
+]
+disallow_any_explicit = true
+
 # CI compares these diagnostics with the base revision using the current
 # configuration and toolchain. See tools/mypy_ratchet.py.
 
